@@ -1,0 +1,60 @@
+---
+// Catch-all route for two kinds of page:
+//  1. Main pages imported from the live Squarespace site (src/data/pages/*.json).
+//  2. Pages built in Pages CMS from reusable sections (src/content/pages/*.md), published
+//     at the address in their `slug` field. Drafts only appear in local previews.
+// Pages with their own files (home, /weddings, the blog) take priority in Astro, so a CMS page
+// may not use those addresses; the build stops with a clear message if one tries to.
+import { getCollection } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ImportedPage from '../components/page/ImportedPage.astro';
+import Sections from '../components/sections/Sections.astro';
+
+export async function getStaticPaths() {
+  const files = import.meta.glob<any>('../data/pages/*.json', { eager: true });
+  const imported = Object.values(files)
+    .map((m) => m.default ?? m)
+    .filter((p) => p.path && p.path !== '/' && p.path !== '/weddings')
+    .map((page) => ({ params: { slug: page.path.replace(/^\//, '') }, props: { kind: 'imported', page } }));
+
+  const cms = (await getCollection('pages', (p) => import.meta.env.DEV || !p.data.draft)).map((entry) => ({
+    params: { slug: entry.data.slug },
+    props: { kind: 'cms', entry },
+  }));
+
+  // Addresses already in use by other pages, plus redirects from old Squarespace addresses.
+  const taken = new Map(imported.map((r) => [r.params.slug, 'an existing page']));
+  ['weddings', 'blog', 'api', 's', 'images', '_astro'].forEach((s) => taken.set(s, 'a built-in page or folder'));
+  const { readFileSync, existsSync } = await import('node:fs');
+  const redirectsFile = `${process.cwd()}/public/_redirects`;
+  if (existsSync(redirectsFile)) {
+    for (const line of readFileSync(redirectsFile, 'utf8').split(/\r?\n/)) {
+      const from = line.trim().split(/\s+/)[0];
+      if (from?.startsWith('/') && from.length > 1) taken.set(from.slice(1), 'a redirect in public/_redirects');
+    }
+  }
+  for (const r of cms) {
+    const slug = r.params.slug;
+    const clash = taken.get(slug) ?? (slug.startsWith('blog/') ? 'the blog' : undefined);
+    if (clash) {
+      throw new Error(`The page "${r.props.entry.data.title}" uses the address /${slug}, which is already used by ${clash}. Choose a different address in Pages CMS.`);
+    }
+    taken.set(slug, `the page "${r.props.entry.data.title}"`);
+  }
+
+  return [...imported, ...cms];
+}
+
+const { kind, page, entry } = Astro.props as any;
+const d = entry?.data;
+---
+{kind === 'imported' && <ImportedPage page={page} />}
+{kind === 'cms' && (
+  <BaseLayout
+    title={d.seoTitle || `${d.title} | Moments In Light`}
+    description={d.description}
+    image={d.shareImage ?? d.sections.find((s: any) => s.image)?.image.src ?? d.sections.find((s: any) => s.images?.length)?.images[0].src}
+  >
+    <Sections title={d.title} sections={d.sections} />
+  </BaseLayout>
+)}

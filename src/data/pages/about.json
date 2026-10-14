@@ -1,0 +1,366 @@
+{
+ "path": "/about",
+ "title": "About | Capture Timeless Moments Today | Moments In Light",
+ "description": "Meet Moments In Light, your experienced photographers dedicated to capturing authentic, heartfelt moments in weddings, portraits, and family sessions.",
+ "ogImage": "http://static1.squarespace.com/static/6626f9fc9b715306f4f4eae7/t/68dc85608cc78a11fc072b7c/1759282528270/Moments+in+Light+250x250.jpg",
+ "type": {
+  "d": {
+   "h1": [
+    "49.56px",
+    "500",
+    "54.7142px",
+    "normal",
+    "rgb(90, 94, 59)"
+   ],
+   "h3": [
+    "28.824px",
+    "500",
+    "33.482px",
+    "normal",
+    "rgb(90, 94, 59)"
+   ],
+   "p": [
+    "16.728px",
+    "400",
+    "26.7648px",
+    "normal",
+    "rgb(0, 0, 0)"
+   ]
+  },
+  "m": {
+   "h1": [
+    "36.6px",
+    "500",
+    "40.4064px",
+    "normal",
+    "rgb(90, 94, 59)"
+   ],
+   "h3": [
+    "23.64px",
+    "500",
+    "27.4602px",
+    "normal",
+    "rgb(90, 94, 59)"
+   ],
+   "p": [
+    "16.08px",
+    "400",
+    "25.728px",
+    "normal",
+    "rgb(0, 0, 0)"
+   ]
+  }
+ },
+ "sections": [
+  {
+   "id": "66271406844641379d834ffd",
+   "kind": "fluid",
+   "bg": "rgb(255, 255, 255)",
+   "bgImage": null,
+   "bgOverlay": null,
+   "headingColor": "rgb(90, 94, 59)",
+   "textColor": "rgb(0, 0, 0)",
+   "divider": {
+    "leftHigh": true,
+    "d": 28,
+    "m": 7
+   },
+   "pad": {
+    "d": [
+     1.4,
+     1.4
+    ],
+    "m": [
+     0.9,
+     0.9
+    ]
+   },
+   "height": {
+    "d": 477,
+    "m": 831
+   },
+   "grid": {
+    "mRows": 10,
+    "mRowMin": 24,
+    "dRows": 7,
+    "dScale": 0.0215,
+    "mGap": 11,
+    "dGap": 11
+   },
+   "blocks": [
+    {
+     "id": "10aca8b41fd3c0f2f333",
+     "type": "text",
+     "html": "<h1><span class=\"sqsrte-text-color--accent\">A little about me</span></h1><h3><span class=\"sqsrte-text-color--accent\">I want to capture those timeless moments for you.</span></h3><p style=\"text-align: justify\">I've been taking photos for as long as I can remember, and I still get a genuine thrill from sharing these moments with the people in them. Originally from the UK, I moved to New Zealand in 2000 with my wife and our son, and photography has been a constant ever since — I'm a qualified judge with PSNZ and hold photographic qualifications from both New Zealand and the USA. Whether it's a wedding or a portrait session, that same passion and enthusiasm goes into getting you the best possible images. Moments In Light is based on the beautiful Hibiscus Coast, just north of Auckland, and travels throughout the region to capture weddings wherever they're held. Many of Auckland's most romantic venues — from the vineyards of Kumeu to the country estates of West Auckland — are only a 30 to 40 minute drive away, so distance is never a barrier to bringing the same calm, considered approach to your day.</p>",
+     "color": "rgb(0, 0, 0)",
+     "textPad": [
+      0,
+      0,
+      0,
+      0
+     ],
+     "area": {
+      "m": "2/2/11/10",
+      "zm": 2,
+      "d": "1/2/8/26",
+      "zd": 2
+     },
+     "valign": {
+      "m": "flex-start",
+      "d": "flex-start"
+     },
+     "textPadM": [
+      0,
+      0,
+      0,
+      0
+     ]
+    }
+   ]
+  },
+  {
+   "id": "662af9e49cbe8b5917e50e56",
+   "kind": "fluid",
+   "bg": "rgb(233, 236, 230)",
+   "bgImage": null,
+   "bgOverlay": null,
+   "headingColor": "rgb(90, 94, 59)",
+   "textColor": "rgb(0, 0, 0)",
+   "divider": {
+    "leftHigh": true,
+    "d": 28,
+    "m": 7
+   },
+   "pad": {
+    "d": [
+     0,
+     0
+    ],
+    "m": [
+     0,
+     0
+    ]
+   },
+   "height": {
+    "d": 1614,
+    "m": 3714
+   },
+   "grid": {
+    "mRows": 19,
+    "mRowMin": 24,
+    "dRows": 35,
+    "dScale": 0.0215,
+    "mGap": 11,
+    "dGap": 11
+   },
+   "blocks": [
+    {
+     "id": "d1f7019aaeee9a6bd509",
+     "type": "image",
+     "image": {
+      "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/eb7fac1a-1c1a-4ec0-94f6-943c732dabc0/tony-solo.gif",
+      "alt": "Tony Gorham, photographer at Moments in Light, seated in a studio portrait",
+      "width": 1536,
+      "height": 1920,
+      "focal": [
+       0.5,
+       0.5
+      ]
+     },
+     "fit": "cover",
+     "radius": "25px",
+     "href": null,
+     "caption": null,
+     "area": {
+      "m": "2/2/12/10",
+      "zm": 0,
+      "d": "2/2/13/8",
+      "zd": 0
+     },
+     "valign": {
+      "m": "center",
+      "d": "center"
+     }
+    },
+    {
+     "id": "19fd0f84ddc0b96509e9",
+     "type": "button",
+     "text": "Ready to chat about your day? Get in touch",
+     "href": "/contact",
+     "target": null,
+     "align": "center",
+     "stretch": true,
+     "style": {
+      "fontSize": "15px",
+      "fontWeight": "600",
+      "letterSpacing": "0.6px",
+      "pad": [
+       0,
+       32.6,
+       0,
+       32.6
+      ],
+      "bg": "rgb(90, 94, 59)",
+      "color": "rgb(255, 255, 255)",
+      "radius": "16px 0px",
+      "border": "0px solid rgb(255, 255, 255)",
+      "w": 323,
+      "h": 68
+     },
+     "area": {
+      "m": "12/2/14/10",
+      "zm": 5,
+      "d": "33/2/35/8",
+      "zd": 5
+     },
+     "valign": {
+      "m": "center",
+      "d": "center"
+     },
+     "styleM": {
+      "fontSize": "15px",
+      "fontWeight": "600",
+      "letterSpacing": "0.6px",
+      "pad": [
+       0,
+       32.6,
+       0,
+       32.6
+      ],
+      "bg": "rgb(90, 94, 59)",
+      "color": "rgb(255, 255, 255)",
+      "radius": "16px 0px",
+      "border": "0px solid rgb(255, 255, 255)",
+      "w": 343,
+      "h": 59
+     }
+    },
+    {
+     "id": "yui_3_17_2_1_1787710703612_1600",
+     "type": "text",
+     "html": "<h3><span class=\"sqsrte-text-color--accent\">Nobody wants a stranger at their wedding, right?</span></h3><p style=\"text-align: justify\">That's exactly why every wedding package includes a complimentary pre-wedding shoot. It gives us a proper chance to get to know each other, and gives you a bit of practice relaxing in front of the camera — I'll talk you through some simple posing along the way, so it feels natural by the time the big day arrives. My aim is for it to feel less like having a photographer following you around, and more like having a friend there with a camera, quietly capturing the day rather than directing it. I'm looking forward to catching all those small moments of genuine affection and love — after all, that's what really matters. </p><p style=\"text-align: justify\">Tony Gorham, LPSNZ, BPSA </p><p style=\"text-align: justify\">Helping make your day feel exactly like you pictured it is what I love most about this work. I'd love to hear about your plans — take a look at how I work and what's included over on my <a href=\"/weddings\">Weddings page</a>, or get in touch anytime to chat.</p>",
+     "color": "rgb(0, 0, 0)",
+     "textPad": [
+      0,
+      0,
+      0,
+      0
+     ],
+     "area": {
+      "m": "14/2/16/10",
+      "zm": 3,
+      "d": "2/9/9/26",
+      "zd": 3
+     },
+     "valign": {
+      "m": "flex-start",
+      "d": "flex-start"
+     },
+     "textPadM": [
+      0,
+      0,
+      0,
+      0
+     ]
+    },
+    {
+     "id": "yui_3_17_2_1_1787710703612_8552",
+     "type": "button",
+     "text": "Get in touch",
+     "href": "/contact",
+     "target": null,
+     "align": "center",
+     "stretch": true,
+     "style": {
+      "fontSize": "15px",
+      "fontWeight": "600",
+      "letterSpacing": "0.6px",
+      "pad": [
+       0,
+       32.6,
+       0,
+       32.6
+      ],
+      "bg": "rgb(90, 94, 59)",
+      "color": "rgb(255, 255, 255)",
+      "radius": "16px 0px",
+      "border": "0px solid rgb(255, 255, 255)",
+      "w": 267,
+      "h": 68
+     },
+     "area": {
+      "m": "16/2/18/10",
+      "zm": 4,
+      "d": "11/9/13/14",
+      "zd": 4
+     },
+     "valign": {
+      "m": "center",
+      "d": "center"
+     },
+     "styleM": {
+      "fontSize": "15px",
+      "fontWeight": "600",
+      "letterSpacing": "0.6px",
+      "pad": [
+       0,
+       32.6,
+       0,
+       32.6
+      ],
+      "bg": "rgb(90, 94, 59)",
+      "color": "rgb(255, 255, 255)",
+      "radius": "16px 0px",
+      "border": "0px solid rgb(255, 255, 255)",
+      "w": 343,
+      "h": 59
+     }
+    },
+    {
+     "id": "yui_3_17_2_1_1787710703612_16807",
+     "card": {
+      "bg": "rgb(233, 236, 230)",
+      "radius": "25px",
+      "pad": [
+       0,
+       0,
+       0,
+       0
+      ],
+      "padM": [
+       0,
+       0,
+       0,
+       0
+      ]
+     },
+     "type": "text",
+     "html": "<p><span class=\"sqsrte-text-color--accent\">Here is what some of my clients have said about me</span></p><ul><li><p><span class=\"sqsrte-text-color--accent\"><em>Tony was amazing in the months leading up to our wedding and the day itself. He took great pride in getting us ready and comfortable in front of the camera, and did an engagement shoot beforehand to get to know us and give us a chance to get to know him. On the day, weather was all over the place, but every photo came out beautiful and was delivered so quickly. Thanks Tony!</em> - Cerise</span></p></li><li><p><span class=\"sqsrte-text-color--accent\"><em>Tony has been INCREDIBLE! Not only did he make my husband and I feel comfortable, but he also made all of our guests (we received many messages raving about how fun he was)! Everything has been easy, from communication to execution. We adore our photos and adore</em> Tony!</span></p></li><li><p><span class=\"sqsrte-text-color--accent\"><em>Tony was incredible to work with for our wedding! From start to finish, his communication was clear and super easy, which made the whole process stress-free. He gave great posing guidance while still keeping everything natural, and his personality made us feel so comfortable in front of the camera.</em> - Leah</span></p></li><li><p><span class=\"sqsrte-text-color--accent\"><em>Our portraits turned out stunning, and the candid shots were honestly some of our favorite moments from the day — he captured everything so beautifully and effortlessly. If you’re looking for a photographer who’s talented, fun, and genuinely amazing to be around, Tony is your guy!</em> - Janine</span></p></li><li><p><span class=\"sqsrte-text-color--accent\"><em>Tony was great for our wedding. The shoot was a lot of fun, he made everyone feel at ease and the photos were amazing!</em> - Steven</span></p></li><li><p><span class=\"sqsrte-text-color--accent\"><em>Tony was absolutely great. From the moment he messaged me on Facebook because I'd made a typo in my email on his website form, I knew I'd chosen the right photographer - later confirmed by the amount of people who asked if he was family following our wedding. We had a very chill &amp; stress free day &amp; Tony was just overall great, got involved &amp; I hope we have the opportunity to meet him again.</em> - Shannon</span></p></li><li><p><span class=\"sqsrte-text-color--accent\"><em>Tony has a great presence and does a brilliant job at making one feel safe and comfortable. He knows his stuff to create beautiful images! Super easy going and relaxed which meant my shoot was enjoyable, calm and fun!</em> - Ashlee</span></p></li><li><p><span class=\"sqsrte-text-color--accent\"><em>We had the absolute pleasure of working with Tony for our wedding, and we couldn’t be happier with the experience! From the very beginning, his communication was exceptional, always prompt, clear, and so friendly. He made us feel completely at ease and was incredibly organised and reliable throughout the entire process. On the day, Tony was an absolute dream to work with. Calm, professional, and full of positive energy, they captured every special moment so beautifully without ever feeling intrusive. The attention to detail and creativity in their shots are just amazing — we are genuinely blown away by the final photos! <br>If you’re looking for a photographer who is not only talented but also wonderful to work with, we couldn’t recommend Tony more highly. Thank you for helping make our day so special and for giving us memories we’ll treasure forever!</em> - Paige</span></p></li></ul>",
+     "color": "rgb(90, 94, 59)",
+     "textPad": [
+      79.5,
+      79.5,
+      79.5,
+      79.5
+     ],
+     "area": {
+      "m": "18/2/20/10",
+      "zm": 5,
+      "d": "14/2/33/26",
+      "zd": 5
+     },
+     "valign": {
+      "m": "flex-start",
+      "d": "flex-start"
+     },
+     "textPadM": [
+      20.6,
+      20.6,
+      20.6,
+      20.6
+     ]
+    }
+   ]
+  }
+ ]
+}

@@ -1,0 +1,238 @@
+{
+ "path": "/wedding-photo-guide",
+ "title": "Free Wedding Photo Guide | Auckland | Moments In Light | Moments In Light",
+ "description": "Download a free wedding photo guide. Get tips and pointers on getting the best pics from your special day.",
+ "ogImage": "http://static1.squarespace.com/static/6626f9fc9b715306f4f4eae7/t/68dc85608cc78a11fc072b7c/1759282528270/Moments+in+Light+250x250.jpg",
+ "type": {
+  "d": {
+   "h1": [
+    "49.56px",
+    "500",
+    "54.7142px",
+    "normal",
+    "rgb(90, 94, 59)"
+   ],
+   "h2": [
+    "32.28px",
+    "500",
+    "37.1866px",
+    "normal",
+    "rgb(0, 0, 0)"
+   ],
+   "p": [
+    "16.728px",
+    "400",
+    "26.7648px",
+    "normal",
+    "rgb(0, 0, 0)"
+   ]
+  },
+  "m": {
+   "h1": [
+    "36.6px",
+    "500",
+    "40.4064px",
+    "normal",
+    "rgb(90, 94, 59)"
+   ],
+   "h2": [
+    "25.8px",
+    "500",
+    "29.7216px",
+    "normal",
+    "rgb(0, 0, 0)"
+   ],
+   "p": [
+    "16.08px",
+    "400",
+    "25.728px",
+    "normal",
+    "rgb(0, 0, 0)"
+   ]
+  }
+ },
+ "sections": [
+  {
+   "id": "6a7d0506cb043142dad209a7",
+   "kind": "fluid",
+   "bg": "rgb(255, 255, 255)",
+   "bgImage": null,
+   "bgOverlay": null,
+   "headingColor": "rgb(90, 94, 59)",
+   "textColor": "rgb(0, 0, 0)",
+   "divider": null,
+   "pad": {
+    "d": [
+     1.4,
+     1.4
+    ],
+    "m": [
+     0.9,
+     0.9
+    ]
+   },
+   "height": {
+    "d": 654,
+    "m": 1048
+   },
+   "grid": {
+    "mRows": 3,
+    "mRowMin": 24,
+    "dRows": 12,
+    "dScale": 0.0215,
+    "mGap": 11,
+    "dGap": 11
+   },
+   "blocks": [
+    {
+     "id": "034867ef9bc67cea88c5",
+     "type": "text",
+     "html": "<h1>The Ultimate Auckland Wedding Photo Guide</h1><p>Great wedding photos rarely happen by accident. They come from a day that's given enough room to breathe — the right light, a little space between moments, and a flow that doesn't feel rushed. Get that right, and everything else follows naturally.</p><p>This free guide shares what goes into truly beautiful wedding photography, from the kind of light that makes portraits glow to the small planning choices that make the biggest difference on the day itself, drawn from real weddings photographed across Auckland.</p><p>Inside, you'll find:</p><ul><li><p>Why you don't need to know how to pose, and what actually makes a great photo</p></li><li><p>Whether an unplugged ceremony or a first look is right for your day</p></li><li><p>Simple tips for ceremony, ring, and detail shots that are easy to forget</p></li><li><p>How to keep group photos relaxed instead of stressful</p></li><li><p>What golden hour actually is, and why it's worth planning around</p></li><li><p>What to expect if the weather doesn't cooperate</p></li></ul>",
+     "color": "rgb(0, 0, 0)",
+     "textPad": [
+      0,
+      0,
+      0,
+      0
+     ],
+     "area": {
+      "m": "2/2/4/10",
+      "zm": 2,
+      "d": "2/2/13/26",
+      "zd": 2
+     },
+     "valign": {
+      "m": "flex-start",
+      "d": "flex-start"
+     },
+     "textPadM": [
+      0,
+      0,
+      0,
+      0
+     ]
+    }
+   ]
+  },
+  {
+   "id": "6a7d0587baed384113ba6b3b",
+   "kind": "fluid",
+   "bg": "rgb(255, 255, 255)",
+   "bgImage": null,
+   "bgOverlay": null,
+   "headingColor": "rgb(0, 0, 0)",
+   "textColor": "rgb(0, 0, 0)",
+   "divider": null,
+   "pad": {
+    "d": [
+     1.4,
+     1.4
+    ],
+    "m": [
+     0.9,
+     0.9
+    ]
+   },
+   "height": {
+    "d": 1178,
+    "m": 1150
+   },
+   "grid": {
+    "mRows": 26,
+    "mRowMin": 24,
+    "dRows": 28,
+    "dScale": 0.0215,
+    "mGap": 11,
+    "dGap": 11
+   },
+   "blocks": [
+    {
+     "id": "6f2cef95b811b4cbab72",
+     "type": "text",
+     "html": "<h2><em>Get the free guide</em></h2><p><em>This guide is drawn from real weddings photographed across Auckland venues, including Settlers Country Manor, Bridgewater Estate, Kumeu Valley Estate, Markovina Vineyard Estate, and Hamilton Gardens. </em></p><p><em>If you'd love help photographing your own day, I'd love to hear from you.</em></p>",
+     "color": "rgb(0, 0, 0)",
+     "textPad": [
+      0,
+      0,
+      0,
+      0
+     ],
+     "area": {
+      "m": "1/2/5/10",
+      "zm": 1,
+      "d": "2/2/7/13",
+      "zd": 1
+     },
+     "valign": {
+      "m": "flex-start",
+      "d": "flex-start"
+     },
+     "textPadM": [
+      0,
+      0,
+      0,
+      0
+     ]
+    },
+    {
+     "id": "yui_3_17_2_1_1786663071460_12366",
+     "card": {
+      "bg": "rgb(233, 236, 230)",
+      "radius": "25px",
+      "pad": [
+       36.1,
+       36.1,
+       36.1,
+       36.1
+      ],
+      "padM": [
+       20.6,
+       20.6,
+       20.6,
+       20.6
+      ]
+     },
+     "area": {
+      "m": "5/2/13/10",
+      "zm": 5,
+      "d": "8/2/18/13",
+      "zd": 5
+     },
+     "valign": {
+      "m": "flex-start",
+      "d": "flex-start"
+     },
+     "type": "guideSignup"
+    },
+    {
+     "id": "1ccf625863ffd728beda",
+     "type": "image",
+     "image": {
+      "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1781481857661-HQ0H8L0AEOX4Q7XIQH9M/_Q9A7504.jpg",
+      "alt": "A groom lifts his bride, reflected in a pool at night",
+      "width": 1366,
+      "height": 2048,
+      "focal": [
+       0.5,
+       0.5
+      ]
+     },
+     "fit": "cover",
+     "radius": "20px",
+     "href": null,
+     "caption": null,
+     "area": {
+      "m": "13/2/27/10",
+      "zm": 4,
+      "d": "2/14/25/26",
+      "zd": 4
+     },
+     "valign": {
+      "m": "center",
+      "d": "center"
+     }
+    }
+   ]
+  }
+ ]
+}

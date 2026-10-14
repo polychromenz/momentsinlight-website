@@ -1,0 +1,502 @@
+{
+ "path": "/family",
+ "title": "Family photographers Auckland | Moments In Light",
+ "description": "Let us work our magic so you get pictures you will love. We are family photographers in Auckland and can come to you or a place that is special to you.",
+ "ogImage": "http://static1.squarespace.com/static/6626f9fc9b715306f4f4eae7/t/668c69b0866be55153fa9d49/1720478135499/092A8969_SOCIAL.jpg",
+ "type": {
+  "d": {
+   "h1": [
+    "49.56px",
+    "500",
+    "54.7142px",
+    "normal",
+    "rgb(90, 94, 59)"
+   ],
+   "h2": [
+    "32.28px",
+    "500",
+    "37.1866px",
+    "normal",
+    "rgb(90, 94, 59)"
+   ],
+   "p": [
+    "16.728px",
+    "400",
+    "26.7648px",
+    "normal",
+    "rgb(0, 0, 0)"
+   ]
+  },
+  "m": {
+   "h1": [
+    "36.6px",
+    "500",
+    "40.4064px",
+    "normal",
+    "rgb(90, 94, 59)"
+   ],
+   "h2": [
+    "25.8px",
+    "500",
+    "29.7216px",
+    "normal",
+    "rgb(90, 94, 59)"
+   ],
+   "p": [
+    "16.08px",
+    "400",
+    "25.728px",
+    "normal",
+    "rgb(0, 0, 0)"
+   ]
+  }
+ },
+ "sections": [
+  {
+   "id": "664eaec733264b095b3cbb5b",
+   "kind": "fluid",
+   "bg": "rgb(255, 255, 255)",
+   "bgImage": null,
+   "bgOverlay": null,
+   "headingColor": null,
+   "textColor": null,
+   "divider": null,
+   "pad": {
+    "d": [
+     1.4,
+     1.4
+    ],
+    "m": [
+     0.9,
+     0.9
+    ]
+   },
+   "height": {
+    "d": 167,
+    "m": 123
+   },
+   "grid": {
+    "mRows": 1,
+    "mRowMin": 24,
+    "dRows": 1,
+    "dScale": 0.0215,
+    "mGap": 11,
+    "dGap": 11
+   },
+   "blocks": []
+  },
+  {
+   "id": "663bfa883c03e410b93ff22d",
+   "kind": "fluid",
+   "bg": "rgb(255, 255, 255)",
+   "bgImage": null,
+   "bgOverlay": null,
+   "headingColor": "rgb(90, 94, 59)",
+   "textColor": "rgb(0, 0, 0)",
+   "divider": null,
+   "pad": {
+    "d": [
+     1.4,
+     1.4
+    ],
+    "m": [
+     0.9,
+     0.9
+    ]
+   },
+   "height": {
+    "d": 1063,
+    "m": 2031
+   },
+   "grid": {
+    "mRows": 11,
+    "mRowMin": 24,
+    "dRows": 22,
+    "dScale": 0.0215,
+    "mGap": 11,
+    "dGap": 11
+   },
+   "blocks": [
+    {
+     "id": "3c200b1374d642a2d753",
+     "type": "text",
+     "html": "<h1>Family Photography in Auckland</h1><p>Family is everything — and your story deserves to be captured in a way that feels natural, authentic, and timeless. Whether it’s the joy of welcoming a new baby, the milestone of a graduation, or simply the everyday love between parents and children, family photography is about creating memories you’ll treasure for a lifetime.</p><h2>Natural, Relaxed Family Portraits</h2><p>I believe the best family photos come from genuine moments. That’s why my sessions are relaxed and fun, allowing kids to be themselves and families to connect in their own way. No stiff poses, no forced smiles — just real laughter, real love, and portraits that reflect who you truly are.</p><p>Sessions can take place at your home, in one of Auckland’s beautiful outdoor locations, or at a venue that’s special to you. I’ll help guide you through the process, so everyone feels comfortable in front of the camera.</p><h2>Why Families Choose Moments in Light</h2><ul><li><p><strong>Relaxed and fun sessions</strong> that keep kids (and parents!) at ease.</p></li><li><p><strong>Auckland-based locations</strong> chosen to suit your family’s style — beaches, parks, gardens, or at home.</p></li><li><p><strong>Beautifully edited images</strong> that feel true-to-life, warm, and timeless.</p></li><li><p><strong>Flexible packages</strong> to suit everything from small family shoots to extended whānau gatherings.</p></li><li><p><strong>Prints and albums</strong> available so your photos don’t just live on a screen — they become heirlooms.</p></li></ul><h2>When to Book a Family Session</h2><p>Every season of family life is worth celebrating:</p><ul><li><p>Young families wanting to capture their little ones before they grow too fast.</p></li><li><p>Teenagers and older kids marking milestones and achievements.</p></li><li><p>Multi-generational portraits to bring grandparents, parents, and children together in one frame.</p></li><li><p>Annual shoots to build a visual story of your family over time.</p></li></ul><h2>Creating Memories That Last</h2><p>Photos aren’t just for today — they’re for the future, too. Your children and grandchildren will look back at these images and see the love that shaped their lives.</p><p><a href=\"/contact\"><strong>Contact me today</strong></a> to plan your Auckland family photography session. Let’s create a set of portraits that tell your story and become a legacy for years to come.</p>",
+     "color": "rgb(0, 0, 0)",
+     "textPad": [
+      0,
+      0,
+      0,
+      0
+     ],
+     "area": {
+      "m": "1/2/12/10",
+      "zm": 0,
+      "d": "1/2/23/26",
+      "zd": 0
+     },
+     "valign": {
+      "m": "center",
+      "d": "center"
+     },
+     "textPadM": [
+      0,
+      0,
+      0,
+      0
+     ]
+    }
+   ]
+  },
+  {
+   "id": "663bfa883c03e410b93ff22e",
+   "kind": "gallery",
+   "bg": "rgb(255, 255, 255)",
+   "bgImage": null,
+   "bgOverlay": null,
+   "headingColor": null,
+   "textColor": null,
+   "divider": null,
+   "pad": {
+    "d": [
+     0,
+     0
+    ],
+    "m": [
+     0,
+     0
+    ]
+   },
+   "height": {
+    "d": 1015,
+    "m": 390
+   },
+   "design": "slideshow",
+   "images": [
+    {
+     "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/e5cfbe3e-31f5-49a7-a211-8acc70ffc155/2C0A4901-2.jpg",
+     "alt": "Black and white photo of a mother and son cheek to cheek",
+     "width": 5760,
+     "height": 3840,
+     "focal": [
+      0.5,
+      0.5
+     ],
+     "href": null,
+     "title": null
+    },
+    {
+     "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/b14d45f5-e6fe-48b9-ab44-6228ae42f0ef/2C0A4886-2_SOCIAL.jpg",
+     "alt": "Black and white photo of children kissing their mother's cheeks",
+     "width": 2048,
+     "height": 1451,
+     "focal": [
+      0.5,
+      0.5
+     ],
+     "href": null,
+     "title": null
+    },
+    {
+     "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/c6d3ce91-c90c-4aaf-bca6-1149594355e2/9-2-1_SOCIAL.jpg",
+     "alt": "A collage of photos from an extended family celebration",
+     "width": 2048,
+     "height": 1395,
+     "focal": [
+      0.5,
+      0.5
+     ],
+     "href": null,
+     "title": null
+    },
+    {
+     "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/0b59985a-861b-4866-8e0b-538b577f8898/1_SOCIAL.jpg",
+     "alt": "A large extended family gathered on a lawn",
+     "width": 2048,
+     "height": 1123,
+     "focal": [
+      0.5,
+      0.5
+     ],
+     "href": null,
+     "title": null
+    },
+    {
+     "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/0a2e5dc9-cd80-4423-90a0-7c5193f8dde1/2C0A5630_SOCIAL.jpg",
+     "alt": "A group of teenage cousins sitting together",
+     "width": 2048,
+     "height": 1313,
+     "focal": [
+      0.5,
+      0.5
+     ],
+     "href": null,
+     "title": null
+    },
+    {
+     "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/2faa156f-de0f-42eb-94ac-2c10278f77ed/2C0A8018_SOCIAL.jpg",
+     "alt": "A family of three generations sitting together in long grass",
+     "width": 1620,
+     "height": 1080,
+     "focal": [
+      0.5,
+      0.5
+     ],
+     "href": null,
+     "title": null
+    },
+    {
+     "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/3a69609d-488f-4fc0-83c7-08424ab4392b/2C0A8136_SOCIAL.jpg",
+     "alt": "A family stands on a clifftop above the sea",
+     "width": 1620,
+     "height": 1080,
+     "focal": [
+      0.5,
+      0.5
+     ],
+     "href": null,
+     "title": null
+    },
+    {
+     "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/253d9e1c-270e-4571-9e61-ac26f9bf7e7b/Julia_SOCIAL.jpg",
+     "alt": "A strip of three photos of a mother holding her baby",
+     "width": 2048,
+     "height": 486,
+     "focal": [
+      0.5,
+      0.5
+     ],
+     "href": null,
+     "title": null
+    },
+    {
+     "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/a45c1a80-40bd-42df-a0f4-3c9509b9d538/_W2A2375_SOCIAL.jpg",
+     "alt": "Two brothers sitting on a tree stump in a park",
+     "width": 2048,
+     "height": 1366,
+     "focal": [
+      0.5,
+      0.5
+     ],
+     "href": null,
+     "title": null
+    },
+    {
+     "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/74489437-d40b-4c82-819b-23d6eaa6ddaf/_W2A2621_SOCIAL.jpg",
+     "alt": "A young girl in a white dress sitting on a tree stump",
+     "width": 2048,
+     "height": 1283,
+     "focal": [
+      0.5,
+      0.5
+     ],
+     "href": null,
+     "title": null
+    },
+    {
+     "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/fe06409a-67f2-470a-940f-27a7e610f1ac/_W2A2630_SOCIAL.jpg",
+     "alt": "A couple sitting on a tree stump in a park",
+     "width": 2048,
+     "height": 1094,
+     "focal": [
+      0.5,
+      0.5
+     ],
+     "href": null,
+     "title": null
+    },
+    {
+     "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/35e6046b-965b-46d3-bc86-cb15b9afe140/_W2A2661_SOCIAL.jpg",
+     "alt": "A couple sitting together in front of stone steps",
+     "width": 2048,
+     "height": 1366,
+     "focal": [
+      0.5,
+      0.5
+     ],
+     "href": null,
+     "title": null
+    },
+    {
+     "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/3ef2b18e-0072-4d9f-93f5-a6edfba396f5/092A8998_SOCIAL.jpg",
+     "alt": "A family reflected in the wet sand on a misty beach",
+     "width": 2048,
+     "height": 1365,
+     "focal": [
+      0.5,
+      0.5
+     ],
+     "href": null,
+     "title": null
+    },
+    {
+     "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/a3f6d0fe-7505-4615-b5ed-bb91bff1390a/092A9116_SOCIAL.jpg",
+     "alt": "A couple standing together on the beach",
+     "width": 2048,
+     "height": 1365,
+     "focal": [
+      0.5,
+      0.5
+     ],
+     "href": null,
+     "title": null
+    },
+    {
+     "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/28be0911-45b9-4e5e-876a-82a69704c372/092A9336_SOCIAL.jpg",
+     "alt": "A smiling boy in red glasses on the beach",
+     "width": 2048,
+     "height": 1365,
+     "focal": [
+      0.5,
+      0.5
+     ],
+     "href": null,
+     "title": null
+    },
+    {
+     "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/7128c83d-266a-4f25-84be-68c2a3eba6a7/triptych3_SOCIAL.jpg",
+     "alt": "A strip of three black and white beach portraits of a boy",
+     "width": 2048,
+     "height": 490,
+     "focal": [
+      0.5,
+      0.5
+     ],
+     "href": null,
+     "title": null
+    },
+    {
+     "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/458d7b97-2b10-4406-a269-1ebddddafaf3/_W2A1405_SOCIAL.jpg",
+     "alt": "A family sitting together in the dunes",
+     "width": 2048,
+     "height": 1366,
+     "focal": [
+      0.5,
+      0.5
+     ],
+     "href": null,
+     "title": null
+    },
+    {
+     "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/8657c878-13cd-4d11-9969-e11fda200027/_W2A1458_SOCIAL.jpg",
+     "alt": "Two children reflected in the wet sand at the beach",
+     "width": 2048,
+     "height": 1366,
+     "focal": [
+      0.5,
+      0.5
+     ],
+     "href": null,
+     "title": null
+    },
+    {
+     "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/5a6b1187-f2c1-4704-98a6-e660719ddff9/2_SOCIAL.jpg",
+     "alt": "A family standing on reflective sand with headlands behind",
+     "width": 2048,
+     "height": 1187,
+     "focal": [
+      0.5,
+      0.5
+     ],
+     "href": null,
+     "title": null
+    },
+    {
+     "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/c0520b5d-11f8-4d40-ac1a-211bf9add197/092A3267_SOCIAL.jpg",
+     "alt": "A family beside Lion Rock at Piha",
+     "width": 2048,
+     "height": 1365,
+     "focal": [
+      0.5,
+      0.5
+     ],
+     "href": null,
+     "title": null
+    },
+    {
+     "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/7f6d05ff-d50d-4e9c-8dba-b32902e2fae5/092A3271_SOCIAL.jpg",
+     "alt": "Two children playing on the shoreline at Piha",
+     "width": 2048,
+     "height": 1365,
+     "focal": [
+      0.5,
+      0.5
+     ],
+     "href": null,
+     "title": null
+    },
+    {
+     "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/8e2652e9-0cc5-48e0-8010-80917041aabe/092A3653_SOCIAL.jpg",
+     "alt": "A brother and sister hug on the beach",
+     "width": 2048,
+     "height": 1365,
+     "focal": [
+      0.5,
+      0.5
+     ],
+     "href": null,
+     "title": null
+    },
+    {
+     "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/7494ca85-7b9e-4101-abf2-54b03eda8f43/092A3665_SOCIAL.jpg",
+     "alt": "A couple embrace on the beach at sunset",
+     "width": 2048,
+     "height": 1365,
+     "focal": [
+      0.5,
+      0.5
+     ],
+     "href": null,
+     "title": null
+    },
+    {
+     "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/f36da65c-0579-4186-a592-7737b856fc6f/SOCIAL__DSC3942-Edit.jpg",
+     "alt": "A boy grins resting his chin on his hands on a log",
+     "width": 2048,
+     "height": 1638,
+     "focal": [
+      0.5,
+      0.5
+     ],
+     "href": null,
+     "title": null
+    },
+    {
+     "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/dfe5a9b5-752e-4686-8d3b-77a092d3c5e4/092A8969_SOCIAL.jpg",
+     "alt": "A family walking across the wet sand with reflections below",
+     "width": 1215,
+     "height": 2048,
+     "focal": [
+      0.5,
+      0.5
+     ],
+     "href": null,
+     "title": null
+    }
+   ],
+   "layout": {
+    "d": {
+     "rect": [
+      58,
+      1325,
+      900
+     ],
+     "columns": 1,
+     "gap": 0,
+     "itemH": 900,
+     "itemW": 1238
+    },
+    "m": {
+     "rect": [
+      23,
+      343,
+      343
+     ],
+     "columns": 1,
+     "gap": 0,
+     "itemH": 343,
+     "itemW": 289
+    }
+   }
+  }
+ ]
+}

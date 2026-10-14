@@ -1,0 +1,44 @@
+---
+// Full-width photo with the heading over it. The first hero on a page uses an <h1>.
+import Img from '../Img.astro';
+
+interface Props {
+  image: { src: string; alt: string };
+  heading: string;
+  subheading?: string;
+  height: 'tall' | 'short';
+  buttonLabel?: string;
+  buttonLink?: string;
+  isFirst: boolean;
+}
+const { image, heading, subheading, height, buttonLabel, buttonLink, isFirst } = Astro.props;
+const H = isFirst ? 'h1' : 'h2';
+---
+<section class:list={['hero', height]}>
+  <Img src={image.src} alt={image.alt} sizes="100vw" loading={isFirst ? 'eager' : 'lazy'} />
+  <div class="overlay">
+    <div class="wrap content">
+      <H>{heading}</H>
+      {subheading && <p class="sub">{subheading}</p>}
+      {buttonLabel && buttonLink && <a class="btn" href={buttonLink}>{buttonLabel}</a>}
+    </div>
+  </div>
+</section>
+
+<style>
+  .hero { position: relative; overflow: hidden; background: var(--black); }
+  .hero.tall { height: min(85vh, 760px); min-height: 420px; }
+  .hero.short { height: min(55vh, 480px); min-height: 300px; }
+  .hero :global(img) { width: 100%; height: 100%; object-fit: cover; }
+  .overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: flex-end;
+    background: linear-gradient(to top, rgb(0 0 0 / 0.55), rgb(0 0 0 / 0) 60%);
+  }
+  .content { width: 100%; padding-block: clamp(28px, 6vw, 70px); }
+  .content :is(h1, h2) { color: var(--white); margin: 0 0 12px; padding-top: 0; max-width: 22ch; }
+  .sub { color: var(--white); font-size: 1.15em; max-width: 50ch; margin: 0 0 22px; }
+  .btn { margin-top: 4px; }
+</style>

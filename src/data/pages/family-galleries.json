@@ -1,0 +1,227 @@
+{
+ "path": "/family-galleries",
+ "title": "Family Galleries | Capture Cherished Moments | Moments In Light",
+ "description": "Discover professional family photography services. Create lasting memories with relaxed, personalized sessions tailored to your favorite locations.",
+ "ogImage": "http://static1.squarespace.com/static/6626f9fc9b715306f4f4eae7/t/68dc85608cc78a11fc072b7c/1759282528270/Moments+in+Light+250x250.jpg",
+ "type": {
+  "d": {
+   "h1": [
+    "49.56px",
+    "500",
+    "54.7142px",
+    "normal",
+    "rgb(90, 94, 59)"
+   ],
+   "p": [
+    "16.728px",
+    "400",
+    "26.7648px",
+    "normal",
+    "rgb(0, 0, 0)"
+   ]
+  },
+  "m": {
+   "h1": [
+    "36.6px",
+    "500",
+    "40.4064px",
+    "normal",
+    "rgb(90, 94, 59)"
+   ],
+   "p": [
+    "16.08px",
+    "400",
+    "25.728px",
+    "normal",
+    "rgb(0, 0, 0)"
+   ]
+  }
+ },
+ "sections": [
+  {
+   "id": "6710360421c8ba393c2e3390",
+   "kind": "fluid",
+   "bg": "rgb(255, 255, 255)",
+   "bgImage": null,
+   "bgOverlay": null,
+   "headingColor": "rgb(90, 94, 59)",
+   "textColor": "rgb(0, 0, 0)",
+   "divider": null,
+   "pad": {
+    "d": [
+     1.4,
+     1.4
+    ],
+    "m": [
+     0.9,
+     0.9
+    ]
+   },
+   "height": {
+    "d": 551,
+    "m": 1005
+   },
+   "grid": {
+    "mRows": 2,
+    "mRowMin": 24,
+    "dRows": 9,
+    "dScale": 0.0215,
+    "mGap": 11,
+    "dGap": 11
+   },
+   "blocks": [
+    {
+     "id": "yui_3_17_2_1_1729115477257_3299",
+     "type": "text",
+     "html": "<h1>I am your local family photographer</h1><p><span class=\"sqsrte-text-color--accent\">Family is the most important thing. Make sure you catch those special moments, once they are gone, they are gone forever. We can help.</span></p><p>Having a good camera on our phones means that we now take more pictures than ever. But what about one of the whole family? Get a friend to grab a snap? It doesn’t have the same impact, does it? What you really want is someone who understands how to catch those special moments. Take some time out and organise some great pictures. Something to cherish forever. </p><p>Family sessions are usually best at home or at a special place like the beach. I will work with you to design a brief that makes you happy. I don’t believe in just diving in so there will be an upfront chat and then on the day we will spend some time just chatting and putting everyone at ease (especially those family members who can be a little camera shy).</p><p>Formal photos have a time and place but they can be a bit boring. Once everyone is ready, we will have a low key and fun shoot that should get you some amazing images that capture your family as they really are, acting themselves and relaxed.</p><p><strong>Pricing starts at just $450 NZD</strong></p>",
+     "color": "rgb(0, 0, 0)",
+     "textPad": [
+      0,
+      0,
+      0,
+      0
+     ],
+     "area": {
+      "m": "1/2/3/10",
+      "zm": 1,
+      "d": "1/2/10/26",
+      "zd": 1
+     },
+     "valign": {
+      "m": "flex-start",
+      "d": "flex-start"
+     },
+     "textPadM": [
+      0,
+      0,
+      0,
+      0
+     ]
+    }
+   ]
+  },
+  {
+   "id": "6710360436a4091cf3a4acaa",
+   "kind": "fluid",
+   "bg": "rgb(255, 255, 255)",
+   "bgImage": null,
+   "bgOverlay": null,
+   "headingColor": null,
+   "textColor": null,
+   "divider": {
+    "leftHigh": true,
+    "d": 28,
+    "m": 7
+   },
+   "pad": {
+    "d": [
+     1.4,
+     1.4
+    ],
+    "m": [
+     0.9,
+     0.9
+    ]
+   },
+   "height": {
+    "d": 1124,
+    "m": 1169
+   },
+   "grid": {
+    "mRows": 16,
+    "mRowMin": 24,
+    "dRows": 11,
+    "dScale": 0.0215,
+    "mGap": 11,
+    "dGap": 11
+   },
+   "blocks": [
+    {
+     "id": "yui_3_17_2_1_1729115477257_5064",
+     "type": "summary",
+     "design": [
+      "autogrid",
+      "list-thumbnail-left"
+     ],
+     "textSize": "large",
+     "textAlign": "left",
+     "items": [
+      {
+       "href": "/blog/annabel-and-her-family",
+       "title": "Annabel and her family",
+       "excerpt": "",
+       "thumb": {
+        "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1729116400941-X65X2D2RQQJK0SFUQAKM/SOCIAL__DSC3942-Edit.jpg",
+        "alt": "Annabel and her family",
+        "width": 2048,
+        "height": 1638,
+        "focal": [
+         0.5,
+         0.5
+        ]
+       },
+       "metaText": ""
+      },
+      {
+       "href": "/blog/family-tracey-and-her-boys",
+       "title": "Tracey and her boys",
+       "excerpt": "",
+       "thumb": {
+        "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1715820529779-68R3KY2Y96XH0UTCG03W/092A9336_SOCIAL.jpg",
+        "alt": "Tracey and her boys",
+        "width": 2048,
+        "height": 1365,
+        "focal": [
+         0.5,
+         0.5
+        ]
+       },
+       "metaText": ""
+      },
+      {
+       "href": "/blog/family-dianne",
+       "title": "Dianne and family",
+       "excerpt": "",
+       "thumb": {
+        "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1715807698000-AL1I35SOF0XGM4SQ8LBQ/_W2A2621_SOCIAL.jpg",
+        "alt": "Dianne and family",
+        "width": 2048,
+        "height": 1283,
+        "focal": [
+         0.5,
+         0.5
+        ]
+       },
+       "metaText": ""
+      }
+     ],
+     "colWidthPct": 49.2453,
+     "showMore": true,
+     "thumbRatio": 66.6667,
+     "header": "",
+     "titleStyle": {
+      "fontSize": "30px",
+      "color": "rgb(0, 0, 0)",
+      "fontWeight": "400",
+      "lineHeight": "36px"
+     },
+     "listRect": [
+      652,
+      526
+     ],
+     "area": {
+      "m": "3/2/15/10",
+      "zm": 1,
+      "d": "1/2/12/26",
+      "zd": 1
+     },
+     "valign": {
+      "m": "flex-start",
+      "d": "flex-start"
+     },
+     "colWidthPctM": 100
+    }
+   ]
+  }
+ ]
+}

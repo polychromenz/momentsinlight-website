@@ -1,0 +1,55 @@
+---
+// Renders a page built in Pages CMS: each section in order, with the site's spacing and
+// optional pale green (Griseo Elegance) background. If the page doesn't start with a hero,
+// the page title is shown as the main heading.
+import Hero from './Hero.astro';
+import TextBlock from './TextBlock.astro';
+import ImageText from './ImageText.astro';
+import Testimonial from './Testimonial.astro';
+import CallToAction from './CallToAction.astro';
+import Gallery from '../Gallery.astro';
+
+interface Props { title: string; sections: any[] }
+const { title, sections } = Astro.props;
+const startsWithHero = sections[0]?.type === 'hero';
+---
+{!startsWithHero && (
+  <div class="wrap page-title"><h1>{title}</h1></div>
+)}
+{sections.map((s, i) =>
+  s.type === 'hero' ? (
+    <Hero {...s} isFirst={i === 0} />
+  ) : (
+    <section class:list={['cms-section', `t-${s.type}`, { 'bg-alt': s.background === 'alt' }]}>
+      {s.type === 'text' && <TextBlock {...s} />}
+      {s.type === 'imageText' && <ImageText {...s} />}
+      {s.type === 'gallery' && (
+        <div class="wrap">
+          {s.heading && <h2>{s.heading}</h2>}
+          <Gallery images={s.images} layout={s.layout} label={s.heading || `Photographs from ${title}`} subject={title} />
+        </div>
+      )}
+      {s.type === 'testimonial' && <Testimonial {...s} />}
+      {s.type === 'cta' && <CallToAction {...s} />}
+    </section>
+  ),
+)}
+
+<style>
+  .page-title { padding-top: clamp(30px, 5vw, 60px); }
+  .page-title h1 { margin: 0; }
+  .cms-section { padding-block: clamp(36px, 6vw, 80px); }
+  /* Two sections on the same background read as one block, so don't double the gap. */
+  .cms-section:not(.bg-alt) + .cms-section:not(.bg-alt),
+  .cms-section.bg-alt + .cms-section.bg-alt { padding-top: 0; }
+  .t-gallery h2 { margin-top: 0; }
+  .t-gallery :global(.gallery) { margin-top: 0; }
+
+  /* Formatted text from the CMS editor. */
+  .cms-section :global(.rich > :first-child) { margin-top: 0; }
+  .cms-section :global(.rich > :last-child) { margin-bottom: 0; }
+  .cms-section :global(.rich :is(ul, ol)) { padding-left: 1.4em; margin: 0 0 0.9em; }
+  .cms-section :global(.rich li) { margin-bottom: 0.4em; }
+  .cms-section :global(.rich img) { width: 100%; height: auto; border-radius: 10px; margin: 1.2em 0; }
+  .cms-section :global(.rich blockquote) { margin: 1.2em 0; padding-left: 1em; border-left: 3px solid var(--green); }
+</style>

@@ -1,0 +1,141 @@
+{
+ "path": "/testimonials",
+ "title": "Kind words from happy clients make us smile | Moments In Light",
+ "description": "We love helping couples with their special day, creating amazing portraits for people and capturing headshots for Businesses. ",
+ "ogImage": "http://static1.squarespace.com/static/6626f9fc9b715306f4f4eae7/t/68dc85608cc78a11fc072b7c/1759282528270/Moments+in+Light+250x250.jpg",
+ "type": {
+  "d": {
+   "h1": [
+    "49.56px",
+    "500",
+    "54.7142px",
+    "normal",
+    "rgb(90, 94, 59)"
+   ]
+  },
+  "m": {
+   "h1": [
+    "36.6px",
+    "500",
+    "40.4064px",
+    "normal",
+    "rgb(90, 94, 59)"
+   ]
+  }
+ },
+ "sections": [
+  {
+   "id": "664eb301db98bc4f88bfe46b",
+   "kind": "fluid",
+   "bg": "rgb(255, 255, 255)",
+   "bgImage": null,
+   "bgOverlay": null,
+   "headingColor": "rgb(90, 94, 59)",
+   "textColor": null,
+   "divider": null,
+   "pad": {
+    "d": [
+     1.4,
+     1.4
+    ],
+    "m": [
+     0.9,
+     0.9
+    ]
+   },
+   "height": {
+    "d": 286,
+    "m": 179
+   },
+   "grid": {
+    "mRows": 2,
+    "mRowMin": 24,
+    "dRows": 4,
+    "dScale": 0.0215,
+    "mGap": 11,
+    "dGap": 11
+   },
+   "blocks": [
+    {
+     "id": "yui_3_17_2_1_1716432375881_11688",
+     "type": "text",
+     "html": "<h1>Testimonials from Happy Clients</h1>",
+     "color": "rgb(90, 94, 59)",
+     "textPad": [
+      0,
+      0,
+      0,
+      0
+     ],
+     "area": {
+      "m": "1/2/3/10",
+      "zm": 1,
+      "d": "2/2/4/26",
+      "zd": 1
+     },
+     "valign": {
+      "m": "flex-start",
+      "d": "flex-start"
+     },
+     "textPadM": [
+      0,
+      0,
+      0,
+      0
+     ]
+    }
+   ]
+  },
+  {
+   "id": "6a87d4a7daa2a96d501291c8",
+   "kind": "fluid",
+   "bg": "rgb(255, 255, 255)",
+   "bgImage": null,
+   "bgOverlay": null,
+   "headingColor": null,
+   "textColor": null,
+   "divider": null,
+   "pad": {
+    "d": [
+     1.4,
+     1.4
+    ],
+    "m": [
+     0.9,
+     0.9
+    ]
+   },
+   "height": {
+    "d": 1742,
+    "m": 1820
+   },
+   "grid": {
+    "mRows": 6,
+    "mRowMin": 24,
+    "dRows": 4,
+    "dScale": 0.0215,
+    "mGap": 11,
+    "dGap": 11
+   },
+   "blocks": [
+    {
+     "id": "yui_3_17_2_1_1787286688448_623",
+     "type": "embed",
+     "html": "<script src=\"https://elfsightcdn.com/platform.js\" async=\"\"></script>\n<div class=\"elfsight-app-95ca0ffd-8bfc-44ba-9b5b-bbfddb30251c\" data-elfsight-app-lazy=\"\" data-miwrid=\"2c693056-8297-4e71-a52d-910dd40bf719\"></div>",
+     "height": 1739,
+     "area": {
+      "m": "1/2/7/10",
+      "zm": 1,
+      "d": "1/2/5/26",
+      "zd": 1
+     },
+     "valign": {
+      "m": "flex-start",
+      "d": "flex-start"
+     },
+     "heightM": 1818
+    }
+   ]
+  }
+ ]
+}

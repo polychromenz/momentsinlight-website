@@ -1,0 +1,35 @@
+---
+// Google Analytics 4 and the Meta (Facebook) Pixel, as on the old Squarespace site.
+// Both load asynchronously so they don't slow the page down. IDs live in src/data/site.ts.
+// Only runs on the real site, so local previews don't add test visits to the reports.
+import { tracking } from '../data/site';
+
+const { googleAnalytics: ga, metaPixel: pixel } = tracking;
+const enabled = import.meta.env.PROD;
+---
+{enabled && ga && (
+  <>
+    <script async src={`https://www.googletagmanager.com/gtag/js?id=${ga}`}></script>
+    <script is:inline define:vars={{ ga }}>
+      window.dataLayer = window.dataLayer || [];
+      function gtag() { dataLayer.push(arguments); }
+      window.gtag = gtag;
+      gtag('js', new Date());
+      gtag('config', ga);
+    </script>
+  </>
+)}
+{enabled && pixel && (
+  <>
+    <script is:inline define:vars={{ pixel }}>
+      !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+      n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;
+      n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;
+      t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,
+      document,'script','https://connect.facebook.net/en_US/fbevents.js');
+      fbq('init', pixel);
+      fbq('track', 'PageView');
+    </script>
+    <noscript><img height="1" width="1" style="display:none" alt="" src={`https://www.facebook.com/tr?id=${pixel}&ev=PageView&noscript=1`} /></noscript>
+  </>
+)}

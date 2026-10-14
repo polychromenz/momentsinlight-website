@@ -1,0 +1,96 @@
+---
+// Free wedding photo guide signup. Posts to the Cloudflare Pages Function at
+// functions/api/guide-signup.js, which saves the signup and sends the visitor back here with
+// ?signup=done; the form is then replaced by a thank-you message and the download button.
+// Styled to match the live Squarespace newsletter block.
+const guide = '/s/Wedding-photography-guide-Moments-In-Light.pdf';
+
+// Cloudflare's always-pass test key is used until the real one is set at build time
+// (PUBLIC_TURNSTILE_SITE_KEY in Cloudflare Pages > Settings > Environment variables).
+const siteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY || '1x00000000000000000000AA';
+---
+<form id="guide-signup" class="signup" method="post" action="/api/guide-signup">
+  <p class="msg" role="alert" hidden></p>
+  <label class="sr-only" for="gs-fname">First Name</label>
+  <input id="gs-fname" name="fname" type="text" placeholder="First Name" autocomplete="given-name" required maxlength="100" />
+  <label class="sr-only" for="gs-lname">Last Name</label>
+  <input id="gs-lname" name="lname" type="text" placeholder="Last Name" autocomplete="family-name" required maxlength="100" />
+  <label class="sr-only" for="gs-email">Email Address</label>
+  <input id="gs-email" name="email" type="email" placeholder="Email Address" autocomplete="email" required maxlength="254" />
+  <!-- Left empty by people; bots fill it in. -->
+  <div class="hp" aria-hidden="true">
+    <label for="gs-website">Website</label>
+    <input id="gs-website" name="website" type="text" tabindex="-1" autocomplete="off" />
+  </div>
+  <div class="cf-turnstile" data-sitekey={siteKey} data-size="flexible"></div>
+  <button class="btn btn--dark" type="submit">Submit</button>
+  <p class="footnote">We respect your privacy.</p>
+</form>
+
+<div id="guide-thanks" class="thanks" hidden tabindex="-1">
+  <h3>Thank you – here’s your free wedding photography guide</h3>
+  <p>This guide is totally free, no catches. If you like how I work and want to talk to me about your wedding, that would be great but there is no obligation to do so.</p>
+  <a class="btn btn--dark download" href={guide} download>Download Guide</a>
+</div>
+
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+<script>
+  // Show a message if the form was sent back with a problem (?signup=…).
+  const status = new URLSearchParams(location.search).get('signup');
+  const msg = document.querySelector<HTMLElement>('#guide-signup .msg');
+  const text: Record<string, string> = {
+    invalid: 'Please enter your first name, last name and a valid email address.',
+    check: 'Sorry, we couldn’t confirm you’re not a robot. Please try again.',
+    error: 'Sorry, something went wrong. Please try again, or contact me directly.',
+  };
+  if (status === 'done') {
+    const form = document.querySelector<HTMLElement>('#guide-signup');
+    const thanks = document.querySelector<HTMLElement>('#guide-thanks');
+    if (form && thanks) {
+      form.hidden = true;
+      thanks.hidden = false;
+      thanks.focus();
+    }
+    // Record the signup as a conversion in Google Analytics and the Meta Pixel.
+    const w = window as any;
+    w.gtag?.('event', 'generate_lead', { form_name: 'wedding_photo_guide' });
+    w.fbq?.('track', 'Lead', { content_name: 'Wedding photo guide' });
+    // Drop ?signup=done so a refresh or shared link doesn't count it again.
+    history.replaceState(null, '', location.pathname + location.hash);
+  } else if (status && msg && text[status]) {
+    msg.textContent = text[status];
+    msg.hidden = false;
+  }
+  // Prevent double submissions.
+  document.querySelector('#guide-signup')?.addEventListener('submit', (e) => {
+    const btn = (e.currentTarget as HTMLFormElement).querySelector('button');
+    if (btn) { btn.disabled = true; btn.textContent = 'Sending…'; }
+  });
+</script>
+
+<style>
+  .signup { display: grid; gap: 15px; width: 100%; }
+  .signup[hidden], .thanks[hidden] { display: none; }
+  .thanks { display: grid; gap: 15px; justify-items: start; }
+  .thanks h3, .thanks p { margin: 0; }
+  .thanks:focus { outline: none; }
+  .download { height: 60px; padding-block: 0; }
+  input {
+    width: 100%;
+    height: 62px;
+    padding: 21px 30px;
+    border: 1px solid rgb(0 0 0 / 0.12);
+    border-radius: 0;
+    background: var(--white);
+    font: inherit;
+    font-size: var(--fs-body);
+    color: var(--black);
+  }
+  input:focus { outline: 2px solid var(--green); outline-offset: 0; }
+  button { justify-self: start; min-width: 114px; height: 60px; padding-block: 0; }
+  button:disabled { opacity: 0.6; cursor: default; }
+  .footnote { margin: 0; font-size: 14px; }
+  .msg { margin: 0; padding: 10px 14px; background: var(--white); border-left: 3px solid #b00020; font-size: 15px; }
+  .hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+</style>

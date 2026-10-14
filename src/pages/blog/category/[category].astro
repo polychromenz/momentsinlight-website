@@ -1,0 +1,25 @@
+---
+// /blog/category/Wedding etc. — same addresses (and capitalisation) as the live site.
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import BlogList from '../../../components/BlogList.astro';
+import { sortedPosts } from '../../../lib/blog';
+
+export async function getStaticPaths() {
+  const posts = await sortedPosts();
+  const cats = [...new Set(posts.flatMap((p) => p.data.categories))];
+  return cats.map((category) => ({
+    params: { category },
+    props: { posts: posts.filter((p) => p.data.categories.includes(category)) },
+  }));
+}
+
+const { category } = Astro.params;
+const { posts } = Astro.props;
+---
+<BaseLayout
+  title={`${category} — Blog — Moments In Light`}
+  description={`${category} posts from Moments In Light, Auckland wedding and portrait photographer.`}
+  background="alt"
+>
+  <BlogList posts={posts} />
+</BaseLayout>

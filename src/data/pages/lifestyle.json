@@ -1,0 +1,405 @@
+{
+ "path": "/lifestyle",
+ "title": "Lifestyle Portraits | Moments In Light",
+ "description": "All-inclusive Lifestyle photography for your website and social media needs.",
+ "ogImage": "http://static1.squarespace.com/static/6626f9fc9b715306f4f4eae7/t/68dc85608cc78a11fc072b7c/1759282528270/Moments+in+Light+250x250.jpg",
+ "type": {
+  "d": {
+   "h1": [
+    "49.56px",
+    "500",
+    "54.7142px",
+    "normal",
+    "rgb(90, 94, 59)"
+   ],
+   "h2": [
+    "32.28px",
+    "500",
+    "37.1866px",
+    "normal",
+    "rgb(90, 94, 59)"
+   ],
+   "h3": [
+    "28.824px",
+    "500",
+    "33.482px",
+    "normal",
+    "rgb(90, 94, 59)"
+   ],
+   "p": [
+    "16.728px",
+    "400",
+    "26.7648px",
+    "normal",
+    "rgb(0, 0, 0)"
+   ]
+  },
+  "m": {
+   "h1": [
+    "36.6px",
+    "500",
+    "40.4064px",
+    "normal",
+    "rgb(90, 94, 59)"
+   ],
+   "h2": [
+    "25.8px",
+    "500",
+    "29.7216px",
+    "normal",
+    "rgb(90, 94, 59)"
+   ],
+   "h3": [
+    "23.64px",
+    "500",
+    "27.4602px",
+    "normal",
+    "rgb(90, 94, 59)"
+   ],
+   "p": [
+    "16.08px",
+    "400",
+    "25.728px",
+    "normal",
+    "rgb(0, 0, 0)"
+   ]
+  }
+ },
+ "sections": [
+  {
+   "id": "67d208760c406376c0fc7918",
+   "kind": "fluid",
+   "bg": "rgb(255, 255, 255)",
+   "bgImage": null,
+   "bgOverlay": null,
+   "headingColor": "rgb(90, 94, 59)",
+   "textColor": "rgb(0, 0, 0)",
+   "divider": null,
+   "pad": {
+    "d": [
+     1.4,
+     1.4
+    ],
+    "m": [
+     0.9,
+     0.9
+    ]
+   },
+   "height": {
+    "d": 1574,
+    "m": 2773
+   },
+   "grid": {
+    "mRows": 2,
+    "mRowMin": 24,
+    "dRows": 36,
+    "dScale": 0.0215,
+    "mGap": 11,
+    "dGap": 11
+   },
+   "blocks": [
+    {
+     "id": "yui_3_17_2_1_1741817817625_4077",
+     "type": "text",
+     "html": "<h1>Lifestyle Portraits</h1><p>I am now offering lifestyle portrait sessions at the AMAZING <a href=\"https://www.mackenziestudios.co.nz/\" target=\"_blank\">Mackenzie studios</a> just in Auckland. This is perfectly setup for lifestyle shoots. It has all of the styling and layouts you could possibly need for your web and social media images, and we will bring lights and make up and make you look and feel amazing!</p><p>I have been shooting portraits for years and in that time, I have done a bunch a really creative as well as stylish and classic images. This package is for anyone looking for high quality images with a selection of looks in a short amount of time for their website and social media. We need these images to look great but also to stay fresh and new. Making that happen is often one of those jobs that keeps getting bumped. This takes all of the prep and effort out of the equation. You show up, get your images in a morning or afternoon and you are done for at least three months, probably six.</p><h3>Here’s how it works</h3><ul><li><p>We have groups of no more than 4 people who want to be photographed. </p></li><li><p>The first hour is for makeup on person # 1 and we will setup and discuss what we are doing with everyone. </p></li><li><p>Hour 2 is the first hour of photography with person #1 whilst person #2 is in makeup. Person #3 may be asked to fill in as an extra while waiting. Let’s imagine that person #1 wants an image where they simulate being in a business meeting for their business website or for social media. Then we will fill in for each other to make this image. Usually, that’s just the back of you and they are front and centre. Don’t worry they will be there for yours when it’s your turn.</p></li><li><p>We then rinse and repeat until everyone has their images.</p></li><li><p>Each session will be up to 5 hours.</p></li></ul><h3>What is included and what does it cost?</h3><p>This is an all-inclusive package including</p><ul><li><p>An amazing venue with staging and space to shoot a good variety of styles</p></li><li><p>All of the planning done for you - turn up and go</p></li><li><p>A great makeup artist, Sinead from <a href=\"https://www.thehouseofmakeup.co.nz/\">https://www.thehouseofmakeup.co.nz/</a> does nearly all of my shoots and weddings, she is wonderful.</p></li><li><p>A great photographer - see my work <a href=\"/portraits-gallery\">here</a></p></li><li><p>At least 10 fully edited images. You can always pay to get more edited</p><p><span><strong>$750 + GST</strong></span><strong> &gt;&gt; Introductory offer $500 + GST for a limited time</strong></p></li></ul><h3>How do I book?</h3><p>Simply fill in your details on our <a href=\"/contact\">contact form</a> and I will be in touch to discuss session availability.</p><h3>Other FAQ’s</h3><ul><li><p><strong>I’m new to this and don’t know how to pose, can you help with this?</strong></p></li><li><p>Don’t worry not only do I have years of helping models pose, but I will also send you a bunch of YouTube videos to watch before your session</p></li><li><p><strong>Where do I get changed?</strong></p></li><li><p>There is a separate area to get changed in as well as a toilet and a kitchen. It’s a large space with a bunch of areas. Check out the walk-through video <a href=\"https://www.mackenziestudios.co.nz/club\" target=\"_blank\">here</a></p></li><li><p><strong>Where can I park?</strong></p></li><li><p>There is plenty of paid parking areas really close to the venue</p></li><li><p><strong>Can I bring someone with me?</strong></p></li><li><p>We have a limit on the number of people allowed in the studio but usually it’s going to be fine, just talk to me. Please don’t bring children though as it can be very disruptive to the other participants.</p></li></ul>",
+     "color": "rgb(0, 0, 0)",
+     "textPad": [
+      0,
+      0,
+      0,
+      0
+     ],
+     "area": {
+      "m": "1/2/3/10",
+      "zm": 1,
+      "d": "1/2/37/26",
+      "zd": 1
+     },
+     "valign": {
+      "m": "flex-start",
+      "d": "flex-start"
+     },
+     "textPadM": [
+      0,
+      0,
+      0,
+      0
+     ]
+    }
+   ]
+  },
+  {
+   "id": "67d23889129d124235dc85b4",
+   "kind": "fluid",
+   "bg": "rgb(255, 255, 255)",
+   "bgImage": null,
+   "bgOverlay": null,
+   "headingColor": "rgb(90, 94, 59)",
+   "textColor": null,
+   "divider": null,
+   "pad": {
+    "d": [
+     1.4,
+     1.4
+    ],
+    "m": [
+     0.9,
+     0.9
+    ]
+   },
+   "height": {
+    "d": 71,
+    "m": 91
+   },
+   "grid": {
+    "mRows": 2,
+    "mRowMin": 24,
+    "dRows": 2,
+    "dScale": 0.0215,
+    "mGap": 11,
+    "dGap": 11
+   },
+   "blocks": [
+    {
+     "id": "yui_3_17_2_1_1741825495611_34794",
+     "type": "text",
+     "html": "<h2>Here is a selection of images from a previous session</h2>",
+     "color": "rgb(0, 0, 0)",
+     "textPad": [
+      0,
+      0,
+      0,
+      0
+     ],
+     "area": {
+      "m": "1/2/3/10",
+      "zm": 1,
+      "d": "1/2/3/26",
+      "zd": 1
+     },
+     "valign": {
+      "m": "flex-start",
+      "d": "flex-start"
+     },
+     "textPadM": [
+      0,
+      0,
+      0,
+      0
+     ]
+    }
+   ]
+  },
+  {
+   "id": "67d20f7ef0aa1f705913877c",
+   "kind": "gallery",
+   "bg": "rgb(255, 255, 255)",
+   "bgImage": null,
+   "bgOverlay": null,
+   "headingColor": null,
+   "textColor": null,
+   "divider": {
+    "leftHigh": true,
+    "d": 85,
+    "m": 22
+   },
+   "pad": {
+    "d": [
+     0,
+     0
+    ],
+    "m": [
+     0,
+     0
+    ]
+   },
+   "height": {
+    "d": 877,
+    "m": 413
+   },
+   "design": "slideshow",
+   "images": [
+    {
+     "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/fc1a3d21-a5fd-4afc-9488-663a5b0b5c1d/SOCIAL__MIL2831-Edit-Edit.jpg",
+     "alt": "Black and white photo of a businesswoman working at a white desk",
+     "width": 2048,
+     "height": 1365,
+     "focal": [
+      0.5,
+      0.5
+     ],
+     "href": null,
+     "title": null
+    },
+    {
+     "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/0022145e-b63a-41d7-bd25-201af51d82ec/SOCIAL__MIL2844-Edit-Edit.jpg",
+     "alt": "Black and white lifestyle portrait of a woman at her laptop",
+     "width": 2048,
+     "height": 1365,
+     "focal": [
+      0.5,
+      0.5
+     ],
+     "href": null,
+     "title": null
+    },
+    {
+     "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/a3168d30-0b53-4000-a313-e460d5d10f35/SOCIAL__DSC5285-Edit-Edit.jpg",
+     "alt": "A woman in a blush wrap coat beside an arched mirror",
+     "width": 2048,
+     "height": 1638,
+     "focal": [
+      0.5,
+      0.5
+     ],
+     "href": null,
+     "title": null
+    },
+    {
+     "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/8a248dd6-fc6a-4d05-aace-7189258d0d43/SOCIAL__DSC5229-Edit.jpg",
+     "alt": "A woman in a black suit seated with arms folded",
+     "width": 1366,
+     "height": 2048,
+     "focal": [
+      0.5,
+      0.5
+     ],
+     "href": null,
+     "title": null
+    },
+    {
+     "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/a99dffd9-4602-4b20-9b28-3b4f67e8c36e/SOCIAL__MIL2709-Edit.jpg",
+     "alt": "A woman in a beige suit perched on a stool in a panelled room",
+     "width": 2048,
+     "height": 1536,
+     "focal": [
+      0.5,
+      0.5
+     ],
+     "href": null,
+     "title": null
+    },
+    {
+     "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/bfdbe147-f348-4d79-be2a-caaad5d3879c/SOCIAL__MIL2787-Edit.jpg",
+     "alt": "A woman in a black suit seated beside a potted olive tree",
+     "width": 1365,
+     "height": 2048,
+     "focal": [
+      0.5,
+      0.5
+     ],
+     "href": null,
+     "title": null
+    },
+    {
+     "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/2ead35a6-cc7a-4ccc-995c-e330448a4904/SOCIAL__MIL2872-Edit.jpg",
+     "alt": "A woman in a black suit seated on a white sofa",
+     "width": 2048,
+     "height": 1365,
+     "focal": [
+      0.5,
+      0.5
+     ],
+     "href": null,
+     "title": null
+    },
+    {
+     "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/60f212fe-0407-434f-abb5-90fb55930927/SOCIAL__MIL3046-Edit.jpg",
+     "alt": "A woman in a blush coat standing by a tall window",
+     "width": 1365,
+     "height": 2048,
+     "focal": [
+      0.5,
+      0.5
+     ],
+     "href": null,
+     "title": null
+    },
+    {
+     "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/9b0c8699-c9b9-4a88-bcac-31e22a8a63e8/SOCIAL__DSC5194.jpg",
+     "alt": "A woman in a black suit resting her chin on her hand",
+     "width": 1366,
+     "height": 2048,
+     "focal": [
+      0.5,
+      0.5
+     ],
+     "href": null,
+     "title": null
+    },
+    {
+     "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/c81e1895-1bf2-4174-abd3-e312765bfc40/SOCIAL__MIL2493-Edit.jpg",
+     "alt": "A woman in a cream suit leaning against a panelled wall",
+     "width": 1365,
+     "height": 2048,
+     "focal": [
+      0.5,
+      0.5
+     ],
+     "href": null,
+     "title": null
+    },
+    {
+     "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/2c3745ac-4826-4ae3-9101-f46563276e29/SOCIAL__MIL2831-Edit.jpg",
+     "alt": "A woman in a leopard print blouse at a white desk with a laptop",
+     "width": 2048,
+     "height": 1365,
+     "focal": [
+      0.5,
+      0.5
+     ],
+     "href": null,
+     "title": null
+    },
+    {
+     "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/b96ca128-5c28-41f0-bfd0-095619f429bb/SOCIAL__MIL2905-Edit.jpg",
+     "alt": "A woman working on a laptop in a bright lounge",
+     "width": 2048,
+     "height": 1365,
+     "focal": [
+      0.5,
+      0.5
+     ],
+     "href": null,
+     "title": null
+    },
+    {
+     "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/5131e45a-722a-4efb-a4c5-5547a77d19f5/SOCIAL__MIL2892-Edit.jpg",
+     "alt": "A woman seated in a lounge beside a fluted coffee table",
+     "width": 2048,
+     "height": 1536,
+     "focal": [
+      0.5,
+      0.5
+     ],
+     "href": null,
+     "title": null
+    }
+   ],
+   "layout": {
+    "d": {
+     "rect": [
+      58,
+      1325,
+      675
+     ],
+     "columns": 1,
+     "gap": 0,
+     "itemH": 675,
+     "itemW": 1238
+    },
+    "m": {
+     "rect": [
+      23,
+      343,
+      343
+     ],
+     "columns": 1,
+     "gap": 0,
+     "itemH": 343,
+     "itemW": 289
+    }
+   }
+  }
+ ]
+}

@@ -1,0 +1,179 @@
+/* Moments in Light brand tokens (see docs/Moments in Light-Brand Guidelines.pdf).
+   Sizes and spacing are matched to the live Squarespace site at 1440px and 390px wide. */
+:root {
+  --white: #ffffff;   /* Peristerá White */
+  --griseo: #e9ece6;  /* Griseo Elegance */
+  --black: #000000;   /* Timeless Black */
+  --green: #5a5e3b;   /* Harmony Green (accent) */
+  --green-dark: #474a2e;
+
+  --font: 'Raleway', system-ui, sans-serif;
+
+  /* Fluid type: same values as the live site at 390px and 1440px, scaling in between. */
+  --fs-body: calc(15.84px + 0.0617vw);   /* 16.08 → 16.73 */
+  --fs-h1: calc(27.66px + 0.987vw);      /* 31.5 → 41.9 (about 15% smaller than Squarespace) */
+  --fs-h2: calc(23.39px + 0.617vw);      /* 25.8 → 32.28 */
+  --fs-meta: calc(16.68px + 0.1234vw);   /* 17.16 → 18.46 */
+
+  --pad: 6vw;     /* page side padding: 23px at 390 */
+  --slant: 2vw;   /* height of the angled section edges: 28px at 1440 */
+}
+@media (min-width: 768px) {
+  :root { --pad: 4vw; } /* 58px at 1440 */
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  font-family: var(--font);
+  font-weight: 400;
+  font-size: var(--fs-body);
+  line-height: 1.6;
+  color: var(--black);
+  background: var(--white);
+}
+
+img { max-width: 100%; height: auto; display: block; }
+
+h1, h2, h3 { font-weight: 500; color: var(--green); margin: 0; }
+/* Page headings: a little extra room above (padding, so section layouts that reset the
+   first element's margin don't remove it) and a little less below than Squarespace had. */
+h1 { font-size: var(--fs-h1); line-height: 1.15; margin-bottom: 22px; padding-top: clamp(10px, 1.4vw, 20px); }
+h2 { font-size: var(--fs-h2); line-height: 1.152; margin: 30px 0; }
+h2:first-child { margin-top: 0; }
+p { margin: 0 0 0.9em; }
+p:last-child { margin-bottom: 0; }
+strong { font-weight: 700; }
+
+a { color: var(--green); text-decoration: underline; text-underline-offset: 0.15em; text-decoration-thickness: 1px; }
+a:hover { opacity: 0.8; }
+
+.wrap { padding-inline: var(--pad); }
+
+/* Section backgrounds and the angled edges Squarespace draws between sections.
+   .slant pulls a section up under the one above and cuts its top edge on a diagonal. */
+.slant {
+  /* Imported pages set the edge height per section (--slant-m on phones, --slant-d on desktop). */
+  --slant: var(--slant-m, 2vw);
+  position: relative;
+  background: var(--white);
+  margin-top: calc(-1 * var(--slant));
+  padding-top: var(--slant);
+  clip-path: polygon(0 0, 100% var(--slant), 100% 100%, 0 100%);
+}
+.slant--up { clip-path: polygon(0 var(--slant), 100% 0, 100% 100%, 0 100%); }
+.bg-alt { background: var(--griseo); }
+@media (min-width: 768px) {
+  .slant { --slant: var(--slant-d, 2vw); }
+}
+
+/* Smaller headings and the text styles Squarespace's editor applies (matched at 390/1440px). */
+h3 { font-size: calc(21.71px + 0.4937vw); line-height: 1.1616; margin: 0 0 0.8em; }
+h4 { font-size: calc(18.2px + 0.33vw); line-height: 1.2; margin: 0 0 0.8em; color: var(--green); font-weight: 500; }
+.sqsrte-large { font-size: 1.2em; }
+.sqsrte-small { font-size: 0.85em; }
+.sqsrte-text-color--accent { color: var(--green); }
+.sqsrte-text-color--black, .sqsrte-text-color--darkAccent { color: var(--black); }
+.sqsrte-text-color--white { color: var(--white); }
+.sqsrte-text-color--lightAccent { color: var(--griseo); }
+
+/* Buttons: Raleway semibold, two rounded corners like the live site.
+   On hover: a soft sheen glides across, the button lifts slightly, and a small light-green
+   heart floats up from it and fades away. Set only background-COLOR on a .btn elsewhere,
+   so the sheen (a background-image) keeps working. */
+:root {
+  --heart: #a3b07a; /* light tint of Harmony Green, still visible on the pale green */
+  --heart-shape: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 21.2 10.6 20C5.4 15.4 2 12.3 2 8.5 2 5.4 4.4 3 7.5 3c1.7 0 3.4.8 4.5 2.1C13.1 3.8 14.8 3 16.5 3 19.6 3 22 5.4 22 8.5c0 3.8-3.4 6.9-8.6 11.5L12 21.2z'/%3E%3C/svg%3E");
+}
+.btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 19.5px 32.5px;
+  border: 0;
+  border-radius: 16px 0;
+  background-color: var(--green);
+  background-image: linear-gradient(110deg, transparent 35%, rgb(255 255 255 / 0.22) 50%, transparent 65%);
+  background-size: 250% 100%;
+  background-position: 130% 0;
+  background-repeat: no-repeat;
+  color: var(--white);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  line-height: 1.2;
+  text-decoration: none;
+  cursor: pointer;
+  box-shadow: 0 0 0 rgb(0 0 0 / 0);
+  transition:
+    background-color 0.35s ease,
+    background-position 0.8s ease,
+    transform 0.35s ease,
+    box-shadow 0.35s ease,
+    letter-spacing 0.35s ease;
+}
+.btn--dark { background-color: var(--black); }
+
+/* The hearts: hidden until hover, then rise from the button's top edge, right of centre.
+   A second, smaller heart follows a moment later. */
+.btn::before,
+.btn::after {
+  content: '';
+  position: absolute;
+  bottom: calc(100% - 8px);
+  background-color: var(--heart);
+  -webkit-mask: var(--heart-shape) center / contain no-repeat;
+  mask: var(--heart-shape) center / contain no-repeat;
+  opacity: 0;
+  pointer-events: none;
+}
+.btn::after { right: 22%; width: 18px; height: 18px; }
+.btn::before { right: calc(22% + 16px); width: 11px; height: 11px; }
+
+@media (hover: hover) {
+  .btn:hover {
+    opacity: 1;
+    color: var(--white);
+    background-color: var(--green-dark);
+    background-position: -30% 0;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 18px -10px rgb(71 74 46 / 0.6);
+    letter-spacing: 0.06em;
+  }
+  .btn--dark:hover { background-color: #1f2117; }
+  .btn:hover::after { animation: heart-float 1.5s ease-out forwards; }
+  .btn:hover::before { animation: heart-float-small 1.5s ease-out 0.25s forwards; }
+}
+.btn:active { transform: translateY(0); box-shadow: none; }
+.btn:focus-visible { outline: 2px solid var(--green); outline-offset: 3px; }
+
+@keyframes heart-float {
+  0%   { opacity: 0; transform: translate(0, 8px) scale(0.4) rotate(0deg); }
+  20%  { opacity: 1; transform: translate(-3px, -8px) scale(1) rotate(-10deg); }
+  60%  { opacity: 0.85; transform: translate(7px, -32px) scale(1.05) rotate(8deg); }
+  100% { opacity: 0; transform: translate(-4px, -56px) scale(0.85) rotate(-6deg); }
+}
+@keyframes heart-float-small {
+  0%   { opacity: 0; transform: translate(0, 6px) scale(0.4) rotate(0deg); }
+  25%  { opacity: 0.9; transform: translate(3px, -6px) scale(1) rotate(10deg); }
+  65%  { opacity: 0.7; transform: translate(-5px, -24px) scale(1) rotate(-8deg); }
+  100% { opacity: 0; transform: translate(3px, -42px) scale(0.8) rotate(4deg); }
+}
+
+/* People who've asked their device for less motion get the colour change only. */
+@media (prefers-reduced-motion: reduce) {
+  .btn { transition: background-color 0.2s ease; }
+  .btn:hover { transform: none; background-position: 130% 0; letter-spacing: 0.04em; }
+  .btn:hover::after, .btn:hover::before { animation: none; }
+}
+
+.skip-link { position: absolute; left: -9999px; }
+.skip-link:focus { left: 1rem; top: 1rem; z-index: 100; background: var(--white); padding: 0.5rem 1rem; }
+:focus-visible { outline: 2px solid var(--green); outline-offset: 3px; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }

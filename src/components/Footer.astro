@@ -1,0 +1,84 @@
+---
+import { Image } from 'astro:assets';
+import { site, badges, social } from '../data/site';
+
+const [mwg, bride, mywed] = badges;
+const tel = site.phone.replace(/\s/g, '');
+
+// Simple line icons for the social links.
+const icons: Record<string, string> = {
+  Instagram: '<rect x="3" y="3" width="18" height="18" rx="5" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="4.2" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="17.4" cy="6.6" r="1.2" fill="currentColor"/>',
+  Facebook: '<path d="M13.4 21v-7.6h2.6l.4-3h-3V8.5c0-.9.3-1.5 1.5-1.5h1.6V4.3c-.3 0-1.2-.1-2.3-.1-2.3 0-3.9 1.4-3.9 4v2.2H7.7v3h2.6V21h3.1z" fill="currentColor"/>',
+  Pinterest: '<circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M11.2 14.2c-.4 1.9-.9 3.6-2 4.6m2-4.6c.4.8 1.4 1.3 2.4 1.3 2.6 0 4-2.3 4-4.8 0-2.7-2.2-4.6-5.3-4.6-3.4 0-5.2 2.3-5.2 4.5 0 1.2.5 2.4 1.5 2.8m2.6 1.9.9-3.9c-.2-.4-.3-.9-.3-1.4 0-1.3.8-2.3 1.7-2.3.8 0 1.2.6 1.2 1.3 0 .8-.5 2-.8 3.1" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>',
+};
+---
+<footer class="site-footer">
+  <div class="mwg">
+    <a href={mwg.href} target="_blank" rel="noopener">
+      <Image src={mwg.src} alt="my Wedding Guide featured vendor" widths={[300, 600]} sizes="(min-width: 768px) 15vw, 70vw" />
+    </a>
+    <p>Featured in <a href={mwg.href} target="_blank" rel="noopener">My Wedding Guide</a></p>
+  </div>
+  <a class="bride" href={bride.href} target="_blank" rel="noopener">
+    <Image src={bride.src} alt="Bride and Groom Magazine" widths={[160, 320]} sizes="(min-width: 768px) 10vw, 37vw" />
+  </a>
+  <a class="mywed" href={mywed.href} target="_blank" rel="noopener">
+    <Image src={mywed.src} alt="My Wed" widths={[120, 240]} sizes="(min-width: 768px) 5vw, 29vw" />
+  </a>
+  <p class="address">
+    {site.name} | {site.address} | <a href={`tel:${tel}`}>{site.phone}</a>
+  </p>
+  <ul class="social">
+    {social.map((s) => (
+      <li>
+        <a href={s.href} target="_blank" rel="noopener" aria-label={s.label}>
+          <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" set:html={icons[s.label]} />
+        </a>
+      </li>
+    ))}
+  </ul>
+</footer>
+
+<style>
+  /* Phones: everything stacked and centred. Desktop: badges spread across one row,
+     socials top right, address centred underneath, as on the live site. */
+  .site-footer {
+    background: var(--griseo);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 24px;
+    padding: 40px var(--pad) 48px;
+  }
+  .site-footer p { margin: 0; }
+  .address a { color: inherit; text-decoration: none; }
+  .mwg { width: 100%; }
+  .mwg img { width: 69.5vw; height: auto; margin: 0 auto 28px; }
+  .bride img { width: 37vw; height: auto; }
+  .mywed img { width: 29vw; height: auto; }
+  .address { margin-top: -18px; }
+  .social { display: flex; gap: 10px; list-style: none; margin: 0; padding: 0; }
+  .social a { display: grid; place-items: center; width: 22px; height: 22px; color: var(--black); }
+  .social svg { width: 22px; height: 22px; }
+
+  @media (min-width: 768px) {
+    .site-footer {
+      position: relative;
+      display: block;
+      height: 19.93vw; /* 287px at 1440 */
+      padding: 0;
+    }
+    .mwg { position: absolute; left: 4vw; top: 1.53vw; width: 14.72vw; }
+    .mwg img { width: 100%; margin: 0 0 0.4vw; }
+    .bride { position: absolute; left: 27.7vw; top: 1.1vw; }
+    .bride img { width: 9.86vw; }
+    .mywed { position: absolute; left: 64.93vw; top: 1.1vw; }
+    .mywed img { width: 4.93vw; }
+    .mwg a { white-space: nowrap; }
+    .address { position: absolute; left: 27.22vw; width: 45.63vw; top: 15.1vw; margin: 0; }
+    .social { position: absolute; right: 4vw; top: 0.76vw; gap: 0; }
+    .social a { width: 32px; height: 40px; }
+    .social svg { width: 22px; height: 22px; }
+  }
+</style>

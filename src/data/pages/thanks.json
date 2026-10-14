@@ -1,0 +1,104 @@
+{
+ "path": "/thanks",
+ "title": "Thanks | Moments In Light",
+ "description": "",
+ "ogImage": "http://static1.squarespace.com/static/6626f9fc9b715306f4f4eae7/t/68dc85608cc78a11fc072b7c/1759282528270/Moments+in+Light+250x250.jpg",
+ "type": {
+  "d": {
+   "p": [
+    "21.912px",
+    "400",
+    "35.0592px",
+    "normal",
+    "rgb(0, 0, 0)"
+   ],
+   "p.sqsrte-large": [
+    "21.912px",
+    "400",
+    "35.0592px",
+    "normal",
+    "rgb(0, 0, 0)"
+   ]
+  },
+  "m": {
+   "p": [
+    "19.32px",
+    "400",
+    "30.912px",
+    "normal",
+    "rgb(0, 0, 0)"
+   ],
+   "p.sqsrte-large": [
+    "19.32px",
+    "400",
+    "30.912px",
+    "normal",
+    "rgb(0, 0, 0)"
+   ]
+  }
+ },
+ "sections": [
+  {
+   "id": "69cf1ab88bb09e4f68d7fd1a",
+   "kind": "fluid",
+   "bg": "rgb(255, 255, 255)",
+   "bgImage": null,
+   "bgOverlay": null,
+   "headingColor": null,
+   "textColor": "rgb(0, 0, 0)",
+   "divider": null,
+   "pad": {
+    "d": [
+     1.4,
+     1.4
+    ],
+    "m": [
+     0.9,
+     0.9
+    ]
+   },
+   "height": {
+    "d": 664,
+    "m": 497
+   },
+   "grid": {
+    "mRows": 2,
+    "mRowMin": 24,
+    "dRows": 13,
+    "dScale": 0.0215,
+    "mGap": 11,
+    "dGap": 11
+   },
+   "blocks": [
+    {
+     "id": "yui_3_17_2_1_1775180467034_440",
+     "type": "text",
+     "html": "<p class=\"sqsrte-large\">Thank you so much for making contact</p><p>I will be in touch as soon as possible. If it’s a Saturday, I may be shooting a wedding, I will get back to you as soon as I possibly can. </p><p></p><p>Have a great day</p><p></p><p>Tony</p><p></p><p></p>",
+     "color": "rgb(0, 0, 0)",
+     "textPad": [
+      0,
+      0,
+      0,
+      0
+     ],
+     "area": {
+      "m": "1/2/3/10",
+      "zm": 1,
+      "d": "3/2/11/22",
+      "zd": 1
+     },
+     "valign": {
+      "m": "flex-start",
+      "d": "flex-start"
+     },
+     "textPadM": [
+      0,
+      0,
+      0,
+      0
+     ]
+    }
+   ]
+  }
+ ]
+}

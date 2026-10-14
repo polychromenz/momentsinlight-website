@@ -1,0 +1,27 @@
+---
+// /blog/page/2, /blog/page/3 … (the live site used ?offset= links, which a static site can't serve).
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import BlogList from '../../../components/BlogList.astro';
+import { sortedPosts, PAGE_SIZE } from '../../../lib/blog';
+
+export async function getStaticPaths() {
+  const posts = await sortedPosts();
+  const pages = Math.ceil(posts.length / PAGE_SIZE);
+  return Array.from({ length: pages - 1 }, (_, i) => ({ params: { page: String(i + 2) } }));
+}
+
+const n = Number(Astro.params.page);
+const posts = await sortedPosts();
+const last = Math.ceil(posts.length / PAGE_SIZE);
+---
+<BaseLayout
+  title={`Blog (page ${n}) — Moments In Light`}
+  description="Real weddings, portrait sessions and wedding planning advice from Auckland wedding photographer Tony Gorham."
+  background="alt"
+>
+  <BlogList
+    posts={posts.slice((n - 1) * PAGE_SIZE, n * PAGE_SIZE)}
+    newer={n === 2 ? '/blog' : `/blog/page/${n - 1}`}
+    older={n < last ? `/blog/page/${n + 1}` : undefined}
+  />
+</BaseLayout>

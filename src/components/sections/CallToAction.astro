@@ -1,0 +1,17 @@
+---
+// Centred heading, a line of text and one of the site's buttons.
+interface Props { heading?: string; text?: string; buttonLabel: string; buttonLink: string }
+const { heading, text, buttonLabel, buttonLink } = Astro.props;
+const external = /^https?:\/\//.test(buttonLink) && !buttonLink.includes('momentsinlight.co.nz');
+---
+<div class="wrap cta">
+  {heading && <h2>{heading}</h2>}
+  {text && <p>{text}</p>}
+  <a class="btn" href={buttonLink} target={external ? '_blank' : undefined} rel={external ? 'noopener' : undefined}>{buttonLabel}</a>
+</div>
+
+<style>
+  .cta { text-align: center; max-width: calc(760px + 2 * var(--pad)); margin-inline: auto; }
+  h2 { margin-top: 0; }
+  p { margin: 0 0 24px; }
+</style>

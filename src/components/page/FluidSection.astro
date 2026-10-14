@@ -1,0 +1,123 @@
+---
+// Renders one Squarespace "fluid engine" section from imported data (src/data/pages/*.json):
+// the same 8-column (phone) and 24-column (desktop) grid, with every block in its original
+// grid position, so the layout matches the live site at both widths.
+import Img from '../Img.astro';
+import SummaryList from './SummaryList.astro';
+import GuideSignup from './GuideSignup.astro';
+import { social as socialLinks } from '../../data/site';
+
+interface Props { section: any; cls: string }
+const { section: s, cls } = Astro.props;
+const g = s.grid ?? { mRows: 1, mRowMin: 24, dRows: 1, dScale: 0.0215, mGap: 11, dGap: 11 };
+
+const box = (p: number[]) => p.map((v) => `${v}px`).join(' ');
+const rules: string[] = [];
+const desk: string[] = [];
+
+rules.push(`.${cls} .fg{display:grid;grid-template-columns:minmax(calc(6vw - ${g.mGap}px),1fr) repeat(8,minmax(0,calc((1500px - ${g.mGap * 7}px)/8))) minmax(calc(6vw - ${g.mGap}px),1fr);grid-template-rows:repeat(${g.mRows},minmax(${g.mRowMin}px,auto));gap:${g.mGap}px;}`);
+desk.push(`.${cls} .fg{grid-template-columns:minmax(calc(4vw - ${g.dGap}px),1fr) repeat(24,minmax(0,calc((1500px - ${g.dGap * 23}px)/24))) minmax(calc(4vw - ${g.dGap}px),1fr);grid-template-rows:repeat(${g.dRows},minmax(calc(min(1500px,100vw - 8vw) * ${g.dScale}),auto));gap:${g.dGap}px;}`);
+
+for (const b of s.blocks) {
+  const sel = `.${cls} .b-${b.id}`;
+  if (b.area?.m) rules.push(`${sel}{grid-area:${b.area.m};z-index:${b.area.zm ?? 1};justify-content:${b.valign?.m ?? 'flex-start'};}`);
+  if (b.area?.d) desk.push(`${sel}{grid-area:${b.area.d};z-index:${b.area.zd ?? 1};justify-content:${b.valign?.d ?? 'flex-start'};}`);
+  if (b.card) {
+    rules.push(`${sel}{background:${b.card.bg};border-radius:${b.card.radius};padding:${box(b.card.padM)};}`);
+    desk.push(`${sel}{padding:${box(b.card.pad)};}`);
+  }
+  if (b.type === 'text' && (b.textPad?.some(Boolean) || b.textPadM?.some(Boolean))) {
+    // Squarespace sizes this padding with the page width, so scale it the same way.
+    const vwOf = (p: number[] = [0, 0, 0, 0], w: number) => p.map((v) => `${Math.round((v / w) * 10000) / 100}vw`).join(' ');
+    rules.push(`${sel} .text{padding:${vwOf(b.textPadM, 390)};}`);
+    desk.push(`${sel} .text{padding:${vwOf(b.textPad, 1440)};}`);
+  }
+  if (b.type === 'button') {
+    const st = (x: any) => `font-size:${x.fontSize};font-weight:${x.fontWeight};letter-spacing:${x.letterSpacing};padding:${box(x.pad)};background-color:${x.bg};color:${x.color};border-radius:${x.radius};min-height:${x.h}px;`;
+    rules.push(`${sel} .btn{${st(b.styleM)}}`);
+    desk.push(`${sel} .btn{${st(b.style)}}`);
+  }
+  if (b.type === 'embed') {
+    if (b.heightM === 0) rules.push(`${sel}{display:none;}`);
+    else rules.push(`${sel} iframe{height:${b.heightM}px;}`);
+    desk.push(`${sel}{display:flex;}${sel} iframe{height:${b.height}px;}`);
+  }
+  if (b.type === 'summary') {
+    const cols = (pct: number | undefined) => Math.max(1, Math.round(100 / (pct || 100)));
+    rules.push(`${sel}{--cols:${cols(b.colWidthPctM)};}`);
+    desk.push(`${sel}{--cols:${cols(b.colWidthPct)};}`);
+  }
+}
+const css = rules.join('') + `@media (min-width:768px){${desk.join('')}}`;
+const pct = (n: number) => `${Math.round(n * 1000) / 10}%`;
+---
+<div class="fg">
+  {s.blocks.map((b: any) => (
+    <div class:list={['blk', `b-${b.id}`, `t-${b.type}`]}>
+      {b.type === 'text' && <div class="text" set:html={b.html} />}
+      {b.type === 'image' && (() => {
+        const img = (
+          <Img
+            src={b.image.src}
+            alt={b.image.alt?.replace(/\.(jpe?g|png|gif|webp)$/i, '') ?? ''}
+            width={b.image.width}
+            height={b.image.height}
+            sizes="(min-width: 768px) 50vw, 100vw"
+            class={b.fit}
+          />
+        );
+        return (
+          <figure class="pic" style={`--fx:${pct(b.image.focal?.[0] ?? 0.5)};--fy:${pct(b.image.focal?.[1] ?? 0.5)};border-radius:${b.radius ?? '0px'}`}>
+            {b.href ? <a href={b.href}>{img}</a> : img}
+            {b.caption && <figcaption>{b.caption}</figcaption>}
+          </figure>
+        );
+      })()}
+      {b.type === 'button' && (
+        <div class:list={['btn-wrap', `align-${b.align}`, { stretch: b.stretch }]}>
+          <a class="btn" href={b.href} target={b.target ?? undefined} rel={b.target === '_blank' ? 'noopener' : undefined}>{b.text}</a>
+        </div>
+      )}
+      {b.type === 'summary' && <SummaryList block={b} />}
+      {b.type === 'embed' && <div class="embed" set:html={b.html} />}
+      {b.type === 'social' && (
+        <ul class="social">
+          {socialLinks.filter((l) => b.links.some((h: string) => h.includes(new URL(l.href).hostname.replace(/^(www|nz)\./, '')))).map((l) => (
+            <li><a href={l.href} target="_blank" rel="noopener">{l.label}</a></li>
+          ))}
+        </ul>
+      )}
+      {b.type === 'line' && <hr />}
+      {b.type === 'guideSignup' && <GuideSignup />}
+    </div>
+  ))}
+</div>
+<style is:inline set:html={css}></style>
+
+<style>
+  .fg { position: relative; }
+  .blk { display: flex; flex-direction: column; min-width: 0; position: relative; }
+  .text :global(> :first-child) { margin-top: 0; }
+  .text :global(> :last-child) { margin-bottom: 0; }
+  .text :global(ul), .text :global(ol) { padding-left: 1.4em; margin: 0 0 0.9em; }
+  .text :global(li) { margin-bottom: 0.45em; }
+  .text :global(li > p) { margin: 0; }
+
+  .pic { margin: 0; flex: 1; position: relative; overflow: hidden; min-height: 100%; }
+  .pic :global(img) { position: absolute; inset: 0; width: 100%; height: 100%; object-position: var(--fx) var(--fy); }
+  .pic :global(img.cover) { object-fit: cover; }
+  .pic :global(img.contain) { object-fit: contain; }
+  .pic figcaption { position: absolute; bottom: 0; left: 0; right: 0; padding: 6px 10px; font-size: 14px; }
+
+  .btn-wrap { display: flex; }
+  .btn-wrap.align-center { justify-content: center; }
+  .btn-wrap.align-right { justify-content: flex-end; }
+  .btn-wrap.stretch .btn { width: 100%; }
+  .btn-wrap .btn { line-height: 1.2; }
+
+  .embed { width: 100%; }
+  .embed :global(iframe) { width: 100%; border: 0; display: block; }
+
+  .social { display: flex; gap: 16px; list-style: none; margin: 0; padding: 0; }
+  hr { width: 100%; border: 0; border-top: 1px solid currentColor; margin: auto 0; }
+</style>

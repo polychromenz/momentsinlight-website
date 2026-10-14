@@ -1,0 +1,332 @@
+---
+// Photo gallery. Blog posts always use the tile grid; pages built in Pages CMS can choose:
+//   grid     – square tiles, 3 across on desktop / 2 on phones (as on the live site)
+//   masonry  – uncropped photos in columns, 3 across / 2 on phones
+//   carousel – one row that scrolls sideways with CSS scroll-snap and arrow buttons
+// Clicking any photo opens a full-screen viewer: swipe, use the arrows or the keyboard
+// (← → Esc) to move through the photos at full size.
+// Every image is lazy-loaded. Width and height (when known) reserve space so nothing jumps.
+import Img from './Img.astro';
+
+export type GalleryLayout = 'grid' | 'masonry' | 'carousel';
+interface Props {
+  images: { src: string; alt: string; width?: number; height?: number }[];
+  layout?: GalleryLayout;
+  label: string;
+  /** Used to describe photos that have no description of their own, e.g. "Paige and Connor". */
+  subject?: string;
+}
+const { layout = 'grid', label, subject } = Astro.props;
+const images = Astro.props.images.map((g, i) => ({
+  ...g,
+  alt: g.alt || (subject ? `${subject} – photo ${i + 1}` : ''),
+}));
+
+const sizes = {
+  grid: '(min-width: 768px) 23vw, 42vw',
+  masonry: '(min-width: 768px) 23vw, 42vw',
+  carousel: '(min-width: 768px) 60vw, 85vw',
+}[layout];
+
+const tile = (g: (typeof images)[number], i: number) => ({ index: i, label: `View photo ${i + 1} of ${images.length} full size` });
+---
+{images.length > 0 && (
+  <div class="gallery-root" data-gallery>
+    {layout === 'carousel' ? (
+      <section class="gallery carousel" aria-label={label} aria-roledescription="carousel">
+        <ul class="track" tabindex="0" aria-label={`${label} – scroll sideways for more`}>
+          {images.map((g, i) => (
+            <li class="slide">
+              <button type="button" class="open" data-index={tile(g, i).index} aria-label={tile(g, i).label}>
+                <Img src={g.src} alt={g.alt} width={g.width} height={g.height} sizes={sizes} class={g.width && g.height ? undefined : 'no-dims'} />
+              </button>
+            </li>
+          ))}
+        </ul>
+        <button class="arrow prev" aria-label="Previous photo" hidden>
+          <svg viewBox="0 0 12 24" aria-hidden="true"><path d="M10 2 2 12l8 10" /></svg>
+        </button>
+        <button class="arrow next" aria-label="Next photo" hidden>
+          <svg viewBox="0 0 12 24" aria-hidden="true"><path d="m2 2 8 10-8 10" /></svg>
+        </button>
+      </section>
+    ) : (
+      <ul class:list={['gallery', layout]} aria-label={label}>
+        {images.map((g, i) => (
+          <li>
+            <button type="button" class="open" data-index={i} aria-label={tile(g, i).label}>
+              <Img src={g.src} alt={g.alt} width={g.width} height={g.height} sizes={sizes} />
+            </button>
+          </li>
+        ))}
+      </ul>
+    )}
+
+    <dialog class="viewer" aria-label={`${label} – full size`}>
+      <ul class="v-track">
+        {images.map((g) => (
+          <li class="v-slide">
+            <Img src={g.src} alt={g.alt} width={g.width} height={g.height} sizes="100vw" />
+          </li>
+        ))}
+      </ul>
+      <p class="v-count" aria-live="polite"></p>
+      <button type="button" class="v-close" aria-label="Close">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5l14 14M19 5 5 19" /></svg>
+      </button>
+      <button type="button" class="v-arrow v-prev" aria-label="Previous photo">
+        <svg viewBox="0 0 12 24" aria-hidden="true"><path d="M10 2 2 12l8 10" /></svg>
+      </button>
+      <button type="button" class="v-arrow v-next" aria-label="Next photo">
+        <svg viewBox="0 0 12 24" aria-hidden="true"><path d="m2 2 8 10-8 10" /></svg>
+      </button>
+    </dialog>
+  </div>
+)}
+
+<script>
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const behavior: ScrollBehavior = reduceMotion ? 'auto' : 'smooth';
+
+  // Inline carousel layout: arrow buttons step one photo and hide at either end.
+  document.querySelectorAll<HTMLElement>('.gallery.carousel').forEach((carousel) => {
+    const track = carousel.querySelector<HTMLElement>('.track')!;
+    const prev = carousel.querySelector<HTMLButtonElement>('.prev')!;
+    const next = carousel.querySelector<HTMLButtonElement>('.next')!;
+    const slides = () => [...track.querySelectorAll<HTMLElement>('.slide')];
+    const go = (dir: 1 | -1) => {
+      const x = track.scrollLeft;
+      const target = dir === 1 ? slides().find((s) => s.offsetLeft > x + 2) : slides().reverse().find((s) => s.offsetLeft < x - 2);
+      if (target) track.scrollTo({ left: target.offsetLeft, behavior });
+    };
+    let frame = 0;
+    const update = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        const max = track.scrollWidth - track.clientWidth;
+        prev.hidden = max < 2 || track.scrollLeft <= 2;
+        next.hidden = max < 2 || track.scrollLeft >= max - 2;
+      });
+    };
+    prev.addEventListener('click', () => go(-1));
+    next.addEventListener('click', () => go(1));
+    track.addEventListener('scroll', update, { passive: true });
+    new ResizeObserver(update).observe(track);
+    track.querySelectorAll('img').forEach((img) => img.addEventListener('load', update, { once: true }));
+    update();
+  });
+
+  // Full-screen viewer: one photo per screen width, scroll-snap does the swiping.
+  document.querySelectorAll<HTMLElement>('[data-gallery]').forEach((root) => {
+    const dialog = root.querySelector<HTMLDialogElement>('.viewer')!;
+    const track = dialog.querySelector<HTMLElement>('.v-track')!;
+    const count = dialog.querySelector<HTMLElement>('.v-count')!;
+    const prev = dialog.querySelector<HTMLButtonElement>('.v-prev')!;
+    const next = dialog.querySelector<HTMLButtonElement>('.v-next')!;
+    const total = track.children.length;
+    let opener: HTMLElement | null = null;
+
+    const current = () => Math.round(track.scrollLeft / track.clientWidth);
+    const show = (i: number, how: ScrollBehavior) => track.scrollTo({ left: i * track.clientWidth, behavior: how });
+    // Load the photo on screen and its neighbours straight away so swiping never shows a gap.
+    const preload = (i: number) => {
+      for (const n of [i - 1, i, i + 1]) {
+        const img = track.children[n]?.querySelector('img');
+        if (img && img.loading !== 'eager') img.loading = 'eager';
+      }
+    };
+    const update = () => {
+      const i = current();
+      preload(i);
+      count.textContent = `${i + 1} / ${total}`;
+      prev.disabled = i <= 0;
+      next.disabled = i >= total - 1;
+    };
+
+    root.querySelectorAll<HTMLButtonElement>('.open').forEach((btn) =>
+      btn.addEventListener('click', () => {
+        opener = btn;
+        preload(Number(btn.dataset.index));
+        dialog.showModal();
+        document.documentElement.style.overflow = 'hidden';
+        show(Number(btn.dataset.index), 'auto');
+        update();
+      }),
+    );
+    prev.addEventListener('click', () => show(current() - 1, behavior));
+    next.addEventListener('click', () => show(current() + 1, behavior));
+    dialog.querySelector('.v-close')!.addEventListener('click', () => dialog.close());
+    // Clicking the dark area around a photo closes the viewer.
+    track.addEventListener('click', (e) => { if ((e.target as Element).tagName !== 'IMG') dialog.close(); });
+    dialog.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight') { e.preventDefault(); show(current() + 1, behavior); }
+      if (e.key === 'ArrowLeft') { e.preventDefault(); show(current() - 1, behavior); }
+    });
+    dialog.addEventListener('close', () => {
+      document.documentElement.style.overflow = '';
+      opener?.focus();
+    });
+    let frame = 0;
+    track.addEventListener('scroll', () => { cancelAnimationFrame(frame); frame = requestAnimationFrame(update); }, { passive: true });
+    // Keep the same photo in view if the window is resized or the phone is rotated.
+    window.addEventListener('resize', () => { if (dialog.open) show(Number(count.textContent?.split(' ')[0]) - 1 || 0, 'auto'); });
+  });
+</script>
+
+<style>
+  .gallery { list-style: none; margin: 30px 0 0; padding: 0; }
+  .open { display: block; width: 100%; padding: 0; border: 0; background: none; cursor: zoom-in; }
+  .open :global(img) { transition: opacity 0.25s ease, transform 0.4s ease; }
+  @media (hover: hover) {
+    .open:hover :global(img) { opacity: 0.88; }
+  }
+  .open:focus-visible { outline: 2px solid var(--green); outline-offset: 3px; }
+
+  /* Grid: square tiles like the live site. */
+  .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
+  .grid :global(img) { width: 100%; aspect-ratio: 1; object-fit: cover; }
+
+  /* Masonry: CSS columns keep each photo's own shape. Photos run down each column in turn. */
+  .masonry { columns: 2; column-gap: 20px; }
+  .masonry li { break-inside: avoid; margin-bottom: 20px; }
+  .masonry :global(img) { width: 100%; height: auto; }
+
+  /* Carousel: native horizontal scrolling with scroll-snap; every photo shares one height. */
+  .carousel { position: relative; --slide-h: min(62vw, 420px); }
+  .track {
+    display: flex;
+    gap: 12px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: thin;
+    position: relative;
+  }
+  .track:focus-visible { outline: 2px solid var(--green); outline-offset: 4px; }
+  .slide { flex: none; scroll-snap-align: start; }
+  .slide .open { width: auto; }
+  .slide :global(img) { height: var(--slide-h); width: auto; max-width: none; }
+  .slide :global(img.no-dims) { aspect-ratio: 3 / 2; object-fit: cover; }
+
+  .arrow {
+    position: absolute;
+    top: calc(var(--slide-h) / 2);
+    transform: translateY(-50%);
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: rgb(255 255 255 / 0.85);
+    color: var(--black);
+    cursor: pointer;
+    box-shadow: 0 1px 4px rgb(0 0 0 / 0.15);
+  }
+  .arrow[hidden] { display: none; }
+  .arrow:hover { background: var(--white); }
+  .arrow svg { width: 10px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.5; }
+  .prev { left: 10px; }
+  .next { right: 10px; }
+
+  /* ---- Full-screen viewer ---- */
+  .viewer {
+    width: 100vw;
+    height: 100dvh;
+    max-width: none;
+    max-height: none;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: rgb(12 13 8 / 0.96);
+    color: var(--white);
+    overflow: hidden;
+  }
+  .viewer::backdrop { background: rgb(12 13 8 / 0.96); }
+  .viewer[open] { animation: viewer-in 0.25s ease; }
+  @keyframes viewer-in { from { opacity: 0; } to { opacity: 1; } }
+
+  .v-track {
+    display: flex;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    overflow-x: auto;
+    overscroll-behavior: contain;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+  }
+  .v-track::-webkit-scrollbar { display: none; }
+  .v-slide {
+    flex: 0 0 100%;
+    height: 100%;
+    display: grid;
+    place-items: center;
+    padding: 56px clamp(12px, 6vw, 90px) 52px;
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
+  }
+  /* A soft placeholder while a full-size photo is still arriving. */
+  .v-slide { background: radial-gradient(circle at center, rgb(255 255 255 / 0.04), transparent 60%); }
+  .v-slide :global(img) {
+    /* Fit the screen: viewport minus the slide's padding (56px top, 52px bottom). */
+    max-width: calc(100vw - 2 * clamp(12px, 6vw, 90px));
+    max-height: calc(100dvh - 108px);
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    cursor: default;
+  }
+  .v-count {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 14px;
+    margin: 0;
+    text-align: center;
+    font-size: 14px;
+    letter-spacing: 0.08em;
+    color: rgb(255 255 255 / 0.8);
+  }
+  .v-close, .v-arrow {
+    position: absolute;
+    display: grid;
+    place-items: center;
+    width: 48px;
+    height: 48px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: rgb(255 255 255 / 0.08);
+    color: var(--white);
+    cursor: pointer;
+    transition: background-color 0.2s ease, opacity 0.2s ease;
+  }
+  .v-close:hover, .v-arrow:hover { background: rgb(255 255 255 / 0.18); }
+  .v-close { top: 10px; right: 10px; }
+  .v-close svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.6; }
+  .v-arrow { top: 50%; transform: translateY(-50%); }
+  .v-arrow svg { width: 12px; height: 24px; fill: none; stroke: currentColor; stroke-width: 1.5; }
+  .v-prev { left: 12px; }
+  .v-next { right: 12px; }
+  .v-arrow:disabled { opacity: 0; pointer-events: none; }
+  .v-close:focus-visible, .v-arrow:focus-visible { outline: 2px solid var(--white); outline-offset: 2px; }
+  /* On phones, swiping is the natural way to move; keep the arrows out of the photo. */
+  @media (max-width: 767px), (hover: none) {
+    .v-arrow { display: none; }
+  }
+
+  @media (min-width: 768px) {
+    .grid { grid-template-columns: repeat(3, 1fr); }
+    .masonry { columns: 3; }
+    .carousel { --slide-h: min(42vw, 600px); }
+    .track { gap: 20px; }
+    .prev { left: -22px; }
+    .next { right: -22px; }
+  }
+</style>

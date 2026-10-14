@@ -1,0 +1,31 @@
+---
+// Photo beside text, like the venue rows on the home page. Stacks on phones, photo first.
+import Img from '../Img.astro';
+
+interface Props {
+  image: { src: string; alt: string };
+  heading?: string;
+  body: string;
+  imageSide: 'left' | 'right';
+}
+const { image, heading, body, imageSide } = Astro.props;
+---
+<div class:list={['wrap', 'image-text', `image-${imageSide}`]}>
+  <div class="pic">
+    <Img src={image.src} alt={image.alt} sizes="(min-width: 768px) 45vw, 88vw" />
+  </div>
+  <div class="copy">
+    {heading && <h2>{heading}</h2>}
+    <div class="rich" set:html={body} />
+  </div>
+</div>
+
+<style>
+  .image-text { display: grid; gap: 28px; align-items: center; }
+  .pic :global(img) { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 10px; }
+  h2 { margin-top: 0; }
+  @media (min-width: 768px) {
+    .image-text { grid-template-columns: 1fr 1fr; gap: clamp(40px, 6vw, 110px); }
+    .image-right .pic { order: 2; }
+  }
+</style>

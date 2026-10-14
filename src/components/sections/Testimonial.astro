@@ -1,0 +1,33 @@
+---
+// A client quote on the site's pale green card.
+interface Props { quote: string; name: string; detail?: string }
+const { quote, name, detail } = Astro.props;
+---
+<figure class="wrap testimonial">
+  <div class="card">
+    <span class="mark" aria-hidden="true">“</span>
+    <blockquote><p>{quote}</p></blockquote>
+    <figcaption>
+      <span class="name">{name}</span>
+      {detail && <span class="detail">{detail}</span>}
+    </figcaption>
+  </div>
+</figure>
+
+<style>
+  .testimonial { margin: 0 auto; max-width: calc(860px + 2 * var(--pad)); }
+  .card {
+    background: var(--griseo);
+    border-radius: 25px;
+    padding: clamp(28px, 5vw, 56px) clamp(22px, 5vw, 64px);
+    text-align: center;
+  }
+  /* On a pale green section, use white for the card so it still stands out. */
+  :global(.bg-alt) .card { background: var(--white); }
+  .mark { display: block; font-size: 64px; line-height: 0.6; color: var(--green); height: 32px; }
+  blockquote { margin: 0 0 22px; font-size: 1.1em; font-style: italic; }
+  blockquote p { margin: 0; }
+  figcaption { display: grid; gap: 2px; }
+  .name { color: var(--green); font-weight: 500; }
+  .detail { font-size: 15px; }
+</style>

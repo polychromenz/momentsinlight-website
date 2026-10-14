@@ -1,0 +1,419 @@
+{
+ "path": "/premium-portraits",
+ "title": "Premium Portraits | Moments In Light",
+ "description": "",
+ "ogImage": "http://static1.squarespace.com/static/6626f9fc9b715306f4f4eae7/t/68dc85608cc78a11fc072b7c/1759282528270/Moments+in+Light+250x250.jpg",
+ "type": {
+  "d": {
+   "h1": [
+    "49.56px",
+    "500",
+    "54.7142px",
+    "normal",
+    "rgb(255, 255, 255)"
+   ],
+   "h2": [
+    "32.28px",
+    "500",
+    "37.1866px",
+    "normal",
+    "rgb(0, 0, 0)"
+   ],
+   "p": [
+    "16.728px",
+    "400",
+    "26.7648px",
+    "normal",
+    "rgb(0, 0, 0)"
+   ]
+  },
+  "m": {
+   "h1": [
+    "36.6px",
+    "500",
+    "40.4064px",
+    "normal",
+    "rgb(255, 255, 255)"
+   ],
+   "h2": [
+    "25.8px",
+    "500",
+    "29.7216px",
+    "normal",
+    "rgb(0, 0, 0)"
+   ],
+   "p": [
+    "16.08px",
+    "400",
+    "25.728px",
+    "normal",
+    "rgb(0, 0, 0)"
+   ]
+  }
+ },
+ "sections": [
+  {
+   "id": "69bb598e61aa2c796e2506ba",
+   "kind": "fluid",
+   "bg": "rgb(0, 0, 0)",
+   "bgImage": {
+    "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/65ee56c5-8cf6-4495-868f-dc73f102b3af/SOCIAL__DSC7374-Edit.jpg",
+    "alt": "",
+    "width": 1638,
+    "height": 2048,
+    "focal": [
+     0.515,
+     0.09599999999999997
+    ]
+   },
+   "bgOverlay": {
+    "color": "rgb(0, 0, 0)",
+    "opacity": "0.2"
+   },
+   "headingColor": "rgb(255, 255, 255)",
+   "textColor": null,
+   "divider": null,
+   "pad": {
+    "d": [
+     47.5,
+     47.5
+    ],
+    "m": [
+     29.7,
+     29.7
+    ]
+   },
+   "height": {
+    "d": 931,
+    "m": 565
+   },
+   "grid": {
+    "mRows": 12,
+    "mRowMin": 24,
+    "dRows": 18,
+    "dScale": 0.0215,
+    "mGap": 11,
+    "dGap": 11
+   },
+   "blocks": [
+    {
+     "id": "c54df559603c3a6fd5b6",
+     "type": "text",
+     "html": "<h1>The Premium Portrait Experience</h1>",
+     "color": "rgb(255, 255, 255)",
+     "textPad": [
+      0,
+      0,
+      0,
+      0
+     ],
+     "area": {
+      "m": "1/2/7/10",
+      "zm": 0,
+      "d": "1/2/7/14",
+      "zd": 0
+     },
+     "valign": {
+      "m": "flex-start",
+      "d": "flex-start"
+     },
+     "textPadM": [
+      0,
+      0,
+      0,
+      0
+     ]
+    }
+   ]
+  },
+  {
+   "id": "69bb5d24032ee31bf298e9f6",
+   "kind": "gallery",
+   "bg": "rgb(255, 255, 255)",
+   "bgImage": null,
+   "bgOverlay": null,
+   "headingColor": null,
+   "textColor": null,
+   "divider": null,
+   "pad": {
+    "d": [
+     0,
+     0
+    ],
+    "m": [
+     0,
+     0
+    ]
+   },
+   "height": {
+    "d": 450,
+    "m": 450
+   },
+   "design": "reel",
+   "images": [
+    {
+     "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/17a7cfc7-28e7-4187-91ca-193b91930f6b/SOCIAL__DSC6887-Edit.jpg",
+     "alt": "A woman with silver-blonde hair smiles in an embroidered black gown",
+     "width": 1638,
+     "height": 2048,
+     "focal": [
+      0.5,
+      0.5
+     ],
+     "href": null,
+     "title": null
+    },
+    {
+     "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/69b1e0d4-bad4-4c39-8215-24c9b1a8e16e/SOCIAL__DSC6894-Edit-Edit.jpg",
+     "alt": "A woman looks down in an embroidered black gown in low light",
+     "width": 1463,
+     "height": 2048,
+     "focal": [
+      0.5,
+      0.5
+     ],
+     "href": null,
+     "title": null
+    },
+    {
+     "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/e2480e14-3a16-47d0-8226-d3fd44d3c71c/SOCIAL__DSC6926-Edit-Edit.jpg",
+     "alt": "Black and white portrait of a woman looking upwards",
+     "width": 2048,
+     "height": 1638,
+     "focal": [
+      0.5,
+      0.5
+     ],
+     "href": null,
+     "title": null
+    },
+    {
+     "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/c9c4b92d-6468-4e72-bc05-a6d3800c9186/SOCIAL__DSC6933-Edit.jpg",
+     "alt": "A woman with silver-blonde hair laughing in an embroidered top",
+     "width": 2048,
+     "height": 1638,
+     "focal": [
+      0.5,
+      0.5
+     ],
+     "href": null,
+     "title": null
+    },
+    {
+     "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/7cbb06c9-4cba-44f0-a0ee-e117b5195179/SOCIAL__DSC6977-Edit.jpg",
+     "alt": "A woman photographed through a rain-speckled glass effect",
+     "width": 1638,
+     "height": 2048,
+     "focal": [
+      0.5,
+      0.5
+     ],
+     "href": null,
+     "title": null
+    },
+    {
+     "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/fba2780e-3ffb-4451-9906-77a4d29f17ff/SOCIAL__DSC7046-Edit.jpg",
+     "alt": "A woman in a sheer embroidered gown against a dark backdrop",
+     "width": 1638,
+     "height": 2048,
+     "focal": [
+      0.5,
+      0.5
+     ],
+     "href": null,
+     "title": null
+    },
+    {
+     "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/65ee56c5-8cf6-4495-868f-dc73f102b3af/SOCIAL__DSC7374-Edit.jpg",
+     "alt": "A woman in a sparkling gown looks upwards in dramatic light",
+     "width": 1638,
+     "height": 2048,
+     "focal": [
+      0.5,
+      0.5
+     ],
+     "href": null,
+     "title": null
+    },
+    {
+     "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/94ea6bb5-6a84-4904-acb3-525d4818c9e2/SOCIAL__DSC7545-Edit.jpg",
+     "alt": "A woman smiles upwards in a sequinned gown",
+     "width": 2048,
+     "height": 2048,
+     "focal": [
+      0.5,
+      0.5
+     ],
+     "href": null,
+     "title": null
+    },
+    {
+     "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/950f7ade-be2c-4fb8-8ce8-d6f1fb327bf1/SOCIAL__DSC7613-Edit.jpg",
+     "alt": "A woman in a red off-the-shoulder dress against a pale backdrop",
+     "width": 1639,
+     "height": 2048,
+     "focal": [
+      0.5,
+      0.5
+     ],
+     "href": null,
+     "title": null
+    },
+    {
+     "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/6858097f-9c10-4838-9ac3-2098fbd4bb58/SOCIAL__DSC7791-Edit.jpg",
+     "alt": "A woman in a red dress holding sunflowers and pink flowers",
+     "width": 2048,
+     "height": 1536,
+     "focal": [
+      0.5,
+      0.5
+     ],
+     "href": null,
+     "title": null
+    }
+   ],
+   "layout": {
+    "d": {
+     "rect": [
+      58,
+      1325,
+      335
+     ],
+     "columns": 6,
+     "gap": 9544,
+     "itemH": 335,
+     "itemW": 268
+    },
+    "m": {
+     "rect": [
+      0,
+      390,
+      450
+     ],
+     "columns": 4,
+     "gap": 9054,
+     "itemH": 450,
+     "itemW": 360
+    }
+   }
+  },
+  {
+   "id": "69bb598e61aa2c796e2506c0",
+   "kind": "fluid",
+   "bg": "rgb(255, 255, 255)",
+   "bgImage": null,
+   "bgOverlay": null,
+   "headingColor": "rgb(0, 0, 0)",
+   "textColor": "rgb(0, 0, 0)",
+   "divider": null,
+   "pad": {
+    "d": [
+     95,
+     95
+    ],
+    "m": [
+     59.4,
+     59.4
+    ]
+   },
+   "height": {
+    "d": 852,
+    "m": 1403
+   },
+   "grid": {
+    "mRows": 22,
+    "mRowMin": 24,
+    "dRows": 15,
+    "dScale": 0.0215,
+    "mGap": 11,
+    "dGap": 11
+   },
+   "blocks": [
+    {
+     "id": "ff09daf49e091b442268",
+     "type": "image",
+     "image": {
+      "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/604b8aa9-94c3-44e0-8ec4-0567e84b6b46/SOCIAL__DSC6887-Edit.jpg",
+      "alt": "A woman smiles in an embroidered black gown",
+      "width": 1638,
+      "height": 2048,
+      "focal": [
+       0.5,
+       0.5
+      ]
+     },
+     "fit": "cover",
+     "radius": "20px",
+     "href": null,
+     "caption": null,
+     "area": {
+      "m": "1/2/12/10",
+      "zm": 9,
+      "d": "1/18/16/26",
+      "zd": 5
+     },
+     "valign": {
+      "m": "center",
+      "d": "center"
+     }
+    },
+    {
+     "id": "3b1c7c2cc4f7d67ee899",
+     "type": "text",
+     "html": "<h2>Fall in love with you</h2>",
+     "color": "rgb(0, 0, 0)",
+     "textPad": [
+      0,
+      0,
+      0,
+      0
+     ],
+     "area": {
+      "m": "13/2/17/10",
+      "zm": 8,
+      "d": "1/2/4/16",
+      "zd": 3
+     },
+     "valign": {
+      "m": "center",
+      "d": "flex-start"
+     },
+     "textPadM": [
+      0,
+      0,
+      0,
+      0
+     ]
+    },
+    {
+     "id": "9089dac07bf4abb0e268",
+     "type": "text",
+     "html": "<p>Celebrate confidence, self-love and connection with a premium portrait experience from Moments in Light. </p><p>Begin with professional hair and makeup, followed by a relaxed two-hour studio photography session. </p><p>These beautiful images&nbsp;of Ivanka Zonjic shows just what’s possible – beautiful, timeless portraits that reflect personality, strength and elegance. </p><p>Each shoot includes</p><ul><li><p>studio hire</p></li><li><p>professional hair and make up</p></li><li><p>2 hours photo shoot</p></li><li><p>10 edited images with professional full skin retouching</p></li><li><p>10 beautiful 8×10 prints in a bound wallet</p></li></ul><p>See more portrait examples <a href=\"/portraits-gallery\">here</a></p><p></p><p><strong>All for just $1995</strong><br></p>",
+     "color": "rgb(0, 0, 0)",
+     "textPad": [
+      0,
+      0,
+      0,
+      0
+     ],
+     "area": {
+      "m": "17/2/21/10",
+      "zm": 9,
+      "d": "4/2/16/16",
+      "zd": 4
+     },
+     "valign": {
+      "m": "flex-start",
+      "d": "flex-start"
+     },
+     "textPadM": [
+      0,
+      0,
+      0,
+      0
+     ]
+    }
+   ]
+  }
+ ]
+}

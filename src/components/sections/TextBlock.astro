@@ -1,0 +1,15 @@
+---
+// Heading and formatted text (from the Pages CMS rich-text editor).
+interface Props { heading?: string; body: string; align: 'left' | 'center' }
+const { heading, body, align } = Astro.props;
+---
+<div class:list={['wrap', 'text-block', align]}>
+  {heading && <h2>{heading}</h2>}
+  <div class="rich" set:html={body} />
+</div>
+
+<style>
+  .text-block { max-width: calc(860px + 2 * var(--pad)); }
+  .text-block.center { margin-inline: auto; text-align: center; }
+  h2 { margin-top: 0; }
+</style>

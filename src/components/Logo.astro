@@ -1,0 +1,24 @@
+---
+// Primary logo (monogram + wordmark) with the brand clear space built in.
+// Brand rule: clear space on every side = height of the "M" in the MOMENTS wordmark.
+// In the logo artwork that "M" is 78px of a 709px-tall image, i.e. 11% of the logo height,
+// so the padding below is 0.11 × the rendered logo height at every size.
+import { Image } from 'astro:assets';
+import { site } from '../data/site';
+---
+<a href="/" class="logo" aria-label="Moments In Light home">
+  <Image src={site.logo} alt="Moments In Light" widths={[220, 400]} sizes="(min-width: 768px) 190px, 106px" loading="eager" fetchpriority="high" />
+</a>
+
+<style>
+  .logo {
+    --h: 50px; /* matches the live site: 50px tall on phones, 90px on desktop */
+    display: inline-block;
+    padding: calc(var(--h) * 0.11);
+    line-height: 0;
+  }
+  .logo img { height: var(--h); width: auto; }
+  @media (min-width: 768px) {
+    .logo { --h: 90px; }
+  }
+</style>

@@ -1,0 +1,316 @@
+{
+ "path": "/links",
+ "title": "Links | Moments In Light",
+ "description": "Professional photography in Auckland. Weddings, portraits, and family moments captured with creativity and care.",
+ "ogImage": "http://static1.squarespace.com/static/6626f9fc9b715306f4f4eae7/t/68dc85608cc78a11fc072b7c/1759282528270/Moments+in+Light+250x250.jpg",
+ "type": {
+  "d": {
+   "h1": [
+    "49.56px",
+    "500",
+    "54.7142px",
+    "normal",
+    "rgb(90, 94, 59)"
+   ],
+   "p": [
+    "21.912px",
+    "400",
+    "35.0592px",
+    "normal",
+    "rgb(0, 0, 0)"
+   ],
+   "p.sqsrte-large": [
+    "21.912px",
+    "400",
+    "35.0592px",
+    "normal",
+    "rgb(0, 0, 0)"
+   ]
+  },
+  "m": {
+   "h1": [
+    "36.6px",
+    "500",
+    "40.4064px",
+    "normal",
+    "rgb(90, 94, 59)"
+   ],
+   "p": [
+    "19.32px",
+    "400",
+    "30.912px",
+    "normal",
+    "rgb(0, 0, 0)"
+   ],
+   "p.sqsrte-large": [
+    "19.32px",
+    "400",
+    "30.912px",
+    "normal",
+    "rgb(0, 0, 0)"
+   ]
+  }
+ },
+ "sections": [
+  {
+   "id": "6683dc82594af16976a1ecd9",
+   "kind": "fluid",
+   "bg": "rgb(255, 255, 255)",
+   "bgImage": null,
+   "bgOverlay": null,
+   "headingColor": "rgb(90, 94, 59)",
+   "textColor": "rgb(0, 0, 0)",
+   "divider": null,
+   "pad": {
+    "d": [
+     95,
+     95
+    ],
+    "m": [
+     59.4,
+     59.4
+    ]
+   },
+   "height": {
+    "d": 789,
+    "m": 742
+   },
+   "grid": {
+    "mRows": 14,
+    "mRowMin": 24,
+    "dRows": 12,
+    "dScale": 0.0215,
+    "mGap": 11,
+    "dGap": 11
+   },
+   "blocks": [
+    {
+     "id": "c169b3122d5523e20a8e",
+     "type": "text",
+     "html": "<h1>Sometimes it’s who you know</h1><p class=\"sqsrte-large\">As a photography business bases in Auckland, we get to meet lots of cool and interesting people. And in this ever, ‘inter-connected’ world it’s good to share contact info with people that we find useful and that you might find handy.</p><p>So, in no particular order</p><p><br></p><ul><li><p><a href=\"https://www.neighbourly.co.nz\" target=\"_blank\">Neighbourly.co.nz</a></p></li><li><p><a href=\"https://dyrectory.com\">https://dyrectory.com</a></p></li></ul><p></p>",
+     "color": "rgb(0, 0, 0)",
+     "textPad": [
+      0,
+      0,
+      0,
+      0
+     ],
+     "area": {
+      "m": "1/2/15/10",
+      "zm": 0,
+      "d": "1/2/13/20",
+      "zd": 0
+     },
+     "valign": {
+      "m": "flex-start",
+      "d": "flex-start"
+     },
+     "textPadM": [
+      0,
+      0,
+      0,
+      0
+     ]
+    }
+   ]
+  },
+  {
+   "id": "6683dd5d37806664f00b0219",
+   "kind": "fluid",
+   "bg": "rgb(255, 255, 255)",
+   "bgImage": null,
+   "bgOverlay": null,
+   "headingColor": null,
+   "textColor": "rgb(0, 0, 0)",
+   "divider": null,
+   "pad": {
+    "d": [
+     1.4,
+     1.4
+    ],
+    "m": [
+     0.9,
+     0.9
+    ]
+   },
+   "height": {
+    "d": 31,
+    "m": 61
+   },
+   "grid": {
+    "mRows": 2,
+    "mRowMin": 24,
+    "dRows": 1,
+    "dScale": 0.0215,
+    "mGap": 11,
+    "dGap": 11
+   },
+   "blocks": [
+    {
+     "id": "yui_3_17_2_1_1719917326458_10418",
+     "type": "text",
+     "html": "<p>And because we are a photography business, we have to add some pretty pictures so enjoy…</p>",
+     "color": "rgb(0, 0, 0)",
+     "textPad": [
+      0,
+      0,
+      0,
+      0
+     ],
+     "area": {
+      "m": "1/2/3/10",
+      "zm": 1,
+      "d": "1/2/2/26",
+      "zd": 1
+     },
+     "valign": {
+      "m": "flex-start",
+      "d": "flex-start"
+     },
+     "textPadM": [
+      0,
+      0,
+      0,
+      0
+     ]
+    }
+   ]
+  },
+  {
+   "id": "6683dc82594af16976a1ecda",
+   "kind": "gallery",
+   "bg": "rgb(255, 255, 255)",
+   "bgImage": null,
+   "bgOverlay": null,
+   "headingColor": null,
+   "textColor": null,
+   "divider": null,
+   "pad": {
+    "d": [
+     0,
+     0
+    ],
+    "m": [
+     0,
+     0
+    ]
+   },
+   "height": {
+    "d": 1451,
+    "m": 393
+   },
+   "design": "masonry",
+   "images": [
+    {
+     "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/6e59d7bc-3f4b-48c9-b38b-384194bd9c31/Yearning.jpg",
+     "alt": "A woman in a flowing green headpiece in soft light",
+     "width": 1620,
+     "height": 1080,
+     "focal": [
+      0.5,
+      0.5
+     ],
+     "href": null,
+     "title": null
+    },
+    {
+     "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/4c42fe3b-4867-4d44-afdd-866ee0c02bb8/SocialMedia_20200116-_DSC0191-untitled+shoot-Edit.jpg",
+     "alt": "Black and white photo of a woman in a straw hat among sunflowers",
+     "width": 2048,
+     "height": 1366,
+     "focal": [
+      0.5,
+      0.5
+     ],
+     "href": null,
+     "title": null
+    },
+    {
+     "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/e65d6978-1895-43ff-ac67-eead87ba0faa/SocialMedia_elle+Noir00918.jpg",
+     "alt": "Black and white portrait of a woman with a long side plait",
+     "width": 1483,
+     "height": 2000,
+     "focal": [
+      0.5,
+      0.5
+     ],
+     "href": null,
+     "title": null
+    }
+   ],
+   "layout": {
+    "d": {
+     "rect": [
+      58,
+      1325,
+      1336
+     ],
+     "columns": 2,
+     "gap": 39,
+     "itemH": 429,
+     "itemW": 643
+    },
+    "m": {
+     "rect": [
+      23,
+      343,
+      346
+     ],
+     "columns": 2,
+     "gap": 3,
+     "itemH": 114,
+     "itemW": 170
+    }
+   }
+  },
+  {
+   "id": "6683dc82594af16976a1ecde",
+   "kind": "fluid",
+   "bg": "rgb(0, 0, 0)",
+   "bgImage": null,
+   "bgOverlay": null,
+   "headingColor": "rgb(255, 255, 255)",
+   "textColor": null,
+   "divider": null,
+   "pad": {
+    "d": [
+     1.4,
+     1.4
+    ],
+    "m": [
+     0.9,
+     0.9
+    ]
+   },
+   "height": {
+    "d": 201,
+    "m": 376
+   },
+   "grid": {
+    "mRows": 11,
+    "mRowMin": 24,
+    "dRows": 5,
+    "dScale": 0.0215,
+    "mGap": 11,
+    "dGap": 11
+   },
+   "blocks": [
+    {
+     "id": "c122f08d666fa5b57a9d",
+     "type": "unknown",
+     "html": "<div class=\"sqs-block-content\">\n<div class=\"newsletter-form-banner newsletter-form-banner--hidden\">\n  \n\n  \n\n\n<div class=\"sqs-blockStatus\">\n  \n  <div class=\"sqs-blockStatus-box\">\n    <div class=\"sqs-blockStatus-box-title\">Newsletter Block</div>\n    <div class=\"sqs-blockStatus-box-message\">\n      This newsletter signup form needs a storage option. Edit the block and enter a storage location via the ",
+     "area": {
+      "m": "1/2/12/10",
+      "zm": 0,
+      "d": "1/8/6/20",
+      "zd": 0
+     },
+     "valign": {
+      "m": "flex-start",
+      "d": "flex-start"
+     }
+    }
+   ]
+  }
+ ]
+}

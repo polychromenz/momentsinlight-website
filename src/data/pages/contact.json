@@ -1,0 +1,286 @@
+{
+ "path": "/contact",
+ "title": "Contact | Get in Touch Today | Moments In Light",
+ "description": "Reach out to us for photography services, including weddings, portraits, and family sessions. We look forward to capturing your special moments.",
+ "ogImage": "http://static1.squarespace.com/static/6626f9fc9b715306f4f4eae7/t/68dc85608cc78a11fc072b7c/1759282528270/Moments+in+Light+250x250.jpg",
+ "type": {
+  "d": {
+   "h1": [
+    "49.56px",
+    "500",
+    "54.7142px",
+    "normal",
+    "rgb(90, 94, 59)"
+   ],
+   "h2": [
+    "32.28px",
+    "500",
+    "37.1866px",
+    "normal",
+    "rgb(90, 94, 59)"
+   ],
+   "p": [
+    "16.728px",
+    "400",
+    "26.7648px",
+    "normal",
+    "rgb(0, 0, 0)"
+   ]
+  },
+  "m": {
+   "h1": [
+    "36.6px",
+    "500",
+    "40.4064px",
+    "normal",
+    "rgb(90, 94, 59)"
+   ],
+   "h2": [
+    "25.8px",
+    "500",
+    "29.7216px",
+    "normal",
+    "rgb(90, 94, 59)"
+   ],
+   "p": [
+    "16.08px",
+    "400",
+    "25.728px",
+    "normal",
+    "rgb(0, 0, 0)"
+   ]
+  }
+ },
+ "sections": [
+  {
+   "id": "66284106b5f130189b948c46",
+   "kind": "fluid",
+   "bg": "rgb(233, 236, 230)",
+   "bgImage": null,
+   "bgOverlay": null,
+   "headingColor": "rgb(90, 94, 59)",
+   "textColor": "rgb(0, 0, 0)",
+   "divider": {
+    "leftHigh": false,
+    "d": 28,
+    "m": 7
+   },
+   "pad": {
+    "d": [
+     1.4,
+     1.4
+    ],
+    "m": [
+     0.9,
+     0.9
+    ]
+   },
+   "height": {
+    "d": 388,
+    "m": 441
+   },
+   "grid": {
+    "mRows": 9,
+    "mRowMin": 24,
+    "dRows": 5,
+    "dScale": 0.0215,
+    "mGap": 11,
+    "dGap": 11
+   },
+   "blocks": [
+    {
+     "id": "a3c34e174e66e7a23d19",
+     "type": "text",
+     "html": "<h1 style=\"text-align: center\">Let’s talk</h1><h2>Planning your wedding?</h2><p>If you like what you’ve seen and feel my approach would suit your day, I’d love to hear about your plans.</p><p>Tell me a bit about your wedding — your venue, the feel you’re going for, and anything that’s important to you.</p>",
+     "color": "rgb(0, 0, 0)",
+     "textPad": [
+      0,
+      0,
+      0,
+      0
+     ],
+     "area": {
+      "m": "1/2/9/10",
+      "zm": 0,
+      "d": "1/2/6/26",
+      "zd": 0
+     },
+     "valign": {
+      "m": "center",
+      "d": "center"
+     },
+     "textPadM": [
+      0,
+      0,
+      0,
+      0
+     ]
+    }
+   ]
+  },
+  {
+   "id": "696d50aea7f73e4959bf5387",
+   "kind": "fluid",
+   "bg": "rgb(255, 255, 255)",
+   "bgImage": null,
+   "bgOverlay": null,
+   "headingColor": null,
+   "textColor": null,
+   "divider": null,
+   "pad": {
+    "d": [
+     1.4,
+     1.4
+    ],
+    "m": [
+     0.9,
+     0.9
+    ]
+   },
+   "height": {
+    "d": 1021,
+    "m": 1068
+   },
+   "grid": {
+    "mRows": 8,
+    "mRowMin": 24,
+    "dRows": 21,
+    "dScale": 0.0215,
+    "mGap": 11,
+    "dGap": 11
+   },
+   "blocks": [
+    {
+     "id": "yui_3_17_2_1_1768771383702_5769",
+     "type": "embed",
+     "html": "<iframe height=\"1017\" id=\"sn-form-obkv2\" src=\"https://app.studioninja.co/contactform/parser/0a800fc9-9359-1155-8193-896cafef14fb/0a800fc9-9359-1155-8193-896caffd14fd\" allowfullscreen=\"\" scrolling=\"no\">\n</iframe>\n<script type=\"text/javascript\" data-iframe-id=\"sn-form-obkv2\" src=\"https://app.studioninja.co/client-assets/form-render/assets/scripts/iframeResizer.js\"></script>",
+     "height": 1018,
+     "area": {
+      "m": "1/2/9/10",
+      "zm": 1,
+      "d": "1/5/22/24",
+      "zd": 1
+     },
+     "valign": {
+      "m": "flex-start",
+      "d": "flex-start"
+     },
+     "heightM": 1066
+    }
+   ]
+  },
+  {
+   "id": "678737d7c36b6653e4f19580",
+   "kind": "fluid",
+   "bg": "rgb(255, 255, 255)",
+   "bgImage": null,
+   "bgOverlay": null,
+   "headingColor": null,
+   "textColor": "rgb(0, 0, 0)",
+   "divider": null,
+   "pad": {
+    "d": [
+     1.4,
+     1.4
+    ],
+    "m": [
+     0.9,
+     0.9
+    ]
+   },
+   "height": {
+    "d": 201,
+    "m": 263
+   },
+   "grid": {
+    "mRows": 2,
+    "mRowMin": 24,
+    "dRows": 5,
+    "dScale": 0.0215,
+    "mGap": 6,
+    "dGap": 6
+   },
+   "blocks": [
+    {
+     "id": "yui_3_17_2_1_1739149539434_5158",
+     "type": "text",
+     "html": "<p style=\"text-align:center\">I promise not to spam you or share your details with anyone else. </p><p style=\"text-align:center\">My phone number is 021 625 943 so you can just call me if you prefer to talk to a human. If you don’t want a phone call because you’re still just gathering information, that’s totally fine and very normal, just leave the phone number blank for now. </p><p style=\"text-align:center\">If we need it, you can supply it later.</p>",
+     "color": "rgb(0, 0, 0)",
+     "textPad": [
+      0,
+      0,
+      0,
+      0
+     ],
+     "area": {
+      "m": "1/2/3/10",
+      "zm": 1,
+      "d": "1/7/5/21",
+      "zd": 1
+     },
+     "valign": {
+      "m": "flex-start",
+      "d": "flex-start"
+     },
+     "textPadM": [
+      0,
+      0,
+      0,
+      0
+     ]
+    }
+   ]
+  },
+  {
+   "id": "66345de322af0a285d99192d",
+   "kind": "fluid",
+   "bg": "rgb(233, 236, 230)",
+   "bgImage": null,
+   "bgOverlay": null,
+   "headingColor": null,
+   "textColor": null,
+   "divider": null,
+   "pad": {
+    "d": [
+     1.4,
+     1.4
+    ],
+    "m": [
+     0.9,
+     0.9
+    ]
+   },
+   "height": {
+    "d": 540,
+    "m": 0
+   },
+   "grid": {
+    "mRows": 6,
+    "mRowMin": 24,
+    "dRows": 13,
+    "dScale": 0.0215,
+    "mGap": 11,
+    "dGap": 11
+   },
+   "blocks": [
+    {
+     "id": "yui_3_17_2_1_1787712417839_1125",
+     "type": "embed",
+     "html": "<iframe src=\"https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3205.1178865931483!2d174.70243159999998!3d-36.55127039999999!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0xaf7f44783f2d4e5d%3A0x342f812e0d726b9!2sMoments%20in%20Light!5e0!3m2!1sen!2sca!4v1787712344907!5m2!1sen!2sca\" width=\"600\" height=\"450\" allowfullscreen=\"\" loading=\"lazy\" referrerpolicy=\"strict-origin-when-cross-origin\"></iframe>",
+     "height": 458,
+     "area": {
+      "m": "1/2/7/10",
+      "zm": 1,
+      "d": "3/2/14/6",
+      "zd": 1
+     },
+     "valign": {
+      "m": "flex-start",
+      "d": "flex-start"
+     },
+     "heightM": 0
+    }
+   ]
+  }
+ ]
+}

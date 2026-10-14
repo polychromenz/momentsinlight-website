@@ -1,0 +1,258 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Img from '../components/Img.astro';
+import { site } from '../data/site';
+
+const IMG = 'https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7';
+
+const hero = `${IMG}/716c62e4-7d6f-468f-aacd-5db35f247974/_Q9A1313-Edit.jpg`;
+
+// Venue copy is as on the live site, with the approved typo fixes in docs/project-plan.md applied.
+// `h` is the image height at 1440px wide on the live site (the width is 379px for all).
+// `indent` marks link lists the live site indents; `align` is where the text sits beside the photo.
+const venues = [
+  {
+    name: 'Abel Estate',
+    href: '/abel-estate',
+    image: `${IMG}/9c74307d-5dd7-4663-889e-e47cd58dac30/_Q9A8507.jpg`,
+    h: 320,
+    text: 'An elegant lakeside venue with a refined, timeless feel. Check my galleries for Abel Estate to get a better feel',
+    weddings: [
+      { label: 'Cherry and Chi', href: '/blog/abel-estate-kumeu-wedding-cherry-and-chi' },
+      { label: 'Chiedza and Foster', href: '/blog/chi-and-foster' },
+    ],
+    indent: true,
+    note: 'Abel estate looks amazing in the afternoon light, a photographer dream location.',
+  },
+  {
+    name: 'The Barn Waimauku',
+    href: '/the-barn-waimauku-wedding-photographer',
+    image: `${IMG}/c3680ae5-84e5-4676-a1d0-c7ecd5a331da/_30A8144.jpg`,
+    h: 340,
+    shortBottom: true, // the live site leaves less space under this section
+    text: 'A relaxed woodland setting with a warm, rustic atmosphere. The Barn offers a real DIY wedding experience so you can have it just how you like and create your own vision.',
+    weddings: [
+      { label: 'Mikaela and Dylan', href: '/blog/the-barn-waimauku-wedding-mikaela-and-dylan' },
+      { label: 'Tay and Jesse', href: '/blog/the-barn-waimauku-wedding-tay-jesse' },
+    ],
+    indent: true,
+    note: 'If you like a rustic and rural vibe this could be for you.',
+  },
+  {
+    name: 'Markovina Vineyard Estate',
+    href: '/markovina-vineyard-estate-wedding-photographer',
+    image: `${IMG}/cdcd39fe-a30a-459b-871e-5619b46d3608/_Q9A0716.jpg`,
+    h: 317,
+    text: 'A spacious estate with multiple ceremony options and seamless flow. Markovina is a very popular and very classy venue that will wow you and your guests.',
+    weddings: [{ label: 'Paige and Connor', href: '/blog/paige-and-connor' }],
+  },
+  {
+    name: 'Kumeu Valley Estate',
+    href: '/kumeu-valley-estate-wedding-photographer',
+    image: `${IMG}/5f102f7b-42ec-476a-b878-3d3c5c2a053a/_30A9039.jpg`,
+    h: 265,
+    align: 'start',
+    text: 'A very pretty location with several ceremony options each offering a stunning backdrop.',
+    weddings: [{ label: 'Jade and Ben', href: '/blog/kumeu-valley-estate-wedding-jade-ben' }],
+  },
+  {
+    name: 'Bridgewater Estate',
+    href: '/bridgewater-estate-wedding-photographer',
+    image: `${IMG}/039f7df9-81c8-4322-91a4-639e4bdea3ab/_30A5026.jpg`,
+    h: 305,
+    text: 'A private, spacious setting surrounded by native bush. Either go with the woodland ceremony or the lawn in front of the small chapel. This might just be my favourite, but don’t tell the others.',
+    weddings: [
+      { label: 'Leah and Warwick', href: '/blog/bridgewater-estate-wedding-leah-warwick' },
+      { label: 'Rebecca and Nick', href: '/blog/rebecca-and-nick-bridgewater-estate' },
+    ],
+    indent: true,
+  },
+  {
+    name: 'Settlers Country Manor',
+    href: '/settlers-country-manor-wedding-photographer',
+    image: `${IMG}/1781655530609-6CXIZZ585K9JZUJQ933R/_30A7846.jpg`,
+    h: 340,
+    textFirst: true, // on phones the live site shows this venue's text above its photo
+    text: 'This place has it all, beautiful gardens for your photos, a casual area for your guests to relax in while you have your photos taken and a grand dining hall complete with epic fireplace. And let’s not forget a killer dance floor.',
+    weddings: [
+      { label: 'Fliss and Ro', href: '/blog/fliss-and-ro-wedding-settlers-country-manor' },
+      { label: 'Stephanie and Jankai', href: '/blog/stephanie-and-jankai' },
+    ],
+    indent: true,
+  },
+];
+
+// Approved fixes applied: Bridewater -> Bridgewater, Kumeu Valley Esate -> Estate.
+const recent = [
+  { label: 'Rebecca and Nick - Bridgewater Estate', href: '/blog/rebecca-and-nick-bridgewater-estate' },
+  { label: 'Fliss and Ro - Settlers Country Manor', href: '/blog/fliss-and-ro-wedding-settlers-country-manor' },
+  { label: 'Emma and Corey - Hamilton Gardens', href: '/blog/emma-and-scott-hamilton-gardens-wedding' },
+  { label: 'Cherry & Chi – Abel Estate', href: '/blog/abel-estate-kumeu-wedding-cherry-and-chi' },
+  { label: 'Tay & Jesse – The Barn Waimauku', href: '/blog/the-barn-waimauku-wedding-tay-jesse' },
+  { label: 'Chanel & Latham – Kawau Island', href: '/blog/chanel-and-latham' },
+  { label: 'Mikaela & Dylan – The Barn Waimauku', href: '/blog/the-barn-waimauku-wedding-mikaela-and-dylan' },
+  { label: 'Jade & Ben - Kumeu Valley Estate', href: '/blog/kumeu-valley-estate-wedding-jade-ben' },
+];
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'ProfessionalService',
+  name: site.name,
+  url: site.url,
+  telephone: '+64 21 625 943',
+  image: hero,
+  address: {
+    '@type': 'PostalAddress',
+    streetAddress: '985a Hibiscus Coast Highway',
+    addressLocality: 'Waiwera',
+    addressRegion: 'Auckland',
+    postalCode: '0994',
+    addressCountry: 'NZ',
+  },
+  areaServed: 'New Zealand',
+  founder: { '@type': 'Person', name: site.author },
+};
+---
+<BaseLayout
+  title="Wedding Photographers in Auckland"
+  description="Auckland wedding photographer capturing timeless, candid, and elegant photography. I don’t just go through the motions; I go through the emotions with you."
+  image={hero}
+  jsonLd={jsonLd}
+>
+  <section class="hero">
+    <Img src={hero} alt="Bride and groom kissing in front of a large wine barrel" width={1500} height={1000} sizes="(min-width: 768px) 69vw, 77vw" loading="eager" />
+  </section>
+
+  <section class="bg-alt slant">
+    <div class="wrap intro">
+      <h1>Timeless, refined wedding photography that captures the feeling of your day</h1>
+      <p><a href="/wedding-galleries">View Real Weddings</a></p>
+      <h2>Refined wedding photography, captured naturally</h2>
+      <p>I photograph weddings across Auckland and beyond, capturing the day with a calm, considered approach.</p>
+      <p>My focus is on creating images that feel natural, effortless, and true to you — without over-direction or anything feeling forced. The result is a collection of photographs that not only look beautiful, but feel genuine and lasting over time.</p>
+      <p>Based in Auckland, available throughout New Zealand.</p>
+    </div>
+  </section>
+
+  <section class="slant">
+    <div class="wrap popular">
+      <h2>Popular Auckland Wedding Venues</h2>
+      <p>I’ve had the privilege of photographing weddings at some of Auckland’s most sought-after venues, each offering its own unique atmosphere. Here are some of my favourites with links to real weddings with real couples that I have shot there so you can imagine what your big day could look like.</p>
+    </div>
+  </section>
+
+  {venues.map((v, i) => {
+    const flip = i % 2 === 1; // griseo sections put the text on the left with no card
+    return (
+      <section class:list={['venue', { 'bg-alt': flip, slant: i > 0, 'venue--flip': flip, 'venue--short-bottom': v.shortBottom, 'venue--text-first': v.textFirst }]}>
+        <div class="venue-grid" style={`--h:${v.h}`}>
+          <a class="venue-img" href={v.href} tabindex="-1">
+            <Img src={v.image} alt={`Wedding at ${v.name}`} width={1500} height={1000} sizes="(min-width: 768px) 27vw, 88vw" />
+          </a>
+          <div class:list={['venue-text', { card: !flip }]} style={v.align ? `align-self:${v.align}` : undefined}>
+            <p class="venue-name"><a href={v.href}>{v.name}</a></p>
+            <p class="justify">{v.text}</p>
+            {v.weddings.map((w) => <p class:list={{ indent: v.indent }}><a href={w.href}>{w.label}</a></p>)}
+            {v.note && <p class="justify">{v.note}</p>}
+          </div>
+        </div>
+      </section>
+    );
+  })}
+
+  <section class="slant">
+    <div class="wrap recent">
+      <h2>Recent Weddings</h2>
+      <p>Each wedding I photograph is different, shaped by the people, the setting, and the moments that unfold naturally throughout the day. No two weddings are the same, but these are real weddings of real couples and we have lots more for you to check out.</p>
+      <ul>
+        {recent.map((r) => <li><a href={r.href}>{r.label}</a></li>)}
+      </ul>
+      <p><a href="/wedding-galleries">(View all real weddings)</a></p>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap approach">
+      <h2>My approach</h2>
+      <p>A calm, unobtrusive approach. I understand that most couples don’t want to feel like they’re on display all day. My role is to create space for you to enjoy your wedding, while quietly documenting everything as it happens. When guidance is needed, I’ll step in with a light touch — enough to help you feel comfortable, but never enough to interrupt the natural flow of the day.</p>
+      <p>The focus is always on capturing moments that feel real, relaxed, and timeless.</p>
+      <h2>Lots of happy clients</h2>
+      <p>"10/10 would recommend booking Tony, he is beyond just talent! He is kind, passionate about what he does, easy to communicate with, very professional, works very quickly and he’s an all-round great guy. He captured our wedding in the most beautiful way, we feel so beyond lucky to have these photos forever now thanks to Tony from Moments in Light!"<br />— Tayla Johnson</p>
+      <p><a href="https://share.google/4z6Tmk2CHXgdkPZpT" target="_blank" rel="noopener">See more reviews here</a></p>
+    </div>
+  </section>
+
+  <section class="bg-alt slant">
+    <div class="feature">
+      <Img src={`${IMG}/48716d8f-5c7d-43bc-a063-106d228f1fa0/_30A8112-Edit.jpg`} alt="Wedding couple among the trees at golden hour" width={1500} height={1200} sizes="(min-width: 768px) 64vw, 64vw" />
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap cta">
+      <p>If you’re planning your wedding and are looking for a photographer who will capture it in a natural, refined way, I’d love to hear about your plans.</p>
+      <p><a href="/contact">Contact me now</a></p>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  /* Phone layout first (390px reference), desktop overrides below (1440px reference). */
+  .hero { padding: 1px 0 20px; }
+  .hero :global(img) { width: 76.4vw; aspect-ratio: 3 / 2; object-fit: cover; margin: 0 auto; }
+
+  .intro { padding-block: 24px 240px; } /* the live site leaves a tall gap here on phones */
+  .popular { padding-block: 0 24px; }
+
+  .venue { padding-bottom: 32px; }
+  .venue.slant { padding-top: calc(var(--slant) + 24px); }
+  .venue-grid { display: grid; gap: 47px; padding-inline: var(--pad); }
+  .venue--text-first .venue-text { order: -1; }
+  .venue-img :global(img) { width: 100%; aspect-ratio: 343 / 234; object-fit: cover; border-radius: 10px; }
+  .venue-text p { margin-bottom: 15px; }
+  .venue-text p:last-child { margin-bottom: 0; }
+  .card { background: var(--griseo); border-radius: 25px; padding: 10px 21px 21px; }
+  .venue-name a { font-weight: 600; }
+  .justify { text-align: justify; }
+  .indent { padding-left: 40px; }
+
+  .recent { padding-block: 24px 1px; }
+  .recent ul { margin: 0 0 15px; padding-left: 40px; }
+  .recent li { margin-bottom: 8px; }
+  .recent li::marker { font-size: 0.8em; }
+
+  .approach { padding-block: 56px 40px; }
+
+  .feature { padding-block: 0 2px; }
+  .feature :global(img) { width: 64vw; aspect-ratio: 924 / 739; object-fit: cover; border-radius: 10px; margin: 0 auto; }
+
+  .cta { padding-block: 43px 1px; }
+
+  @media (min-width: 768px) {
+    .hero { padding: 1px 0 30px; }
+    .hero :global(img) { width: 68.75vw; }
+
+    .intro { padding-block: 42px 70px; }
+    .popular { padding-block: 2px 28px; }
+
+    .venue { padding-block: 41px 70px; }
+    .venue.slant { padding-top: calc(var(--slant) + 41px); }
+    .venue-grid {
+      grid-template-columns: 26.32vw 26.32vw;
+      column-gap: 8.47vw;
+      justify-content: center;
+      align-items: center;
+      padding: 0;
+    }
+    .venue--flip .venue-img { order: 2; }
+    .venue--text-first .venue-text { order: 0; }
+    .venue-img :global(img) { aspect-ratio: auto; height: calc(var(--h) / 1440 * 100vw); }
+    .card { align-self: start; padding: 23px; }
+
+    .recent { padding-block: 2px 1px; max-width: calc(68.82vw + 2 * var(--pad)); }
+    .venue--short-bottom { padding-bottom: 31px; }
+    .approach { padding-block: 58px 69px; }
+    .feature { padding-block: 41px 42px; }
+    .cta { padding-block: 43px 1px; }
+  }
+</style>

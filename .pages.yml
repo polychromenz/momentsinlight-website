@@ -1,0 +1,305 @@
+# Pages CMS configuration (https://pagescms.org/docs/configuration/)
+# Lets blog posts and section-built pages be added and edited from the browser.
+# Blog posts are Markdown files in src/content/blog; the file name becomes the address,
+# e.g. /blog/ellie-and-ryan-tui-hills. Pages are files in src/content/pages; their address
+# is the "Page address" field.
+
+media:
+  input: public/images
+  output: /images
+
+# Fields shared by several page sections.
+components:
+  photo:
+    type: object
+    label: Photo
+    fields:
+      - name: src
+        label: Photo
+        type: image
+        required: true
+      - name: alt
+        label: Description (for Google and screen readers)
+        type: string
+  background:
+    type: select
+    label: Background
+    default: white
+    options:
+      values:
+        - name: white
+          label: White
+        - name: alt
+          label: Pale green
+  richText:
+    type: rich-text
+    label: Text
+    options:
+      format: html
+
+content:
+  - name: pages
+    label: Pages
+    type: collection
+    path: src/content/pages
+    filename: "{primary}.md"
+    format: yaml-frontmatter
+    view:
+      primary: title
+      fields: [title, slug, draft]
+    fields:
+      - name: title
+        label: Page title
+        description: Shown as the main heading if the page doesn't start with a hero section.
+        type: string
+        required: true
+      - name: slug
+        label: Page address
+        description: "What comes after momentsinlight.co.nz/ — lowercase letters, numbers and hyphens, e.g. maternity-portraits. Can't be the same as an existing page."
+        type: string
+        required: true
+      - name: seoTitle
+        label: Google title
+        description: Shown in Google results and the browser tab. Leave empty to use "Page title | Moments In Light".
+        type: string
+      - name: description
+        label: Google description
+        description: One or two sentences (about 150 characters) shown under the title in Google.
+        type: text
+        required: true
+      - name: shareImage
+        label: Social sharing image (optional)
+        description: Shown when the page is shared on Facebook etc. Leave empty to use the first photo on the page.
+        type: image
+      - name: draft
+        label: Draft (hide from the live site)
+        type: boolean
+        default: true
+      - name: sections
+        label: Sections
+        type: block
+        list: true
+        blockKey: type
+        blocks:
+          - name: hero
+            label: Hero image with heading
+            fields:
+              - name: image
+                component: photo
+              - name: heading
+                label: Heading
+                type: string
+                required: true
+              - name: subheading
+                label: Line under the heading (optional)
+                type: string
+              - name: height
+                label: Height
+                type: select
+                default: tall
+                options:
+                  values:
+                    - name: tall
+                      label: Tall
+                    - name: short
+                      label: Short
+              - name: buttonLabel
+                label: Button text (optional)
+                type: string
+              - name: buttonLink
+                label: Button link (optional), e.g. /contact
+                type: string
+          - name: text
+            label: Text block
+            fields:
+              - name: heading
+                label: Heading (optional)
+                type: string
+              - name: body
+                component: richText
+              - name: align
+                label: Alignment
+                type: select
+                default: left
+                options:
+                  values:
+                    - name: left
+                      label: Left
+                    - name: center
+                      label: Centred
+              - name: background
+                component: background
+          - name: imageText
+            label: Image and text side by side
+            fields:
+              - name: image
+                component: photo
+              - name: heading
+                label: Heading (optional)
+                type: string
+              - name: body
+                component: richText
+              - name: imageSide
+                label: Photo position
+                type: select
+                default: left
+                options:
+                  values:
+                    - name: left
+                      label: Photo on the left
+                    - name: right
+                      label: Photo on the right
+              - name: background
+                component: background
+          - name: gallery
+            label: Gallery
+            fields:
+              - name: heading
+                label: Heading (optional)
+                type: string
+              - name: layout
+                label: Layout
+                description: Grid crops every photo square. Masonry keeps each photo's own shape. Carousel shows one row that scrolls sideways.
+                type: select
+                default: grid
+                options:
+                  values:
+                    - name: grid
+                      label: Grid (square crops)
+                    - name: masonry
+                      label: Masonry (original shapes)
+                    - name: carousel
+                      label: Carousel (scrolls sideways)
+              - name: images
+                label: Photos
+                type: object
+                list:
+                  collapsible:
+                    collapsed: true
+                    summary: "{index}. {alt}"
+                fields:
+                  - name: src
+                    label: Photo
+                    type: image
+                  - name: alt
+                    label: Description (for Google and screen readers)
+                    type: string
+              - name: background
+                component: background
+          - name: testimonial
+            label: Testimonial
+            fields:
+              - name: quote
+                label: Quote
+                type: text
+                required: true
+              - name: name
+                label: Name
+                type: string
+                required: true
+              - name: detail
+                label: Detail (optional), e.g. "Tui Hills wedding"
+                type: string
+              - name: background
+                component: background
+          - name: cta
+            label: Call-to-action button
+            fields:
+              - name: heading
+                label: Heading (optional)
+                type: string
+              - name: text
+                label: Text (optional)
+                type: text
+              - name: buttonLabel
+                label: Button text
+                type: string
+                required: true
+              - name: buttonLink
+                label: Button link, e.g. /contact
+                type: string
+                required: true
+              - name: background
+                component: background
+
+  - name: blog
+    label: Wedding blog
+    type: collection
+    path: src/content/blog
+    filename: "{primary}.md"
+    format: yaml-frontmatter
+    view:
+      primary: title
+      sort: date
+      order: desc
+    fields:
+      - name: title
+        label: Title
+        type: string
+        required: true
+      - name: seoTitle
+        label: Browser tab / Google title (optional)
+        type: string
+      - name: description
+        label: Google description
+        type: text
+        required: true
+      - name: date
+        label: Wedding post date
+        type: date
+        required: true
+      - name: updated
+        label: Last updated (optional)
+        type: date
+      - name: author
+        label: Author
+        type: string
+        default: Tony Gorham
+      - name: venue
+        label: Venue (also used as the post's tag)
+        type: string
+      - name: venueUrl
+        label: Venue website (optional)
+        type: string
+
+      - name: gallery
+        label: Gallery photos (shown as square tiles; click one to view full size)
+        type: object
+        list:
+          collapsible:
+            collapsed: true
+            summary: "{index}. {alt}"
+        fields:
+          - name: src
+            label: Photo
+            type: image
+          - name: alt
+            label: Description (for Google and screen readers)
+            type: string
+          - name: width
+            label: Width in pixels (optional, stops the page jumping while photos load)
+            type: number
+          - name: height
+            label: Height in pixels (optional)
+            type: number
+
+      - name: prev
+        label: Previous post link
+        type: object
+        fields:
+          - name: title
+            type: string
+          - name: href
+            type: string
+      - name: next
+        label: Next post link
+        type: object
+        fields:
+          - name: title
+            type: string
+          - name: href
+            type: string
+
+      - name: body
+        label: Story
+        type: rich-text

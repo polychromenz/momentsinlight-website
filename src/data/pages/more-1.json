@@ -1,0 +1,621 @@
+{
+ "path": "/more-1",
+ "title": "Auckland Wedding Photography Services | Moments In Light",
+ "description": "Capture your love story with stunning Auckland wedding photography. Elegant, natural, and heartfelt images youâ€™ll treasure forever.\n",
+ "ogImage": "http://static1.squarespace.com/static/6626f9fc9b715306f4f4eae7/t/68dc85608cc78a11fc072b7c/1759282528270/Moments+in+Light+250x250.jpg",
+ "type": {
+  "d": {
+   "h1": [
+    "49.56px",
+    "500",
+    "54.7142px",
+    "normal",
+    "rgb(90, 94, 59)"
+   ],
+   "p": [
+    "16.728px",
+    "400",
+    "26.7648px",
+    "normal",
+    "rgb(0, 0, 0)"
+   ]
+  },
+  "m": {
+   "h1": [
+    "36.6px",
+    "500",
+    "40.4064px",
+    "normal",
+    "rgb(90, 94, 59)"
+   ],
+   "p": [
+    "16.08px",
+    "400",
+    "25.728px",
+    "normal",
+    "rgb(0, 0, 0)"
+   ]
+  }
+ },
+ "sections": [
+  {
+   "id": "68db159604271f582f6c9f98",
+   "kind": "fluid",
+   "bg": "rgb(255, 255, 255)",
+   "bgImage": null,
+   "bgOverlay": null,
+   "headingColor": "rgb(90, 94, 59)",
+   "textColor": "rgb(0, 0, 0)",
+   "divider": null,
+   "pad": {
+    "d": [
+     1.4,
+     1.4
+    ],
+    "m": [
+     0.9,
+     0.9
+    ]
+   },
+   "height": {
+    "d": 329,
+    "m": 210
+   },
+   "grid": {
+    "mRows": 2,
+    "mRowMin": 24,
+    "dRows": 3,
+    "dScale": 0.0215,
+    "mGap": 11,
+    "dGap": 11
+   },
+   "blocks": [
+    {
+     "id": "yui_3_17_2_1_1759186870700_6422",
+     "type": "text",
+     "html": "<h1>More information</h1><p>I really hope that this ever-expanding resource helps with your planning.</p>",
+     "color": "rgb(0, 0, 0)",
+     "textPad": [
+      0,
+      0,
+      0,
+      0
+     ],
+     "area": {
+      "m": "1/2/3/10",
+      "zm": 1,
+      "d": "1/2/2/26",
+      "zd": 1
+     },
+     "valign": {
+      "m": "flex-start",
+      "d": "flex-start"
+     },
+     "textPadM": [
+      0,
+      0,
+      0,
+      0
+     ]
+    }
+   ]
+  },
+  {
+   "id": "68db15658f90b75ee27d8907",
+   "kind": "fluid",
+   "bg": "rgb(255, 255, 255)",
+   "bgImage": null,
+   "bgOverlay": null,
+   "headingColor": "rgb(90, 94, 59)",
+   "textColor": null,
+   "divider": null,
+   "pad": {
+    "d": [
+     95,
+     95
+    ],
+    "m": [
+     59.4,
+     59.4
+    ]
+   },
+   "height": {
+    "d": 2765,
+    "m": 10558
+   },
+   "grid": {
+    "mRows": 5,
+    "mRowMin": 24,
+    "dRows": 25,
+    "dScale": 0.0215,
+    "mGap": 11,
+    "dGap": 11
+   },
+   "blocks": [
+    {
+     "id": "yui_3_17_2_1_1759186870700_5839",
+     "type": "summary",
+     "design": [
+      "autocolumns",
+      "list-thumbnail-left"
+     ],
+     "textSize": "medium",
+     "textAlign": "left",
+     "items": [
+      {
+       "href": "/blog/wedding-day-timeline-planner",
+       "title": "How to Plan Your Wedding Day Timeline",
+       "excerpt": "",
+       "thumb": {
+        "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1791243012695-J2XKAFA15MRRS7M90DSJ/runorder-wedding-featured-image.jpg",
+        "alt": "How to Plan Your Wedding Day Timeline",
+        "width": 2400,
+        "height": 1600,
+        "focal": [
+         0.5,
+         0.5
+        ]
+       },
+       "metaText": ""
+      },
+      {
+       "href": "/blog/auckland-wedding-venues",
+       "title": "Auckland Wedding Venues: A Local Photographer's Guide",
+       "excerpt": "",
+       "thumb": {
+        "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1759186493257-WVEJWW3M8P8MCBEPGCO0/_30A9345.jpg",
+        "alt": "Auckland Wedding Venues: A Local Photographer's Guide",
+        "width": 8192,
+        "height": 5464,
+        "focal": [
+         0.5,
+         0.5
+        ]
+       },
+       "metaText": ""
+      },
+      {
+       "href": "/blog/iris-2026",
+       "title": "Three Bronze Awards at the 2026 NZIPP Iris Awards",
+       "excerpt": "",
+       "thumb": {
+        "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1787799048615-RLBVC28VZQWPQ95NKRL5/chanel-bronze-nzipp-2026.jpg",
+        "alt": "Three Bronze Awards at the 2026 NZIPP Iris Awards",
+        "width": 3000,
+        "height": 2001,
+        "focal": [
+         0.5,
+         0.5
+        ]
+       },
+       "metaText": ""
+      },
+      {
+       "href": "/blog/engagement-rings-101",
+       "title": "Engagement Rings 101: Cuts, Settings & What to Ask Your Jeweller",
+       "excerpt": "",
+       "thumb": {
+        "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1786762919491-XPFPSK91U81ISQRBBDA4/_30A5339.jpg",
+        "alt": "Engagement Rings 101: Cuts, Settings &amp; What to Ask Your Jeweller",
+        "width": 7694,
+        "height": 5132,
+        "focal": [
+         0.5,
+         0.5
+        ]
+       },
+       "metaText": ""
+      },
+      {
+       "href": "/blog/auckland-wedding-photographers",
+       "title": "Auckland Wedding Photographers: Capture Your Love Story",
+       "excerpt": "",
+       "thumb": {
+        "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1786674613005-276SWXC8H6E6VBI973B1/__tay-barn-bronze-nzipp-2026.jpg",
+        "alt": "Auckland Wedding Photographers: Capture Your Love Story",
+        "width": 3000,
+        "height": 1703,
+        "focal": [
+         0.5,
+         0.5
+        ]
+       },
+       "metaText": ""
+      },
+      {
+       "href": "/blog/the-magic-of-a-first-look",
+       "title": "Capture the Moment: The Magic of a First Look on Your Wedding Day",
+       "excerpt": "",
+       "thumb": {
+        "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1759462545180-9AT98G39QPAC2JSYVOQK/SOCIAL__MIL4826-2.jpg",
+        "alt": "Capture the Moment: The Magic of a First Look on Your Wedding Day",
+        "width": 2048,
+        "height": 1536,
+        "focal": [
+         0.5,
+         0.5
+        ]
+       },
+       "metaText": ""
+      },
+      {
+       "href": "/blog/vintage-views",
+       "title": "Red, Regal & Really Yours: Arriving in Style on a London Bus this Wedding Season",
+       "excerpt": "",
+       "thumb": {
+        "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1757892613576-MOGM2XWDTA65BWTUJ0AP/wedding-party-inside-vintage-routemaster-auckland.jpg.webp",
+        "alt": "Red, Regal &amp; Really Yours: Arriving in Style on a London Bus this Wedding Season",
+        "width": 750,
+        "height": 424,
+        "focal": [
+         0.5,
+         0.5
+        ]
+       },
+       "metaText": ""
+      },
+      {
+       "href": "/blog/markovina-vineyard-estate-wedding-venue",
+       "title": "Markovina Vineyard Estate Wedding Photography",
+       "excerpt": "",
+       "thumb": {
+        "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1756698705818-SH5CLYKCZQEK6NX9DWSU/SOCIAL__Q9A1313-Edit.jpg",
+        "alt": "Markovina Vineyard Estate Wedding Photography",
+        "width": 2048,
+        "height": 1366,
+        "focal": [
+         0.5,
+         0.5
+        ]
+       },
+       "metaText": ""
+      },
+      {
+       "href": "/blog/abel-estate-wedding-venue",
+       "title": "Abel Estate Wedding Photography",
+       "excerpt": "",
+       "thumb": {
+        "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1756698192741-SW6ZT4XU7JOSW8AHYEQU/SOCIAL__30A9554-Edit-2.jpg",
+        "alt": "Abel Estate Wedding Photography",
+        "width": 2048,
+        "height": 1366,
+        "focal": [
+         0.5,
+         0.5
+        ]
+       },
+       "metaText": ""
+      },
+      {
+       "href": "/blog/settlers-country-manor-wedding-venue",
+       "title": "Settlers Country Manor Wedding Photography",
+       "excerpt": "",
+       "thumb": {
+        "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1756697858094-MVW8IIXOL07323Z70JXC/SOCIAL__MIL3720.jpg",
+        "alt": "Settlers Country Manor Wedding Photography",
+        "width": 2048,
+        "height": 1536,
+        "focal": [
+         0.5,
+         0.5
+        ]
+       },
+       "metaText": ""
+      },
+      {
+       "href": "/blog/all-about-practice-wedding-photographs",
+       "title": "All about practice wedding shoots",
+       "excerpt": "",
+       "thumb": {
+        "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1742780364028-C88I7ZXUZF0LI803NT7C/SOCIAL__MIL6780.jpg",
+        "alt": "All about practice wedding shoots",
+        "width": 2048,
+        "height": 1536,
+        "focal": [
+         0.5,
+         0.5
+        ]
+       },
+       "metaText": ""
+      },
+      {
+       "href": "/blog/practice-wedding-photographs",
+       "title": "Practice wedding shoots",
+       "excerpt": "",
+       "thumb": {
+        "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1742774642780-G5N30U4TWLS0YLHVHWRW/SOCIAL__MIL6740.jpg",
+        "alt": "Practice wedding shoots",
+        "width": 2048,
+        "height": 1536,
+        "focal": [
+         0.5,
+         0.5
+        ]
+       },
+       "metaText": ""
+      },
+      {
+       "href": "/blog/choosing-the-perfect-wedding-entertainment",
+       "title": "Choosing the Perfect Wedding Entertainment",
+       "excerpt": "",
+       "thumb": {
+        "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1718149234635-376ZIPRCR0X1VM5OKWGQ/_W2A6120_SOCIAL.jpg",
+        "alt": "Choosing the Perfect Wedding Entertainment",
+        "width": 2048,
+        "height": 1366,
+        "focal": [
+         0.5,
+         0.5
+        ]
+       },
+       "metaText": ""
+      },
+      {
+       "href": "/blog/planning-your-wedding-makeup-as-a-bride",
+       "title": "Planning your wedding makeup as a bride",
+       "excerpt": "",
+       "thumb": {
+        "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1718147529858-1GY6AJIDPSKJFJMH1S0F/092A4501_SOCIAL.jpg",
+        "alt": "Planning your wedding makeup as a bride",
+        "width": 2048,
+        "height": 1365,
+        "focal": [
+         0.5,
+         0.5
+        ]
+       },
+       "metaText": ""
+      },
+      {
+       "href": "/blog/tips-on-planning-a-wedding-in-auckland",
+       "title": "Tips on Planning a wedding in Auckland",
+       "excerpt": "",
+       "thumb": {
+        "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1718146020638-14KGG0U8RKXPE5ZGGWO9/_W2A0600-2_SOCIAL.jpg",
+        "alt": "Tips on Planning a wedding in Auckland",
+        "width": 2048,
+        "height": 1366,
+        "focal": [
+         0.5,
+         0.5
+        ]
+       },
+       "metaText": ""
+      },
+      {
+       "href": "https://weddingdanceauckla.wixsite.com/mysite",
+       "title": "Wedding Dance Auckland",
+       "excerpt": "",
+       "thumb": {
+        "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1717108984312-49T0ZBORD3PVSISXYUME/WeddingDanceAuckland.jpg",
+        "alt": "Wedding Dance Auckland",
+        "width": 828,
+        "height": 828,
+        "focal": [
+         0.5,
+         0.5
+        ]
+       },
+       "metaText": ""
+      },
+      {
+       "href": "/blog/we-are-now-on-myweddingguide",
+       "title": "We are now on MyWeddingGuide",
+       "excerpt": "",
+       "thumb": {
+        "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1717112370485-AQOC5F9S6WHQC7WW9LZ8/myweddingguide_large.png",
+        "alt": "We are now on MyWeddingGuide",
+        "width": 2576,
+        "height": 1640,
+        "focal": [
+         0.5,
+         0.5
+        ]
+       },
+       "metaText": ""
+      },
+      {
+       "href": "/blog/finding-a-celebrant",
+       "title": "Finding a celebrant that suits you",
+       "excerpt": "",
+       "thumb": {
+        "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1716331118084-5M6H86QPPDNJ7ESGWMTZ/anna-the-celebrant.png",
+        "alt": "Finding a celebrant that suits you",
+        "width": 674,
+        "height": 450,
+        "focal": [
+         0.5,
+         0.5
+        ]
+       },
+       "metaText": ""
+      },
+      {
+       "href": "/blog/how-to-create-a-wedding-mood-board",
+       "title": "How to Create a Wedding Mood Board on Pinterest",
+       "excerpt": "",
+       "thumb": {
+        "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1759186220256-GYIBSO09GC9VCFJV1BGV/_Q9A0292.jpg",
+        "alt": "How to Create a Wedding Mood Board on Pinterest",
+        "width": 8192,
+        "height": 5464,
+        "focal": [
+         0.5,
+         0.5
+        ]
+       },
+       "metaText": ""
+      },
+      {
+       "href": "/blog/finding-a-celebrant-in-auckland",
+       "title": "Finding a Celebrant in Auckland",
+       "excerpt": "",
+       "thumb": {
+        "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1715562659503-6XMKXP1EJ2S76X1R54ES/092A5080_SOCIAL.jpg",
+        "alt": "Finding a Celebrant in Auckland",
+        "width": 2048,
+        "height": 1365,
+        "focal": [
+         0.5,
+         0.5
+        ]
+       },
+       "metaText": ""
+      },
+      {
+       "href": "/blog/wedding-ring-options",
+       "title": "Wedding Ring options",
+       "excerpt": "",
+       "thumb": {
+        "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1715562020136-KQ24STRY93S30EXCSXDC/092A4427_SOCIAL.jpg",
+        "alt": "Wedding Ring options",
+        "width": 2048,
+        "height": 1365,
+        "focal": [
+         0.5,
+         0.5
+        ]
+       },
+       "metaText": ""
+      },
+      {
+       "href": "/blog/wedding-table-decorations-auckland",
+       "title": "Wedding Table Decorations",
+       "excerpt": "",
+       "thumb": {
+        "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1756698531190-GOZT4ZGKY72ST6XNN1OQ/SOCIAL__30A3220.jpg",
+        "alt": "Wedding Table Decorations",
+        "width": 2048,
+        "height": 1366,
+        "focal": [
+         0.5,
+         0.5
+        ]
+       },
+       "metaText": ""
+      },
+      {
+       "href": "/blog/confetti-options",
+       "title": "Confetti Options",
+       "excerpt": "",
+       "thumb": {
+        "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1715561060500-YSJX0ZDVXNMUDI188ZOB/092A5202_SOCIAL.jpg",
+        "alt": "Confetti Options",
+        "width": 2048,
+        "height": 1365,
+        "focal": [
+         0.5,
+         0.5
+        ]
+       },
+       "metaText": ""
+      },
+      {
+       "href": "/blog/tips-for-writing-wedding-vows",
+       "title": "Tips for writing your Wedding Vows",
+       "excerpt": "",
+       "thumb": {
+        "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1759206037350-4VEDAVVX64Q5O8QJ6ZVU/SOCIAL__30A3316.jpg",
+        "alt": "Tips for writing your Wedding Vows",
+        "width": 2048,
+        "height": 1366,
+        "focal": [
+         0.5,
+         0.5
+        ]
+       },
+       "metaText": ""
+      },
+      {
+       "href": "/blog/wedding-suit-options-in-auckland",
+       "title": "Wedding Suit options in Auckland.",
+       "excerpt": "",
+       "thumb": {
+        "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1715560513431-J6QCP6JH0T6D1P3UKI31/_W2A1023_SOCIAL.jpg",
+        "alt": "Wedding Suit options in Auckland.",
+        "width": 2048,
+        "height": 1366,
+        "focal": [
+         0.5,
+         0.5
+        ]
+       },
+       "metaText": ""
+      },
+      {
+       "href": "/blog/discover-the-best-wedding-florists-in-auckland-new-zealand",
+       "title": "Discover the Best Wedding Florists in Auckland, New Zealand",
+       "excerpt": "",
+       "thumb": {
+        "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1715557024999-IWA3EOCMVW5CJPDXNOLO/_W2A4718_SOCIAL.jpg",
+        "alt": "Discover the Best Wedding Florists in Auckland, New Zealand",
+        "width": 2048,
+        "height": 1366,
+        "focal": [
+         0.5,
+         0.5
+        ]
+       },
+       "metaText": ""
+      },
+      {
+       "href": "/blog/how-to-find-the-perfect-invitation-card-supplier-for-your-auckland-wedding",
+       "title": "How to Find the Perfect Invitation Card Supplier",
+       "excerpt": "",
+       "thumb": null,
+       "metaText": ""
+      },
+      {
+       "href": "/blog/create-your-dream-eco-friendly-wedding-in-new-zealand",
+       "title": "Create Your Dream Eco-Friendly Wedding",
+       "excerpt": "",
+       "thumb": null,
+       "metaText": ""
+      },
+      {
+       "href": "/blog/invites-place-settings-signs-and-seating-charts",
+       "title": "Invites, place settings, signs and seating charts",
+       "excerpt": "",
+       "thumb": {
+        "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1759185811279-UJ05ULXZFVJK5YMFC85Z/_Q9A0304.jpg",
+        "alt": "Invites, place settings, signs and seating charts",
+        "width": 8192,
+        "height": 5464,
+        "focal": [
+         0.5,
+         0.5
+        ]
+       },
+       "metaText": ""
+      }
+     ],
+     "colWidthPct": 286,
+     "showMore": false,
+     "thumbRatio": null,
+     "header": "",
+     "titleStyle": {
+      "fontSize": "20px",
+      "color": "rgb(0, 0, 0)",
+      "fontWeight": "400",
+      "lineHeight": "24px"
+     },
+     "listRect": [
+      286,
+      273
+     ],
+     "area": {
+      "m": "1/2/6/10",
+      "zm": 1,
+      "d": "1/2/26/26",
+      "zd": 1
+     },
+     "valign": {
+      "m": "flex-start",
+      "d": "flex-start"
+     },
+     "colWidthPctM": 343
+    }
+   ]
+  }
+ ]
+}

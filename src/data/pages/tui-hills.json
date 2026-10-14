@@ -1,0 +1,351 @@
+{
+ "path": "/tui-hills",
+ "title": "Tui Hills Wedding Photographer | Auckland Weddings | Moments In Light | Moments In Light",
+ "description": "Wedding photography at Tui Hills, Swanson — native bush and garden setting in the Waitakere Ranges. See a real Tui Hills wedding and get in touch about photographing yours.",
+ "ogImage": "http://static1.squarespace.com/static/6626f9fc9b715306f4f4eae7/t/68dc85608cc78a11fc072b7c/1759282528270/Moments+in+Light+250x250.jpg",
+ "type": {
+  "d": {
+   "h1": [
+    "49.56px",
+    "500",
+    "54.7142px",
+    "normal",
+    "rgb(90, 94, 59)"
+   ],
+   "h2": [
+    "32.28px",
+    "500",
+    "37.1866px",
+    "normal",
+    "rgb(90, 94, 59)"
+   ],
+   "p": [
+    "16.728px",
+    "400",
+    "26.7648px",
+    "normal",
+    "rgb(0, 0, 0)"
+   ]
+  },
+  "m": {
+   "h1": [
+    "36.6px",
+    "500",
+    "40.4064px",
+    "normal",
+    "rgb(90, 94, 59)"
+   ],
+   "h2": [
+    "25.8px",
+    "500",
+    "29.7216px",
+    "normal",
+    "rgb(90, 94, 59)"
+   ],
+   "p": [
+    "16.08px",
+    "400",
+    "25.728px",
+    "normal",
+    "rgb(0, 0, 0)"
+   ]
+  }
+ },
+ "sections": [
+  {
+   "id": "6aa088b3025fe54286b2b6ac",
+   "kind": "fluid",
+   "bg": "rgb(255, 255, 255)",
+   "bgImage": null,
+   "bgOverlay": null,
+   "headingColor": null,
+   "textColor": null,
+   "divider": null,
+   "pad": {
+    "d": [
+     1.4,
+     1.4
+    ],
+    "m": [
+     0.9,
+     0.9
+    ]
+   },
+   "height": {
+    "d": 917,
+    "m": 298
+   },
+   "grid": {
+    "mRows": 6,
+    "mRowMin": 24,
+    "dRows": 20,
+    "dScale": 0.0215,
+    "mGap": 11,
+    "dGap": 11
+   },
+   "blocks": [
+    {
+     "id": "yui_3_17_2_1_1788905620687_6017",
+     "type": "image",
+     "image": {
+      "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/5332229b-9372-4c4f-ad7d-fe4a38da6c48/_Q9A6998-Edit.jpg",
+      "alt": "A bride gazes up at her groom at Tui Hills",
+      "width": 4096,
+      "height": 2731,
+      "focal": [
+       0.5,
+       0.5
+      ]
+     },
+     "fit": "contain",
+     "radius": "0px",
+     "href": null,
+     "caption": null,
+     "area": {
+      "m": "1/2/7/10",
+      "zm": 1,
+      "d": "1/6/19/24",
+      "zd": 1
+     },
+     "valign": {
+      "m": "center",
+      "d": "center"
+     }
+    }
+   ]
+  },
+  {
+   "id": "6aa088b932825168319604e7",
+   "kind": "fluid",
+   "bg": "rgb(255, 255, 255)",
+   "bgImage": null,
+   "bgOverlay": null,
+   "headingColor": "rgb(90, 94, 59)",
+   "textColor": "rgb(0, 0, 0)",
+   "divider": null,
+   "pad": {
+    "d": [
+     1.4,
+     1.4
+    ],
+    "m": [
+     0.9,
+     0.9
+    ]
+   },
+   "height": {
+    "d": 770,
+    "m": 1376
+   },
+   "grid": {
+    "mRows": 2,
+    "mRowMin": 24,
+    "dRows": 14,
+    "dScale": 0.0215,
+    "mGap": 11,
+    "dGap": 11
+   },
+   "blocks": [
+    {
+     "id": "yui_3_17_2_1_1788905620687_469",
+     "type": "text",
+     "html": "<h1>Tui Hills Wedding Photographer</h1><p>Tucked into the edge of the Waitakere Ranges, Tui Hills is one of the most distinctly New Zealand settings I've had the chance to photograph a wedding in — native bush, ferns, and nikau palms standing in for the manicured gardens you'll find at most Auckland venues. It's thirty minutes from town, but it feels like a different world entirely.</p><h2>A setting that does the work for you</h2><p>Every corner of the grounds offers something different to shoot against — dense native bush for portraits with real depth and texture, open lawn for the ceremony itself, and pockets of native garden that catch soft, filtered light through the afternoon. For a couple wanting their photographs to feel unmistakably of this country rather than generic, Tui Hills is hard to beat.</p><p>‍  ‍</p><h2>Why I love photographing here</h2><p>‍I photographed Ellie &amp; Ryan's wedding at Tui Hills, and it's stayed with me since — the venue has a way of making a big day feel grounded and unhurried, exactly the kind of atmosphere that produces the candid, quiet moments alongside the romantic portraits I look for at every wedding. You can read about their day here: <a href=\"https://www.momentsinlight.co.nz/blog/ellie-and-ryan-tui-hills\">Ellie &amp; Ryan's wedding at Tui Hills</a>.</p><p>‍  ‍</p><h2>Thinking about Tui Hills for your wedding?</h2><p>If you're picturing a native bush backdrop and a setting with real New Zealand character, I'd love to talk through what your day at Tui Hills could look like. <a href=\"https://www.momentsinlight.co.nz/contact\">Get in touch</a> to check availability and start planning your photography.</p>",
+     "color": "rgb(0, 0, 0)",
+     "textPad": [
+      0,
+      0,
+      0,
+      0
+     ],
+     "area": {
+      "m": "1/2/3/10",
+      "zm": 1,
+      "d": "1/2/14/26",
+      "zd": 1
+     },
+     "valign": {
+      "m": "flex-start",
+      "d": "flex-start"
+     },
+     "textPadM": [
+      0,
+      0,
+      0,
+      0
+     ]
+    }
+   ]
+  },
+  {
+   "id": "6aa089def8b50f791fa27eff",
+   "kind": "gallery",
+   "bg": "rgb(255, 255, 255)",
+   "bgImage": null,
+   "bgOverlay": null,
+   "headingColor": null,
+   "textColor": null,
+   "divider": null,
+   "pad": {
+    "d": [
+     0,
+     0
+    ],
+    "m": [
+     0,
+     0
+    ]
+   },
+   "height": {
+    "d": 3333,
+    "m": 882
+   },
+   "design": "masonry",
+   "images": [
+    {
+     "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/e809c7f1-8b02-4bd4-b280-8254f595573d/_Q9A6785-Edit.jpg",
+     "alt": "A bride smiles at her groom over his shoulder",
+     "width": 4096,
+     "height": 2731,
+     "focal": [
+      0.5,
+      0.5
+     ],
+     "href": null,
+     "title": null
+    },
+    {
+     "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/71337195-e209-4370-a2eb-487a6edccdf2/_30A6188-Edit.jpg",
+     "alt": "A groom hugs his bride from behind against greenery",
+     "width": 3165,
+     "height": 4096,
+     "focal": [
+      0.5,
+      0.5
+     ],
+     "href": null,
+     "title": null
+    },
+    {
+     "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1dd3c1ed-c6c1-4281-90ac-ed1abba40669/_30A5642.jpg",
+     "alt": "Guests watch a ceremony among the ferns at Tui Hills",
+     "width": 4096,
+     "height": 2732,
+     "focal": [
+      0.5,
+      0.5
+     ],
+     "href": null,
+     "title": null
+    },
+    {
+     "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/a1f07099-93cb-412e-b47f-89d7f60e3f13/_30A5707.jpg",
+     "alt": "A couple stand before guests under a white arbour in the bush",
+     "width": 4096,
+     "height": 2732,
+     "focal": [
+      0.5,
+      0.5
+     ],
+     "href": null,
+     "title": null
+    },
+    {
+     "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/085598a8-5e10-4a3b-a81c-3e896dcf0670/_30A5899.jpg",
+     "alt": "A couple with family on the lawn at Tui Hills",
+     "width": 4096,
+     "height": 2732,
+     "focal": [
+      0.5,
+      0.5
+     ],
+     "href": null,
+     "title": null
+    },
+    {
+     "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/992f31b5-18d5-4844-91c8-c3608f4a7d1f/_Q9A7152.jpg",
+     "alt": "A smiling guest in glasses and a colourful tie",
+     "width": 2731,
+     "height": 4096,
+     "focal": [
+      0.5,
+      0.5
+     ],
+     "href": null,
+     "title": null
+    },
+    {
+     "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/32f85504-8486-42dc-9869-ee65ff3ce13f/_30A5656.jpg",
+     "alt": "A couple sign the register on a mosaic courtyard",
+     "width": 3277,
+     "height": 4096,
+     "focal": [
+      0.5,
+      0.5
+     ],
+     "href": null,
+     "title": null
+    },
+    {
+     "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/b95bc44f-af6a-443d-b17b-1a1e7e32c60b/_30A6558.jpg",
+     "alt": "A couple cut their cake in front of a bright mural",
+     "width": 3277,
+     "height": 4096,
+     "focal": [
+      0.5,
+      0.5
+     ],
+     "href": null,
+     "title": null
+    },
+    {
+     "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/98e9cfba-4cc2-43f6-92b2-cae29e11afc1/_Q9A6564.jpg",
+     "alt": "A couple exchange rings with the celebrant",
+     "width": 4096,
+     "height": 3277,
+     "focal": [
+      0.5,
+      0.5
+     ],
+     "href": null,
+     "title": null
+    },
+    {
+     "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1cd9a5c7-c4b9-4b58-bb83-5028c676588a/_Q9A7051.jpg",
+     "alt": "A couple stand in a hedge archway at Tui Hills",
+     "width": 4096,
+     "height": 2304,
+     "focal": [
+      0.5,
+      0.5
+     ],
+     "href": null,
+     "title": null
+    }
+   ],
+   "layout": {
+    "d": {
+     "rect": [
+      58,
+      1325,
+      3218
+     ],
+     "columns": 2,
+     "gap": 13,
+     "itemH": 438,
+     "itemW": 656
+    },
+    "m": {
+     "rect": [
+      23,
+      343,
+      835
+     ],
+     "columns": 2,
+     "gap": 3,
+     "itemH": 114,
+     "itemW": 170
+    }
+   }
+  }
+ ]
+}

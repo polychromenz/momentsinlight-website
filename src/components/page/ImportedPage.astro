@@ -1,0 +1,71 @@
+---
+// One main page imported from the live Squarespace site (src/data/pages/*.json, made by
+// scripts/import-pages.mjs), rebuilt section by section with its original layout.
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import FluidSection from './FluidSection.astro';
+import GallerySection from './GallerySection.astro';
+import Img from '../Img.astro';
+
+interface Props { page: any }
+const { page } = Astro.props;
+const sections: any[] = page.sections;
+const isAlt = (bg: string) => bg === 'rgb(233, 236, 230)';
+const subject = page.title.split(/\s[|–—-]\s/)[0];
+---
+<BaseLayout title={page.title} description={page.description} image={page.ogImage || undefined}>
+  {sections.map((s, i) => {
+    const prev = sections[i - 1];
+    const slant = prev?.divider;
+    const cls = `ps-${s.id || i}`;
+    // A section with an angled bottom edge keeps that much extra space below its content,
+    // so the next section's diagonal never cuts into it (as on the live site).
+    const div = s.divider;
+    const style = [
+      `--pt-m:${s.pad.m[0]}px;--pb-m:${s.pad.m[1]}px;--pt-d:${s.pad.d[0]}px;--pb-d:${s.pad.d[1]}px`,
+      div ? `--div-m:${Math.round((div.m / 390) * 10000) / 100}vw;--div-d:${Math.round((div.d / 1440) * 10000) / 100}vw` : '',
+      slant ? `--slant-m:${Math.round((slant.m / 390) * 10000) / 100}vw;--slant-d:${Math.round((slant.d / 1440) * 10000) / 100}vw` : '',
+      !isAlt(s.bg) && s.bg !== 'rgba(0, 0, 0, 0)' && s.bg !== 'rgb(255, 255, 255)' ? `background:${s.bg}` : '',
+      s.headingColor && s.headingColor !== 'rgb(90, 94, 59)' ? `--hc:${s.headingColor}` : '',
+      s.textColor && s.textColor !== 'rgb(0, 0, 0)' ? `--tc:${s.textColor}` : '',
+    ].filter(Boolean).join(';');
+    const bg = s.bgImage;
+    return (
+      <section
+        class:list={['ps', cls, { 'bg-alt': isAlt(s.bg), slant, 'slant--up': slant && !slant.leftHigh }]}
+        style={style}
+      >
+        {bg?.src && (
+          <div class="ps-bg" aria-hidden="true">
+            <Img
+              src={bg.src}
+              alt=""
+              width={bg.width}
+              height={bg.height}
+              loading={i === 0 ? 'eager' : 'lazy'}
+              style={`object-position:${Math.round((bg.focal?.[0] ?? 0.5) * 100)}% ${Math.round((bg.focal?.[1] ?? 0.5) * 100)}%`}
+            />
+            {s.bgOverlay && <span style={`background:${s.bgOverlay.color};opacity:${s.bgOverlay.opacity}`} />}
+          </div>
+        )}
+        <div class="ps-inner">
+          {s.kind === 'fluid' && <FluidSection section={s} cls={cls} />}
+          {s.kind === 'gallery' && <GallerySection section={s} cls={cls} subject={subject} />}
+        </div>
+      </section>
+    );
+  })}
+</BaseLayout>
+
+<style>
+  .ps { position: relative; }
+  .ps-bg { position: absolute; inset: 0; overflow: hidden; }
+  .ps-bg :global(img) { width: 100%; height: 100%; object-fit: cover; }
+  .ps-bg span { position: absolute; inset: 0; }
+  .ps-inner { position: relative; }
+  .ps :global(:is(h1, h2, h3, h4)) { color: var(--hc, var(--green)); }
+  .ps :global(.text) { color: var(--tc, inherit); }
+  .ps-inner { padding: var(--pt-m) 0 calc(var(--pb-m) + var(--div-m, 0px)); }
+  @media (min-width: 768px) {
+    .ps-inner { padding: var(--pt-d) 0 calc(var(--pb-d) + var(--div-d, 0px)); }
+  }
+</style>

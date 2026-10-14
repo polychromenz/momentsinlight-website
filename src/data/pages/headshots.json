@@ -1,0 +1,329 @@
+{
+ "path": "/headshots",
+ "title": "Auckland Headshots Photographer | Moments In Light",
+ "description": "We can shoot headshots for you or your entire team for a professional consistent look. We are photographers based in Auckland, New Zealand.",
+ "ogImage": "http://static1.squarespace.com/static/6626f9fc9b715306f4f4eae7/t/668c653e642e0b65e9037971/1720476997468/SOCIAL__GFX0604v1.tif.jpg",
+ "type": {
+  "d": {
+   "h1": [
+    "49.56px",
+    "500",
+    "54.7142px",
+    "normal",
+    "rgb(90, 94, 59)"
+   ],
+   "h2": [
+    "32.28px",
+    "500",
+    "37.1866px",
+    "normal",
+    "rgb(90, 94, 59)"
+   ],
+   "p": [
+    "16.728px",
+    "400",
+    "26.7648px",
+    "normal",
+    "rgb(0, 0, 0)"
+   ]
+  },
+  "m": {
+   "h1": [
+    "36.6px",
+    "500",
+    "40.4064px",
+    "normal",
+    "rgb(90, 94, 59)"
+   ],
+   "h2": [
+    "25.8px",
+    "500",
+    "29.7216px",
+    "normal",
+    "rgb(90, 94, 59)"
+   ],
+   "p": [
+    "16.08px",
+    "400",
+    "25.728px",
+    "normal",
+    "rgb(0, 0, 0)"
+   ]
+  }
+ },
+ "sections": [
+  {
+   "id": "662885f7cf35b917cc576369",
+   "kind": "fluid",
+   "bg": "rgb(255, 255, 255)",
+   "bgImage": null,
+   "bgOverlay": null,
+   "headingColor": "rgb(90, 94, 59)",
+   "textColor": "rgb(0, 0, 0)",
+   "divider": {
+    "leftHigh": false,
+    "d": 28,
+    "m": 7
+   },
+   "pad": {
+    "d": [
+     1.4,
+     1.4
+    ],
+    "m": [
+     0.9,
+     0.9
+    ]
+   },
+   "height": {
+    "d": 1282,
+    "m": 2271
+   },
+   "grid": {
+    "mRows": 2,
+    "mRowMin": 24,
+    "dRows": 22,
+    "dScale": 0.0215,
+    "mGap": 11,
+    "dGap": 11
+   },
+   "blocks": [
+    {
+     "id": "yui_3_17_2_1_1714801156031_72906",
+     "type": "text",
+     "html": "<h1>Professional Headshots in Auckland</h1><p>They say first impressions count — and in today’s world, your headshot is often the very first thing clients, colleagues, or potential employers see. A great headshot isn’t just a photo; it’s a powerful tool for presenting your brand, your professionalism, and your personality.</p><h2>Headshots That Work as Hard as You Do</h2><p>I make it simple to get professional, consistent headshots that elevate your image. With a <strong>portable studio setup</strong>, I can come directly to your office, workplace, or chosen location anywhere in Auckland. Whether you need a single headshot or professional portraits for your entire team of 10, 100 — or even 1,000 — I create a streamlined experience that ensures everyone looks their best.</p><p>My goal is to help your business present a <strong>smooth, polished, and approachable look</strong> across all your platforms, from websites and LinkedIn profiles to marketing material, annual reports, and press releases.</p><h2>Why Choose Moments in Light for Your Headshots?</h2><ul><li><p><strong>On-site convenience</strong>: No travel required — I bring the lighting, background, and expertise to you.</p></li><li><p><strong>Consistent results</strong>: Perfect for businesses that want a cohesive look across their team.</p></li><li><p><strong>Fast turnaround</strong>: Professionally edited images delivered quickly so you can put them to work straight away.</p></li><li><p><strong>Experience with all business sizes</strong>: From startups and small businesses to large corporates and professional boards.</p></li><li><p><strong>Images tailored to your needs</strong>: Corporate, creative, casual, or contemporary — I’ll work with you to capture the right style for your brand.</p></li></ul><h2>Who I Work With</h2><p>Over the years, I’ve helped a wide range of Auckland professionals look their best, including:</p><ul><li><p>Small businesses upgrading their websites and promotional material</p></li><li><p>Teams refreshing their staff directory or intranet profiles</p></li><li><p>Executives and board members who need consistent imagery for reports</p></li><li><p>Professionals updating their LinkedIn profile or CV with a modern, confident portrait</p></li></ul><h2>Book Your Headshots Today</h2><p>A strong headshot gives people confidence in your professionalism before they even meet you. Don’t settle for outdated or inconsistent photos — let’s create portraits that reflect the best version of you and your team.</p><p><a href=\"/contact\"><strong>Contact me today</strong></a> to discuss your headshot session and find the perfect look for your brand.</p>",
+     "color": "rgb(0, 0, 0)",
+     "textPad": [
+      0,
+      0,
+      0,
+      0
+     ],
+     "area": {
+      "m": "1/2/3/10",
+      "zm": 1,
+      "d": "1/2/23/26",
+      "zd": 1
+     },
+     "valign": {
+      "m": "flex-start",
+      "d": "flex-start"
+     },
+     "textPadM": [
+      0,
+      0,
+      0,
+      0
+     ]
+    }
+   ]
+  },
+  {
+   "id": "662885f7cf35b917cc57636a",
+   "kind": "gallery",
+   "bg": "rgb(233, 236, 230)",
+   "bgImage": null,
+   "bgOverlay": null,
+   "headingColor": null,
+   "textColor": null,
+   "divider": null,
+   "pad": {
+    "d": [
+     0,
+     0
+    ],
+    "m": [
+     0,
+     0
+    ]
+   },
+   "height": {
+    "d": 1015,
+    "m": 390
+   },
+   "design": "slideshow",
+   "images": [
+    {
+     "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/3d99f47e-eec7-4c68-995f-60401a7b25c2/SOCIAL__MIL6663.jpg",
+     "alt": "Black and white business headshot of a man in a dark shirt",
+     "width": 1536,
+     "height": 2048,
+     "focal": [
+      0.5,
+      0.5
+     ],
+     "href": null,
+     "title": null
+    },
+    {
+     "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/70ad1dd2-2471-4165-b7dd-a7fdde577a97/SOCIAL__MIL7471-Edit-Edit.jpg",
+     "alt": "Black and white headshot of a man in a paisley shirt",
+     "width": 1536,
+     "height": 2048,
+     "focal": [
+      0.5,
+      0.5
+     ],
+     "href": null,
+     "title": null
+    },
+    {
+     "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/9d373bfe-44d3-4541-9f4c-75b1345e53a3/SOCIAL__DSC5229-Edit.jpg",
+     "alt": "A woman in a black blazer seated with arms folded",
+     "width": 1366,
+     "height": 2048,
+     "focal": [
+      0.5,
+      0.5
+     ],
+     "href": null,
+     "title": null
+    },
+    {
+     "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/d653c734-08ab-46e5-aadc-8a75c54e73d6/SOCIAL__MIL2739-Edit.jpg",
+     "alt": "A woman in glasses and a beige suit seated on a chair",
+     "width": 1365,
+     "height": 2048,
+     "focal": [
+      0.5,
+      0.5
+     ],
+     "href": null,
+     "title": null
+    },
+    {
+     "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/0d122d96-360e-44d0-aa1f-7a6b4a341b02/_GFX0613.jpg",
+     "alt": "A man in a hoodie standing beside a framed brewery poster",
+     "width": 1536,
+     "height": 2048,
+     "focal": [
+      0.5,
+      0.5
+     ],
+     "href": null,
+     "title": null
+    },
+    {
+     "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/a1fad65a-4ca6-413d-93f1-64f333a8540e/_DSC2591-Edit_FULLSIZE.jpg",
+     "alt": "A corporate headshot of a woman in glasses and a floral top",
+     "width": 864,
+     "height": 1080,
+     "focal": [
+      0.5,
+      0.5
+     ],
+     "href": null,
+     "title": null
+    },
+    {
+     "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/ef5b5ef3-145f-4b47-85e6-7c4cf3a35d8d/_DSC2710-Edit_FULLSIZE.jpg",
+     "alt": "A smiling corporate headshot of a woman with red hair",
+     "width": 864,
+     "height": 1080,
+     "focal": [
+      0.5,
+      0.5
+     ],
+     "href": null,
+     "title": null
+    },
+    {
+     "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/45cadd49-2c20-43b5-8313-2365572f7d4c/_DSC2724-Edit_FULLSIZE.jpg",
+     "alt": "A smiling headshot of a woman in a floral top",
+     "width": 864,
+     "height": 1080,
+     "focal": [
+      0.5,
+      0.5
+     ],
+     "href": null,
+     "title": null
+    },
+    {
+     "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/92590eb5-8f5a-45d5-b13e-9c584b75772f/SOCIAL__MIL2546-Edit.jpg",
+     "alt": "A woman in a beige suit standing in a panelled studio",
+     "width": 2048,
+     "height": 1365,
+     "focal": [
+      0.5,
+      0.5
+     ],
+     "href": null,
+     "title": null
+    },
+    {
+     "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/bd61ea91-8315-441c-b713-430daf3ce0a9/SOCIAL__DSC3217-Edit-Edit.jpg",
+     "alt": "Black and white portrait of a man in patterned glasses and beads",
+     "width": 1536,
+     "height": 2048,
+     "focal": [
+      0.5,
+      0.5
+     ],
+     "href": null,
+     "title": null
+    },
+    {
+     "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/e31a1c7e-b147-47f8-a916-6e645002d202/SOCIAL_20180818-_GFX3681-untitled+shoot.jpg",
+     "alt": "A man with folded arms against a red wall",
+     "width": 1638,
+     "height": 2048,
+     "focal": [
+      0.5,
+      0.5
+     ],
+     "href": null,
+     "title": null
+    },
+    {
+     "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/a75103d6-0ec8-4254-80fa-8dce66d5c0f2/SOCIAL_20180812-_DSF2557-untitled+shoot-Edit.jpg",
+     "alt": "Black and white photo of a man in a suit and sunglasses",
+     "width": 2048,
+     "height": 1365,
+     "focal": [
+      0.5,
+      0.5
+     ],
+     "href": null,
+     "title": null
+    },
+    {
+     "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/a4333059-6290-46e1-9795-ffc628474d71/SOCIAL__MIL6611-Edit-2.jpg",
+     "alt": "A woman in a black dress in a low-key studio portrait",
+     "width": 1536,
+     "height": 2048,
+     "focal": [
+      0.5,
+      0.5
+     ],
+     "href": null,
+     "title": null
+    }
+   ],
+   "layout": {
+    "d": {
+     "rect": [
+      58,
+      1325,
+      900
+     ],
+     "columns": 1,
+     "gap": 0,
+     "itemH": 900,
+     "itemW": 1238
+    },
+    "m": {
+     "rect": [
+      23,
+      343,
+      343
+     ],
+     "columns": 1,
+     "gap": 0,
+     "itemH": 343,
+     "itemW": 289
+    }
+   }
+  }
+ ]
+}

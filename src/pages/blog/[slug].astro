@@ -1,0 +1,132 @@
+---
+import { getCollection, render } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Gallery from '../../components/Gallery.astro';
+import { Image } from 'astro:assets';
+import { site } from '../../data/site';
+
+export async function getStaticPaths() {
+  // Newest first. Like Squarespace, "previous" is the next newer post and "next" the next older one.
+  const posts = (await getCollection('blog')).sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+  const link = (p?: (typeof posts)[number]) => (p ? { title: p.data.title, href: `/blog/${p.id}` } : undefined);
+  return posts.map((post, i) => ({
+    params: { slug: post.id },
+    props: { post, prev: post.data.prev ?? link(posts[i - 1]), next: post.data.next ?? link(posts[i + 1]) },
+  }));
+}
+
+const { post, prev, next } = Astro.props;
+const { Content } = await render(post);
+const d = post.data;
+const cover = d.thumbnail ?? d.gallery[0]?.src;
+
+// The live site shows the date as "22 Jul".
+const dateLabel = d.date.toLocaleDateString('en-NZ', { day: 'numeric', month: 'short', timeZone: 'Pacific/Auckland' });
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'BlogPosting',
+  headline: d.title,
+  description: d.description,
+  datePublished: d.date.toISOString(),
+  dateModified: (d.updated ?? d.date).toISOString(),
+  author: { '@type': 'Person', name: d.author },
+  publisher: { '@type': 'Organization', name: site.name, url: site.url },
+  image: (cover ? [cover] : []).concat(d.gallery.slice(0, 2).map((g) => g.src)).map((src) => `${src}?format=1500w`),
+  mainEntityOfPage: new URL(`/blog/${post.id}`, site.url).href,
+};
+---
+<BaseLayout title={d.seoTitle ?? d.title} description={d.description} image={cover} type="article" jsonLd={jsonLd} background="alt">
+  <article class="post">
+    <p class="meta">
+      <time datetime={d.date.toISOString()}>{dateLabel}</time>
+      <span class="sep" aria-hidden="true">-</span>
+      Written By <span class="author">{d.author}</span>
+    </p>
+    <h1>{d.title}</h1>
+
+    <div class="prose">
+      <Content />
+    </div>
+
+    <Gallery images={d.gallery} layout="grid" label={`Photographs from ${d.title}`} subject={d.title.split(/\s[|–-]\s/)[0]} />
+
+    {d.tags.length > 0 && (
+      <p class="tags">
+        {d.tags.map((t) => <a href={`/blog/tag/${encodeURIComponent(t)}`}>{t}</a>)}
+      </p>
+    )}
+
+    <aside class="author-box">
+      <Image src={site.monogramWhite} alt="" width={40} height={40} densities={[1, 2]} />
+      <p>{d.author}</p>
+      <p>Wedding Photographer based in Auckland. Specialising in weddings and portraits.</p>
+      <p>{site.url}</p>
+    </aside>
+  </article>
+
+  {(prev || next) && (
+    <nav class="pager" aria-label="More posts">
+      {prev ? (
+        <a class="prev" href={prev.href}>
+          <svg viewBox="0 0 12 24" aria-hidden="true"><path d="M10 2 2 12l8 10" /></svg>
+          <span class="sr-only">Previous: </span><span class="title">{prev.title}</span>
+        </a>
+      ) : <span />}
+      {next ? (
+        <a class="next" href={next.href}>
+          <span class="sr-only">Next: </span><span class="title">{next.title}</span>
+          <svg viewBox="0 0 12 24" aria-hidden="true"><path d="m2 2 8 10-8 10" /></svg>
+        </a>
+      ) : <span />}
+    </nav>
+  )}
+</BaseLayout>
+
+<style>
+  /* Phone layout first (390px reference), desktop overrides below (1440px reference). */
+  .post { padding: 23px var(--pad) 60px; }
+
+  .meta { font-size: var(--fs-meta); line-height: 1.2; letter-spacing: 0.02em; color: var(--green); margin: 0 0 19px; }
+  .sep { margin: 0 0.6em; }
+  h1 { font-size: var(--fs-h2); line-height: 1.2; margin: 0 0 44px; }
+
+  /* Section headings in posts are bold body-size text on the live site. */
+  .prose :global(h2) { font-size: inherit; line-height: inherit; font-weight: 700; color: var(--black); margin: 0 0 0.9em; }
+  .prose :global(h2 a) { color: var(--green); }
+  .prose :global(blockquote) { margin: 0; }
+  .prose :global(blockquote p) { margin: 0; }
+
+  .tags { display: flex; flex-wrap: wrap; gap: 0 1em; margin: 70px 0 0; font-size: var(--fs-meta); letter-spacing: 0.02em; }
+  .tags a { color: var(--green); text-decoration: none; }
+  .tags a:hover { text-decoration: underline; }
+
+  /* Photos placed inside the story text. */
+  .prose :global(img) { width: 100%; height: auto; margin: 1.5em 0; }
+  .prose :global(table) { width: 100%; border-collapse: collapse; }
+
+  .author-box { margin-top: 45px; font-size: 15px; line-height: 24px; }
+  .author-box img { width: 40px; height: auto; margin-bottom: 12px; }
+  .author-box p { margin: 0 0 12px; }
+
+  .pager {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    padding: 12px var(--pad);
+    min-height: 104px;
+    align-items: center;
+  }
+  .pager a { display: flex; align-items: center; gap: 18px; text-decoration: none; color: var(--green); line-height: 1; }
+  .pager .next { justify-content: flex-end; text-align: right; }
+  .pager svg { flex: none; width: 12px; height: 24px; fill: none; stroke: var(--black); stroke-width: 1.2; }
+
+  @media (min-width: 768px) {
+    .post { width: 68vw; margin: 0 auto; padding: 58px 0 100px; }
+    .meta { margin-bottom: 31px; }
+    h1 { margin-bottom: 38px; }
+    .tags { margin-top: 93px; }
+    .author-box { margin-top: 44px; }
+    .pager { padding: 43px var(--pad); min-height: 118px; }
+  }
+</style>

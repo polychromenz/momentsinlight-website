@@ -1,0 +1,52 @@
+---
+// A Squarespace "summary" block: a list of blog posts (e.g. the wedding galleries page).
+// The posts, titles and thumbnails are the ones the live block showed; columns come from
+// the live layout and are set per breakpoint by FluidSection (--cols).
+import Img from '../Img.astro';
+
+interface Props { block: any }
+const { block: b } = Astro.props;
+const ratio = b.thumbRatio ? `100 / ${b.thumbRatio}` : '3 / 2';
+const ts = b.titleStyle;
+---
+<div class="summary" style={`text-align:${b.textAlign}`}>
+  {b.header && <h3 class="heading">{b.header}</h3>}
+  <ul>
+    {b.items.filter((i: any) => i.href).map((i: any) => (
+      <li>
+        {i.thumb?.src && (
+          <a class="thumb" href={i.href} tabindex="-1" aria-hidden="true">
+            <Img src={i.thumb.src} alt="" sizes="(min-width: 768px) 45vw, 90vw" style={`aspect-ratio:${ratio}`} />
+          </a>
+        )}
+        <a
+          class="title"
+          href={i.href}
+          style={ts ? `font-size:${ts.fontSize};color:${ts.color};font-weight:${ts.fontWeight};line-height:${ts.lineHeight}` : undefined}
+        >{i.title}</a>
+        {i.metaText && <p class="meta">{i.metaText}</p>}
+        {i.excerpt && <p class="excerpt">{i.excerpt}</p>}
+        {b.showMore !== false && <a class="more" href={i.href} aria-hidden="true" tabindex="-1">Read more →</a>}
+      </li>
+    ))}
+  </ul>
+</div>
+
+<style>
+  .summary ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(var(--cols, 1), minmax(0, 1fr));
+    column-gap: 1.5%;
+    row-gap: 30px;
+  }
+  .thumb { display: block; margin-bottom: 15px; }
+  .thumb :global(img) { width: 100%; height: auto; object-fit: cover; }
+  .title { display: block; text-decoration: none; color: var(--green); font-size: 20px; line-height: 1.2; }
+  .title:hover { opacity: 0.8; }
+  .excerpt { margin: 8px 0 0; font-size: 15px; }
+  .meta { margin: 6px 0 0; font-size: 14px; }
+  .more { display: inline-block; margin-top: 10px; font-size: 14px; line-height: 20px; text-decoration: none; color: var(--green); }
+</style>

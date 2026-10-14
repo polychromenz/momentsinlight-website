@@ -1,0 +1,46 @@
+# Cloudflare Pages redirects (https://developers.cloudflare.com/pages/configuration/redirects/)
+# Keeps every address from the old Squarespace site working. All are permanent (301).
+
+# /home was a duplicate of the home page (its canonical link already pointed to /)
+/home                    /                                 301
+
+# Squarespace menu folders, which redirected to their first page
+/galleries-menu          /wedding-galleries                301
+/portraits-1             /portraits                        301
+/wedding-venues          /west-auckland-wedding-venues     301
+/more                    /wedding-photo-guide              301
+
+# The guide download now appears on the guide page itself after signing up
+/thank-you-photo-guide   /wedding-photo-guide              301
+
+# ---- From the Squarespace "URL Mappings" settings ----
+
+# Old wedding post addresses. Squarespace sent these to /weddings; they now go to the
+# post itself, which has the same wedding at its current address.
+/blog/deb-and-joe                  /blog/wedding-deb-and-joe                301
+/blog/ruby-and-oscar               /blog/wedding-ruby-and-oscar             301
+/blog/weddings-catherine-and-marianne  /blog/wedding-catherine-and-marianne 301
+/blog/angela-and-sonni             /blog/wedding-angela-and-sonni           301
+/blog/bronte-and-greg              /blog/wedding-bronte-and-greg            301
+
+# Old article addresses (misspelt or renamed)
+/blog/tops-on-how-to-write-your-best-man-speech  /blog/how-to-write-your-best-man-speech  301
+/blog/potriats-sunflowers          /blog/portraits-sunflowers               301
+/blog/engagement-rings-101-cuts-settings-what-to-ask-your-jeweller  /blog/engagement-rings-101  301
+
+# Old tag pages about wedding dresses, now the wedding dresses article
+# (both ways a browser may write the space in the address)
+/blog/tag/wedding+dress+stores     /blog/wedding-dresses                    301
+/blog/tag/wedding%20dress%20stores /blog/wedding-dresses                    301
+/blog/tag/wedding+dresses          /blog/wedding-dresses                    301
+/blog/tag/wedding%20dresses        /blog/wedding-dresses                    301
+
+# Old page addresses
+/bookings                          /weddings                                301
+/headshots-1                       /headshots                               301
+/family-gallery                    /family                                  301
+/creative-portraits-gallery        /portraits-gallery                       301
+/galleries-1                       /wedding-galleries                       301
+
+# Duplicate of the Auckland wedding photographers article (from the Squarespace URL mappings)
+/blog/discover-the-best-auckland-wedding-photographers  /blog/auckland-wedding-photographers  301
