@@ -29,7 +29,7 @@ const inFolder = (item: (typeof nav)[number]) => item.children?.some((c) => isCu
           </li>
         ))}
       </ul>
-      <a class="btn" href={cta.href}>{cta.label}</a>
+      <a class="btn" href={cta.href} aria-label={cta.label}><span class="cta-long">{cta.label}</span><span class="cta-short" aria-hidden="true">Check availability</span></a>
     </nav>
 
     <button class="burger" aria-expanded="false" aria-controls="mobile-menu">
@@ -72,6 +72,8 @@ const inFolder = (item: (typeof nav)[number]) => item.children?.some((c) => isCu
     const open = burger.getAttribute('aria-expanded') !== 'true';
     burger.setAttribute('aria-expanded', String(open));
     menu.hidden = !open;
+    // The menu opens just below the header, whatever height it is (phones and tablets differ).
+    menu.style.top = header.getBoundingClientRect().bottom + 'px';
     document.body.style.overflow = open ? 'hidden' : '';
     showPanel('main');
   });
@@ -162,8 +164,18 @@ const inFolder = (item: (typeof nav)[number]) => item.children?.some((c) => isCu
   .panel .back::before { content: '‹ '; }
   .mobile-cta { width: 100%; min-height: 75px; }
 
+  /* Tablets (768–999px) keep the phone header, with the menu button: the full menu and the
+     date button don't fit. From 1000px the full menu shows; the button gets a shorter label
+     until 1200px, where the long one fits on one line. */
   @media (min-width: 768px) {
     .bar { padding: 13px calc(var(--pad) - 9.9px); }
+  }
+  .cta-short { display: none; }
+  @media (min-width: 1000px) and (max-width: 1199px) {
+    .cta-long { display: none; }
+    .cta-short { display: inline; }
+  }
+  @media (min-width: 1000px) {
     .burger, .mobile-menu { display: none !important; }
     .desktop-nav { display: flex; align-items: center; gap: 35px; }
     .desktop-nav > ul { display: flex; gap: 35px; list-style: none; margin: 0; padding: 0; }
