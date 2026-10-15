@@ -67,7 +67,7 @@ const paragraphs = (s: string) => s.split(/\n{2,}/).map((p) => p.trim()).filter(
         <div class:list={['text', { short: r.photos.length > 0 }]}>
           {paragraphs(r.text).map((p) => <p>{p}</p>)}
         </div>
-        <button type="button" class="more" data-open={i} hidden>Read more</button>
+        <button type="button" class="more" data-open={i} data-extra={r.reply ? 'See reply' : r.url ? 'More' : undefined}>Read more</button>
         {r.photos.length > 0 && (
           <div class="photos">
             {r.photos.slice(0, 4).map((ph, n) => (
@@ -146,11 +146,15 @@ const paragraphs = (s: string) => s.split(/\n{2,}/).map((p) => p.trim()).filter(
     };
     root.querySelectorAll('.card time').forEach((t) => { t.textContent = ago(t.dateTime); });
 
-    // "Read more" only where the text is cut short.
+    // "Read more" where the text is cut short; "See reply" where it all fits but there's a
+    // reply (or Google link) to show; nothing otherwise.
     const checkMore = () => cards.forEach((c) => {
       if (c.hidden) return;
       const t = c.querySelector('.text');
-      c.querySelector('.more').hidden = t.scrollHeight <= t.clientHeight + 2;
+      const more = c.querySelector('.more');
+      const cut = t.scrollHeight > t.clientHeight + 2;
+      more.textContent = cut ? 'Read more' : more.dataset.extra || 'Read more';
+      more.hidden = !cut && !('extra' in more.dataset);
     });
     checkMore();
     addEventListener('resize', checkMore);
