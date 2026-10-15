@@ -1,6 +1,8 @@
 ---
-// Responsive image. While images are still hosted on Squarespace, build a srcset from its
-// ?format=NNNw resizing. Swap this for Cloudflare Images once the original exports are in.
+// Responsive image: a srcset from Cloudflare Images' or Squarespace's resizing (see
+// src/lib/images.mjs), so each device downloads the smallest size that looks sharp.
+import { responsive } from '../lib/images.mjs';
+
 interface Props {
   src: string;
   alt: string;
@@ -12,18 +14,12 @@ interface Props {
   style?: string;
 }
 const { src, alt, width, height, sizes = '100vw', loading = 'lazy', class: className, style } = Astro.props;
-
-// Animated GIFs must be served as-is; Squarespace's resizing would flatten them.
-const isSqs = src.includes('squarespace-cdn.com') && !/\.gif$/i.test(src.split('?')[0]);
-const base = src.split('?')[0];
-const widths = [500, 750, 1000, 1500, 2500];
-const srcset = isSqs ? widths.map((w) => `${base}?format=${w}w ${w}w`).join(', ') : undefined;
-const fallback = isSqs ? `${base}?format=1500w` : src;
+const img = responsive(src);
 ---
 <img
-  src={fallback}
-  srcset={srcset}
-  sizes={srcset ? sizes : undefined}
+  src={img.src}
+  srcset={img.srcset}
+  sizes={img.srcset ? sizes : undefined}
   alt={alt}
   width={width}
   height={height}

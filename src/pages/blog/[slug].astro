@@ -4,6 +4,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 import Gallery from '../../components/Gallery.astro';
 import { Image } from 'astro:assets';
 import { site } from '../../data/site';
+import { sized } from '../../lib/images.mjs';
 
 export async function getStaticPaths() {
   // Newest first. Like Squarespace, "previous" is the next newer post and "next" the next older one.
@@ -32,7 +33,7 @@ const jsonLd = {
   dateModified: (d.updated ?? d.date).toISOString(),
   author: { '@type': 'Person', name: d.author },
   publisher: { '@type': 'Organization', name: site.name, url: site.url },
-  image: (cover ? [cover] : []).concat(d.gallery.slice(0, 2).map((g) => g.src)).map((src) => `${src}?format=1500w`),
+  image: (cover ? [cover] : []).concat(d.gallery.slice(0, 2).map((g) => g.src)).map((src) => sized(src, 1500)),
   mainEntityOfPage: new URL(`/blog/${post.id}`, site.url).href,
 };
 ---

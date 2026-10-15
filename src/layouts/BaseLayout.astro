@@ -6,7 +6,9 @@ import '@fontsource/raleway/700.css';
 import '../styles/global.css';
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
-import Tracking from '../components/Tracking.astro';import { site } from '../data/site';
+import Tracking from '../components/Tracking.astro';
+import { site } from '../data/site';
+import { sized } from '../lib/images.mjs';
 
 interface Props {
   title: string;
@@ -19,7 +21,7 @@ interface Props {
 }
 const { title, description, image, type = 'website', jsonLd, background = 'white' } = Astro.props;
 const canonical =new URL(Astro.url.pathname.replace(/\/$/, '') || '/', site.url).href;
-const ogImage = image ? `${image.split('?')[0]}?format=1500w` : undefined;
+const ogImage = image ? sized(image, 1500) : undefined;
 ---
 <!doctype html>
 <html lang="en-NZ">

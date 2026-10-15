@@ -3,39 +3,38 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import Img from '../components/Img.astro';
 import Slideshow from '../components/Slideshow.astro';
 
-const IMG = 'https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7';
 
 // Slideshow, in the live site's order. [path, width, height]
 const slides: [string, number, number][] = [
-  ['408f3500-4a06-4e8a-afdd-6414f94796c1/markovina-wedding-photographer.jpg', 1024, 683],
-  ['11537224-0cfb-4d66-85e8-a5fd9428280c/tay-barn-bronze-nzipp-2026.jpg', 3000, 1703],
-  ['7a502107-97d7-4bf5-ba4c-05504c214393/chanel-bronze-nzipp-2026.jpg', 3000, 2001],
-  ['941f6ee2-9a69-4c3b-adc3-883a98a99373/emma-lift-bronze-nzipp-2026.jpg', 2001, 3000],
-  ['f35cb49e-7c9b-49ec-a204-5888d772cfe1/SOCIAL_20200523-_GFX5954-untitled+shoot-Edit-Edit-Edit-Edit.jpg', 2048, 1578],
-  ['1775006767877-N0UW92K7MJ5B6N1Z0JIC/_Q9A0978.jpg', 2048, 1366],
-  ['99f3d9a0-d95a-4c1c-b94c-8967a7c858b5/_30A9554-Edit.jpg', 2048, 1366],
-  ['1781655510790-E4TTLBPMGUUHLZLAZZE0/_30A8977.jpg', 2048, 1638],
-  ['5f102f7b-42ec-476a-b878-3d3c5c2a053a/_30A9039.jpg', 2048, 1152],
-  ['0bbbb232-d2c9-495f-b074-b4a2259754ec/_30A4171.jpg', 2048, 1366],
-  ['1781655489823-JMAFBKFEI6SJOEY6MY1G/_Q9A9733.jpg', 2048, 1365],
-  ['d987ae4b-66a2-477d-bb19-a5396f8550a1/SOCIAL__ML26809.jpg', 2048, 1366],
-  ['1781481820732-ECB3WYN5UTIJ94KD0LKC/_30A4401-Edit.jpg', 2048, 1366],
-  ['395d2e9f-6a18-481e-bb08-37c774d1b583/_30A0762-Edit.jpg', 2048, 1366],
-  ['1775006700661-IUYXDCIBHSCDLD1D7I5H/_Q9A0973-Edit.jpg', 2048, 1366],
-  ['01ad0e4c-720e-4d47-b878-9c7b3e04f97c/_30A8103-Edit.jpg', 2048, 1366],
-  ['543f9849-3957-4bcc-9e17-d5df3330fcc5/_30A0489.jpg', 2048, 1366],
-  ['1768269245209-VWR5VSDE5XVMIS4LTP7F/SOCIAL__30A2755-Edit.jpg', 2048, 1366],
-  ['8570d2d5-38e2-4d35-8418-eb22f7613bdf/_30A8312-Edit.jpg', 2048, 1366],
-  ['1774992211758-SW1FKFL9UALL7OW4K3MW/_30A8495.jpg', 5188, 4150],
-  ['1775008277264-7R1AHLX05A6HMZ9U9C3N/_30A8112-Edit.jpg', 2048, 1638],
-  ['2fc28a1e-853a-46f8-884b-c11a37d36f11/_Q9A0630.jpg', 2048, 1366],
-  ['1779334777523-SHB9XSXAWUXQYL8B6MWH/SOCIAL__30A0232.jpg', 2048, 1366],
-  ['1775007514383-4SE1LTA3XAX5DVMW4JUD/_30A5527.jpg', 7807, 5207],
-  ['1762390742541-CVMO8YB5YIQS0623QOH2/_30A8327-Edit.jpg', 2048, 1366],
-  ['1759460959233-LZSOHYR49ZY234T2SWAX/SOCIAL__MIL1319-Edit.jpg', 2048, 1365],
-  ['879229ef-e6cb-4dad-9f5e-aab44668be8c/SOCIAL__MIL3720.jpg', 2048, 1536],
-  ['1748985835000-FLX60YNNQ42IQRVGOD8B/SOCIAL__ML27027.jpg', 2048, 1366],
-  ['7a567a47-7f40-4e3a-86bf-dca679ddabd9/SOCIAL__MIL8838.jpg', 2048, 1365],
+  ['https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/408f3500-4a06-4e8a-afdd-6414f94796c1/markovina-wedding-photographer.jpg', 1024, 683],
+  ['https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/11537224-0cfb-4d66-85e8-a5fd9428280c/tay-barn-bronze-nzipp-2026.jpg', 3000, 1703],
+  ['https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/7a502107-97d7-4bf5-ba4c-05504c214393/chanel-bronze-nzipp-2026.jpg', 3000, 2001],
+  ['https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/941f6ee2-9a69-4c3b-adc3-883a98a99373/emma-lift-bronze-nzipp-2026.jpg', 2001, 3000],
+  ['https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/f35cb49e-7c9b-49ec-a204-5888d772cfe1/SOCIAL_20200523-_GFX5954-untitled+shoot-Edit-Edit-Edit-Edit.jpg', 2048, 1578],
+  ['https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1775006767877-N0UW92K7MJ5B6N1Z0JIC/_Q9A0978.jpg', 2048, 1366],
+  ['https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/99f3d9a0-d95a-4c1c-b94c-8967a7c858b5/_30A9554-Edit.jpg', 2048, 1366],
+  ['https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1781655510790-E4TTLBPMGUUHLZLAZZE0/_30A8977.jpg', 2048, 1638],
+  ['https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/5f102f7b-42ec-476a-b878-3d3c5c2a053a/_30A9039.jpg', 2048, 1152],
+  ['https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/0bbbb232-d2c9-495f-b074-b4a2259754ec/_30A4171.jpg', 2048, 1366],
+  ['https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1781655489823-JMAFBKFEI6SJOEY6MY1G/_Q9A9733.jpg', 2048, 1365],
+  ['https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/d987ae4b-66a2-477d-bb19-a5396f8550a1/SOCIAL__ML26809.jpg', 2048, 1366],
+  ['https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1781481820732-ECB3WYN5UTIJ94KD0LKC/_30A4401-Edit.jpg', 2048, 1366],
+  ['https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/395d2e9f-6a18-481e-bb08-37c774d1b583/_30A0762-Edit.jpg', 2048, 1366],
+  ['https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1775006700661-IUYXDCIBHSCDLD1D7I5H/_Q9A0973-Edit.jpg', 2048, 1366],
+  ['https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/01ad0e4c-720e-4d47-b878-9c7b3e04f97c/_30A8103-Edit.jpg', 2048, 1366],
+  ['https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/543f9849-3957-4bcc-9e17-d5df3330fcc5/_30A0489.jpg', 2048, 1366],
+  ['https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1768269245209-VWR5VSDE5XVMIS4LTP7F/SOCIAL__30A2755-Edit.jpg', 2048, 1366],
+  ['https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/8570d2d5-38e2-4d35-8418-eb22f7613bdf/_30A8312-Edit.jpg', 2048, 1366],
+  ['https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1774992211758-SW1FKFL9UALL7OW4K3MW/_30A8495.jpg', 5188, 4150],
+  ['https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1775008277264-7R1AHLX05A6HMZ9U9C3N/_30A8112-Edit.jpg', 2048, 1638],
+  ['https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/2fc28a1e-853a-46f8-884b-c11a37d36f11/_Q9A0630.jpg', 2048, 1366],
+  ['https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1779334777523-SHB9XSXAWUXQYL8B6MWH/SOCIAL__30A0232.jpg', 2048, 1366],
+  ['https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1775007514383-4SE1LTA3XAX5DVMW4JUD/_30A5527.jpg', 7807, 5207],
+  ['https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1762390742541-CVMO8YB5YIQS0623QOH2/_30A8327-Edit.jpg', 2048, 1366],
+  ['https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1759460959233-LZSOHYR49ZY234T2SWAX/SOCIAL__MIL1319-Edit.jpg', 2048, 1365],
+  ['https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/879229ef-e6cb-4dad-9f5e-aab44668be8c/SOCIAL__MIL3720.jpg', 2048, 1536],
+  ['https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1748985835000-FLX60YNNQ42IQRVGOD8B/SOCIAL__ML27027.jpg', 2048, 1366],
+  ['https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/7a567a47-7f40-4e3a-86bf-dca679ddabd9/SOCIAL__MIL8838.jpg', 2048, 1365],
 ];
 
 const packages = [
@@ -72,21 +71,21 @@ const packages = [
 ];
 
 const realWeddings = [
-  { title: 'Ellie and Ryan | Tui Hills', href: '/blog/ellie-and-ryan-tui-hills', img: '1786921169780-8IMTQEJ9TCYR5B51PMTP/_Q9A6785-Edit.jpg', w: 4096, h: 2731 },
-  { title: 'Sofia and John | Stockholm', href: '/blog/sofia-and-john-stockholm', img: '1786927035245-93ZT8DX9YLS2BNW90XQD/_Q9A5538.jpg', w: 4096, h: 3277 },
-  { title: 'Rebecca & Nick | Bridgewater Estate Wedding', href: '/blog/rebecca-and-nick-bridgewater-estate', img: '1785798109882-YYVVNIFKV9N3BU483YBY/_30A1292.jpg', w: 4096, h: 3277 },
-  { title: 'Felicity & Ronan | Settlers Country Manor, Waimauku', href: '/blog/fliss-and-ro-wedding-settlers-country-manor', img: '1781655162621-K5TEQMFUSZM58EWB4WBE/_30A8977.jpg', w: 2048, h: 1638 },
-  { title: 'Emma & Corey | Hamilton Gardens & St Peter Chanel Catholic Church, Hamilton', href: '/blog/emma-and-scott-hamilton-gardens-wedding', img: '1781481750344-NPHI1CIH25GDWYQBVN04/_30A4481-Edit.jpg', w: 2048, h: 1638 },
-  { title: 'Kayla & Scott | Devonport Wedding', href: '/blog/kayla-and-scott-devonport-wedding', img: '1779335373078-IASGJ0MZBIYFO0AE4MQD/SOCIAL__30A0947-Edit.jpg', w: 1639, h: 2048 },
-  { title: 'Julia & Alistair - Maungaturoto Wedding', href: '/blog/julia-and-alistair-maungaturoto-wedding', img: '1779330977521-E79V4KV95MNVSPCVHE9D/SOCIAL__Q9A3673-Edit.jpg', w: 2048, h: 1366 },
-  { title: 'Tay & Jesse – Country Vibes at The Barn Waimauku', href: '/blog/the-barn-waimauku-wedding-tay-jesse', img: '1775008050077-3EWLGKHPELC7E4NA0U6K/_30A8106-Edit.jpg', w: 2048, h: 1638 },
-  { title: 'Mikaela & Dylan – Heartfelt Moments at The Barn, Waimauku', href: '/blog/the-barn-waimauku-wedding-mikaela-and-dylan', img: '1775006700661-IUYXDCIBHSCDLD1D7I5H/_Q9A0973-Edit.jpg', w: 2048, h: 1366 },
+  { title: 'Ellie and Ryan | Tui Hills', href: '/blog/ellie-and-ryan-tui-hills', img: 'https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1786921169780-8IMTQEJ9TCYR5B51PMTP/_Q9A6785-Edit.jpg', w: 4096, h: 2731 },
+  { title: 'Sofia and John | Stockholm', href: '/blog/sofia-and-john-stockholm', img: 'https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1786927035245-93ZT8DX9YLS2BNW90XQD/_Q9A5538.jpg', w: 4096, h: 3277 },
+  { title: 'Rebecca & Nick | Bridgewater Estate Wedding', href: '/blog/rebecca-and-nick-bridgewater-estate', img: 'https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1785798109882-YYVVNIFKV9N3BU483YBY/_30A1292.jpg', w: 4096, h: 3277 },
+  { title: 'Felicity & Ronan | Settlers Country Manor, Waimauku', href: '/blog/fliss-and-ro-wedding-settlers-country-manor', img: 'https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1781655162621-K5TEQMFUSZM58EWB4WBE/_30A8977.jpg', w: 2048, h: 1638 },
+  { title: 'Emma & Corey | Hamilton Gardens & St Peter Chanel Catholic Church, Hamilton', href: '/blog/emma-and-scott-hamilton-gardens-wedding', img: 'https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1781481750344-NPHI1CIH25GDWYQBVN04/_30A4481-Edit.jpg', w: 2048, h: 1638 },
+  { title: 'Kayla & Scott | Devonport Wedding', href: '/blog/kayla-and-scott-devonport-wedding', img: 'https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1779335373078-IASGJ0MZBIYFO0AE4MQD/SOCIAL__30A0947-Edit.jpg', w: 1639, h: 2048 },
+  { title: 'Julia & Alistair - Maungaturoto Wedding', href: '/blog/julia-and-alistair-maungaturoto-wedding', img: 'https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1779330977521-E79V4KV95MNVSPCVHE9D/SOCIAL__Q9A3673-Edit.jpg', w: 2048, h: 1366 },
+  { title: 'Tay & Jesse – Country Vibes at The Barn Waimauku', href: '/blog/the-barn-waimauku-wedding-tay-jesse', img: 'https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1775008050077-3EWLGKHPELC7E4NA0U6K/_30A8106-Edit.jpg', w: 2048, h: 1638 },
+  { title: 'Mikaela & Dylan – Heartfelt Moments at The Barn, Waimauku', href: '/blog/the-barn-waimauku-wedding-mikaela-and-dylan', img: 'https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1775006700661-IUYXDCIBHSCDLD1D7I5H/_Q9A0973-Edit.jpg', w: 2048, h: 1366 },
 ];
 ---
 <BaseLayout
   title="Auckland Wedding Photographers | Moments In Light"
   description="Capture the magic of your wedding day with stunning, heartfelt photography. Book your dream wedding photographer today!"
-  image={`${IMG}/${slides[0][0]}`}
+  image={slides[0][0]}
 >
   <section>
     <div class="wrap intro">
@@ -104,7 +103,7 @@ const realWeddings = [
     heightMobile="30vh"
     heightDesktop="50vh"
     interval={5}
-    images={slides.map(([path, w, h], i) => ({ src: `${IMG}/${path}`, alt: `Auckland wedding photograph ${i + 1} of ${slides.length}`, width: w, height: h }))}
+    images={slides.map(([path, w, h], i) => ({ src: path, alt: `Auckland wedding photograph ${i + 1} of ${slides.length}`, width: w, height: h }))}
   />
 
   <section>
@@ -143,7 +142,7 @@ const realWeddings = [
         {realWeddings.map((r) => (
           <li>
             <a class="card-img" href={r.href} tabindex="-1">
-              <Img src={`${IMG}/${r.img}`} alt={r.title} width={r.w} height={r.h} sizes="(min-width: 768px) 43vw, 83vw" />
+              <Img src={r.img} alt={r.title} width={r.w} height={r.h} sizes="(min-width: 768px) 43vw, 83vw" />
             </a>
             <a class="card-title" href={r.href}>{r.title}</a>
             <a class="card-more" href={r.href} aria-hidden="true" tabindex="-1">Read more →</a>
