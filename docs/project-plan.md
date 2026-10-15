@@ -87,7 +87,7 @@ Venue pages share one layout, and so do wedding posts, so both convert in bulk o
    - [x] Both hostnames on the Turnstile widget
    - [x] Live domain tested (all pages, canonical tags, old links, contact form, analytics)
    - [x] A real guide signup on the live domain (after fixing the Turnstile site key)
-   - [ ] Submit the sitemap in Google Search Console
+   - [x] Sitemap submitted in Google Search Console; test email arrived
    - [ ] Keep Squarespace a few weeks as a fallback, then cancel
 
 ## Image exports and matching

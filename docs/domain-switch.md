@@ -12,7 +12,7 @@ keeps working throughout, as its records were copied across first.
 | 1. Domain added to Cloudflare, records copied and checked | Done 15 Oct |
 | 2. Nameservers changed at iwantmyname to `dora.ns.cloudflare.com`, `eoin.ns.cloudflare.com` | Done 15 Oct; registry switched and Cloudflare Active the same evening |
 | 3. Domain pointed at the new site: www and bare domain on the Pages project, root-to-www redirect (301, query string kept), Turnstile hostnames | Done 15 Oct |
-| 4. Live checks | Done 15 Oct: all 121 sitemap pages 200 with correct canonical, all 34 redirects, 404, http to https, bare domain to www, contact form, Google Analytics, Turnstile widget. Guide signup confirmed working after correcting the Turnstile site key. Still to do: Search Console, cancel Squarespace later |
+| 4. Live checks | Done 15 Oct: all 121 sitemap pages 200 with correct canonical, all 34 redirects, 404, http to https, bare domain to www, contact form, Google Analytics, Turnstile widget. Guide signup confirmed working after correcting the Turnstile site key. Sitemap submitted in Search Console and a test email from another provider arrived. Still to do: cancel Squarespace after a few weeks |
 
 DNSSEC was checked and is off (no DS record at the `.nz` registry), so nothing needed turning off first.
 
