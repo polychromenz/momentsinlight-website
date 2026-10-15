@@ -8,9 +8,11 @@
 const THANK_YOU = '/wedding-photo-guide?signup=done#guide-signup';
 const FORM_PAGE = '/wedding-photo-guide';
 
-const back = (request, error) => {
+const back = (request, error, reason) => {
   const url = new URL(FORM_PAGE, request.url);
   url.searchParams.set('signup', error);
+  // Turnstile's reason code (e.g. invalid-input-secret), for diagnosing; not secret.
+  if (reason) url.searchParams.set('reason', reason);
   url.hash = 'guide-signup';
   return Response.redirect(url.toString(), 303);
 };
@@ -44,8 +46,12 @@ export async function onRequestPost({ request, env }) {
     const ip = request.headers.get('CF-Connecting-IP');
     if (ip) body.append('remoteip', ip);
     const res = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', { method: 'POST', body });
-    const outcome = await res.json().catch(() => ({ success: false }));
-    if (!outcome.success) return back(request, 'check');
+    const outcome = await res.json().catch(() => ({ success: false, 'error-codes': ['bad-response'] }));
+    if (!outcome.success) {
+      const reason = (outcome['error-codes'] || []).join(',') || 'unknown';
+      console.error('guide-signup: Turnstile failed:', reason, 'hostname:', outcome.hostname);
+      return back(request, 'check', reason);
+    }
   }
 
   if (!env.DB) {
