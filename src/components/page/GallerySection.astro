@@ -1,5 +1,6 @@
 ---
 // A Squarespace gallery section (masonry, slideshow, reel or grid) rebuilt from imported data.
+// Reels use the same fading slideshow as the Weddings page, at the same height.
 // Column counts, gaps and heights are the live site's at 390px and 1440px.
 import Img from '../Img.astro';
 import Slideshow from '../Slideshow.astro';
@@ -7,13 +8,14 @@ import Slideshow from '../Slideshow.astro';
 interface Props { section: any; cls: string; subject?: string }
 const { section: s, cls, subject } = Astro.props;
 const L = s.layout;
-const design: string = s.design === 'fullscreen-slideshow' ? 'slideshow' : s.design;
+const design: string = s.design === 'fullscreen-slideshow' || s.design === 'reel' ? 'slideshow' : s.design;
+const isReel = s.design === 'reel';
 const alt = (i: any, n: number) => {
   const a = (i.alt || '').replace(/\.(jpe?g|png|gif|webp)$/i, '');
   return /^[_A-Z0-9 -]+$/i.test(a) && /\d/.test(a) ? (subject ? `${subject} – photo ${n + 1}` : '') : a;
 };
 const vw = (px: number, w: number) => `${Math.round((px / w) * 10000) / 100}vw`;
-// Slideshows and reels position photos with transforms, so measured gaps can be nonsense;
+// Slideshows position photos with transforms, so measured gaps can be nonsense;
 // keep them within a sensible range.
 const gapOf = (g: number | undefined, fallback: number) => (g != null && g >= 0 && g <= 60 ? g : fallback);
 L.m.gap = gapOf(L.m.gap, design === 'masonry' ? 3 : 2);
@@ -37,79 +39,17 @@ const css =
   </ul>
 )}
 {design === 'slideshow' && (
+  <div class:list={{ reel: isReel }}>
   <Slideshow
     label="Photo gallery"
-    heightMobile={vw(L.m.itemH || L.m.rect?.[2] || 300, 390)}
-    heightDesktop={vw(L.d.itemH || L.d.rect?.[2] || 600, 1440)}
+    heightMobile={isReel ? '30vh' : vw(L.m.itemH || L.m.rect?.[2] || 300, 390)}
+    heightDesktop={isReel ? '50vh' : vw(L.d.itemH || L.d.rect?.[2] || 600, 1440)}
     interval={5}
     images={s.images.map((i: any, n: number) => ({ src: i.src, alt: alt(i, n), width: i.width, height: i.height }))}
   />
-)}
-{design === 'reel' && (
-  <div class:list={['g', 'scroller', design]} aria-roledescription="carousel" aria-label="Photo gallery">
-    <ul class="track" tabindex="0">
-      {s.images.map((i: any, n: number) => (
-        <li class="slide"><Img src={i.src} alt={alt(i, n)} width={i.width} height={i.height} sizes="(min-width: 768px) 50vw, 90vw" /></li>
-      ))}
-    </ul>
-    <button class="arrow prev" aria-label="Previous photo" hidden><svg viewBox="0 0 12 24" aria-hidden="true"><path d="M10 2 2 12l8 10" /></svg></button>
-    <button class="arrow next" aria-label="Next photo" hidden><svg viewBox="0 0 12 24" aria-hidden="true"><path d="m2 2 8 10-8 10" /></svg></button>
   </div>
 )}
 <style is:inline set:html={css}></style>
-
-<script>
-  // Arrow buttons and autoplay for reels (scrolling also works by swipe, trackpad or keyboard).
-  document.querySelectorAll<HTMLElement>('.scroller').forEach((root) => {
-    const track = root.querySelector<HTMLElement>('.track')!;
-    const prev = root.querySelector<HTMLButtonElement>('.prev')!;
-    const next = root.querySelector<HTMLButtonElement>('.next')!;
-    const slides = [...track.querySelectorAll<HTMLElement>('.slide')];
-    const smooth = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth';
-    // Where each slide sits once scrolled to, allowing for the reel's side padding.
-    const pos = (s: HTMLElement) => s.offsetLeft - (parseFloat(getComputedStyle(track).scrollPaddingLeft) || 0);
-    const go = (dir: number) => {
-      const x = track.scrollLeft;
-      const t = dir > 0 ? slides.find((s) => pos(s) > x + 2) : [...slides].reverse().find((s) => pos(s) < x - 2);
-      if (t) track.scrollTo({ left: pos(t), behavior: smooth });
-    };
-    const update = () => {
-      const max = track.scrollWidth - track.clientWidth;
-      prev.hidden = max < 2 || track.scrollLeft <= 2;
-      next.hidden = max < 2 || track.scrollLeft >= max - 2;
-    };
-    prev.addEventListener('click', () => go(-1));
-    next.addEventListener('click', () => go(1));
-    track.addEventListener('scroll', update, { passive: true });
-    new ResizeObserver(update).observe(track);
-    update();
-
-    // Reels move on one photo every 5 seconds, going back to the start after the last one.
-    // They pause while hovered, focused, off screen or in a background tab, and don't move
-    // at all for visitors who ask for reduced motion.
-    if (!root.classList.contains('reel') || smooth === 'auto') return;
-    let timer = 0, hovered = false, focused = false, visible = false;
-    const advance = () => {
-      const max = track.scrollWidth - track.clientWidth;
-      if (track.scrollLeft >= max - 2) track.scrollTo({ left: 0, behavior: smooth });
-      else go(1);
-    };
-    const schedule = () => {
-      clearTimeout(timer);
-      if (!hovered && !focused && visible && !document.hidden) timer = window.setTimeout(() => { advance(); schedule(); }, 5000);
-    };
-    root.addEventListener('mouseenter', () => { hovered = true; schedule(); });
-    root.addEventListener('mouseleave', () => { hovered = false; schedule(); });
-    root.addEventListener('focusin', () => { focused = true; schedule(); });
-    root.addEventListener('focusout', () => { focused = false; schedule(); });
-    // Swiping or using the arrows restarts the 5 seconds.
-    track.addEventListener('pointerdown', schedule);
-    prev.addEventListener('click', schedule);
-    next.addEventListener('click', schedule);
-    document.addEventListener('visibilitychange', schedule);
-    new IntersectionObserver(([e]) => { visible = e.isIntersecting; schedule(); }, { threshold: 0.3 }).observe(root);
-  });
-</script>
 
 <style>
   .g { list-style: none; margin: 0; padding: 0 var(--pad); }
@@ -117,41 +57,6 @@ const css =
   .masonry li { break-inside: avoid; margin-bottom: var(--gap); }
   .masonry :global(img), .grid :global(img) { width: 100%; height: auto; }
   .grid { display: grid; grid-template-columns: repeat(var(--cols), 1fr); gap: var(--gap); }
-
-  .scroller { position: relative; padding: 0; }
-  .track {
-    display: flex;
-    gap: var(--gap);
-    margin: 0;
-    padding: 0;
-    list-style: none;
-    overflow-x: auto;
-    scroll-snap-type: x mandatory;
-    scrollbar-width: none;
-    position: relative;
-  }
-  .track::-webkit-scrollbar { display: none; }
-  .slide { flex: none; scroll-snap-align: start; }
-  .reel .slide :global(img) { height: var(--h); width: auto; max-width: none; }
-  .reel .track { padding-inline: var(--pad); scroll-padding-inline: var(--pad); }
-  .slideshow .slide { width: 100%; height: var(--h); }
-  .slideshow .slide :global(img) { width: 100%; height: 100%; object-fit: contain; }
-
-  .arrow {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    display: grid;
-    place-items: center;
-    width: 44px;
-    height: 44px;
-    border: 0;
-    border-radius: 50%;
-    background: rgb(255 255 255 / 0.85);
-    cursor: pointer;
-  }
-  .arrow[hidden] { display: none; }
-  .arrow svg { width: 10px; height: 20px; fill: none; stroke: var(--black); stroke-width: 1.5; }
-  .prev { left: 12px; }
-  .next { right: 12px; }
+  /* Space between a reel and the sections above and below it, as on the Weddings page. */
+  .reel { padding-block: clamp(24px, 3vw, 44px); }
 </style>
