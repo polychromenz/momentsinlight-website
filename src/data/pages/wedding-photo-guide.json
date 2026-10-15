@@ -230,6 +230,10 @@
      "valign": {
       "m": "center",
       "d": "center"
+     },
+     "lift": {
+      "rows": 7,
+      "minWidth": 1400
      }
     }
    ]

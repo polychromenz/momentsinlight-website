@@ -51,7 +51,17 @@ for (const b of s.blocks) {
     desk.push(`${sel}{--cols:${cols(b.colWidthPct)};}`);
   }
 }
-const css = rules.join('') + `@media (min-width:768px){${desk.join('')}}`;
+// A block with "lift" ({ rows, minWidth }) keeps its size but moves up by that many rows on
+// wide screens, into the empty space at the end of the section above; the section loses the
+// rows it no longer needs. (Wedding photo guide: the photo ends level with the signup form.)
+const wide: string[] = [];
+const rowH = `(min(1500px,100vw - 8vw) * ${g.dScale} + ${g.dGap}px)`;
+for (const b of s.blocks.filter((b: any) => b.lift && b.area?.d)) {
+  const [r1, c1, r2, c2] = b.area.d.split('/').map(Number);
+  const n = b.lift.rows;
+  wide.push(`@media (min-width:${b.lift.minWidth}px){.${cls} .b-${b.id}{grid-area:${r1}/${c1}/${r2 - n}/${c2};margin-top:calc(-${n} * ${rowH});}.${cls} .fg{grid-template-rows:repeat(${g.dRows - n},minmax(calc(min(1500px,100vw - 8vw) * ${g.dScale}),auto));}}`);
+}
+const css = rules.join('') + `@media (min-width:768px){${desk.join('')}}` + wide.join('');
 const pct = (n: number) => `${Math.round(n * 1000) / 10}%`;
 ---
 <div class="fg">
