@@ -17,6 +17,7 @@ Related docs:
 | --- | --- |
 | [domain-switch.md](domain-switch.md) | Moving momentsinlight.co.nz to the new site: DNS records, steps, what's left |
 | [photos.md](photos.md) | How photos are hosted (Cloudflare Images), the scripts, and adding photos for a new post |
+| [speed-testing.md](speed-testing.md) | Google PageSpeed health check: how to run it and read the results |
 | [forms-setup.md](forms-setup.md) | Wedding photo guide signup form (Cloudflare D1 database, Turnstile) |
 | [wedding-exports-checklist.md](wedding-exports-checklist.md) | Lightroom export checklist used for the photo move (finished) |
 
@@ -114,7 +115,7 @@ Google PageSpeed Insights, 15 Oct 2026, median of 3 runs per page, old and new t
 
 Desktop scores are 76–99 with the main photo in under a second. Pages download about a third of the data and a quarter of the files Squarespace's did. Scores move ±10 between runs; what's left is mostly Google Analytics and the Meta Pixel, which now load after the page has appeared (kept on purpose: starting them only on first scroll would lose visitors who leave without touching the page).
 
-Rerun any time with `node scripts/speed-compare.mjs` (needs `PAGESPEED_API_KEY` in `.env`; results in `docs/speed-compare.json`).
+For ongoing health checks of the live site, see [speed-testing.md](speed-testing.md) (`node scripts/speed-test.mjs`).
 
 ## URLs, redirects and SEO
 

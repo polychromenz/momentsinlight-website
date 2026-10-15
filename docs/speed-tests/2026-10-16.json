@@ -1,0 +1,222 @@
+{
+ "date": "2026-10-15T21:45:24.681Z",
+ "site": "https://www.momentsinlight.co.nz",
+ "runs": 3,
+ "results": [
+  {
+   "device": "mobile",
+   "page": "/",
+   "score": 97,
+   "lcp": 2,
+   "fcp": 1.5,
+   "tbt": 154,
+   "cls": 0,
+   "mb": 0.95,
+   "requests": 24,
+   "why": [
+    "script 227ms: https://www.googletagmanager.com/gtag/js",
+    "Improve image delivery (Est savings of 220 KiB)"
+   ]
+  },
+  {
+   "device": "mobile",
+   "page": "/weddings",
+   "score": 96,
+   "lcp": 2.4,
+   "fcp": 1.7,
+   "tbt": 122,
+   "cls": 0,
+   "mb": 0.62,
+   "requests": 23,
+   "why": [
+    "script 210ms: https://www.googletagmanager.com/gtag/js",
+    "Improve image delivery (Est savings of 20 KiB)"
+   ]
+  },
+  {
+   "device": "mobile",
+   "page": "/blog/ellie-and-ryan-tui-hills",
+   "score": 96,
+   "lcp": 1.7,
+   "fcp": 1.7,
+   "tbt": 210,
+   "cls": 0,
+   "mb": 0.65,
+   "requests": 25,
+   "why": [
+    "script 264ms: https://www.googletagmanager.com/gtag/js",
+    "script 155ms: https://connect.facebook.net/en_US/fbevents.js",
+    "Improve image delivery (Est savings of 34 KiB)"
+   ]
+  },
+  {
+   "device": "mobile",
+   "page": "/abel-estate",
+   "score": 93,
+   "lcp": 2.1,
+   "fcp": 1.7,
+   "tbt": 257,
+   "cls": 0,
+   "mb": 0.99,
+   "requests": 31,
+   "why": [
+    "script 320ms: https://www.googletagmanager.com/gtag/js",
+    "script 169ms: https://connect.facebook.net/en_US/fbevents.js",
+    "Improve image delivery (Est savings of 301 KiB)"
+   ]
+  },
+  {
+   "device": "mobile",
+   "page": "/portraits",
+   "score": 90,
+   "lcp": 2.4,
+   "fcp": 1.7,
+   "tbt": 318,
+   "cls": 0,
+   "mb": 1.1,
+   "requests": 44,
+   "why": [
+    "script 369ms: https://www.googletagmanager.com/gtag/js",
+    "script 196ms: https://connect.facebook.net/en_US/fbevents.js",
+    "Improve image delivery (Est savings of 258 KiB)"
+   ]
+  },
+  {
+   "device": "mobile",
+   "page": "/premium-portraits",
+   "score": 97,
+   "lcp": 2.3,
+   "fcp": 1.5,
+   "tbt": 125,
+   "cls": 0,
+   "mb": 0.73,
+   "requests": 26,
+   "why": [
+    "script 208ms: https://www.googletagmanager.com/gtag/js",
+    "Improve image delivery (Est savings of 14 KiB)"
+   ]
+  },
+  {
+   "device": "mobile",
+   "page": "/wedding-photo-guide",
+   "score": 87,
+   "lcp": 3.2,
+   "fcp": 1.5,
+   "tbt": 284,
+   "cls": 0,
+   "mb": 1.51,
+   "requests": 34,
+   "why": [
+    "script 309ms: https://www.googletagmanager.com/gtag/js",
+    "script 201ms: https://connect.facebook.net/en_US/fbevents.js",
+    "Improve image delivery (Est savings of 157 KiB)"
+   ]
+  },
+  {
+   "device": "desktop",
+   "page": "/",
+   "score": 98,
+   "lcp": 0.5,
+   "fcp": 0.4,
+   "tbt": 121,
+   "cls": 0,
+   "mb": 0.88,
+   "requests": 27,
+   "why": [
+    "script 195ms: https://www.googletagmanager.com/gtag/js",
+    "Improve image delivery (Est savings of 181 KiB)"
+   ]
+  },
+  {
+   "device": "desktop",
+   "page": "/weddings",
+   "score": 93,
+   "lcp": 0.6,
+   "fcp": 0.5,
+   "tbt": 221,
+   "cls": 0,
+   "mb": 1.17,
+   "requests": 31,
+   "why": [
+    "script 254ms: https://www.googletagmanager.com/gtag/js",
+    "Improve image delivery (Est savings of 206 KiB)"
+   ]
+  },
+  {
+   "device": "desktop",
+   "page": "/blog/ellie-and-ryan-tui-hills",
+   "score": 92,
+   "lcp": 0.5,
+   "fcp": 0.5,
+   "tbt": 235,
+   "cls": 0,
+   "mb": 1.05,
+   "requests": 37,
+   "why": [
+    "script 233ms: https://www.googletagmanager.com/gtag/js",
+    "Improve image delivery (Est savings of 227 KiB)"
+   ]
+  },
+  {
+   "device": "desktop",
+   "page": "/abel-estate",
+   "score": 88,
+   "lcp": 0.5,
+   "fcp": 0.5,
+   "tbt": 291,
+   "cls": 0,
+   "mb": 1,
+   "requests": 28,
+   "why": [
+    "script 273ms: https://www.googletagmanager.com/gtag/js",
+    "script 154ms: https://connect.facebook.net/en_US/fbevents.js",
+    "Improve image delivery (Est savings of 172 KiB)"
+   ]
+  },
+  {
+   "device": "desktop",
+   "page": "/portraits",
+   "score": 93,
+   "lcp": 0.7,
+   "fcp": 0.5,
+   "tbt": 210,
+   "cls": 0,
+   "mb": 1.78,
+   "requests": 43,
+   "why": [
+    "script 219ms: https://www.googletagmanager.com/gtag/js",
+    "Improve image delivery (Est savings of 854 KiB)"
+   ]
+  },
+  {
+   "device": "desktop",
+   "page": "/premium-portraits",
+   "score": 99,
+   "lcp": 0.7,
+   "fcp": 0.4,
+   "tbt": 93,
+   "cls": 0,
+   "mb": 0.86,
+   "requests": 28,
+   "why": [
+    "script 183ms: https://www.googletagmanager.com/gtag/js",
+    "Improve image delivery (Est savings of 30 KiB)"
+   ]
+  },
+  {
+   "device": "desktop",
+   "page": "/wedding-photo-guide",
+   "score": 94,
+   "lcp": 0.8,
+   "fcp": 0.5,
+   "tbt": 193,
+   "cls": 0,
+   "mb": 1.48,
+   "requests": 32,
+   "why": [
+    "script 249ms: https://www.googletagmanager.com/gtag/js",
+    "Improve image delivery (Est savings of 77 KiB)"
+   ]
+  }
+ ]
+}

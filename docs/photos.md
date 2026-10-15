@@ -23,7 +23,7 @@ bundle, US$5/month, up to 100,000 photos). Nothing loads from Squarespace any mo
 | --- | --- |
 | `CLOUDFLARE_ACCOUNT_ID` | The Account ID shown on Cloudflare's **Images** page (`ba83c09b…`). The first ID found elsewhere was a different one and gave "authentication error". |
 | `CLOUDFLARE_IMAGES_TOKEN` | API token with **Account > Cloudflare Images > Edit**. Created in Profile > API Tokens. Never paste it into chat. |
-| `PAGESPEED_API_KEY` | Free Google key for `scripts/speed-compare.mjs`, restricted to PageSpeed Insights API. |
+| `PAGESPEED_API_KEY` | Free Google key for `scripts/speed-test.mjs` (see speed-testing.md), restricted to PageSpeed Insights API. |
 
 ## Adding photos for a new blog post
 
@@ -50,7 +50,6 @@ works; they're just not resized by Cloudflare.
 | `scripts/fetch-missing-from-squarespace.mjs [folder] [--pages] [--only=a,b]` | Downloads photos Lightroom couldn't provide from the current site (2500px, resized to 2048px) into the wedding's folder, or `_from-website` for pages. Your own exports always win over these. |
 | `scripts/upload-images.mjs [--dry-run]` | Uploads every matched photo not yet uploaded; records it in `docs/image-uploads.json`. |
 | `scripts/use-uploaded-images.mjs [--dry-run]` | Swaps Squarespace addresses in `src/` for the Cloudflare ones and updates widths and heights. |
-| `scripts/speed-compare.mjs [runs]` | Compares page speed of the old and new sites with PageSpeed Insights. |
 
 Where the 1,523 photos came from: most wedding-post photos are your Lightroom exports. The rest
 were downloaded from the current site: gaps Lightroom couldn't fill (mainly Gel & James,
