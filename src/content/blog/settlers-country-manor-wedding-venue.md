@@ -7,7 +7,7 @@ updated: 2025-10-01
 author: "Tony Gorham"
 categories: ["Info"]
 tags: []
-thumbnail: "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1756697858094-MVW8IIXOL07323Z70JXC/SOCIAL__MIL3720.jpg"
+thumbnail: "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/colour/SOCIAL__MIL3720-website/public"
 ---
 ### Intro
 

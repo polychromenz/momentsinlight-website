@@ -6,35 +6,35 @@ import Slideshow from '../components/Slideshow.astro';
 
 // Slideshow, in the live site's order. [path, width, height]
 const slides: [string, number, number][] = [
-  ['https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/408f3500-4a06-4e8a-afdd-6414f94796c1/markovina-wedding-photographer.jpg', 1024, 683],
-  ['https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/11537224-0cfb-4d66-85e8-a5fd9428280c/tay-barn-bronze-nzipp-2026.jpg', 3000, 1703],
+  ['https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/colour/markovina-wedding-photographer-website/public', 1024, 683],
+  ['https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/colour/tay-barn-bronze-nzipp-2026-website/public', 3000, 1703],
   ['https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/7a502107-97d7-4bf5-ba4c-05504c214393/chanel-bronze-nzipp-2026.jpg', 3000, 2001],
   ['https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/941f6ee2-9a69-4c3b-adc3-883a98a99373/emma-lift-bronze-nzipp-2026.jpg', 2001, 3000],
-  ['https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/f35cb49e-7c9b-49ec-a204-5888d772cfe1/SOCIAL_20200523-_GFX5954-untitled+shoot-Edit-Edit-Edit-Edit.jpg', 2048, 1578],
+  ['https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/mono/SOCIAL_20200523-_GFX5954-untitled_shoot-Edit-Edit-Edit-Edit-website/public', 2048, 1578],
   ['https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-mikaela-and-dylan/colour/_Q9A0978/public', 2048, 1366],
-  ['https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/99f3d9a0-d95a-4c1c-b94c-8967a7c858b5/_30A9554-Edit.jpg', 2048, 1366],
+  ['https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2025-chiedza-and-foster/colour/_30A9554/public', 2048, 1366],
   ['https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-felicity-and-ronan/colour/_30A8977/public', 2048, 1638],
-  ['https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/5f102f7b-42ec-476a-b878-3d3c5c2a053a/_30A9039.jpg', 2048, 1152],
+  ['https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/colour/_30A9039-website/public', 2048, 1152],
   ['https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-leah-and-warwick/mono/_30A4171/public', 2048, 1366],
   ['https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-felicity-and-ronan/colour/_Q9A9733/public', 2048, 1365],
-  ['https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/d987ae4b-66a2-477d-bb19-a5396f8550a1/SOCIAL__ML26809.jpg', 2048, 1366],
+  ['https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/colour/SOCIAL__ML26809-website/public', 2048, 1366],
   ['https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-emma-and-corey/colour/_30A4401-Edit/public', 2048, 1366],
-  ['https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/395d2e9f-6a18-481e-bb08-37c774d1b583/_30A0762-Edit.jpg', 2048, 1366],
+  ['https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/colour/_30A0762-Edit-website/public', 2048, 1366],
   ['https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-mikaela-and-dylan/colour/_Q9A0973-Edit-2/public', 2048, 1366],
   ['https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-tay-and-jesse/colour/_30A8103-Edit/public', 2048, 1366],
-  ['https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/543f9849-3957-4bcc-9e17-d5df3330fcc5/_30A0489.jpg', 2048, 1366],
+  ['https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/colour/_30A0489-website/public', 2048, 1366],
   ['https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-cerise-and-nick/colour/_30A2755-Edit/public', 2048, 1366],
   ['https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2025-feby-and-steven/colour/_30A8312-Edit-website/public', 2048, 1366],
   ['https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-jade-and-ben/colour/_30A8495-website/public', 5188, 4150],
   ['https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-tay-and-jesse/colour/_30A8112-Edit/public', 2048, 1638],
-  ['https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/2fc28a1e-853a-46f8-884b-c11a37d36f11/_Q9A0630.jpg', 2048, 1366],
+  ['https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2025-chiedza-and-foster/colour/_Q9A0630/public', 2048, 1366],
   ['https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-kayla-and-scott/colour/_30A0232/public', 2048, 1366],
   ['https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-mikaela-and-dylan/colour/_30A5527/public', 7807, 5207],
   ['https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2025-feby-and-steven/colour/_30A8327-Edit/public', 2048, 1366],
-  ['https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1759460959233-LZSOHYR49ZY234T2SWAX/SOCIAL__MIL1319-Edit.jpg', 2048, 1365],
-  ['https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/879229ef-e6cb-4dad-9f5e-aab44668be8c/SOCIAL__MIL3720.jpg', 2048, 1536],
+  ['https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/colour/SOCIAL__MIL1319-Edit-website/public', 2048, 1365],
+  ['https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/colour/SOCIAL__MIL3720-website/public', 2048, 1536],
   ['https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1748985835000-FLX60YNNQ42IQRVGOD8B/SOCIAL__ML27027.jpg', 2048, 1366],
-  ['https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/7a567a47-7f40-4e3a-86bf-dca679ddabd9/SOCIAL__MIL8838.jpg', 2048, 1365],
+  ['https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/colour/SOCIAL__MIL8838-website/public', 2048, 1365],
 ];
 
 const packages = [
@@ -71,7 +71,7 @@ const packages = [
 ];
 
 const realWeddings = [
-  { title: 'Ellie and Ryan | Tui Hills', href: '/blog/ellie-and-ryan-tui-hills', img: 'https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1786921169780-8IMTQEJ9TCYR5B51PMTP/_Q9A6785-Edit.jpg', w: 4096, h: 2731 },
+  { title: 'Ellie and Ryan | Tui Hills', href: '/blog/ellie-and-ryan-tui-hills', img: 'https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/colour/_Q9A6785-Edit-website/public', w: 4096, h: 2731 },
   { title: 'Sofia and John | Stockholm', href: '/blog/sofia-and-john-stockholm', img: 'https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-sofia-and-john/colour/_Q9A5538-2/public', w: 4096, h: 3277 },
   { title: 'Rebecca & Nick | Bridgewater Estate Wedding', href: '/blog/rebecca-and-nick-bridgewater-estate', img: 'https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-rebecca-and-nick/colour/_30A1292/public', w: 4096, h: 3277 },
   { title: 'Felicity & Ronan | Settlers Country Manor, Waimauku', href: '/blog/fliss-and-ro-wedding-settlers-country-manor', img: 'https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-felicity-and-ronan/colour/_30A8977/public', w: 2048, h: 1638 },

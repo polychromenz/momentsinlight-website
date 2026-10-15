@@ -19,6 +19,10 @@ const ROOT = process.argv[2] || 'E:\\EXPORTS\\website';
 const OUT = 'docs/image-matches.json';
 const SQS = /https?:\/\/images\.squarespace-cdn\.com\/[^\s"')\\]+?\.(?:jpe?g|png|webp)/gi;
 const camera = (n) => (n.match(/_?(?=[A-Z0-9]*[A-Z])[A-Z0-9]{3,4}\d{4}/i) || [null])[0]?.replace(/^_/, '').toUpperCase();
+// Photos without a camera file name (e.g. the-barn-ceilidh.jpg) are matched by their whole
+// name; copies downloaded from Squarespace end in -website.
+const plainName = (n) => n.replace(/\.[^.]+$/, '').replace(/-website$/, '').replace(/[^\w.-]+/g, '_').toLowerCase();
+const keyOf = (n) => camera(n) ?? plainName(n);
 
 // ---- Exports: camera name -> files
 const exportsByName = new Map();
@@ -27,8 +31,8 @@ for (const folder of folders) {
   for (const tone of ['colour', 'mono']) {
     const dir = path.join(ROOT, folder, tone);
     if (!fs.existsSync(dir)) continue;
-    for (const f of fs.readdirSync(dir).filter((f) => /\.jpe?g$/i.test(f))) {
-      const key = camera(f);
+    for (const f of fs.readdirSync(dir).filter((f) => /\.(jpe?g|png)$/i.test(f))) {
+      const key = keyOf(f);
       if (!key) continue;
       if (!exportsByName.has(key)) exportsByName.set(key, []);
       exportsByName.get(key).push({ folder, tone, file: path.join(dir, f) });
@@ -92,7 +96,7 @@ let done = 0;
 const worker = async () => {
   while (todo.length) {
     const [url, files] = todo.shift();
-    const name = camera(decodeURIComponent(url.split('/').pop()));
+    const name = keyOf(decodeURIComponent(url.split('/').pop()));
     let cands = (name && exportsByName.get(name)) || [];
     const homes = [...files].map((f) => postFolder.get(f)).filter(Boolean);
     if (homes.length) {
@@ -101,7 +105,7 @@ const worker = async () => {
     }
     const entry = { usedIn: [...files], name };
     if (!cands.length) {
-      entry.status = name ? 'not exported yet' : 'no camera file name';
+      entry.status = 'not exported yet';
     } else {
       const prev = previous[url];
       try {
@@ -113,7 +117,9 @@ const worker = async () => {
         }
         // Prefer exports in the same tone as the photo on the site (colour or mono).
         const wantMono = isMono(sq);
-        scored.sort((a, b) => (a.mono !== wantMono) - (b.mono !== wantMono) || a.diff - b.diff);
+        // Your own exports win over copies downloaded from Squarespace when both are close.
+        const fromSite = (c) => /-website\.\w+$/.test(c.file);
+        scored.sort((a, b) => (a.mono !== wantMono) - (b.mono !== wantMono) || (a.diff <= 25 && b.diff <= 25 ? fromSite(a) - fromSite(b) : 0) || a.diff - b.diff);
         const best = scored[0];
         entry.tone = best.tone;
         entry.diff = best.diff;

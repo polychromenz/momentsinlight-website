@@ -7,35 +7,35 @@ updated: 2026-04-02
 author: "Tony Gorham"
 categories: ["Wedding"]
 tags: []
-thumbnail: "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1751242029570-QXXD42Y4RNU3XZS36GKO/SOCIAL__30A9428.jpg"
+thumbnail: "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2025-chiedza-and-foster/colour/_30A9428/public"
 gallery:
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1751239749331-7LEGMYPZH5M1FHGM0DRI/SOCIAL__30A9554-Edit.jpg","alt":"Chiedza and Foster embrace on the rotunda by the lake at Abel Estate","width":2048,"height":1366}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1751239754628-DGJUIXDLUBMTB8Y6LU25/SOCIAL__30A9659-Edit.jpg","alt":"Chiedza and Foster relax together on a velvet sofa","width":2048,"height":1638}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1751239761331-7S3O8TKMYHF4QFLE56KY/SOCIAL__Q9A0630.jpg","alt":"Chiedza and Foster kiss at the end of the aisle in the marquee","width":2048,"height":1366}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2025-chiedza-and-foster/colour/_30A9554/public","alt":"Chiedza and Foster embrace on the rotunda by the lake at Abel Estate","width":2048,"height":1366}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2025-chiedza-and-foster/colour/_30A9659/public","alt":"Chiedza and Foster relax together on a velvet sofa","width":2048,"height":1638}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2025-chiedza-and-foster/colour/_Q9A0630/public","alt":"Chiedza and Foster kiss at the end of the aisle in the marquee","width":2048,"height":1366}
   - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1751239727237-WQKR1CVLX2WRYCZ91KUO/SOCIAL__30A8964.jpg","alt":"Black and white photo of Foster and his groomsmen","width":2048,"height":1638}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1751239736939-SAWS5RIU4LGVI0E1KHSD/SOCIAL__30A9105-Edit.jpg","alt":"Chiedza looks over her shoulder in front of a lit mirror","width":1456,"height":2048}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1751239736636-ZTXTBR887V6QATCRDIN5/SOCIAL__30A9317.jpg","alt":"Chiedza and Foster exchange rings during the ceremony","width":2048,"height":1366}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1751239741101-CC0EHZ8EK2AEBQPAEJ7Z/SOCIAL__30A9368.jpg","alt":"Foster kisses Chiedza as the celebrant smiles","width":2048,"height":1366}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1751239744087-M7GN4YBH6EVCUCI2GSZK/SOCIAL__30A9428.jpg","alt":"Chiedza and Foster walk back up the aisle past their guests","width":2048,"height":1366}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2025-chiedza-and-foster/colour/_30A9105-Edit/public","alt":"Chiedza looks over her shoulder in front of a lit mirror","width":1456,"height":2048}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2025-chiedza-and-foster/colour/_30A9317/public","alt":"Chiedza and Foster exchange rings during the ceremony","width":2048,"height":1366}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2025-chiedza-and-foster/colour/_30A9368/public","alt":"Foster kisses Chiedza as the celebrant smiles","width":2048,"height":1366}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2025-chiedza-and-foster/colour/_30A9428/public","alt":"Chiedza and Foster walk back up the aisle past their guests","width":2048,"height":1366}
   - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1751239748392-NT1LR7EAHYUT44FA1E6I/SOCIAL__30A9524.jpg","alt":"Chiedza and Foster hug by the lake at sunset","width":2048,"height":1366}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1751239763422-IFDS8YMBGVUKNJW1ZVYE/SOCIAL__Q9A0701.jpg","alt":"Chiedza and Foster celebrate as they walk up the aisle at Abel Estate","width":2048,"height":1366}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2025-chiedza-and-foster/colour/_Q9A0701/public","alt":"Chiedza and Foster celebrate as they walk up the aisle at Abel Estate","width":2048,"height":1366}
   - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1751239731374-W02375BJFKCNJIS4IU1T/SOCIAL__30A9001.jpg","alt":"Foster seated in an armchair in front of a wine rack","width":1366,"height":2048}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1751239754934-Z7TGON6TSL4RR4WID817/SOCIAL__30A9669-Edit.jpg","alt":"Chiedza seated in front of Foster beside a wine rack","width":1366,"height":2048}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1751239730284-E10XYALPHBCHQG6MDEIU/SOCIAL__30A0008.jpg","alt":"Two young guests in suits sit on a velvet sofa","width":2048,"height":1638}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1751239921781-8VEYL0U3NG0IDT2QE0N4/_30A8920.jpg","alt":"A place setting with white flowers and a printed menu","width":5464,"height":8192}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1751240044318-DG8WYCIZG38NT2M2H286/_Q9A0297.jpg","alt":"Long reception tables set with white flowers and greenery","width":7579,"height":5055}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1751239765148-ARGZY06B1O1RHGEXA0QZ/SOCIAL__Q9A1327.jpg","alt":"Black and white photo of Chiedza and Foster dancing into the reception","width":2048,"height":1366}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1751240264274-J9VV7ENSUUQF9EZO2P3Z/_30A0419.jpg","alt":"Chiedza and Foster speak to their guests at the reception","width":6830,"height":5464}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1751240338633-IYHBQPW4ETGU1ZVM7KCO/_30A9783.jpg","alt":"Guests listen to the speeches at their tables","width":7266,"height":4846}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1751240397533-THI6H7G4I8BMA5AFP8D8/_Q9A1313.jpg","alt":"Chiedza and Foster dance into the reception hall","width":8192,"height":5464}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1751240339022-RM032BAYSRV1FFV7GFW3/_Q9A0302.jpg","alt":"A reception table decorated with eucalyptus and white flowers","width":8192,"height":5464}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1751240384829-3PE9NI4HHDP9S3PS5FUO/_30A9698.jpg","alt":"Chiedza and Foster cut their tiered white wedding cake","width":3084,"height":3855}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1751240212160-SXPS3T706F9U3GSOU144/_Q9A0306.jpg","alt":"The reception room at Abel Estate set for dinner","width":7631,"height":5090}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1751240629656-1HW2MPVOSCCRCGHFOBPH/_30A0064.jpg","alt":"Guests sing and play drums during the celebration","width":6161,"height":3466}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1751240577929-RIKH6TJXOWUQAC14V0LQ/_30A9818.jpg","alt":"Guests laugh and clap during the reception","width":8192,"height":5464}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1751240451315-9GR3O72MCHSNZJ2ZDPD3/_Q9A0312.jpg","alt":"A place setting with a menu on a dark wooden table","width":7774,"height":4373}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1751240575397-DOUAEGWB0RFJL82NYGOR/_Q9A1514.jpg","alt":"Guests dance and celebrate at the head table","width":8192,"height":5464}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1751240603397-344SD83B45CCTKNZC1UV/_Q9A0394.jpg","alt":"A menu tucked into a napkin on a reception table","width":5464,"height":8192}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2025-chiedza-and-foster/colour/_30A9669/public","alt":"Chiedza seated in front of Foster beside a wine rack","width":1366,"height":2048}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2025-chiedza-and-foster/colour/_30A0008/public","alt":"Two young guests in suits sit on a velvet sofa","width":2048,"height":1638}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2025-chiedza-and-foster/colour/_30A8920/public","alt":"A place setting with white flowers and a printed menu","width":1366,"height":2048}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2025-chiedza-and-foster/colour/_Q9A0297/public","alt":"Long reception tables set with white flowers and greenery","width":2048,"height":1366}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2025-chiedza-and-foster/mono/_Q9A1327-2/public","alt":"Black and white photo of Chiedza and Foster dancing into the reception","width":2048,"height":1366}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2025-chiedza-and-foster/colour/_30A0419/public","alt":"Chiedza and Foster speak to their guests at the reception","width":2048,"height":1638}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2025-chiedza-and-foster/colour/_30A9783/public","alt":"Guests listen to the speeches at their tables","width":2048,"height":1366}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2025-chiedza-and-foster/colour/_Q9A1313/public","alt":"Chiedza and Foster dance into the reception hall","width":2048,"height":1366}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2025-chiedza-and-foster/colour/_Q9A0302/public","alt":"A reception table decorated with eucalyptus and white flowers","width":2048,"height":1366}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2025-chiedza-and-foster/colour/_30A9698/public","alt":"Chiedza and Foster cut their tiered white wedding cake","width":1638,"height":2048}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2025-chiedza-and-foster/colour/_Q9A0306/public","alt":"The reception room at Abel Estate set for dinner","width":2048,"height":1366}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2025-chiedza-and-foster/colour/_30A0064/public","alt":"Guests sing and play drums during the celebration","width":2048,"height":1152}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2025-chiedza-and-foster/colour/_30A9818/public","alt":"Guests laugh and clap during the reception","width":2048,"height":1366}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2025-chiedza-and-foster/colour/_Q9A0312/public","alt":"A place setting with a menu on a dark wooden table","width":2048,"height":1152}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2025-chiedza-and-foster/colour/_Q9A1514/public","alt":"Guests dance and celebrate at the head table","width":2048,"height":1366}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2025-chiedza-and-foster/colour/_Q9A0394/public","alt":"A menu tucked into a napkin on a reception table","width":1366,"height":2048}
 ---
 There are days that feel less like work and more like witnessing something truly extraordinary. Chiedza and Foster’s wedding at [Abel Estate](https://abelestate.co.nz/) was one of those days — bursting at the seams with love, laughter, and the kind of joy that stays with you.
 

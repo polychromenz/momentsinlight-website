@@ -7,9 +7,9 @@ updated: 2026-09-09
 author: "Tony Gorham"
 categories: ["Wedding"]
 tags: []
-thumbnail: "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1744763435276-YL92LZ00W67MAHSJBI7U/SOCIAL__ML26809.jpg"
+thumbnail: "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/colour/SOCIAL__ML26809-website/public"
 gallery:
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1744763556552-ZV0OHIU55GXMIMROHYZN/SOCIAL__ML26809.jpg","alt":"Shannon and Darren under festoon lights at The Hotel Britomart","width":2048,"height":1366}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/colour/SOCIAL__ML26809-website/public","alt":"Shannon and Darren under festoon lights at The Hotel Britomart","width":2048,"height":1366}
   - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1744763479990-LDGQ0G0IZP4EU0LMX2YF/SOCIAL__MIL1423.jpg","alt":"Shannon and Darren among the planters in the Britomart courtyard at dusk","width":2048,"height":1365}
   - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1744763609873-6Q71552MDOSZAF1MX0FS/SOCIAL__MIL1209.jpg","alt":"Shannon and Darren stand in the courtyard beneath carved pillars","width":2048,"height":1365}
   - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1744763483782-TYAD4YJKZRRKA2O8E1IP/SOCIAL__MIL1466-Edit.jpg","alt":"Shannon and Darren in a low-light portrait","width":2048,"height":1365}
@@ -37,7 +37,7 @@ gallery:
   - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1744763672270-JII736SD9Z78TML8A1F1/SOCIAL__MIL1303-Edit.jpg","alt":"Shannon rests her hand on Darren's shoulder among the planters","width":2048,"height":1365}
   - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1744763690381-T3SLXKSFF6HYO34JCZYP/SOCIAL__MIL1332-Edit.jpg","alt":"Shannon smiles in front of Darren in warm evening light","width":2048,"height":1365}
   - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1744763678271-Y690L5NY2LOLQ853S59V/SOCIAL__MIL1304-Edit.jpg","alt":"Shannon and Darren pose among the greenery","width":2048,"height":1365}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1744763684708-2QZGXGB8HXPJ6YIH7KP0/SOCIAL__MIL1319-Edit.jpg","alt":"Shannon rests her hand on Darren's chest","width":2048,"height":1365}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/colour/SOCIAL__MIL1319-Edit-website/public","alt":"Shannon rests her hand on Darren's chest","width":2048,"height":1365}
   - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1744763696096-9TDHT0AELH3B81QZR7AA/SOCIAL__MIL1394-Edit.jpg","alt":"Shannon and Darren outside the hotel's glass frontage","width":2048,"height":1365}
   - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1744763701445-56BDVZC8TDJFUQ1EETCB/SOCIAL__MIL1401.jpg","alt":"Shannon and Darren beside a row of bicycles on a Britomart lane","width":2048,"height":1365}
   - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1744763553671-5OTYTZHD32GJJ44Y324X/SOCIAL__ML26794-Edit-Edit.jpg","alt":"Black and white photo of Shannon and Darren cheek to cheek","width":2048,"height":1366}

@@ -7,9 +7,9 @@ updated: 2026-08-17
 author: "Tony Gorham"
 categories: ["Wedding"]
 tags: ["settlers-country-manor"]
-thumbnail: "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1748986348080-07R9RDYOX6VCY4BU1Q7C/SOCIAL__MIL3720.jpg"
+thumbnail: "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/colour/SOCIAL__MIL3720-website/public"
 gallery:
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1748985431581-ANP8C8ARA9HMXILRC4S7/SOCIAL__MIL3720.jpg","alt":"Stephanie and Jankai under a brick arch with her long lace veil spread out","width":2048,"height":1536}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/colour/SOCIAL__MIL3720-website/public","alt":"Stephanie and Jankai under a brick arch with her long lace veil spread out","width":2048,"height":1536}
   - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1748985313846-TZJR6FRMHKAT3BHOSAU3/SOCIAL__MIL3376.jpg","alt":"Stephanie smiles beneath her veil","width":2048,"height":1536}
   - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1748985795523-9J2MFLFA1ZAECZ8PS5QA/SOCIAL__ML26943-2.jpg","alt":"Black and white photo of Stephanie fastening her earring","width":2048,"height":1366}
   - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1748985803234-ATRP947DM41XX2YHPPEP/SOCIAL__ML26949.jpg","alt":"A guest in lilac smiles during preparations","width":2048,"height":1366}

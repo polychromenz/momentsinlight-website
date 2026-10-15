@@ -7,7 +7,7 @@ updated: 2025-10-14
 author: "Tony Gorham"
 categories: ["Info"]
 tags: []
-thumbnail: "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1756698705818-SH5CLYKCZQEK6NX9DWSU/SOCIAL__Q9A1313-Edit.jpg"
+thumbnail: "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2025-paige-and-connor/colour/_Q9A1313-Edit/public"
 ---
 Set among rolling vines and landscaped gardens, **Markovina Vineyard Estate** is one of Auckland’s most versatile and sought-after wedding venues. With ceremony spots that work in both sunshine and rain, endless photo backdrops, and a warm, family-run team, it’s no wonder so many couples fall in love with this Kumeu gem.
 

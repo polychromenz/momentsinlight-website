@@ -118,7 +118,7 @@ Involving pets or children in your photoshoot personalises your wedding album fu
 
 ## Real Stories: Couples' Experiences with Auckland Wedding Photography
 
-![A couple kiss in front of a large wine barrel](https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/c963e66c-76d6-4ef2-b865-8913c006a1e8/SOCIAL__Q9A1313-Edit.jpg)
+![A couple kiss in front of a large wine barrel](https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2025-paige-and-connor/colour/_Q9A1313-Edit/public)
 
 Couples often rave about the seamless experiences they’ve had with their chosen photographers.
 

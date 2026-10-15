@@ -7,7 +7,7 @@ updated: 2025-09-30
 author: "Tony Gorham"
 categories: []
 tags: []
-thumbnail: "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1759186308354-U6JLK6ZYNCN7YH6FKACC/_Q9A0853.jpg"
+thumbnail: "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2025-paige-and-connor/mono/_Q9A0853/public"
 ---
 Don’t let those colder morning fool you into thinking you can’t tie the know. Winter weddings can be incredibly romantic, with cozy vibes, crisp air, and stunning backdrops. Let’s dive into the details:
 

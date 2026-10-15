@@ -7,7 +7,7 @@ updated: 2026-09-21
 author: "Tony Gorham"
 categories: ["Info"]
 tags: []
-thumbnail: "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1756698531190-GOZT4ZGKY72ST6XNN1OQ/SOCIAL__30A3220.jpg"
+thumbnail: "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/colour/_30A3220-website/public"
 ---
 Let’s explore some delightful table decoration options for weddings in Auckland, New Zealand. Whether you’re planning a rustic, elegant, or modern wedding, these ideas will help you create a memorable and visually stunning reception:
 
