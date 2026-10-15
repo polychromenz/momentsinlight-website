@@ -2,8 +2,8 @@
 title: "Felicity & Ronan | Settlers Country Manor, Waimauku"
 seoTitle: "Felicity & Ronan | Settlers Country Manor Wedding Photography | Waimauku Auckland"
 description: "A beautiful winter wedding at Settlers Country Manor in Waimauku, Auckland. Vintage Bentley bridal arrival, emotional first look, and a showstopping first dance — captured by Auckland wedding photographer."
-date: 2026-05-06T22:00:38.322Z
-updated: 2026-08-12T02:48:43.670Z
+date: 2026-05-07
+updated: 2026-08-12
 author: "Tony Gorham"
 categories: ["Wedding"]
 tags: ["settlers-country-manor"]

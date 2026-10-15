@@ -2,8 +2,8 @@
 title: "Ellie and Ryan | Tui Hills"
 seoTitle: "Ellie & Ryan | Tui Hills Wedding Photography | Auckland Wedding Photographer"
 description: "A joyful, laughter-filled wedding at Tui Hills featuring an emotional bridal prep, stunning outdoor portraits, and a groom who Rickrolled his own wedding vows. Captured by Auckland wedding photographer."
-date: 2026-07-22T11:08:58+12:00
-updated: 2026-08-17T14:07:37+12:00
+date: 2026-07-22
+updated: 2026-08-17
 author: Tony Gorham
 venue: Tui Hills
 venueUrl: https://tuihills.co.nz/

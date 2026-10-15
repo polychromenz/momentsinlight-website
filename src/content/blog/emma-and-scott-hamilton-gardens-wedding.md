@@ -2,8 +2,8 @@
 title: "Emma & Corey | Hamilton Gardens & St Peter Chanel Catholic Church, Hamilton"
 seoTitle: "Emma & Corey | Hamilton Gardens Winter Wedding Photography | St Peter Chanel Catholic Church Hamilton"
 description: "A romantic winter wedding at Hamilton Gardens and St Peter Chanel Catholic Church in Hamilton, New Zealand. Stunning bridal portraits, a travel-themed reception, and an unforgettable first dance — captured by Hamilton wedding photographer."
-date: 2026-05-02T02:17:15.147Z
-updated: 2026-06-17T00:06:16.737Z
+date: 2026-05-02
+updated: 2026-06-17
 author: "Tony Gorham"
 categories: ["Wedding"]
 tags: []

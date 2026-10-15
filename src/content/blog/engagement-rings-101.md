@@ -2,8 +2,8 @@
 title: "Engagement Rings 101: Cuts, Settings & What to Ask Your Jeweller"
 seoTitle: "Engagement Rings 101"
 description: "Engagement Rings 101: Cuts, Settings & What to Ask Your Jeweller"
-date: 2026-08-15T03:03:22.183Z
-updated: 2026-08-27T02:41:14.902Z
+date: 2026-08-15
+updated: 2026-08-27
 author: "Tony Gorham"
 categories: ["Info"]
 tags: []

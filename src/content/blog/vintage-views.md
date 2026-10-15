@@ -2,8 +2,8 @@
 title: "Red, Regal & Really Yours: Arriving in Style on a London Bus this Wedding Season"
 seoTitle: "London Bus Wedding Transport"
 description: "Make your wedding unforgettable with a classic London Routemaster bus."
-date: 2025-09-14T23:31:54.963Z
-updated: 2025-10-13T21:28:59.831Z
+date: 2025-09-15
+updated: 2025-10-14
 author: "Tony Gorham"
 categories: ["Info"]
 tags: []

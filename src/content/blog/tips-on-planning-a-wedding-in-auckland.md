@@ -1,8 +1,8 @@
 ---
 title: "Tips on Planning a wedding in Auckland"
 description: "Looking for some inspiration on places for your Auckland Wedding? We have some ideas that will help get those cogs whirring"
-date: 2024-06-11T22:52:04.607Z
-updated: 2024-09-19T22:54:43.059Z
+date: 2024-06-12
+updated: 2024-09-20
 author: "Tony Gorham"
 categories: ["Info"]
 tags: []

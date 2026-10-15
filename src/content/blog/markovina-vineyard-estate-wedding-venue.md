@@ -2,8 +2,8 @@
 title: "Markovina Vineyard Estate Wedding Photography"
 seoTitle: "Markovina Vineyard Estate Wedding Photos"
 description: "Markovina Vineyard Estate weddings in Auckland: golden-hour portraits, vineyard gardens, Barrel Room ceremonies. Full-day coverage from $2,990."
-date: 2025-09-01T03:53:17.809Z
-updated: 2025-10-13T21:01:13.618Z
+date: 2025-09-01
+updated: 2025-10-14
 author: "Tony Gorham"
 categories: ["Info"]
 tags: []

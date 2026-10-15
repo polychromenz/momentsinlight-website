@@ -2,8 +2,8 @@
 title: "Capture the Moment: The Magic of a First Look on Your Wedding Day"
 seoTitle: "The Magic of a First Look"
 description: "Your wedding day is a tapestry of dreams and emotions woven into one unforgettable celebration. Amongst timeless traditions and modern twists, one trend stands out: the first look."
-date: 2025-10-04T20:30:00.003Z
-updated: 2025-10-13T21:28:32.919Z
+date: 2025-10-05
+updated: 2025-10-14
 author: "Tony Gorham"
 categories: ["Info"]
 tags: []

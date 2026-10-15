@@ -2,8 +2,8 @@
 title: "Abel Estate Wedding Photography"
 seoTitle: "Abel Estate Wedding Photos, Auckland"
 description: "Abel Estate wedding photography in Kumeu: golden-hour pond reflections, garden ceremonies, marquee receptions. Full-day coverage from $2,990."
-date: 2025-09-01T03:44:33.338Z
-updated: 2025-09-30T02:47:53.477Z
+date: 2025-09-01
+updated: 2025-09-30
 author: "Tony Gorham"
 categories: ["Info"]
 tags: []

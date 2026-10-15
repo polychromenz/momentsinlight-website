@@ -2,8 +2,8 @@
 title: "Paige & Connor at Markovina Vineyard Estate - Young Love, A Lifetime of Memories"
 seoTitle: "Paige and Connor's | Markovina Vineyard Estate"
 description: "Paige and Connor’s wedding at the stunning Markovina Vineyard Estate was the perfect way to mark the 10th anniversary of their very first date."
-date: 2025-08-18T00:08:53.001Z
-updated: 2026-04-02T01:21:54.329Z
+date: 2025-08-18
+updated: 2026-04-02
 author: "Tony Gorham"
 categories: ["Wedding"]
 tags: []

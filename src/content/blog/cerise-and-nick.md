@@ -2,8 +2,8 @@
 title: "Cerise and Nick - Stables Matakana"
 seoTitle: "Cerise and Nick's Omaha beach wedding"
 description: "A super chill beach wedding at sunny Omaha beacch, Auckland"
-date: 2026-01-13T02:52:05.085Z
-updated: 2026-08-17T02:09:15.214Z
+date: 2026-01-13
+updated: 2026-08-17
 author: "Tony Gorham"
 categories: ["Wedding"]
 tags: []

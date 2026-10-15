@@ -2,8 +2,8 @@
 title: "Wedding Ring options"
 seoTitle: "Auckland Wedding Photography Services"
 description: "Capture your love story with stunning Auckland wedding photography. Elegant, natural, and heartfelt images you'll treasure forever."
-date: 2024-05-13T01:00:36.097Z
-updated: 2025-09-30T04:20:05.822Z
+date: 2024-05-13
+updated: 2025-09-30
 author: "Tony Gorham"
 categories: ["Info"]
 tags: []

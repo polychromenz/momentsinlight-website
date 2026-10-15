@@ -2,8 +2,8 @@
 title: "Nat Hugill | High Performance Coach - Lifestyle"
 seoTitle: "Nat Hugill Coach | Lifestyle photoshoot"
 description: "Read stories, tips, and inspiration from real photo sessions and Auckland weddings on our photography blog."
-date: 2025-03-10T22:35:36.978Z
-updated: 2025-10-13T21:30:42.084Z
+date: 2025-03-11
+updated: 2025-10-14
 author: "Tony Gorham"
 categories: ["Portrait"]
 tags: []

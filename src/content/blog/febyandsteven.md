@@ -2,8 +2,8 @@
 title: "Feby and Steven | The Waitākere Resort and Spa,"
 seoTitle: "Feby and Steven's Auckland Wedding"
 description: "Wedding at Waitakere Resort and Spa"
-date: 2025-11-06T01:06:13.025Z
-updated: 2026-08-17T02:09:51.017Z
+date: 2025-11-06
+updated: 2026-08-17
 author: "Tony Gorham"
 categories: ["Wedding"]
 tags: []

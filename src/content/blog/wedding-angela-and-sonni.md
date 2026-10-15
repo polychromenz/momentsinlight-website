@@ -2,8 +2,8 @@
 title: "Angela and Sonni"
 seoTitle: "Auckland wedding for Angela and Sonni"
 description: "A wonderful relaxed mood at this Auckland Wedding for a truly lovely couple."
-date: 2024-05-12T22:53:24.599Z
-updated: 2025-07-01T03:40:44.327Z
+date: 2024-05-13
+updated: 2025-07-01
 author: "Tony Gorham"
 categories: []
 tags: []

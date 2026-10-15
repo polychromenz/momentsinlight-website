@@ -2,8 +2,8 @@
 title: "We are now on MyWeddingGuide"
 seoTitle: "Auckland based wedding photographers"
 description: "Now featured on MyWeddingGuide where you can find all your wedding needs. They even have an app to help you manage your wedding prep."
-date: 2024-05-30T00:24:52.228Z
-updated: 2024-05-30T23:52:36.737Z
+date: 2024-05-30
+updated: 2024-05-31
 author: "Tony Gorham"
 categories: ["Info"]
 tags: []

@@ -2,8 +2,8 @@
 title: "Invites, place settings, signs and seating charts"
 seoTitle: "Invites Place Settings Signs and Seating Charts"
 description: "Read stories, tips, and inspiration from real photo sessions and Auckland weddings."
-date: 2024-05-08T01:01:26.128Z
-updated: 2025-10-01T00:29:24.586Z
+date: 2024-05-08
+updated: 2025-10-01
 author: "Tony Gorham"
 categories: ["Info"]
 tags: []

@@ -2,8 +2,8 @@
 title: "Jasmine"
 seoTitle: "Creative Portrait Photography in Auckland"
 description: "Express yourself with creative portrait photography in Auckland. Stylish, natural, and uniquely tailored to you."
-date: 2024-11-13T03:17:37.989Z
-updated: 2025-10-13T21:31:45.099Z
+date: 2024-11-13
+updated: 2025-10-14
 author: "Tony Gorham"
 categories: ["Portrait"]
 tags: []

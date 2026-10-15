@@ -2,8 +2,8 @@
 title: "Mikaela & Dylan – Heartfelt Moments at The Barn, Waimauku"
 seoTitle: "The Barn Waimauku Wedding | Mikaela & Dylan | Auckland Wedding Photographer"
 description: "A beautiful Waimauku wedding at The Barn with Mikaela & Dylan, featuring a tea-inspired reception, emotional speeches and a lively ceilidh celebration."
-date: 2026-03-07T01:41:25.759Z
-updated: 2026-04-02T01:19:37.189Z
+date: 2026-03-07
+updated: 2026-04-02
 author: "Tony Gorham"
 categories: ["Wedding"]
 tags: []

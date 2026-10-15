@@ -2,8 +2,8 @@
 title: "Chanel & Latham – Island Vibes at Mansion House, Kawau Island"
 seoTitle: "Kawau Island Wedding Photographer | Chanel & Latham at Mansion House"
 description: "A beautiful Kawau Island wedding at Mansion House with Chanel & Latham. A hot summer day, emotional speeches and a high-energy celebration."
-date: 2026-03-02T01:10:28.369Z
-updated: 2026-04-01T01:23:08.867Z
+date: 2026-03-02
+updated: 2026-04-01
 author: "Tony Gorham"
 categories: ["Wedding"]
 tags: []

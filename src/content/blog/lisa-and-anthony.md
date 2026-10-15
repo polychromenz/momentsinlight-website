@@ -2,8 +2,8 @@
 title: "Lisa and Anthony"
 seoTitle: "Lisa and Anthony's Auckland Wedding"
 description: "From intimate moments to elegant portraits, relive their love story through timeless photography."
-date: 2022-10-07T23:36:00.650Z
-updated: 2025-10-01T00:56:15.738Z
+date: 2022-10-08
+updated: 2025-10-01
 author: "Tony Gorham"
 categories: []
 tags: []

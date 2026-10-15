@@ -2,8 +2,8 @@
 title: "Stephanie and Jankai"
 seoTitle: "Stephanie and Jankai's - Romantic Wedding"
 description: "Stephanie and Jankai's romantic wedding at Settlers Country Manor in Kumeu Auckland."
-date: 2025-05-23T21:38:00.081Z
-updated: 2026-08-17T02:10:47.007Z
+date: 2025-05-24
+updated: 2026-08-17
 author: "Tony Gorham"
 categories: ["Wedding"]
 tags: ["settlers-country-manor"]

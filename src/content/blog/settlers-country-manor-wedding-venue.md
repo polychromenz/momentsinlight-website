@@ -2,8 +2,8 @@
 title: "Settlers Country Manor Wedding Photography"
 seoTitle: "Settlers Country Manor"
 description: "Real Settlers Country Manor wedding photography."
-date: 2025-09-01T03:39:57.002Z
-updated: 2025-10-01T00:39:16.150Z
+date: 2025-09-01
+updated: 2025-10-01
 author: "Tony Gorham"
 categories: ["Info"]
 tags: []

@@ -1,8 +1,8 @@
 ---
 title: "Planning your wedding makeup as a bride"
 description: "Thinking about the makeup for your special day? Here are some thing to be thinking about."
-date: 2024-06-17T06:00:00.042Z
-updated: 2024-09-19T22:54:58.036Z
+date: 2024-06-17
+updated: 2024-09-20
 author: "Tony Gorham"
 categories: ["Info"]
 tags: []

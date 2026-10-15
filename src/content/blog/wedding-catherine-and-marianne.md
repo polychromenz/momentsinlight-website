@@ -1,8 +1,8 @@
 ---
 title: "Catherine and Marianne"
 description: "Weddings can be fun."
-date: 2018-09-24T18:15:00.257Z
-updated: 2025-10-01T00:15:48.937Z
+date: 2018-09-25
+updated: 2025-10-01
 author: "Tony Gorham"
 categories: []
 tags: []

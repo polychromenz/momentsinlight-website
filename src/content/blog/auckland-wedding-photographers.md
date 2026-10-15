@@ -2,8 +2,8 @@
 title: "Auckland Wedding Photographers: Capture Your Love Story"
 seoTitle: "Auckland Wedding Photographers: Capture Love Stories"
 description: "Auckland Wedding Photographers: Capture Love Stories"
-date: 2026-08-14T02:35:20.535Z
-updated: 2026-08-26T03:33:01.021Z
+date: 2026-08-14
+updated: 2026-08-26
 author: "Tony Gorham"
 categories: ["Info"]
 tags: []

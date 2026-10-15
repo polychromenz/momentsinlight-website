@@ -2,8 +2,8 @@
 title: "Gel and James"
 seoTitle: "Gel & James’ Beautiful Wedding"
 description: "Gel & James' stunning wedding day. Explore a love story told through timeless photography"
-date: 2025-02-01T22:20:00.995Z
-updated: 2026-04-01T00:28:19.093Z
+date: 2025-02-02
+updated: 2026-04-01
 author: "Tony Gorham"
 categories: ["Wedding"]
 tags: []

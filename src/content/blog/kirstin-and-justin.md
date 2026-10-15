@@ -2,8 +2,8 @@
 title: "Kirstin and Justin"
 seoTitle: "Kirstin and Justin's wedding"
 description: "Beautiful church wedding in Auckland"
-date: 2026-02-11T01:35:19.356Z
-updated: 2026-04-01T00:53:13.793Z
+date: 2026-02-11
+updated: 2026-04-01
 author: "Tony Gorham"
 categories: ["Wedding"]
 tags: []

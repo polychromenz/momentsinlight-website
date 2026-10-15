@@ -2,8 +2,8 @@
 title: "Shannon & Darren's Elegant Wedding at The Hotel Britomart"
 seoTitle: "Shannon & Darren's Elegant Wedding at The Hotel Britomart"
 description: "An elegant, urban wedding at The Hotel Britomart in Auckland's Britomart precinct — captured by wedding photographer Tony Gorham of Moments In Light."
-date: 2025-04-12T00:43:59.370Z
-updated: 2026-09-08T22:46:31.085Z
+date: 2025-04-12
+updated: 2026-09-09
 author: "Tony Gorham"
 categories: ["Wedding"]
 tags: []

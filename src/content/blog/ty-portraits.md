@@ -2,8 +2,8 @@
 title: "Ty shoot 2"
 seoTitle: "Creative Portrait Photography in Auckland"
 description: "Express yourself with creative portrait photography in Auckland. Stylish, natural, and uniquely tailored to you."
-date: 2024-12-02T19:54:10.156Z
-updated: 2025-10-13T21:31:34.838Z
+date: 2024-12-03
+updated: 2025-10-14
 author: "Tony Gorham"
 categories: ["Portrait"]
 tags: []

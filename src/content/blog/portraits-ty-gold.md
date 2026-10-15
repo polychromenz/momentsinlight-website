@@ -2,8 +2,8 @@
 title: "Pure Gold - Portraits with Ty"
 seoTitle: "Creative studio portraits"
 description: "We went bold with a gold theme and did very well in lots of competitions"
-date: 2024-10-18T00:06:00.582Z
-updated: 2025-10-13T21:33:17.779Z
+date: 2024-10-18
+updated: 2025-10-14
 author: "Tony Gorham"
 categories: ["Portrait"]
 tags: []

@@ -2,8 +2,8 @@
 title: "Janine and Kyle"
 seoTitle: "Janine and Kyle's Auckland wedding"
 description: "A wonderful Wanui wedding"
-date: 2025-12-03T21:32:57.049Z
-updated: 2026-01-13T01:52:41.851Z
+date: 2025-12-04
+updated: 2026-01-13
 author: "Tony Gorham"
 categories: ["Wedding"]
 tags: []

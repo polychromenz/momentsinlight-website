@@ -2,8 +2,8 @@
 title: "Deb and Joe"
 seoTitle: "Deb & Joe’s Beautiful Wedding | Moments in Light Photography"
 description: "Deb & Joe’s stunning wedding. See their love story through timeless photography."
-date: 2022-12-21T23:29:00.273Z
-updated: 2025-10-01T00:48:56.512Z
+date: 2022-12-22
+updated: 2025-10-01
 author: "Tony Gorham"
 categories: []
 tags: []

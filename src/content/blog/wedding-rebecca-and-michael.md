@@ -2,8 +2,8 @@
 title: "Rebecca and Michael"
 seoTitle: "Rebecca and Michael's Beautiful Wedding"
 description: "Rebecca & Michaels stunning wedding day. Explore a love story told through timeless photography"
-date: 2025-04-08T00:37:03.342Z
-updated: 2025-10-13T21:30:03.720Z
+date: 2025-04-08
+updated: 2025-10-14
 author: "Tony Gorham"
 categories: ["Wedding"]
 tags: []

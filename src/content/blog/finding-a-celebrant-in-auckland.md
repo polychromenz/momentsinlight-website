@@ -2,8 +2,8 @@
 title: "Finding a Celebrant in Auckland"
 seoTitle: "Auckland Wedding Photography Services"
 description: "Capture your love story with stunning Auckland wedding photography. Elegant, natural, and heartfelt images youâ€™ll treasure forever."
-date: 2024-05-13T01:12:01.379Z
-updated: 2025-09-30T23:08:16.640Z
+date: 2024-05-13
+updated: 2025-10-01
 author: "Tony Gorham"
 categories: ["Info"]
 tags: []

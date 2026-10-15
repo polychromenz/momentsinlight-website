@@ -2,8 +2,8 @@
 title: "Raewyn and Shane"
 seoTitle: "Raewyn & Shane's Wedding"
 description: "Experience the magic of Raewyn & Shane’s wedding in Auckland."
-date: 2024-12-14T00:13:00.934Z
-updated: 2025-10-13T21:31:21.434Z
+date: 2024-12-14
+updated: 2025-10-14
 author: "Tony Gorham"
 categories: ["Wedding"]
 tags: []

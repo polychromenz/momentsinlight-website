@@ -2,8 +2,8 @@
 title: "Viv’s ballet portrait session"
 seoTitle: "Creative Portrait Photography in Auckland"
 description: "Express yourself with creative portrait photography in Auckland. Stylish, natural, and uniquely tailored to you."
-date: 2024-10-17T00:42:55.776Z
-updated: 2025-10-13T21:33:54.109Z
+date: 2024-10-17
+updated: 2025-10-14
 author: "Tony Gorham"
 categories: ["Portrait"]
 tags: []

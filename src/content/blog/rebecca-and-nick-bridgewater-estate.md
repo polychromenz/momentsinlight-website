@@ -2,8 +2,8 @@
 title: "Rebecca & Nick | Bridgewater Estate Wedding"
 seoTitle: "Rebecca & Nick | Bridgewater Estate Wedding"
 description: "A beautiful Bridgewater Estate wedding with Rebecca and Nick. Despite a rainy day, their outdoor ceremony and elegant details made for a perfect celebration."
-date: 2026-05-31T23:02:38.217Z
-updated: 2026-08-16T22:24:40.713Z
+date: 2026-06-01
+updated: 2026-08-17
 author: "Tony Gorham"
 categories: ["Wedding"]
 tags: ["bridgewater"]

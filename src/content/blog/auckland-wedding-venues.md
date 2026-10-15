@@ -2,8 +2,8 @@
 title: "Auckland Wedding Venues: A Local Photographer's Guide"
 seoTitle: "Auckland Wedding Venues: A Local Photographer's Guide"
 description: "27+ Auckland wedding venues, from West Auckland vineyards to Waiheke Island — curated by wedding photographer Tony Gorham, with real weddings from venues he's shot at."
-date: 2026-08-31T22:07:57.315Z
-updated: 2026-09-21T02:47:44.253Z
+date: 2026-09-01
+updated: 2026-09-21
 author: "Tony Gorham"
 categories: ["Info"]
 tags: []

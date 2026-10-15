@@ -2,8 +2,8 @@
 title: "Wedding Suit options in Auckland."
 seoTitle: "Need a sharp suit to complete the look?"
 description: "Casual or formal? Hire or Buy? A guide to men's wedding suits in Auckland NZ. Have a blast finding the perfect vibe."
-date: 2024-05-13T00:35:38.405Z
-updated: 2024-10-01T22:29:46.734Z
+date: 2024-05-13
+updated: 2024-10-02
 author: "Tony Gorham"
 categories: ["Info"]
 tags: []

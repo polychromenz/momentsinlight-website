@@ -2,8 +2,8 @@
 title: "Jade and Ben - Kumeu Valley Estate"
 seoTitle: "Jade and Ben's classy wedding at Kumeu Valley Estate"
 description: "Beautiful summer wedding at the stunning Kumeu Valley Estate"
-date: 2026-02-20T21:29:05.623Z
-updated: 2026-08-16T23:15:06.869Z
+date: 2026-02-21
+updated: 2026-08-17
 author: "Tony Gorham"
 categories: ["Wedding"]
 tags: []

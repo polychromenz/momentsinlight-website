@@ -4,8 +4,8 @@ seoTitle: Family photoshoot Auckland
 description: Looking for the perfect Auckland family photoshoot? We can help
   with that. Take a look at our galleries.
 thumbnail: https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1715807698000-AL1I35SOF0XGM4SQ8LBQ/_W2A2621_SOCIAL.jpg
-date: 2026-10-15
-updated: 2026-10-15
+date: 2024-05-16
+updated: 2024-10-17
 author: Tony Gorham
 gallery:
   - src: https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1715807382856-0O8T5AKAI4K9F9KUGQQJ/_W2A2621_SOCIAL.jpg

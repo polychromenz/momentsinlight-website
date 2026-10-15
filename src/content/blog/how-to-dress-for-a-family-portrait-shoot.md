@@ -2,8 +2,8 @@
 title: "How to Dress for a Family Portrait Shoot"
 seoTitle: "Family Photography Sessions in Auckland"
 description: "Cherish life's milestones with relaxed family photography in Auckland. Fun, natural, and timeless portraits you'll love sharing."
-date: 2024-09-09T05:22:16.747Z
-updated: 2025-09-30T04:21:45.248Z
+date: 2024-09-09
+updated: 2025-09-30
 author: "Tony Gorham"
 categories: []
 tags: []

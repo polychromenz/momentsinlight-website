@@ -2,8 +2,8 @@
 title: "Chiedza & Foster – A Joyful Celebration at Abel Estate"
 seoTitle: "Chi and Foster's | Abel Estate"
 description: "Chi and Foster's stunning wedding shoot at Abel Estate. Set against the backdrop of this beautiful vineyard."
-date: 2025-06-20T23:43:00.537Z
-updated: 2026-04-02T01:21:26.115Z
+date: 2025-06-21
+updated: 2026-04-02
 author: "Tony Gorham"
 categories: ["Wedding"]
 tags: []

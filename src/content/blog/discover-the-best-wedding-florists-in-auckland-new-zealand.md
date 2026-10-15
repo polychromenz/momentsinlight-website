@@ -2,8 +2,8 @@
 title: "Discover the Best Wedding Florists in Auckland, New Zealand"
 seoTitle: "Weddings and flowers go hand in hand"
 description: "Our handy guide to finding and choosing a florist that suits your wedding vibe. It's a super important job so don't rush this."
-date: 2024-05-12T23:32:41.730Z
-updated: 2025-10-13T21:36:45.305Z
+date: 2024-05-13
+updated: 2025-10-14
 author: "Tony Gorham"
 categories: ["Info"]
 tags: []

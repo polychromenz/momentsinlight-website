@@ -2,8 +2,8 @@
 title: "Andrea and Nigel"
 seoTitle: "Andrea & Nigel’s Stunning Wedding"
 description: "Andrea & Nigel’s breathtaking wedding day.  From intimate moments to elegant portraits."
-date: 2024-06-04T23:24:00.879Z
-updated: 2025-10-01T00:46:49.803Z
+date: 2024-06-05
+updated: 2025-10-01
 author: "Tony Gorham"
 categories: []
 tags: []

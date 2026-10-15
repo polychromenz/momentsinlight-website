@@ -2,8 +2,8 @@
 title: "Franklin sunflower fields"
 seoTitle: "Sunflower photoshoot"
 description: "Come to Franklin farm and get some gorgeous photos at sunset in the sunflowers"
-date: 2024-11-10T22:28:07.529Z
-updated: 2025-10-13T21:32:08.284Z
+date: 2024-11-11
+updated: 2025-10-14
 author: "Tony Gorham"
 categories: ["Portrait"]
 tags: []

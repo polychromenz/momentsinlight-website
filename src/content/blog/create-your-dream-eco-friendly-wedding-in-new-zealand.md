@@ -2,8 +2,8 @@
 title: "Create Your Dream Eco-Friendly Wedding"
 seoTitle: "Create Your Dream Eco-Friendly Wedding"
 description: "Many couples are now seeking to celebrate their love in a manner that reflects their values and minimizes their ecological footprint."
-date: 2024-05-12T23:24:08.082Z
-updated: 2025-09-30T03:51:46.875Z
+date: 2024-05-13
+updated: 2025-09-30
 author: "Tony Gorham"
 categories: ["Info"]
 tags: []

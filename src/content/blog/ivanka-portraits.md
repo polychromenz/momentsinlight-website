@@ -2,8 +2,8 @@
 title: "Ivanka Zonjic"
 seoTitle: "Classy studio portraits"
 description: "Lots of different styles for a classy look."
-date: 2025-01-23T02:57:08.593Z
-updated: 2025-10-13T21:31:12.347Z
+date: 2025-01-23
+updated: 2025-10-14
 author: "Tony Gorham"
 categories: ["Portrait"]
 tags: []

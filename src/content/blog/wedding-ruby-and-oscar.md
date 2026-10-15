@@ -2,8 +2,8 @@
 title: "Ruby and Oscar"
 seoTitle: "Ruby & Oscar’s Magical Wedding | Moments in Light Photography"
 description: "Ruby & Oscar’s unforgettable wedding day. From emotional vows to stunning portraits."
-date: 2024-02-24T01:40:00.638Z
-updated: 2025-10-01T00:48:05.993Z
+date: 2024-02-24
+updated: 2025-10-01
 author: "Tony Gorham"
 categories: []
 tags: []

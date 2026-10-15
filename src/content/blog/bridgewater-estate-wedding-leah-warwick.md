@@ -2,8 +2,8 @@
 title: "Leah and Warwick - Bridgewater Estate"
 seoTitle: "Leah and Warwick's Auckland Wedding at Bridgewater Estate Auckland"
 description: "Leah and Warwick's Wedding at Bridgewater Estate Auckland"
-date: 2026-01-13T03:42:27.831Z
-updated: 2026-08-16T23:14:16.364Z
+date: 2026-01-13
+updated: 2026-08-17
 author: "Tony Gorham"
 categories: ["Wedding"]
 tags: ["bridgewater"]

@@ -2,8 +2,8 @@
 title: "Bronte and Greg"
 seoTitle: "Bronte & Greg’s Dreamy Wedding | Moments in Light Photography"
 description: "Bronte & Greg’s breathtaking wedding.  From romantic vows to stunning portraits, relive their unforgettable love story."
-date: 2024-05-12T22:58:57.024Z
-updated: 2025-10-01T00:52:11.776Z
+date: 2024-05-13
+updated: 2025-10-01
 author: "Tony Gorham"
 categories: []
 tags: []

@@ -2,8 +2,8 @@
 title: "Wedding Table Decorations"
 seoTitle: "Auckland Wedding Table Decorations Guide - Moments In Light"
 description: "Discover delightful wedding table decoration options in Auckland, New Zealand. From rustic to modern, create a memorable reception with these stunning ideas."
-date: 2024-05-13T00:50:58.364Z
-updated: 2026-09-21T02:53:25.092Z
+date: 2024-05-13
+updated: 2026-09-21
 author: "Tony Gorham"
 categories: ["Info"]
 tags: []

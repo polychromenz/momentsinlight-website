@@ -2,8 +2,8 @@
 title: "Tips for writing your Wedding Vows"
 seoTitle: "Auckland Wedding Photography Services"
 description: "Read stories, tips, and inspiration from real photo sessions and Auckland weddings."
-date: 2024-05-13T00:43:07.154Z
-updated: 2026-09-21T03:22:17.462Z
+date: 2024-05-13
+updated: 2026-09-21
 author: "Tony Gorham"
 categories: ["Info"]
 tags: []

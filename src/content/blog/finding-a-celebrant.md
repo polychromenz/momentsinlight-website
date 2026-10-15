@@ -2,8 +2,8 @@
 title: "Finding a celebrant that suits you"
 seoTitle: "Finding A Celebrant In Auckland"
 description: "Read stories, tips, and inspiration from real photo sessions and Auckland weddings."
-date: 2024-05-21T22:39:44.260Z
-updated: 2025-10-01T00:28:57.443Z
+date: 2024-05-22
+updated: 2025-10-01
 author: "Tony Gorham"
 categories: ["Info"]
 tags: []

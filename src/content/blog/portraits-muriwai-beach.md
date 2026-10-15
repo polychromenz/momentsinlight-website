@@ -2,8 +2,8 @@
 title: "Muriwai beach portraits"
 seoTitle: "Creative Portrait Photography in Auckland"
 description: "Express yourself with creative portrait photography in Auckland. Stylish, natural, and uniquely tailored to you."
-date: 2024-10-23T20:23:27.312Z
-updated: 2025-10-13T21:32:56.153Z
+date: 2024-10-24
+updated: 2025-10-14
 author: "Tony Gorham"
 categories: ["Portrait"]
 tags: []

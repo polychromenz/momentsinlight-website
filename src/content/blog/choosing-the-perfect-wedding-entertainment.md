@@ -1,8 +1,8 @@
 ---
 title: "Choosing the Perfect Wedding Entertainment"
 description: "Get all the details right. Here are some thoughts on choosing the entertainment for the perfect end to your special day."
-date: 2024-06-21T05:00:00.729Z
-updated: 2024-09-19T22:55:08.719Z
+date: 2024-06-21
+updated: 2024-09-20
 author: "Tony Gorham"
 categories: ["Info"]
 tags: []

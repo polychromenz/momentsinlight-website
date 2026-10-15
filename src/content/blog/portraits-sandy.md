@@ -2,8 +2,8 @@
 title: "Sandy at Willowbrook"
 seoTitle: "Creative Portrait Photography in Auckland"
 description: "Express yourself with creative portrait photography in Auckland. Stylish, natural, and uniquely tailored to you."
-date: 2024-10-23T20:09:23.669Z
-updated: 2025-10-13T21:33:08.454Z
+date: 2024-10-24
+updated: 2025-10-14
 author: "Tony Gorham"
 categories: ["Portrait"]
 tags: []

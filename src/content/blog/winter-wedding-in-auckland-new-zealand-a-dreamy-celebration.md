@@ -2,8 +2,8 @@
 title: "Winter Weddings in Auckland"
 seoTitle: "Winter weddings in Auckland New Zealand"
 description: "Just because it gets cold, the love doesn't stop. Find out about winter weddings in Auckland."
-date: 2024-07-09T04:07:20.531Z
-updated: 2025-09-29T22:53:06.000Z
+date: 2024-07-09
+updated: 2025-09-30
 author: "Tony Gorham"
 categories: []
 tags: []

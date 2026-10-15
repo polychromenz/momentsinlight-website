@@ -2,8 +2,8 @@
 title: "Wedding Dance Auckland"
 seoTitle: "For the perfect wedding dance"
 description: "Your wedding dance is an exciting highlight of your special day but can often feel daunting for many couples!"
-date: 2024-05-30T22:45:50.695Z
-updated: 2024-05-30T22:45:51.947Z
+date: 2024-05-31
+updated: 2024-05-31
 author: "Tony Gorham"
 categories: ["Info"]
 tags: []

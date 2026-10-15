@@ -2,8 +2,8 @@
 title: "How to Plan Your Wedding Day Timeline"
 seoTitle: "How to Plan Your Wedding Day Timeline (NZ Photographer Tips)"
 description: "An Auckland wedding photographer's guide to planning your wedding day timeline: a sample run sheet, family photo tips, golden hour timing and a free tool."
-date: 2026-10-05T23:33:23.947Z
-updated: 2026-10-06T00:20:10.151Z
+date: 2026-10-06
+updated: 2026-10-06
 author: "Tony Gorham"
 categories: ["Info"]
 tags: []

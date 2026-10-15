@@ -2,8 +2,8 @@
 title: "Miss Sandy Dee at her American Diner"
 seoTitle: "Creative Portrait Photography in Auckland"
 description: "Express yourself with creative portrait photography in Auckland. Stylish, natural, and uniquely tailored to you."
-date: 2024-10-23T19:51:46.859Z
-updated: 2025-09-30T04:17:47.174Z
+date: 2024-10-24
+updated: 2025-09-30
 author: "Tony Gorham"
 categories: ["Portrait"]
 tags: []

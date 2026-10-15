@@ -2,8 +2,8 @@
 title: "Chris and Andy"
 seoTitle: "Chris & Andy’s Beautiful Wedding | Moments in Light Photography"
 description: "Experience the love and joy of Chris & Andy’s stunning wedding."
-date: 2024-05-14T01:46:18.704Z
-updated: 2025-10-01T00:46:23.167Z
+date: 2024-05-14
+updated: 2025-10-01
 author: "Tony Gorham"
 categories: []
 tags: []

@@ -2,8 +2,8 @@
 title: "How to Find the Perfect Invitation Card Supplier"
 seoTitle: "Finding Invite card suppliers"
 description: "The perfect invite sets the tone for your wedding day. Makle an announcement with style."
-date: 2024-05-12T23:27:58.373Z
-updated: 2025-09-30T02:50:57.468Z
+date: 2024-05-13
+updated: 2025-09-30
 author: "Tony Gorham"
 categories: ["Info"]
 tags: []

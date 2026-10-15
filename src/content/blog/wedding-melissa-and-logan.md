@@ -2,8 +2,8 @@
 title: "Melissa and Logan"
 seoTitle: "Beautiful relaxed and casual Auckland wedding"
 description: "Melissa and Logan's casual Kiwi wedding."
-date: 2024-05-13T03:10:11.806Z
-updated: 2025-10-01T00:47:37.958Z
+date: 2024-05-13
+updated: 2025-10-01
 author: "Tony Gorham"
 categories: []
 tags: []

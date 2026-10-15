@@ -2,8 +2,8 @@
 title: "Confetti Options"
 seoTitle: "Confetti Options Pros and Cons"
 description: "Read stories, tips, and inspiration from real photo sessions and Auckland weddings."
-date: 2024-05-13T00:45:39.109Z
-updated: 2025-10-01T00:29:12.509Z
+date: 2024-05-13
+updated: 2025-10-01
 author: "Tony Gorham"
 categories: ["Info"]
 tags: []

@@ -2,8 +2,8 @@
 title: "Anita at the Airedale"
 seoTitle: "Creative Portrait Photography in Auckland"
 description: "Express yourself with creative portrait photography in Auckland. Stylish, natural, and uniquely tailored to you."
-date: 2024-10-17T01:17:14.288Z
-updated: 2025-10-13T21:33:34.129Z
+date: 2024-10-17
+updated: 2025-10-14
 author: "Tony Gorham"
 categories: ["Portrait"]
 tags: []

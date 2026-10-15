@@ -2,8 +2,8 @@
 title: "Cherry & Chi – Elegant Romance at Abel Estate"
 seoTitle: "Cherry and Chi's wedding at Abel Estate, Kumeu, Auckland"
 description: "Another classy Kumeu wedding at Abel Estate"
-date: 2026-03-01T00:58:16.989Z
-updated: 2026-04-02T01:21:00.944Z
+date: 2026-03-01
+updated: 2026-04-02
 author: "Tony Gorham"
 categories: ["Wedding"]
 tags: []

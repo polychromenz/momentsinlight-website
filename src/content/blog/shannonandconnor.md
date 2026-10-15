@@ -2,8 +2,8 @@
 title: "Shannon & Connor’s Auckland Wedding."
 seoTitle: "Shannon and Connor's Auckland Wedding"
 description: "Auckland garden wedding"
-date: 2025-10-13T21:38:41.337Z
-updated: 2025-12-03T21:33:34.371Z
+date: 2025-10-14
+updated: 2025-12-04
 author: "Tony Gorham"
 categories: ["Wedding"]
 tags: []

@@ -2,8 +2,8 @@
 title: "How to Create a Wedding Mood Board on Pinterest"
 seoTitle: "Create a wedding mood board"
 description: "Creating a mood board lets everyone from florist to venue and even the wedding photographer know what styles you like and how to help create your vision."
-date: 2024-05-13T03:04:20.950Z
-updated: 2025-09-30T02:49:15.487Z
+date: 2024-05-13
+updated: 2025-09-30
 author: "Tony Gorham"
 categories: ["Info"]
 tags: []

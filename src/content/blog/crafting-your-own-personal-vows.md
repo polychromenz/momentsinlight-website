@@ -2,8 +2,8 @@
 title: "Crafting your own personal vows"
 seoTitle: "How to crate you own wedding vows"
 description: "Writing personal vows is often one of the most meaningful aspects of wedding planning."
-date: 2024-08-18T21:54:05.952Z
-updated: 2026-01-12T21:03:41.361Z
+date: 2024-08-19
+updated: 2026-01-13
 author: "Sarah Wolff"
 categories: []
 tags: []
