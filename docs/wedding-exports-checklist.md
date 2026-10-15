@@ -1,5 +1,9 @@
 # Wedding exports checklist
 
+> **Finished 15 Oct 2026.** All 25 weddings are exported, matched and on Cloudflare Images;
+> photos Lightroom couldn't find were taken from the current site. Kept for reference; see
+> [photos.md](photos.md) for how photos work now.
+
 Every wedding with a blog post on the website, newest post first. Tick each one off once its
 Lightroom export is done.
 

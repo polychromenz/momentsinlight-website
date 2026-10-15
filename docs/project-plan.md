@@ -1,6 +1,6 @@
 # Moments in Light Website Rebuild — Project Plan
 
-Oct 13, 2026 · @Tony
+Oct 13, 2026 · @Tony · updated Oct 15, 2026
 
 ## Overview
 
@@ -9,7 +9,16 @@ Rebuild [momentsinlight.co.nz](https://www.momentsinlight.co.nz) off Squarespace
 - **Why:** SEO tools flag issues that can't be fixed on Squarespace, the design is restrictive, and the subscription is expensive.
 - **Goal:** better SEO and page speed, full design control, lower running costs.
 - **Must keep:** an easy way to add wedding blog posts, every existing URL, and current Google rankings.
-- **Status:** exploring; no start date set.
+- **Status (15 Oct 2026):** the new site is built and running at [momentsinlight-website.pages.dev](https://momentsinlight-website.pages.dev), every photo is on Cloudflare Images, and the domain is being switched over (nameservers moved to Cloudflare, waiting for the `.nz` registry). See [domain-switch.md](domain-switch.md).
+
+Related docs:
+
+| Doc | What it covers |
+| --- | --- |
+| [domain-switch.md](domain-switch.md) | Moving momentsinlight.co.nz to the new site: DNS records, steps, what's left |
+| [photos.md](photos.md) | How photos are hosted (Cloudflare Images), the scripts, and adding photos for a new post |
+| [forms-setup.md](forms-setup.md) | Wedding photo guide signup form (Cloudflare D1 database, Turnstile) |
+| [wedding-exports-checklist.md](wedding-exports-checklist.md) | Lightroom export checklist used for the photo move (finished) |
 
 ## Decisions
 
@@ -17,7 +26,9 @@ Rebuild [momentsinlight.co.nz](https://www.momentsinlight.co.nz) off Squarespace
 | --- | --- | --- |
 | Site framework | [Astro](https://astro.build) | Outputs plain, fast HTML with full control over titles, meta tags, structured data and URLs |
 | Hosting | [Cloudflare](https://pages.cloudflare.com) (static site, free) | Auckland edge server, unlimited bandwidth, free preview address for review |
-| Images | [Cloudflare Images](https://www.cloudflare.com/developer-platform/products/cloudflare-images/) (about US$5/month) | Auto-resizes and serves WebP/AVIF per device; biggest speed gain |
+| Images | [Cloudflare Images](https://www.cloudflare.com/developer-platform/products/cloudflare-images/) (Images & Stream starter bundle, US$5/month) | Auto-resizes and serves WebP/AVIF per device; biggest speed gain. All 1,523 photos moved 15 Oct 2026 |
+| Guide signup form | Cloudflare Pages Function + D1 database + Turnstile | Replaces the Squarespace newsletter block; see forms-setup.md |
+| Analytics | Google Analytics 4 and Meta Pixel, loaded after the page | Same IDs as Squarespace; loading them late keeps the photos fast |
 | Blog editing | [Pages CMS](https://pagescms.org) | Free, simple editor for posts and photos, works with GitHub |
 | Code storage | [GitHub](https://github.com), existing account, private repo momentsinlight-website | Every push publishes automatically via Cloudflare |
 | Build tool | [Claude Code](https://claude.com/product/claude-code) on PC (already installed) | Can build the site, run the image script locally, and push to GitHub |
@@ -45,49 +56,64 @@ Venue pages share one layout, and so do wedding posts, so both convert in bulk o
 
 ## Roadmap
 
-About two weekends of hands-on time, spread over two to three weeks.
-
-1. **Accounts (about 1 hour)**
-   - [ ] Create a private GitHub repo for the site (done: momentsinlight-website)
-   - [ ] Create a Cloudflare account and authorise GitHub access (done); select the repo and deploy after the first push
-2. **Image exports (a few hours, unattended)**
-   - [ ] Export every wedding, portrait and family session at 2048px into a `web` subfolder (spec below)
-3. **Build (one or two sessions with Claude Code)**
-   - [ ] Give Claude Code this plan as its brief
-   - [ ] Recreate the design and all main pages from the live site
-   - [ ] Build the blog and venue templates, then convert all posts
-   - [ ] Embed the Studio Ninja contact form and carry over Pic-Time links
-   - [ ] Set up Pages CMS for adding new blog posts
-4. **Image matching**
-   - [ ] Run the matching script against the `web` folders
-   - [ ] Check the flagged, uncertain matches by eye
-   - [ ] Export the landing-page images at 3000px once the script lists them
-   - [ ] Set up Cloudflare Images
-5. **Review on the preview address (as long as needed)**
-   - [ ] Compare the new site side by side with the live one
-   - [ ] Approve or reject each flagged typo
-   - [ ] Request tweaks
-6. **Switchover (about 1 hour, plus up to a day to propagate)**
-   - [ ] Check every current URL resolves on the new site or redirects
-   - [ ] Point the domain at Cloudflare
-   - [ ] Submit the new sitemap in Google Search Console
-   - [ ] Keep Squarespace active for a few weeks as a fallback, then cancel
+1. **Accounts**
+   - [x] Private GitHub repo: momentsinlight-website
+   - [x] Cloudflare account, Pages project connected to GitHub (every push publishes)
+2. **Build**
+   - [x] Recreate the design and all main pages from the live site
+   - [x] Blog and venue templates; all posts converted
+   - [x] Studio Ninja contact form embedded; Pic-Time links carried over
+   - [x] Pages CMS for blog posts and section-built pages
+   - [x] Guide signup form on Cloudflare (D1 + Turnstile); GA4 and Meta Pixel
+   - [x] Squarespace URL mappings carried over as 301 redirects; 404 page
+3. **Review on the preview address**
+   - [x] Compared side by side with the live site at desktop and phone widths
+   - [x] Flagged typos approved or rejected (see Content fixes)
+   - [x] Tweaks: buttons, headings, slideshows, blog galleries, gallery pages filtered by category
+   - [x] Retired 9 older wedding posts (redirected to /wedding-galleries)
+4. **Photos (15 Oct 2026)**
+   - [x] Lightroom exports for the weddings; anything Lightroom couldn't find, plus portraits, family, venue pages and articles, taken from the current site
+   - [x] Matched and uploaded to Cloudflare Images (1,523 photos); nothing loads from Squarespace any more
+   - [ ] Optional: re-export the full-width hero photos at 3000px (not needed for speed or quality at current sizes)
+5. **Speed (15 Oct 2026)**
+   - [x] Compared old and new with Google PageSpeed Insights (see Speed below)
+   - [x] Slideshows load each photo just before it shows; main photo fetched first; styles inline; analytics after load; fonts preloaded
+6. **Switchover** (see [domain-switch.md](domain-switch.md))
+   - [x] Every sitemap URL checked on the new site (all 200), redirects and 404 tested
+   - [x] Domain added to Cloudflare (Free plan), DNS records copied and checked
+   - [x] Nameservers changed at iwantmyname to dora/eoin.ns.cloudflare.com
+   - [ ] Cloudflare shows the domain Active
+   - [ ] Add www and the bare domain as custom domains on the Pages project; root-to-www redirect
+   - [ ] Add both hostnames to the Turnstile widget
+   - [ ] Test the live domain (pages, old links, form, email still arriving)
+   - [ ] Submit the sitemap in Google Search Console
+   - [ ] Keep Squarespace a few weeks as a fallback, then cancel
 
 ## Image exports and matching
 
-Use original files rather than Squarespace's compressed copies, matched to each page by a script on the PC.
+Done 15 Oct 2026; how it works now is in [photos.md](photos.md).
 
-| Export | Size | Format | Where | When |
-| --- | --- | --- | --- | --- |
-| Blog and gallery images | 2048px long edge | sRGB JPEG, quality \~85 | `web` subfolder in each session folder | Before the build |
-| Landing and full-width images | 3000px long edge | sRGB JPEG, quality \~85 | Same folder | After the script lists which ones they are |
+- **Exports:** 2048px long edge, sRGB JPEG, into `E:\EXPORTS\website\<year-couple>\colour` and `\mono`.
+- **Matching:** camera file name first (the script strips SOCIAL\_\_, FULLSIZE\_\_, -Edit, -2, " - Copy"), then the pictures themselves are compared, which also picks colour or mono and the right edit. Camera numbering does repeat across weddings, so each post is matched against its own wedding's folder.
+- **From the current site:** photos Lightroom couldn't find (most older weddings, all portraits, family, headshots, lifestyle, venue pages and articles) were downloaded from Squarespace at 2500px and resized to 2048px. Visitors see no difference at the sizes the site shows.
+- **Result:** 1,523 photos on Cloudflare Images; no page loads anything from Squarespace.
 
-- **Folders:** existing session folders are already named by date and couple (for example, 2025-03-15 Sarah & James), so each blog post is matched only against its own wedding's folder.
-- **Matching:** filename first, then visual matching (perceptual hashing) to confirm each pair and catch renamed files.
-- **Filename clean-up:** the script strips Squarespace extras such as SOCIAL\_\_, FULLSIZE\_\_, -Edit and " - Copy" before matching.
-- **Duplicate names:** not a risk, since the two R5 Mark II bodies already use different prefixes (\_30A and \_Q9A).
-- **Fallback:** any image with no original found uses the downloaded Squarespace copy, so nothing goes missing.
-- **Scope:** include portrait and family sessions too, since they appear on the landing pages.
+## Speed
+
+Google PageSpeed Insights, 15 Oct 2026, median of 3 runs per page, old and new tested at the same time. Mobile is a mid-range phone on slow 4G (what Google uses for rankings). Score out of 100, then how long until the main photo appears.
+
+| Page | Squarespace | New site |
+| --- | --- | --- |
+| Home | 47, 5.3s | 93, 1.8s |
+| Weddings | 47, 4.6s | 89, 2.1s |
+| Ellie & Ryan post | 39, 13.4s | 87, 1.1s |
+| Abel Estate | 38, 9.4s | 99, 2.0s |
+| Portraits | 49, 5.0s | 84–97, 2.1s |
+| Premium Portraits | 39, 10.1s | 86, 2.1s |
+
+Desktop scores are 76–99 with the main photo in under a second. Pages download about a third of the data and a quarter of the files Squarespace's did. Scores move ±10 between runs; what's left is mostly Google Analytics and the Meta Pixel, which now load after the page has appeared (kept on purpose: starting them only on first scroll would lose visitors who leave without touching the page).
+
+Rerun any time with `node scripts/speed-compare.mjs` (needs `PAGESPEED_API_KEY` in `.env`; results in `docs/speed-compare.json`).
 
 ## URLs, redirects and SEO
 
@@ -148,8 +174,10 @@ Running costs drop to about US$5 a month, plus the domain already being paid for
 | --- | --- |
 | Astro, Pages CMS, GitHub | Free |
 | Cloudflare hosting | Free |
-| Cloudflare Images | About US$5/month |
-| Domain | Unchanged |
+| Cloudflare Images | US$5/month (Images & Stream starter bundle) |
+| Cloudflare DNS | Free plan |
+| Google PageSpeed API key | Free |
+| Domain | Unchanged (still registered with iwantmyname) |
 | Squarespace | Cancelled after switchover |
 
 The main cost is setup time, about two weekends.
@@ -178,5 +206,7 @@ Two Studio Ninja ideas came up alongside the rebuild; neither is decided.
 | Astro | [astro.build](https://astro.build) |
 | Pages CMS | [pagescms.org](https://pagescms.org) |
 | Claude Code | [claude.com/product/claude-code](https://claude.com/product/claude-code) |
+| New site (preview) | [momentsinlight-website.pages.dev](https://momentsinlight-website.pages.dev) |
+| PageSpeed Insights | [pagespeed.web.dev](https://pagespeed.web.dev) |
 | Current site | [momentsinlight.co.nz](https://www.momentsinlight.co.nz) |
 | Current sitemap | [momentsinlight.co.nz/sitemap.xml](https://www.momentsinlight.co.nz/sitemap.xml) |
