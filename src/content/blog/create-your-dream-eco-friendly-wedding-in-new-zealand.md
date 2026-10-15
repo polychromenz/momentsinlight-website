@@ -7,7 +7,6 @@ updated: 2025-09-30
 author: "Tony Gorham"
 categories: ["Info"]
 tags: []
-thumbnail: "https://static1.squarespace.com/static/6626f9fc9b715306f4f4eae7/66380feb540545204e5ea0b6/66414e7f4510fd1809e6cac1/1759204306875/"
 ---
 Amidst growing environmental awareness, many couples are now seeking to celebrate their love in a manner that reflects their values and minimizes their ecological footprint. New Zealand, with its breathtaking natural landscapes, provides an unparalleled setting for couples aiming to create a memorable and environmentally responsible wedding celebration. As a wedding photographer based in Auckland, we think you’ll appreciate the beauty and uniqueness of eco-friendly weddings.
 

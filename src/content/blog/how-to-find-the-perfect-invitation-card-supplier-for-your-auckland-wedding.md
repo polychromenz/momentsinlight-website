@@ -7,7 +7,6 @@ updated: 2025-09-30
 author: "Tony Gorham"
 categories: ["Info"]
 tags: []
-thumbnail: "https://static1.squarespace.com/static/6626f9fc9b715306f4f4eae7/66380feb540545204e5ea0b6/66414fee6b5cfa0487af9d85/1759200657468/"
 ---
 Your wedding invitations set the tone for your special day, and finding the right supplier is crucial. Whether you’re planning an intimate gathering or a grand celebration in Auckland, here are some steps to help you discover the perfect invitation cards:
 

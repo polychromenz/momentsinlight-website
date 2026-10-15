@@ -2,7 +2,7 @@
  "path": "/portraits-gallery",
  "title": "Portraits Gallery - Stunning portraits | Moments In Light",
  "description": "Looking for an awesome portrait? The memories we leave behind tell our story. Why not add to that story with a beautiful portrait.",
- "ogImage": "http://static1.squarespace.com/static/6626f9fc9b715306f4f4eae7/t/68dc85608cc78a11fc072b7c/1759282528270/Moments+in+Light+250x250.jpg",
+ "ogImage": "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/share/Moments_in_Light_250x250/public",
  "type": {
   "d": {
    "h1": [
@@ -144,10 +144,10 @@
    "design": "slideshow",
    "images": [
     {
-     "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/e75eeb2d-5768-4d30-b390-2c3792f08ff2/Gorham_Tony_03_Kenja.jpg",
+     "src": "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/colour/Gorham_Tony_03_Kenja-website/public",
      "alt": "Studio portrait of a woman with bold orange eye makeup and a patterned jacket",
-     "width": 2250,
-     "height": 3000,
+     "width": 1536,
+     "height": 2048,
      "focal": [
       0.5,
       0.5
@@ -156,10 +156,10 @@
      "title": null
     },
     {
-     "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/82491d93-22d8-47fd-b485-a0eb63dcf15c/Gorham_Tony_04_Jay.jpg",
+     "src": "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/colour/Gorham_Tony_04_Jay-website/public",
      "alt": "A woman in a red tulle gown seated in a mustard armchair",
-     "width": 2001,
-     "height": 3000,
+     "width": 1366,
+     "height": 2048,
      "focal": [
       0.5,
       0.5
@@ -168,10 +168,10 @@
      "title": null
     },
     {
-     "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/5343588b-c5df-4525-a5f5-fba799d5fde7/Gorham_Tony_05_Elle.jpg",
+     "src": "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/mono/Gorham_Tony_05_Elle-website/public",
      "alt": "Black and white portrait of a woman with a long side plait",
-     "width": 2225,
-     "height": 3000,
+     "width": 1519,
+     "height": 2048,
      "focal": [
       0.5,
       0.5
@@ -180,10 +180,10 @@
      "title": null
     },
     {
-     "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/57810dda-9d29-4f27-b54a-51a010a7ee1a/Gorham_Tony_06_Ty.jpg",
+     "src": "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/colour/Gorham_Tony_06_Ty-website/public",
      "alt": "Ty with gold leaf on her skin against a black background",
-     "width": 2250,
-     "height": 3000,
+     "width": 1536,
+     "height": 2048,
      "focal": [
       0.5,
       0.5
@@ -192,7 +192,7 @@
      "title": null
     },
     {
-     "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/7d79a6e8-39b9-4308-8988-67d051291e67/SOCIAL__DSC7413_2_2_1.jpg",
+     "src": "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/colour/SOCIAL__DSC7413_2_2_1-website/public",
      "alt": "A woman in a flowing green headpiece in soft light",
      "width": 2048,
      "height": 1365,
@@ -204,7 +204,7 @@
      "title": null
     },
     {
-     "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/96740bcc-cd7f-4319-b2d1-1901e67402a3/2019+20190413-_GFX4048-untitled+shoot-Edit-Edit_SOCIAL.jpg",
+     "src": "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/mono/2019_20190413-_GFX4048-untitled_shoot-Edit-Edit_SOCIAL-website/public",
      "alt": "Black and white portrait of a woman in a statement necklace",
      "width": 1638,
      "height": 2048,
@@ -216,7 +216,7 @@
      "title": null
     },
     {
-     "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/57340223-cb1a-460c-83cc-8a9af482444b/_DSC9641_SOCIAL.jpg",
+     "src": "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/colour/SOCIAL__DSC9641-website/public",
      "alt": "Anita holds a turquoise teacup in a burgundy dress",
      "width": 1366,
      "height": 2048,
@@ -228,7 +228,7 @@
      "title": null
     },
     {
-     "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/a85563c8-5b4a-4b63-9d4d-a9a33cfd56aa/Courtney00951_1_SOCIAL.jpg",
+     "src": "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/mono/Courtney00951_1_SOCIAL-website/public",
      "alt": "Black and white portrait of a woman with vintage curls and pearls",
      "width": 1536,
      "height": 2048,
@@ -240,7 +240,7 @@
      "title": null
     },
     {
-     "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/671ae152-b607-4cd3-88de-7b0c210250c2/%7E279_1_SOCIAL.jpg",
+     "src": "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/colour/_279_1_SOCIAL-website/public",
      "alt": "A woman with long blonde hair resting her face on her hands",
      "width": 2048,
      "height": 1638,
@@ -252,7 +252,7 @@
      "title": null
     },
     {
-     "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/4a12dafb-b158-43f3-8a43-26c63b916313/_GFX9003_1_SOCIAL.jpg",
+     "src": "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/mono/SOCIAL__GFX9003_1-website/public",
      "alt": "Black and white photo of Jay seated at a grand piano",
      "width": 1536,
      "height": 2048,
@@ -264,7 +264,7 @@
      "title": null
     },
     {
-     "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/9ebd7d1e-30ea-4cd9-9dae-629287ed2189/20180816-_DSF2632-Aeon+Wynyard-Edit_SOCIAL.jpg",
+     "src": "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/mono/20180816-_DSF2632-Aeon_Wynyard-Edit_SOCIAL-website/public",
      "alt": "Black and white portrait of a woman in a polka dot dress",
      "width": 1365,
      "height": 2048,
@@ -276,7 +276,7 @@
      "title": null
     },
     {
-     "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/897f720d-a564-434f-870c-fea389d8db0a/_DSC5859_1_SOCIAL.jpg",
+     "src": "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/colour/_DSC5859_1_SOCIAL-website/public",
      "alt": "A woman in a zebra-print dress and white gloves",
      "width": 1352,
      "height": 2048,
@@ -300,9 +300,9 @@
      "title": null
     },
     {
-     "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/5b04dc56-84d4-461a-8f11-3cbb491924c0/2020+20200116-_DSC0503-untitled+shoot_SOCIAL.jpg",
+     "src": "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/colour/SOCIAL_20200116-_DSC0503-untitled_shoot-website/public",
      "alt": "A young man in a white jumper among sunflowers",
-     "width": 1639,
+     "width": 1638,
      "height": 2048,
      "focal": [
       0.5,
@@ -312,7 +312,7 @@
      "title": null
     },
     {
-     "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/7b5b45d6-b590-44ec-809f-4fcd30b0d430/SOCIAL__DSC3374.jpg",
+     "src": "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/mono/SOCIAL__DSC3374-website/public",
      "alt": "Black and white portrait of a man in patterned glasses and beads",
      "width": 1638,
      "height": 2048,
@@ -324,7 +324,7 @@
      "title": null
     },
     {
-     "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/59d4e768-b096-4f55-94f5-ff5daa89d1c5/_DSC9902_SOCIAL.jpg",
+     "src": "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/colour/SOCIAL__DSC9902-website/public",
      "alt": "Viv rests her chin on her hand at a small table in lace and jewels",
      "width": 2048,
      "height": 1366,
@@ -336,7 +336,7 @@
      "title": null
     },
     {
-     "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/f7e41a59-2a4c-4c5c-8d7e-f03af9728c98/%7E1464_SOCIAL.jpg",
+     "src": "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/mono/_1464_SOCIAL-website/public",
      "alt": "Black and white portrait of a woman with blonde hair and a choker",
      "width": 2048,
      "height": 1536,
@@ -348,7 +348,7 @@
      "title": null
     },
     {
-     "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/c81e8e71-306f-4fcd-b894-b0b99dc3fd11/_GFX9079-Edit-2_SOCIAL.jpg",
+     "src": "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/colour/_GFX9079-Edit-2_SOCIAL-website/public",
      "alt": "A woman in a black dress and pearls seated by a sunlit window",
      "width": 1536,
      "height": 2048,
@@ -360,7 +360,7 @@
      "title": null
     },
     {
-     "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1eb17cfc-0dd1-40f3-a202-19127e00c438/_DSC4443_SOCIAL.jpg",
+     "src": "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/mono/SOCIAL__DSC4443-website/public",
      "alt": "Black and white portrait of Sandy smiling in a statement necklace",
      "width": 1366,
      "height": 2048,
@@ -372,7 +372,7 @@
      "title": null
     },
     {
-     "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/a34474b9-dc13-4246-baae-b179d5cafdb0/_GFX0015_SOCIAL.jpg",
+     "src": "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/colour/_GFX0015_SOCIAL-website/public",
      "alt": "A woman wearing a vibrant floral crown and red top",
      "width": 1536,
      "height": 2048,
@@ -384,7 +384,7 @@
      "title": null
     },
     {
-     "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/ed7cd8db-e96e-4789-bf09-7177382dd4e1/_DSC9636-Edit_SOCIAL.jpg",
+     "src": "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/mono/SOCIAL__DSC9636-Edit-website/public",
      "alt": "Black and white photo of a woman in a white gown among long grass",
      "width": 2048,
      "height": 1365,
@@ -396,7 +396,7 @@
      "title": null
     },
     {
-     "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/7c4cc7d8-c712-48a8-97a0-f79e9f256cd8/_DSC3912_SOCIAL.jpg",
+     "src": "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/colour/SOCIAL__DSC3912-website/public",
      "alt": "Sandy in an emerald satin gown beside red velvet curtains",
      "width": 1366,
      "height": 2048,
@@ -408,7 +408,7 @@
      "title": null
     },
     {
-     "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/7f2079a2-97ff-4fb7-a98c-bf6ea99ce638/_GFX9035_SOCIAL.jpg",
+     "src": "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/mono/SOCIAL__GFX9035-website/public",
      "alt": "Black and white photo of a woman sipping tea by a window",
      "width": 2048,
      "height": 1536,
@@ -420,7 +420,7 @@
      "title": null
     },
     {
-     "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/30b546e2-c936-456b-8473-190bcea6ff79/20180818-_DSF2990-Aeon+Wynyard-Edit_SOCIAL.jpg",
+     "src": "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/colour/20180818-_DSF2990-Aeon_Wynyard-Edit_SOCIAL-website/public",
      "alt": "A bearded man in aviator sunglasses and a patterned shirt",
      "width": 1536,
      "height": 2048,
@@ -432,7 +432,7 @@
      "title": null
     },
     {
-     "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/b42e82bc-c0c8-4cd2-b54e-85b222a6a64f/20180812-_DSF2430-untitled+shoot-Edit-Edit_SOCIAL.jpg",
+     "src": "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/mono/20180812-_DSF2430-untitled_shoot-Edit-Edit_SOCIAL-website/public",
      "alt": "Black and white photo of a man in sunglasses looking down",
      "width": 2048,
      "height": 1536,
@@ -444,7 +444,7 @@
      "title": null
     },
     {
-     "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/d6c04dbe-e936-4f34-82d3-00fb19eb18bd/20200523-_GFX5850-untitled+shoot_2_SOCIAL.jpg",
+     "src": "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/colour/20200523-_GFX5850-untitled_shoot_2_SOCIAL-website/public",
      "alt": "Studio portrait of a woman with dark hair and a fringe",
      "width": 1638,
      "height": 2048,
@@ -456,7 +456,7 @@
      "title": null
     },
     {
-     "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/433f06b1-267e-4fde-836a-8f09e52decfe/20200116-_DSC0472-untitled+shoot-Edit_SOCIAL.jpg",
+     "src": "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/mono/20200116-_DSC0472-untitled_shoot-Edit_SOCIAL-website/public",
      "alt": "Black and white photo of a young man in a hat among sunflowers",
      "width": 2048,
      "height": 1366,
@@ -468,7 +468,7 @@
      "title": null
     },
     {
-     "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/a4006837-1051-4cf5-bff8-43a81f365bed/20190624-_DSC4486-Neon-Edit_SOCIAL.jpg",
+     "src": "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/mono/20190624-_DSC4486-Neon-Edit_SOCIAL-website/public",
      "alt": "Black and white portrait of a woman in a striped top",
      "width": 1638,
      "height": 2048,
@@ -480,7 +480,7 @@
      "title": null
     },
     {
-     "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/f7c93d1b-7a1b-4729-8c79-ffce815a63a6/20190413-_GFX4079-untitled+shoot-Edit-Edit_SOCIAL.jpg",
+     "src": "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/colour/20190413-_GFX4079-untitled_shoot-Edit-Edit_SOCIAL-website/public",
      "alt": "A woman in a black dress leaning on a weathered window sill",
      "width": 1638,
      "height": 2048,
@@ -492,7 +492,7 @@
      "title": null
     },
     {
-     "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/55fa4f42-fcbb-4c32-b098-5f8a5e374f01/2019+20190413-_GFX4058-untitled+shoot-2_SOCIAL.jpg",
+     "src": "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/mono/2019_20190413-_GFX4058-untitled_shoot-2_SOCIAL-website/public",
      "alt": "Black and white photo of a woman seated at a garden table",
      "width": 1536,
      "height": 2048,
@@ -504,7 +504,7 @@
      "title": null
     },
     {
-     "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/533a6f59-848a-4c47-885e-84c5ba8d3844/Juanita+20201010+0484_SOCIAL.jpg",
+     "src": "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/colour/Juanita_20201010_0484_SOCIAL-website/public",
      "alt": "A woman in a strapless navy dress and pearls against a dark backdrop",
      "width": 2048,
      "height": 1536,
@@ -516,7 +516,7 @@
      "title": null
     },
     {
-     "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/2342bc28-fc1d-405b-b59e-eaac9d55c659/_DSC3174_1_SOCIAL.jpg",
+     "src": "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/mono/_DSC3174_1_SOCIAL-website/public",
      "alt": "Black and white photo of Sandy seated in a beaded gown",
      "width": 1366,
      "height": 2048,
@@ -528,7 +528,7 @@
      "title": null
     },
     {
-     "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/ee19d5fe-0b0c-466e-bf7a-ba59a9b60105/QUAY2019_Tonez_0030_SOCIAL.jpg",
+     "src": "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/colour/QUAY2019_Tonez_0030_SOCIAL-website/public",
      "alt": "A young man in a grey jacket leaning in a doorway",
      "width": 1366,
      "height": 2048,
@@ -540,7 +540,7 @@
      "title": null
     },
     {
-     "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/4d79aa6d-9373-46af-b62f-5d75469a3b43/Courtney00962-Edit_SOCIAL.jpg",
+     "src": "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/mono/Courtney00962-Edit_SOCIAL-website/public",
      "alt": "Black and white photo of a laughing woman with curls and pearls",
      "width": 2048,
      "height": 1536,
@@ -552,7 +552,7 @@
      "title": null
     },
     {
-     "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1011d967-2f8e-4793-8f75-c09666570bb9/QUAY2019_Tonez_0240_SOCIAL.jpg",
+     "src": "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/colour/QUAY2019_Tonez_0240_SOCIAL-website/public",
      "alt": "A woman in a cream gown by a tall window",
      "width": 1536,
      "height": 2048,
@@ -564,7 +564,7 @@
      "title": null
     },
     {
-     "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/0207c410-9ba8-490f-be8d-ccabf517a9dd/Juanita+20201010+0331_1_SOCIAL.jpg",
+     "src": "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/mono/Juanita_20201010_0331_1_SOCIAL-website/public",
      "alt": "Black and white photo of a woman holding flowers beside a chaise longue",
      "width": 2048,
      "height": 1536,
@@ -576,7 +576,7 @@
      "title": null
     },
     {
-     "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/cc003531-844a-40f4-98e6-8ebd42c6f1d2/QUAY2019_Tonez_0172_1_SOCIAL.jpg",
+     "src": "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/colour/QUAY2019_Tonez_0172_1_SOCIAL-website/public",
      "alt": "A woman in a cream gown with long dark hair",
      "width": 1463,
      "height": 2048,
@@ -588,7 +588,7 @@
      "title": null
     },
     {
-     "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/63cf499c-9c9b-485e-840e-eb9abcc04625/20190413-_GFX4032-untitled+shoot-Edit-Edit_SOCIAL.jpg",
+     "src": "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/mono/20190413-_GFX4032-untitled_shoot-Edit-Edit_SOCIAL-website/public",
      "alt": "Black and white photo of a woman seated on an ornate sofa",
      "width": 2048,
      "height": 1639,
@@ -600,7 +600,7 @@
      "title": null
     },
     {
-     "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/82f17d22-4104-4f87-acf6-466790447b81/QUAY2019_Tonez_0357_SOCIAL.jpg",
+     "src": "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/colour/QUAY2019_Tonez_0357_SOCIAL-website/public",
      "alt": "Close portrait of a woman with long ombre hair",
      "width": 1366,
      "height": 2048,
@@ -612,7 +612,7 @@
      "title": null
     },
     {
-     "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/66ef897a-7261-4115-b57d-55ba9aaa6b63/SOCIAL__DSC1233.jpg",
+     "src": "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/colour/SOCIAL__DSC1233-website/public",
      "alt": "Laura in a white hat, pearls and navy dress",
      "width": 1366,
      "height": 2048,
@@ -624,7 +624,7 @@
      "title": null
     },
     {
-     "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/2d29b665-b1ef-4d5c-9bf6-767950ab5fc8/20200523-_GFX5885-untitled+shoot-Edit-Edit_1_SOCIAL.jpg",
+     "src": "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/mono/20200523-_GFX5885-untitled_shoot-Edit-Edit_1_SOCIAL-website/public",
      "alt": "Black and white portrait of a smiling woman in low light",
      "width": 1638,
      "height": 2048,
@@ -636,7 +636,7 @@
      "title": null
     },
     {
-     "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/43156a40-bd6d-4c41-877a-36fe07743401/SOCIAL_20200523-_GFX5954-untitled+shoot-Edit-Edit-Edit.jpg",
+     "src": "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/mono/SOCIAL_20200523-_GFX5954-untitled_shoot-Edit-Edit-Edit-website/public",
      "alt": "Award-winning portrait of a woman in a ruffled gown in front of a glowing ring light",
      "width": 1536,
      "height": 2048,
@@ -648,10 +648,10 @@
      "title": null
     },
     {
-     "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/a5c749a6-e617-45ed-aea6-734e4296690a/Gorham_Tony_02_Scarlet.jpg",
+     "src": "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/colour/Gorham_Tony_02_Scarlet-website/public",
      "alt": "A woman with red curls holding pink gerberas in low light",
-     "width": 2250,
-     "height": 3000,
+     "width": 1536,
+     "height": 2048,
      "focal": [
       0.5,
       0.5

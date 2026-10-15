@@ -75,7 +75,10 @@ for (const t of todo) {
   const buf = Buffer.from(await r.arrayBuffer());
   const mono = t.why === 'mono version not exported' || (t.why !== 'colour version not exported' && await monoOf(buf));
   const dir = path.join(ROOT, t.folder, mono ? 'mono' : 'colour');
-  const out = path.join(dir, `${base}-website.${ext}`);
+  // Photos still unmatched after an earlier run may share a name with a different photo
+  // (e.g. two 1_SOCIAL.jpg); those get the Squarespace folder id added to the name.
+  let out = path.join(dir, `${base}-website.${ext}`);
+  if (fs.existsSync(out)) out = path.join(dir, `${base}-${t.url.split('/').at(-2).slice(0, 8)}-website.${ext}`);
   if (fs.existsSync(out)) continue;
   fs.mkdirSync(dir, { recursive: true });
   const img = sharp(buf).rotate().resize(2048, 2048, { fit: 'inside', withoutEnlargement: true });

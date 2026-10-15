@@ -2,7 +2,7 @@
  "path": "/about",
  "title": "About | Capture Timeless Moments Today | Moments In Light",
  "description": "Meet Moments In Light, your experienced photographers dedicated to capturing authentic, heartfelt moments in weddings, portraits, and family sessions.",
- "ogImage": "http://static1.squarespace.com/static/6626f9fc9b715306f4f4eae7/t/68dc85608cc78a11fc072b7c/1759282528270/Moments+in+Light+250x250.jpg",
+ "ogImage": "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/share/Moments_in_Light_250x250/public",
  "type": {
   "d": {
    "h1": [
@@ -158,10 +158,10 @@
      "id": "d1f7019aaeee9a6bd509",
      "type": "image",
      "image": {
-      "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/eb7fac1a-1c1a-4ec0-94f6-943c732dabc0/tony-solo.gif",
+      "src": "/images/tony-solo.webp",
       "alt": "Tony Gorham, photographer at Moments in Light, seated in a studio portrait",
-      "width": 1536,
-      "height": 1920,
+      "width": 1000,
+      "height": 1250,
       "focal": [
        0.5,
        0.5

@@ -21,7 +21,8 @@ const SQS = /https?:\/\/images\.squarespace-cdn\.com\/[^\s"')\\]+?\.(?:jpe?g|png
 const camera = (n) => (n.match(/_?(?=[A-Z0-9]*[A-Z])[A-Z0-9]{3,4}\d{4}/i) || [null])[0]?.replace(/^_/, '').toUpperCase();
 // Photos without a camera file name (e.g. the-barn-ceilidh.jpg) are matched by their whole
 // name; copies downloaded from Squarespace end in -website.
-const plainName = (n) => n.replace(/\.[^.]+$/, '').replace(/-website$/, '').replace(/[^\w.-]+/g, '_').toLowerCase();
+// (with the Squarespace folder id added when two had the same name).
+const plainName = (n) => n.replace(/\.[^.]+$/, '').replace(/-website$/, '').replace(/-[0-9a-f]{8}$/i, '').replace(/[^\w.-]+/g, '_').toLowerCase();
 const keyOf = (n) => camera(n) ?? plainName(n);
 
 // ---- Exports: camera name -> files
