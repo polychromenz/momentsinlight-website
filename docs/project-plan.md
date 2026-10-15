@@ -86,7 +86,7 @@ Venue pages share one layout, and so do wedding posts, so both convert in bulk o
    - [x] www and the bare domain added as custom domains on the Pages project; root-to-www redirect
    - [x] Both hostnames on the Turnstile widget
    - [x] Live domain tested (all pages, canonical tags, old links, contact form, analytics)
-   - [ ] A real guide signup on the live domain
+   - [x] A real guide signup on the live domain (after fixing the Turnstile site key)
    - [ ] Submit the sitemap in Google Search Console
    - [ ] Keep Squarespace a few weeks as a fallback, then cancel
 

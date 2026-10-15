@@ -10,10 +10,16 @@ usually invisible "are you human" check).
 
 ## Status (15 Oct 2026)
 
-Set up and working on the preview site: the `momentsinlight-signups` D1 database is bound as
-`DB`, the table exists, and the Turnstile secret is set. **When the domain switches**, add
-`momentsinlight.co.nz` and `www.momentsinlight.co.nz` to the Turnstile widget's hostnames
-(see [domain-switch.md](domain-switch.md)), or the form will reject visitors on the real domain.
+Working on momentsinlight.co.nz (confirmed with a real signup on 15 Oct 2026). The `momentsinlight-signups` D1 database is bound as
+`DB`, the table exists, the Turnstile secret is set, and the widget's hostnames include both the real domain and the
+`.pages.dev` preview.
+
+- **Site key** (public, in `src/components/page/GuideSignup.astro`): `0x4AAAAAAFXGYYzurJExinLB`.
+  The key first used was mistyped, which made the widget fail with error 400020 ("invalid site key")
+  and show only a "Troubleshoot" link; fixed 15 Oct 2026.
+- If the check fails on the server, the visitor is sent back with `?signup=check&reason=<code>`;
+  the code is Cloudflare's reason (e.g. `invalid-input-secret` means the secret key is wrong).
+- The form won't send until the Turnstile check has finished.
 
 ## One-off setup (done)
 
