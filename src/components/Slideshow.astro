@@ -16,6 +16,14 @@ interface Props {
   interval?: number;
 }
 const { images, label, heightMobile = '30vh', heightDesktop = '50vh', interval = 5 } = Astro.props;
+// Photos are shown whole inside a box the slideshow's height tall, so each is only as wide as
+// its shape allows at that height (never wider than the screen); tell the browser so it
+// fetches that size rather than a full-screen-width one.
+const sizesFor = (g: { width?: number; height?: number }) => {
+  if (!g.width || !g.height) return '100vw';
+  const r = Math.round((g.width / g.height) * 1000) / 1000;
+  return `(min-width: 768px) min(100vw, calc(${heightDesktop} * ${r})), min(100vw, calc(${heightMobile} * ${r}))`;
+};
 ---
 {images.length > 0 && (
   <section
@@ -30,7 +38,7 @@ const { images, label, heightMobile = '30vh', heightDesktop = '50vh', interval =
     <ul class="slides" aria-live="off">
       {images.map((g, i) => (
         <li class:list={['slide', { active: i === 0 }]} aria-roledescription="slide" aria-label={`${i + 1} of ${images.length}`} aria-hidden={i === 0 ? undefined : 'true'}>
-          <Img src={g.src} alt={g.alt} width={g.width} height={g.height} sizes="100vw" loading={i < 2 ? 'eager' : 'lazy'} />
+          <Img src={g.src} alt={g.alt} width={g.width} height={g.height} sizes={sizesFor(g)} loading={i < 2 ? 'eager' : 'lazy'} deferred={i >= 2} />
         </li>
       ))}
     </ul>
@@ -64,14 +72,20 @@ const { images, label, heightMobile = '30vh', heightDesktop = '50vh', interval =
     let timer = 0;
     let hovered = false, focused = false, visible = true;
 
+    // Photos after the first two are left unloaded (data-src) until they're next up, as the
+    // stacked slides would otherwise all download at once.
     const preload = (i: number) => {
       const img = slides[(i + slides.length) % slides.length].querySelector('img');
-      if (img && img.loading !== 'eager') img.loading = 'eager';
+      if (!img) return;
+      if (img.dataset.srcset) { img.srcset = img.dataset.srcset; delete img.dataset.srcset; }
+      if (img.dataset.src) { img.src = img.dataset.src; delete img.dataset.src; }
+      if (img.loading !== 'eager') img.loading = 'eager';
     };
 
     const go = (to: number) => {
       const next = (to + slides.length) % slides.length;
       if (next === index) return;
+      preload(next); // in case of a jump (dots, back arrow) to a photo not loaded yet
       slides[index].classList.remove('active');
       slides[index].setAttribute('aria-hidden', 'true');
       dots[index]?.classList.remove('on');
@@ -82,6 +96,7 @@ const { images, label, heightMobile = '30vh', heightDesktop = '50vh', interval =
       dots[index]?.classList.add('on');
       dots[index]?.setAttribute('aria-current', 'true');
       preload(index + 1);
+      preload(index - 1);
       schedule();
     };
 

@@ -12,13 +12,18 @@ interface Props {
   loading?: 'lazy' | 'eager';
   class?: string;
   style?: string;
+  /** Leave the photo unloaded (data-src/data-srcset) until a script sets it, e.g. slideshow
+   * photos stacked out of sight, which the browser would otherwise all fetch at once. */
+  deferred?: boolean;
 }
-const { src, alt, width, height, sizes = '100vw', loading = 'lazy', class: className, style } = Astro.props;
+const { src, alt, width, height, sizes = '100vw', loading = 'lazy', class: className, style, deferred = false } = Astro.props;
 const img = responsive(src);
 ---
 <img
-  src={img.src}
-  srcset={img.srcset}
+  src={deferred ? undefined : img.src}
+  srcset={deferred ? undefined : img.srcset}
+  data-src={deferred ? img.src : undefined}
+  data-srcset={deferred ? img.srcset : undefined}
   sizes={img.srcset ? sizes : undefined}
   alt={alt}
   width={width}
