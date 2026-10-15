@@ -7,22 +7,22 @@ updated: 2026-08-17
 author: "Tony Gorham"
 categories: ["Wedding"]
 tags: []
-thumbnail: "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1774992632980-M8KIPFU6Q7P5OTEKY6DL/_30A8992.jpg"
+thumbnail: "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-jade-and-ben/colour/_30A8992/public"
 gallery:
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1774990629810-W9QWGJ7WEYQDUXJIVXAB/_30A8995.jpg","alt":"Jade and Ben under a flower-covered arch at Kumeu Valley Estate","width":3038,"height":3798}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1774990402968-3R4VUOCD4BQ7HX763ZQF/_30A9675.jpg","alt":"Jade and Ben embrace between trees strung with fairy lights at night","width":2048,"height":1638}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1774990393408-COOSQ9W4HOAVJ1OZYRU1/_30A8498-Edit.jpg","alt":"Jade and Ben smile together in the garden","width":2048,"height":1366}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1774990402031-LLD4KNPPIV772P7KNIWA/_30A8508-Edit.jpg","alt":"Jade and Ben stand together on the lawn","width":1366,"height":2048}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1774990412594-LUIAZX03JKEO7Q66560H/_30A9267.jpg","alt":"Jade's long veil floats in the breeze as she faces Ben","width":2048,"height":1638}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1774990407905-Z3FJKTTEUPX4F7DOU48U/_30A8589-Edit.jpg","alt":"Jade rests her hand on Ben's chest","width":2048,"height":1366}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1774990441778-6CIQQ7EUXZS4N7NLF0UO/_30A9715.jpg","alt":"Two guests sit together for an evening portrait","width":6049,"height":4839}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1774990493133-4V2RYXG4FT9SG97UW9DX/_30A9928.jpg","alt":"Two guests smile together on a dark sofa","width":6830,"height":5464}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1774990568823-5LSZVHI2SWI5LBI8R9DD/_30A9953.jpg","alt":"Four guests in colourful dresses pose together","width":7806,"height":5207}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1774990601072-V4VL901F459R0VCY375H/_30A9787.jpg","alt":"Two guests sit together for a portrait","width":6292,"height":5034}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1774992175151-OX0JZ61KVJ2VHFZ1YYRF/_Q9A7266.jpg","alt":"Ben hugs Jade under the trees during their practice shoot","width":5375,"height":8058}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1774992211758-SW1FKFL9UALL7OW4K3MW/_30A8495.jpg","alt":"Jade and Ben reflected in a still pond surrounded by bush","width":5188,"height":4150}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1774992235992-2C2Z8NRWMJ6KBZ76X33D/_Q9A7449-Edit.jpg","alt":"Jade and Ben smile cheek to cheek","width":6380,"height":5104}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1774992267871-5W4CDN1CIW3JZALTKZH9/_Q9A7062.jpg","alt":"Jade sits on Ben's knee on a white garden chair","width":4664,"height":5830}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-jade-and-ben/colour/_30A8995/public","alt":"Jade and Ben under a flower-covered arch at Kumeu Valley Estate","width":1638,"height":2048}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-jade-and-ben/colour/_30A9675/public","alt":"Jade and Ben embrace between trees strung with fairy lights at night","width":2048,"height":1638}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-jade-and-ben/colour/_30A8498-Edit/public","alt":"Jade and Ben smile together in the garden","width":2048,"height":1366}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-jade-and-ben/colour/_30A8508-Edit/public","alt":"Jade and Ben stand together on the lawn","width":1366,"height":2048}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-jade-and-ben/colour/_30A9267/public","alt":"Jade's long veil floats in the breeze as she faces Ben","width":2048,"height":1638}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-jade-and-ben/colour/_30A8589-Edit/public","alt":"Jade rests her hand on Ben's chest","width":2048,"height":1366}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-jade-and-ben/colour/_30A9715/public","alt":"Two guests sit together for an evening portrait","width":2048,"height":1638}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-jade-and-ben/colour/_30A9928/public","alt":"Two guests smile together on a dark sofa","width":2048,"height":1638}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-jade-and-ben/colour/_30A9953/public","alt":"Four guests in colourful dresses pose together","width":2048,"height":1366}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-jade-and-ben/colour/_30A9787/public","alt":"Two guests sit together for a portrait","width":2048,"height":1638}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-jade-and-ben/colour/_Q9A7266-website/public","alt":"Ben hugs Jade under the trees during their practice shoot","width":1366,"height":2048}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-jade-and-ben/colour/_30A8495-website/public","alt":"Jade and Ben reflected in a still pond surrounded by bush","width":2048,"height":1638}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-jade-and-ben/colour/_Q9A7449-Edit-website/public","alt":"Jade and Ben smile cheek to cheek","width":2048,"height":1638}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-jade-and-ben/colour/_Q9A7062-website/public","alt":"Jade sits on Ben's knee on a white garden chair","width":1638,"height":2048}
 ---
 Jade and Ben are such a beautiful couple who give off real “soulmate” vibes from the moment you meet them. There’s an ease between them that makes everything feel natural — the kind of connection that doesn’t need to be forced or posed, it just quietly shines through in every glance and every smile.
 

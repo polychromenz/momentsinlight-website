@@ -7,23 +7,23 @@ updated: 2026-04-01
 author: "Tony Gorham"
 categories: ["Wedding"]
 tags: []
-thumbnail: "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1775005805582-WNPDXKNVCHDJZYFO42T6/_30A3019-Edit.jpg"
+thumbnail: "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-chanel-and-latham/mono/_30A3019-Edit/public"
 gallery:
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1775005590810-KCCGPP6IMWK6Y3GY358U/_30A2351.jpg","alt":"The bridal party cheers on the deck of a boat to Kawau Island","width":7993,"height":5331}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1775005641040-VONP2T6YCEKJIUDZNRT2/_Q9A9371.jpg","alt":"Chanel is walked along the wharf at Kawau Island","width":5242,"height":6553}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1775005504690-J0WFWHZWKJME1UZVSXYI/_30A2843-Edit.jpg","alt":"Chanel and Latham kiss on the lawn as guests pass by","width":2048,"height":1366}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1775005502434-23YQYNT94GGTSZCTXCHS/_30A2950.jpg","alt":"Chanel and Latham beneath her veil","width":2048,"height":1366}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1775005507897-MPP6IRCDBCFX86RPA529/_30A2957.jpg","alt":"Chanel and Latham beside a column at Mansion House","width":1638,"height":2048}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1775005509886-NOVU9R6VIIE1RW39USVS/_30A3013-Edit.jpg","alt":"Chanel and Latham in the doorway of Mansion House on Kawau Island","width":1366,"height":2048}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1775005513983-XSWOCA7R1NMI3ESAHOC3/_30A3019-Edit.jpg","alt":"Black and white photo of Latham holding Chanel's face","width":2048,"height":1366}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1775005691185-70RAEG8FOZP4SQXNSASQ/_Q9A9528.jpg","alt":"Black and white photo of the couple beneath a huge old tree","width":3724,"height":4655}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1775005672498-X7OI1Y6GVAPVCO19LH0M/_30A3246.jpg","alt":"Black and white photo of guests at the long reception table","width":8028,"height":5355}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1775005519219-3P1M0NWC4XHVW4W9NBWM/_30A3545-Edit.jpg","alt":"Chanel twirls on the lawn at Mansion House in evening light","width":2048,"height":1638}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1775005520695-RBJIUGTL7H6V0U6AKPB1/_30A3666-Edit.jpg","alt":"Two guests pose for a portrait at night","width":2048,"height":1638}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1775005535028-Z5NYMDV5AU16HYHUOUBM/_30A3749.jpg","alt":"Two guests sit together laughing on a stone wall at night","width":2048,"height":1638}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1775005529703-E9GHFIDKVTDSS3ZH697H/_30A3680-Edit.jpg","alt":"Two guests smile for a portrait at night","width":2048,"height":1639}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1775005524006-4HJG2LFFCFZ01M1JYPUY/_30A3678-Edit.jpg","alt":"Two guests pose together on a stone wall in the dark","width":2048,"height":1638}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1775005531864-UCSVKXPRF3LSK5YP6LXX/_30A3727-Edit.jpg","alt":"Two guests sit side by side for an evening portrait","width":2048,"height":1638}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-chanel-and-latham/colour/_30A2351/public","alt":"The bridal party cheers on the deck of a boat to Kawau Island","width":2048,"height":1366}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-chanel-and-latham/colour/_Q9A9371/public","alt":"Chanel is walked along the wharf at Kawau Island","width":1638,"height":2048}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-chanel-and-latham/colour/_30A2843-Edit-2/public","alt":"Chanel and Latham kiss on the lawn as guests pass by","width":2048,"height":1366}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-chanel-and-latham/colour/_30A2950-2/public","alt":"Chanel and Latham beneath her veil","width":2048,"height":1366}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-chanel-and-latham/colour/_30A2957-2/public","alt":"Chanel and Latham beside a column at Mansion House","width":1638,"height":2048}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-chanel-and-latham/colour/_30A3013-Edit-2/public","alt":"Chanel and Latham in the doorway of Mansion House on Kawau Island","width":1366,"height":2048}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-chanel-and-latham/mono/_30A3019-Edit/public","alt":"Black and white photo of Latham holding Chanel's face","width":2048,"height":1366}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-chanel-and-latham/mono/_Q9A9528/public","alt":"Black and white photo of the couple beneath a huge old tree","width":1638,"height":2048}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-chanel-and-latham/mono/_30A3246/public","alt":"Black and white photo of guests at the long reception table","width":2048,"height":1366}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-chanel-and-latham/colour/_30A3545-Edit-2/public","alt":"Chanel twirls on the lawn at Mansion House in evening light","width":2048,"height":1638}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-chanel-and-latham/colour/_30A3666-Edit/public","alt":"Two guests pose for a portrait at night","width":2048,"height":1638}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-chanel-and-latham/colour/_30A3749/public","alt":"Two guests sit together laughing on a stone wall at night","width":2048,"height":1638}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-chanel-and-latham/colour/_30A3680/public","alt":"Two guests smile for a portrait at night","width":2048,"height":1638}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-chanel-and-latham/colour/_30A3678-Edit/public","alt":"Two guests pose together on a stone wall in the dark","width":2048,"height":1638}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-chanel-and-latham/colour/_30A3727-Edit/public","alt":"Two guests sit side by side for an evening portrait","width":2048,"height":1638}
 ---
 Some weddings feel like a little adventure from the very beginning — and Chanel and Latham’s was exactly that.
 

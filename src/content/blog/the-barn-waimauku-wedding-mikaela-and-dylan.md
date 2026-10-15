@@ -7,35 +7,35 @@ updated: 2026-04-02
 author: "Tony Gorham"
 categories: ["Wedding"]
 tags: []
-thumbnail: "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1775006700661-IUYXDCIBHSCDLD1D7I5H/_Q9A0973-Edit.jpg"
+thumbnail: "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-mikaela-and-dylan/colour/_Q9A0973-Edit-2/public"
 gallery:
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1775006767877-N0UW92K7MJ5B6N1Z0JIC/_Q9A0978.jpg","alt":"Mikaela and Dylan kiss beside a mirror before the celebrations","width":2048,"height":1366}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1775006761069-JMQJFEQG1H704EEEO3B6/_30A5453.jpg","alt":"Mikaela and Dylan with their bridal party in green under the trees","width":2048,"height":1152}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1775006757769-XNX2PG8EQRSE6ZKMYVEQ/_Q9A0288-Edit.jpg","alt":"Mikaela by a window in her lace gown and veil","width":1366,"height":2048}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1775007514383-4SE1LTA3XAX5DVMW4JUD/_30A5527.jpg","alt":"The bridal party dances on the lawn at The Barn Waimauku","width":7807,"height":5207}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1775006764927-9CPJX17I67TCD99F1YS3/_Q9A0904.jpg","alt":"Mikaela and Dylan lean on a red vintage tractor","width":2048,"height":1366}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1775006799636-CFX1SN72BXPZX2C7UGO7/_Q9A0747-Edit.jpg","alt":"Dylan smiles in his green waistcoat and bow tie","width":2048,"height":1366}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1775006761997-K011U6L61LY1ZCBTCUCX/_Q9A0305-Edit.jpg","alt":"Mikaela with a flower in her hair looking away","width":2048,"height":1366}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1775006775978-J08BFBZIRZKHPH90JNEK/_30A3966-Edit-Edit.jpg","alt":"Mikaela in her gown beside a leadlight window","width":1366,"height":2048}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1775006805698-4SAPQ4DR5CIZURL1G31R/_30A5659.jpg","alt":"The bridal party gathered around a red tractor","width":2048,"height":1366}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1775006791172-Z38LX9TO07Q4KGXI9NJR/_30A5289.jpg","alt":"Mikaela and Dylan relax on a red velvet chaise in the garden","width":2048,"height":1536}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1775006791768-ED7WW7ZIO3LLX3N8WF3P/_30A5359.jpg","alt":"Mikaela and Dylan beneath an avenue of trees","width":2048,"height":1152}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1775006779936-IXBMNIFBWW6PJBYYIIEW/_Q9A1016.jpg","alt":"A vintage car drives down a tree-lined road","width":1638,"height":2048}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1775006805259-RIP4ZE2RCX3M0V9RB124/_Q9A0343-Edit.jpg","alt":"A bridesmaid in green looks out of a window","width":1366,"height":2048}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1775006810438-AJQZ2OXEAN0PESI94628/_Q9A0385-Edit.jpg","alt":"A bridesmaid in green in soft window light","width":1366,"height":2048}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1775007247312-IQ7J7C43PDVTV2XGWKH7/_30A4604.jpg","alt":"Mikaela and Dylan with all their guests outside The Barn Waimauku","width":7342,"height":4897}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1775007175448-4D7BO8LSK8JZ4XIK4G76/_30A4960.jpg","alt":"Mikaela laughs with guests outside","width":7976,"height":5320}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1775007335030-G82K8KEJYSNE596JBW7P/_30A5110.jpg","alt":"Guests wave streamers as a vintage car drives off","width":7730,"height":5156}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1775007142004-Y40TP9BHTVZYSSIA14L0/_30A5980.jpg","alt":"Dylan sings and plays guitar in the barn","width":6416,"height":5133}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1775007421194-UJI8RM8XIVWOYNQLEFHB/_30A6033.jpg","alt":"Mikaela reads her speech at the microphone","width":4035,"height":5044}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1775007076491-9SYRBV3R5KL38LZL65R4/_Q9A1511.jpg","alt":"A guest in a tartan kilt gives a speech","width":5440,"height":4352}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1775007375457-1L4WLNGYBHTEFW1H0H3G/_Q9A1591.jpg","alt":"Musicians play fiddle and guitar under festoon bunting","width":7895,"height":5266}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1775006867348-CR8Q0A5H6GP2U8N4JTWU/_Q9A1535.jpg","alt":"Mikaela dances during the ceilidh","width":7989,"height":5329}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1775006962934-PSFWU6975BSE166KJCM9/_30A6106-Edit.jpg","alt":"Mikaela and Dylan seated together for an evening portrait","width":6586,"height":5269}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1775007048299-I2WKJ2QXQRKF9IW6GRNF/_30A6073-Edit.jpg","alt":"A guest in green seated for an evening portrait","width":6759,"height":5407}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1775006903008-WPR8UMX83EJPHJ1DBR65/_30A6086-Edit.jpg","alt":"Mikaela with a guest in red seated for a portrait","width":6566,"height":5253}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1775007017182-WCFAEDBH215O23WCQ3F5/_30A6115-Edit.jpg","alt":"A guest seated with three large white dogs","width":6571,"height":5257}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1775007579757-PEJ1GXIF6PH3FOFQUDIU/_Q9A1612.jpg","alt":"Guests form an arch during a ceilidh dance","width":7897,"height":5267}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-mikaela-and-dylan/colour/_Q9A0978/public","alt":"Mikaela and Dylan kiss beside a mirror before the celebrations","width":2048,"height":1366}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-mikaela-and-dylan/colour/_30A5453/public","alt":"Mikaela and Dylan with their bridal party in green under the trees","width":2048,"height":1152}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-mikaela-and-dylan/colour/_Q9A0288-Edit/public","alt":"Mikaela by a window in her lace gown and veil","width":1366,"height":2048}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-mikaela-and-dylan/colour/_30A5527/public","alt":"The bridal party dances on the lawn at The Barn Waimauku","width":2048,"height":1366}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-mikaela-and-dylan/colour/_Q9A0904/public","alt":"Mikaela and Dylan lean on a red vintage tractor","width":2048,"height":1366}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-mikaela-and-dylan/colour/_Q9A0747-Edit/public","alt":"Dylan smiles in his green waistcoat and bow tie","width":2048,"height":1366}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-mikaela-and-dylan/colour/_Q9A0305-Edit/public","alt":"Mikaela with a flower in her hair looking away","width":2048,"height":1366}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-mikaela-and-dylan/colour/_30A3966-Edit-Edit/public","alt":"Mikaela in her gown beside a leadlight window","width":1366,"height":2048}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-mikaela-and-dylan/colour/_30A5659/public","alt":"The bridal party gathered around a red tractor","width":2048,"height":1366}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-mikaela-and-dylan/colour/_30A5289/public","alt":"Mikaela and Dylan relax on a red velvet chaise in the garden","width":2048,"height":1536}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-mikaela-and-dylan/colour/_30A5359/public","alt":"Mikaela and Dylan beneath an avenue of trees","width":2048,"height":1152}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-mikaela-and-dylan/colour/_Q9A1016/public","alt":"A vintage car drives down a tree-lined road","width":1638,"height":2048}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-mikaela-and-dylan/colour/_Q9A0343-Edit/public","alt":"A bridesmaid in green looks out of a window","width":1366,"height":2048}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-mikaela-and-dylan/colour/_Q9A0385-Edit/public","alt":"A bridesmaid in green in soft window light","width":1366,"height":2048}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-mikaela-and-dylan/colour/_30A4604-website/public","alt":"Mikaela and Dylan with all their guests outside The Barn Waimauku","width":2048,"height":1366}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-mikaela-and-dylan/colour/_30A4960-website/public","alt":"Mikaela laughs with guests outside","width":2048,"height":1366}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-mikaela-and-dylan/colour/_30A5110-website/public","alt":"Guests wave streamers as a vintage car drives off","width":2048,"height":1366}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-mikaela-and-dylan/colour/_30A5980-website/public","alt":"Dylan sings and plays guitar in the barn","width":2048,"height":1638}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-mikaela-and-dylan/colour/_30A6033-website/public","alt":"Mikaela reads her speech at the microphone","width":1638,"height":2048}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-mikaela-and-dylan/colour/_Q9A1511-website/public","alt":"A guest in a tartan kilt gives a speech","width":2048,"height":1638}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-mikaela-and-dylan/colour/_Q9A1591-website/public","alt":"Musicians play fiddle and guitar under festoon bunting","width":2048,"height":1366}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-mikaela-and-dylan/colour/_Q9A1535-website/public","alt":"Mikaela dances during the ceilidh","width":2048,"height":1366}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-mikaela-and-dylan/colour/_30A6106-Edit-website/public","alt":"Mikaela and Dylan seated together for an evening portrait","width":2048,"height":1638}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-mikaela-and-dylan/colour/_30A6073-Edit-website/public","alt":"A guest in green seated for an evening portrait","width":2048,"height":1638}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-mikaela-and-dylan/colour/_30A6086-Edit-website/public","alt":"Mikaela with a guest in red seated for a portrait","width":2048,"height":1638}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-mikaela-and-dylan/colour/_30A6115-Edit-website/public","alt":"A guest seated with three large white dogs","width":2048,"height":1638}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-mikaela-and-dylan/colour/_Q9A1612/public","alt":"Guests form an arch during a ceilidh dance","width":2048,"height":1366}
 ---
 Some weddings are filled with big moments. Others are filled with meaning in every small detail. Mikaela and Dylan’s day was beautifully both.
 

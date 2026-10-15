@@ -7,20 +7,20 @@ updated: 2026-04-02
 author: "Tony Gorham"
 categories: ["Wedding"]
 tags: []
-thumbnail: "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1775004693974-EM9UQ2LWQ0C1BMYJYPL3/_Q9A8760.jpg"
+thumbnail: "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-cherry-and-chi/colour/_Q9A8760/public"
 gallery:
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1775004104736-9NTXCBRICZACWVS8O0A2/_Q9A8760.jpg","alt":"Cherry and Chi on the lakeside rotunda at Abel Estate","width":2048,"height":1366}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1775004101171-Q6QZUO8OD2EIJ5H2V1PT/_30A0720-Edit.jpg","alt":"Cherry smiles up at Chi in the garden","width":2048,"height":1366}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1775004108935-SZJC9GUXQIX5QM88IZWF/_30A0734-Edit.jpg","alt":"Black and white photo of Cherry and Chi kissing beneath her veil","width":2048,"height":1366}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1775004207741-1S0CWHWN6XGVD0FJTH8C/_30A0504.jpg","alt":"Chi reads his vows to Cherry beside the celebrant","width":8105,"height":5406}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1775004140835-4XSYHZ983KPYTZ49XKB6/_30A0284-Edit.jpg","alt":"Cherry in her strapless gown in the bridal suite","width":5112,"height":7665}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1775004110409-G7FHRU55G1QD2218YEZK/_30A0743-Edit.jpg","alt":"Chi smiles as Cherry rests her head against his shoulder","width":2048,"height":1366}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1775004262727-F53SQ2R0DR81DAYFAQTF/_Q9A8507.jpg","alt":"Cherry and Chi walk back up the aisle past their guests at Abel Estate","width":6229,"height":4155}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1775004114121-6R3ZXUPFKF1UF04531H6/_30A0790-Edit.jpg","alt":"Cherry holds her bouquet beside Chi by the lake","width":2048,"height":1366}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1775004957952-YJFQMW87DTLWRCBRF152/_Q9A9198-Edit.jpg","alt":"Two guests pose for a portrait on a red velvet sofa","width":2048,"height":1638}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1775004965373-MR18ETDC5N7SC4WMM0P5/_Q9A9245-Edit.jpg","alt":"Cherry poses with family on a red velvet sofa","width":2048,"height":1366}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1775004973058-LDZ2OYT8C8VYC2TQEU6E/_Q9A9250-Edit.jpg","alt":"Cherry and a family member sit together on a red velvet sofa","width":2048,"height":1638}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1775004990098-ID9ZLUYOKBAE2JAMV8F3/_Q9A8885-Edit-Edit.jpg","alt":"Black and white photo of Cherry lying on a sofa beside Chi","width":2048,"height":1366}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-cherry-and-chi/colour/_Q9A8760/public","alt":"Cherry and Chi on the lakeside rotunda at Abel Estate","width":2048,"height":1366}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-cherry-and-chi/colour/_30A0720-Edit/public","alt":"Cherry smiles up at Chi in the garden","width":2048,"height":1366}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-cherry-and-chi/mono/_30A0734-Edit/public","alt":"Black and white photo of Cherry and Chi kissing beneath her veil","width":2048,"height":1366}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-cherry-and-chi/colour/_30A0504/public","alt":"Chi reads his vows to Cherry beside the celebrant","width":2048,"height":1366}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-cherry-and-chi/colour/_30A0284-Edit/public","alt":"Cherry in her strapless gown in the bridal suite","width":1366,"height":2048}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-cherry-and-chi/colour/_30A0743-Edit/public","alt":"Chi smiles as Cherry rests her head against his shoulder","width":2048,"height":1366}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-cherry-and-chi/colour/_Q9A8507/public","alt":"Cherry and Chi walk back up the aisle past their guests at Abel Estate","width":2048,"height":1366}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-cherry-and-chi/colour/_30A0790-Edit/public","alt":"Cherry holds her bouquet beside Chi by the lake","width":2048,"height":1366}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-cherry-and-chi/colour/_Q9A9198-Edit/public","alt":"Two guests pose for a portrait on a red velvet sofa","width":2048,"height":1638}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-cherry-and-chi/colour/_Q9A9245-Edit/public","alt":"Cherry poses with family on a red velvet sofa","width":2048,"height":1366}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-cherry-and-chi/colour/_Q9A9250-Edit/public","alt":"Cherry and a family member sit together on a red velvet sofa","width":2048,"height":1638}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-cherry-and-chi/mono/_Q9A8885-Edit-Edit/public","alt":"Black and white photo of Cherry lying on a sofa beside Chi","width":2048,"height":1366}
 ---
 There are some weddings where you can just feel it straight away — that quiet, undeniable connection between two people. Cherry and Chi have that in abundance. A beautiful young couple, deeply in love, and the kind of energy that makes the whole day feel effortless.
 

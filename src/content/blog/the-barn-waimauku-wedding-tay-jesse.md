@@ -7,31 +7,31 @@ updated: 2026-05-20
 author: "Tony Gorham"
 categories: ["Wedding"]
 tags: []
-thumbnail: "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1775008050077-3EWLGKHPELC7E4NA0U6K/_30A8106-Edit.jpg"
+thumbnail: "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-tay-and-jesse/colour/_30A8106-Edit/public"
 gallery:
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1775008293293-HBSECI2U9JQFPMA3DEMS/_30A8202.jpg","alt":"Tay and Jesse embrace on a railway line in golden light","width":1638,"height":2048}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1775008332288-PE530OIK37LSZSXH9OTH/_30A6376.jpg","alt":"Tay shares a first look with her dad","width":7689,"height":5129}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1775008224096-MS8TCRC1C1S8XDZ4RQWJ/_30A6604.jpg","alt":"Tay and Jesse with the celebrant under a wooden arch","width":2048,"height":1638}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1775008226351-HNII3LNG5Q643ABD93BV/_30A6661.jpg","alt":"Guests seated among the pine trees at The Barn Waimauku","width":2048,"height":1366}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1775008251363-YS81SNVB28RX2B0ZXIW6/_30A6551.jpg","alt":"Tay walks down the aisle between the pines","width":2048,"height":1366}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1775008240979-EETGN83OFJN6TJO2RYD7/_30A6728.jpg","alt":"Tay and Jesse share a smile among the trees","width":1366,"height":2048}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1775008298081-UXYXIC9MNHJ7L1OV0PIH/_Q9A1826.jpg","alt":"Tay arrives with her parents through the long grass","width":1638,"height":2048}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1775008314584-1BRRD5LMRZ7M9CSI1JTF/_Q9A1862.jpg","alt":"Tay is walked down the aisle by her parents","width":1638,"height":2048}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1775008315754-937DAPJZ48O497I90GTO/_Q9A1866.jpg","alt":"Jesse waits with the celebrant under the arch","width":1638,"height":2048}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1775008242430-RXTJTR5FG14M5WDEH74J/_30A6802.jpg","alt":"The ceremony among the pine trees","width":2048,"height":1152}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1775008273671-3A8JFR4SLKA0GLV1I7QZ/_30A7377.jpg","alt":"The bridal party looks down into the camera with bouquets","width":2048,"height":1413}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1775008269144-04WI5W8SM7B15LVKKOU3/_30A7294.jpg","alt":"Tay and Jesse with their bridal party on a black sand beach","width":2048,"height":1152}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1775008269604-OJPHT22JOO0V65DRGUXK/_Q9A2650.jpg","alt":"Tay and Jesse smile at each other against a tree","width":2048,"height":1366}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1775008274785-N0PJ9TMOG16VPQOHE9MW/_30A8103-Edit.jpg","alt":"Tay and Jesse sit together in long golden grass","width":2048,"height":1366}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1775008277264-7R1AHLX05A6HMZ9U9C3N/_30A8112-Edit.jpg","alt":"Jesse hugs Tay from behind among the pines","width":2048,"height":1638}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1775008279164-PEV044ZA8WCJIRWHDUH5/_30A8135.jpg","alt":"Tay walks along a railway line under a dramatic sky","width":2048,"height":1152}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1775008284731-I1AFL0U6JOL4RR6UPOWB/_30A8144.jpg","alt":"Tay and Jesse in the doorway of a weathered red barn at sunset","width":2048,"height":1162}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1775008285190-UHKG2OO29Z65OGBWRFGC/_30A8157-Edit.jpg","alt":"Tay and Jesse against a rusty red corrugated wall","width":1366,"height":2048}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1775008289932-P4GA5CRABJXF72BW4JTM/_30A8164-Edit.jpg","alt":"Tay in her gown in the doorway of a red barn","width":1442,"height":2048}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1775008295451-GK33Z8UTSQW5JQ9XMBMW/_30A8225.jpg","alt":"Tay and Jesse walk hand in hand down a gravel road","width":2048,"height":1152}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1775008317169-RBJGQ1W4249P205NB4ZC/_Q9A2525-Edit.jpg","alt":"Tay wraps her arms around Jesse in golden light","width":2048,"height":1366}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1775008320276-LCGBEON4IGGGDNSD1W2T/_Q9A2562.jpg","alt":"Tay's hands and rings around Jesse's neck","width":2048,"height":1366}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1775008320586-5ICN4XX1UVGNB3F3CRPX/_Q9A2591-Edit-Edit.jpg","alt":"Black and white photo of Tay and Jesse sitting in long grass","width":2048,"height":1366}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-tay-and-jesse/colour/_30A8202/public","alt":"Tay and Jesse embrace on a railway line in golden light","width":1638,"height":2048}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-tay-and-jesse/colour/_30A6376/public","alt":"Tay shares a first look with her dad","width":2048,"height":1366}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-tay-and-jesse/colour/_30A6604/public","alt":"Tay and Jesse with the celebrant under a wooden arch","width":2048,"height":1638}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-tay-and-jesse/colour/_30A6661/public","alt":"Guests seated among the pine trees at The Barn Waimauku","width":2048,"height":1366}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-tay-and-jesse/colour/_30A6551/public","alt":"Tay walks down the aisle between the pines","width":2048,"height":1366}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-tay-and-jesse/colour/_30A6728/public","alt":"Tay and Jesse share a smile among the trees","width":1366,"height":2048}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-tay-and-jesse/colour/_Q9A1826/public","alt":"Tay arrives with her parents through the long grass","width":1638,"height":2048}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-tay-and-jesse/colour/_Q9A1862/public","alt":"Tay is walked down the aisle by her parents","width":1638,"height":2048}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-tay-and-jesse/colour/_Q9A1866/public","alt":"Jesse waits with the celebrant under the arch","width":1638,"height":2048}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-tay-and-jesse/colour/_30A6802/public","alt":"The ceremony among the pine trees","width":2048,"height":1152}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-tay-and-jesse/colour/_30A7377/public","alt":"The bridal party looks down into the camera with bouquets","width":2048,"height":1413}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-tay-and-jesse/colour/_30A7294/public","alt":"Tay and Jesse with their bridal party on a black sand beach","width":2048,"height":1152}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-tay-and-jesse/colour/_Q9A2650/public","alt":"Tay and Jesse smile at each other against a tree","width":2048,"height":1366}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-tay-and-jesse/colour/_30A8103-Edit/public","alt":"Tay and Jesse sit together in long golden grass","width":2048,"height":1366}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-tay-and-jesse/colour/_30A8112-Edit/public","alt":"Jesse hugs Tay from behind among the pines","width":2048,"height":1638}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-tay-and-jesse/colour/_30A8135/public","alt":"Tay walks along a railway line under a dramatic sky","width":2048,"height":1152}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-tay-and-jesse/colour/_30A8144/public","alt":"Tay and Jesse in the doorway of a weathered red barn at sunset","width":2048,"height":1162}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-tay-and-jesse/colour/_30A8157-Edit/public","alt":"Tay and Jesse against a rusty red corrugated wall","width":1366,"height":2048}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-tay-and-jesse/colour/_30A8164-Edit/public","alt":"Tay in her gown in the doorway of a red barn","width":1442,"height":2048}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-tay-and-jesse/colour/_30A8225/public","alt":"Tay and Jesse walk hand in hand down a gravel road","width":2048,"height":1152}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-tay-and-jesse/colour/_Q9A2525-Edit/public","alt":"Tay wraps her arms around Jesse in golden light","width":2048,"height":1366}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-tay-and-jesse/colour/_Q9A2562/public","alt":"Tay's hands and rings around Jesse's neck","width":2048,"height":1366}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-tay-and-jesse/mono/_Q9A2591-Edit-Edit/public","alt":"Black and white photo of Tay and Jesse sitting in long grass","width":2048,"height":1366}
 ---
 Some weddings just have a certain energy from the very beginning — and Tay and Jesse’s day had it in abundance.
 

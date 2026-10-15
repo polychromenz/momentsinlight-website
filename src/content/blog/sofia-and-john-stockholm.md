@@ -7,49 +7,49 @@ updated: 2026-08-17
 author: "Tony Gorham"
 categories: ["Wedding"]
 tags: []
-thumbnail: "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1786927035245-93ZT8DX9YLS2BNW90XQD/_Q9A5538.jpg"
+thumbnail: "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-sofia-and-john/colour/_Q9A5538-2/public"
 gallery:
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1786924349861-8N1C7EUEHSDGDPVTLG52/_Q9A4339-Edit.jpg","alt":"Black and white close-up of a bracelet being fastened on Sofia's wrist","width":4096,"height":2731}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1786924362895-VTL2CLQHNQ9VLSD40Q75/_Q9A4352-Edit-Edit.jpg","alt":"Black and white photo of Sofia's veil being placed in her hair","width":4096,"height":3276}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1786924344805-8N7EJF4BPT0ONF3ZRX11/_Q9A4372-Edit.jpg","alt":"Black and white photo of Sofia in her veil by a window","width":2730,"height":4096}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1786924871599-XES82W4SS530H92DHN9W/_Q9A5620.jpg","alt":"A red wooden cottage beside a meadow of yellow wildflowers in Stockholm","width":4096,"height":2731}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1786924381105-NBYCQXMPVR2SJVWR0I86/_Q9A4399.jpg","alt":"Sofia is walked across the meadow towards the ceremony","width":3277,"height":4096}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1786924461538-20INZIT3YCF2I53334UY/_Q9A4390.jpg","alt":"Guests seated on white chairs await the ceremony","width":4096,"height":3277}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1786924411320-IE1KJD71OPAU8RMEJ7AC/_Q9A4496.jpg","alt":"Sofia and John exchange vows on the waterfront under the trees","width":4096,"height":3277}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1786924423658-2W3OZ01HR6A76X92Y601/_Q9A4463.jpg","alt":"Sofia and John during their outdoor ceremony by the water","width":4096,"height":2731}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1786924445157-ZRRXZXROQCBG5BCVGTGM/_Q9A4546.jpg","alt":"Sofia and John kiss in front of their guests","width":4096,"height":3172}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1786924479892-476UML038XH9RLSVLW8Z/_Q9A4676.jpg","alt":"John hugs a guest after the ceremony","width":4096,"height":2731}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1786924488385-TJX6UGDWVC02HLOFQ253/_Q9A4690.jpg","alt":"Sofia hugs a laughing guest after the ceremony","width":4096,"height":2731}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1786924505176-WHIU67LQ6GK47NZ05OQK/_Q9A4743.jpg","alt":"John shares an emotional hug after the ceremony","width":3277,"height":4096}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1786924532933-ORJBG69YN4OTU6OX2W3L/_Q9A4774.jpg","alt":"A guest smiles tearfully at Sofia by the water","width":4096,"height":2731}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1786924544399-E47TBZHOGHC7ENJ4BG4M/_Q9A4842.jpg","alt":"Sofia and John with all their guests by the water","width":4096,"height":2304}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1786924564186-IMROFMTTH7HXKT57Y7TG/_Q9A4852.jpg","alt":"Guests cheer with arms raised for the group photo","width":4096,"height":2304}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1786924596374-BIIPZ1I4DBRA3SRABIU6/_Q9A4891.jpg","alt":"Sofia and John with family on the shore","width":4096,"height":2731}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1786924651844-K9XVA6FKY7DCZARZT584/_Q9A5019.jpg","alt":"Sofia and John walk along a rocky path towards the water at sunset","width":2731,"height":4096}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1786924614176-H91EPKV9I26XOJRX2Z0J/_Q9A4947-Edit.jpg","alt":"Black and white photo of Sofia and John embracing on a wooden step","width":2730,"height":4096}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1786924622143-ZS4QP5XRTY8UPP1BEI5W/_Q9A4955-Edit-Edit.jpg","alt":"Black and white photo of Sofia smiling over John's shoulder","width":4096,"height":3277}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1786924659282-3B4LXWZS6Q8FUMJG76V8/_Q9A5112.jpg","alt":"Sofia and John embrace in a meadow beside a red cottage","width":4096,"height":2731}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1786924677836-49MEYD8LTIV0XE26FL5X/_Q9A5061-Edit.jpg","alt":"John hugs Sofia from behind against a large tree","width":4096,"height":2730}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1786924688053-OW0XK6U3JPLDJSM63HJB/_Q9A5132-Edit.jpg","alt":"Black and white photo of Sofia and John kissing by a window","width":4096,"height":3277}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1786924879079-Z0JKVPFQEL9Q3EP5S7WY/_Q9A5556-Edit.jpg","alt":"Black and white photo of Sofia and John in long grass by a cottage","width":2730,"height":4096}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1786924727039-N2408KIJXZRIOY9TCJHU/_Q9A5538.jpg","alt":"Sofia and John hold each other in front of a red cottage","width":4096,"height":3277}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1786924703308-O2JV5F3CV5PHIYWXJZY3/_Q9A5170.jpg","alt":"A colourful table of fruit, cheese and snacks","width":4096,"height":2731}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1786924606055-2ZT4WK8TMMIDN67K0043/_Q9A4895.jpg","alt":"White table settings with small vases of white flowers","width":3277,"height":4096}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1786924308601-MLKAH5EN81SM3UA8LZYJ/_Q9A4186.jpg","alt":"A smiling guest in glasses holding a glass of wine","width":2731,"height":4096}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1786924709591-DYIX0Z15KLB6UVXNCXE0/_Q9A5293.jpg","alt":"Guests listen during the speeches","width":4096,"height":3277}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1786924717668-UOTMN30EZAEQ3IX4DH66/_Q9A5371.jpg","alt":"A guest speaks as others laugh at the table","width":2731,"height":4096}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1786924736555-SBD7X43IDCVM6FVHEBCO/_Q9A5598.jpg","alt":"Sofia and John hug a guest in the meadow","width":4096,"height":2731}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1786924774627-0FET5B29I9GL7D07XDCA/_Q9A5632-Edit.jpg","alt":"Sofia and a guest seated in wicker chairs for a portrait","width":4096,"height":2730}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1786924785071-5DD05PHTTN0CHX6RHADZ/_Q9A5778.jpg","alt":"Two guests seated for a portrait against patterned wallpaper","width":4096,"height":2708}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1786924748712-001G6939ZZB7V546NZVK/_Q9A5731-Edit.jpg","alt":"A smiling guest in a navy lace top seated for a portrait","width":2730,"height":4096}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1786924329022-AAG9XQIWKLYKYSD8MZVM/_Q9A4212.jpg","alt":"A guest in a pink ruffled dress holds a glass of champagne","width":2731,"height":4096}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1786924809701-4AP1LC4N9ZPXRTDEGYOF/_Q9A5783.jpg","alt":"A wood-fired pizza van serving guests in the garden","width":4096,"height":2731}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1786924847241-VY42BNPA41KJJDOF09NY/_Q9A5975.jpg","alt":"Guests celebrate around the table in the evening","width":4096,"height":2731}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1786924796579-MKOHZOGEXC697WKKBJHT/_Q9A5749.jpg","alt":"A guest in an orange dress laughs in a wicker chair","width":2731,"height":4096}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1786924857970-3FP4B7OW9XPK4XA63EDX/_Q9A5622.jpg","alt":"John stands with a guest in the meadow in front of a red cottage","width":2731,"height":4096}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1786924825081-4WEYKVRXM2YAC00KDRUD/_Q9A5895.jpg","alt":"Two guests laugh together in wicker chairs","width":4096,"height":2731}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1786924894746-WVKH7AZLQM3M2GQEXAD3/_Q9A5667-Edit.jpg","alt":"A guest in a sage suit seated for a portrait","width":2731,"height":4096}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1786924833503-F1CPSA990Z1OPJOW78TD/_Q9A6150-Edit.jpg","alt":"A guest in a navy dress seated for a portrait","width":2730,"height":4096}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-sofia-and-john/mono/_Q9A4339-Edit/public","alt":"Black and white close-up of a bracelet being fastened on Sofia's wrist","width":2048,"height":1365}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-sofia-and-john/mono/_Q9A4352-Edit-Edit/public","alt":"Black and white photo of Sofia's veil being placed in her hair","width":2048,"height":1638}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-sofia-and-john/mono/_Q9A4372-Edit/public","alt":"Black and white photo of Sofia in her veil by a window","width":1365,"height":2048}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-sofia-and-john/colour/_Q9A5620/public","alt":"A red wooden cottage beside a meadow of yellow wildflowers in Stockholm","width":2048,"height":1365}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-sofia-and-john/colour/_Q9A4399/public","alt":"Sofia is walked across the meadow towards the ceremony","width":1638,"height":2048}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-sofia-and-john/colour/_Q9A4390/public","alt":"Guests seated on white chairs await the ceremony","width":2048,"height":1638}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-sofia-and-john/colour/_Q9A4496/public","alt":"Sofia and John exchange vows on the waterfront under the trees","width":2048,"height":1638}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-sofia-and-john/colour/_Q9A4463/public","alt":"Sofia and John during their outdoor ceremony by the water","width":2048,"height":1365}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-sofia-and-john/colour/_Q9A4546/public","alt":"Sofia and John kiss in front of their guests","width":2048,"height":1586}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-sofia-and-john/colour/_Q9A4676/public","alt":"John hugs a guest after the ceremony","width":2048,"height":1365}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-sofia-and-john/colour/_Q9A4690/public","alt":"Sofia hugs a laughing guest after the ceremony","width":2048,"height":1365}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-sofia-and-john/colour/_Q9A4743/public","alt":"John shares an emotional hug after the ceremony","width":1638,"height":2048}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-sofia-and-john/colour/_Q9A4774/public","alt":"A guest smiles tearfully at Sofia by the water","width":2048,"height":1365}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-sofia-and-john/colour/_Q9A4842/public","alt":"Sofia and John with all their guests by the water","width":2048,"height":1152}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-sofia-and-john/colour/_Q9A4852/public","alt":"Guests cheer with arms raised for the group photo","width":2048,"height":1152}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-sofia-and-john/colour/_Q9A4891/public","alt":"Sofia and John with family on the shore","width":2048,"height":1365}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-sofia-and-john/colour/_Q9A5019/public","alt":"Sofia and John walk along a rocky path towards the water at sunset","width":1365,"height":2048}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-sofia-and-john/mono/_Q9A4947-Edit/public","alt":"Black and white photo of Sofia and John embracing on a wooden step","width":1365,"height":2048}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-sofia-and-john/mono/_Q9A4955-Edit-Edit/public","alt":"Black and white photo of Sofia smiling over John's shoulder","width":2048,"height":1638}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-sofia-and-john/colour/_Q9A5112/public","alt":"Sofia and John embrace in a meadow beside a red cottage","width":2048,"height":1365}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-sofia-and-john/colour/_Q9A5061-Edit/public","alt":"John hugs Sofia from behind against a large tree","width":2048,"height":1365}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-sofia-and-john/mono/_Q9A5132-Edit/public","alt":"Black and white photo of Sofia and John kissing by a window","width":2048,"height":1638}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-sofia-and-john/mono/_Q9A5556-Edit/public","alt":"Black and white photo of Sofia and John in long grass by a cottage","width":1365,"height":2048}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-sofia-and-john/colour/_Q9A5538-2/public","alt":"Sofia and John hold each other in front of a red cottage","width":2048,"height":1638}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-sofia-and-john/colour/_Q9A5170/public","alt":"A colourful table of fruit, cheese and snacks","width":2048,"height":1365}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-sofia-and-john/colour/_Q9A4895/public","alt":"White table settings with small vases of white flowers","width":1638,"height":2048}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-sofia-and-john/colour/_Q9A4186/public","alt":"A smiling guest in glasses holding a glass of wine","width":1365,"height":2048}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-sofia-and-john/colour/_Q9A5293/public","alt":"Guests listen during the speeches","width":2048,"height":1638}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-sofia-and-john/colour/_Q9A5371/public","alt":"A guest speaks as others laugh at the table","width":1365,"height":2048}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-sofia-and-john/colour/_Q9A5598/public","alt":"Sofia and John hug a guest in the meadow","width":2048,"height":1365}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-sofia-and-john/colour/_Q9A5632-Edit/public","alt":"Sofia and a guest seated in wicker chairs for a portrait","width":2048,"height":1365}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-sofia-and-john/colour/_Q9A5778/public","alt":"Two guests seated for a portrait against patterned wallpaper","width":2048,"height":1354}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-sofia-and-john/colour/_Q9A5731-Edit/public","alt":"A smiling guest in a navy lace top seated for a portrait","width":1365,"height":2048}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-sofia-and-john/colour/_Q9A4212/public","alt":"A guest in a pink ruffled dress holds a glass of champagne","width":1365,"height":2048}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-sofia-and-john/colour/_Q9A5783/public","alt":"A wood-fired pizza van serving guests in the garden","width":2048,"height":1365}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-sofia-and-john/colour/_Q9A5975/public","alt":"Guests celebrate around the table in the evening","width":2048,"height":1365}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-sofia-and-john/colour/_Q9A5749/public","alt":"A guest in an orange dress laughs in a wicker chair","width":1365,"height":2048}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-sofia-and-john/colour/_Q9A5622/public","alt":"John stands with a guest in the meadow in front of a red cottage","width":1365,"height":2048}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-sofia-and-john/colour/_Q9A5895/public","alt":"Two guests laugh together in wicker chairs","width":2048,"height":1365}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-sofia-and-john/colour/_Q9A5667-Edit/public","alt":"A guest in a sage suit seated for a portrait","width":1365,"height":2048}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-sofia-and-john/colour/_Q9A6150-Edit/public","alt":"A guest in a navy dress seated for a portrait","width":1365,"height":2048}
 ---
 There are weddings that move you as a photographer. And then there are weddings that move you as a parent. Sofia and John's day in Stockholm was both — and writing this one feels a little different, because this time, it was my son getting married.
 

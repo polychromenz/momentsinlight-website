@@ -7,41 +7,41 @@ updated: 2026-08-12
 author: "Tony Gorham"
 categories: ["Wedding"]
 tags: ["settlers-country-manor"]
-thumbnail: "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1781655162621-K5TEQMFUSZM58EWB4WBE/_30A8977.jpg"
+thumbnail: "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-felicity-and-ronan/colour/_30A8977/public"
 gallery:
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1781655611143-KOEIF4C53GP4IDNCZYKY/_30A6750-2.jpg","alt":"Black and white portrait of Felicity before the ceremony","width":1366,"height":2048}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1781655372477-ZHOZCOPFDIQKDM6F0J04/_30A6741.jpg","alt":"Felicity in her gown standing in a doorway","width":1366,"height":2048}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1781655380061-NO7EV7ZXO26U9PKJZ0IT/_30A6704.jpg","alt":"Felicity and her bridesmaids in robes beside the pond","width":2048,"height":1366}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1781655415777-EX3O3VJMO4P8D9OQATWI/_30A6660.jpg","alt":"Lumi the dog in a bow tie at Settlers Country Manor","width":2048,"height":1366}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1781655442029-LX2VY20U5MQVHQN1JUOZ/_Q9A9213.jpg","alt":"Felicity puts in her earrings during preparations","width":2048,"height":1366}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1781655384878-9VAG3KJOMJE26X4OOGTC/_30A6818.jpg","alt":"Felicity and a bridesmaid in a vintage Bentley","width":2048,"height":1366}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1781655445638-WLNJ19TSRGYV08FBFFS3/_30A6925.jpg","alt":"Felicity and her bridesmaids in front of the white rotunda at Settlers Country Manor","width":1366,"height":2048}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1781655450217-EE2MVDGOE4DI39OF0W7A/_Q9A9277.jpg","alt":"A groomsman in a bow tie laughs and looks down","width":1366,"height":2048}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1781655452504-2C1Z3ZYKVWBRXYU19LAG/_Q9A9275-Edit.jpg","alt":"A groomsman in round glasses laughs heartily","width":1366,"height":2048}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1781655459459-ECEYNXEZY3F6U9QEB3V1/_30A7138-2.jpg","alt":"Black and white close-up of Felicity's rose bouquet","width":2048,"height":2048}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1781655461431-XFISE1CAVVSMDLAED7K9/_30A7152.jpg","alt":"Ronan and his groomsmen sit on brick steps","width":2048,"height":1366}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1781655466301-245O4XFMNWQ1RN5OCNVG/_30A7337.jpg","alt":"The pond and white bridge in the gardens at Settlers Country Manor","width":2048,"height":1366}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1781655480105-8PYQ4AA5Y4H52W1BHL0H/_30A7887.jpg","alt":"Ronan's hands rest on Felicity's waist, showing their rings","width":1638,"height":2048}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1781655470700-8G8ZJ0ADW4K5L5IHNLPJ/_Q9A9305-Edit.jpg","alt":"Felicity smiles up at Ronan beside a lantern","width":2048,"height":1366}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1781655484326-2KOUIT8US11U5GTDAI9Q/_30A8023.jpg","alt":"Felicity and Ronan kiss on a garden bench beside a lamp","width":2048,"height":1366}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1781655549951-9KWTMLGAWIM89L0RBL13/_30A6940.jpg","alt":"Felicity and her bridesmaids pose with a gold frame by the rotunda","width":1638,"height":2048}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1781655530609-6CXIZZ585K9JZUJQ933R/_30A7846.jpg","alt":"Felicity and Ronan walk back up the aisle as guests cheer","width":2048,"height":1366}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1781655521184-BCH9TU72M3P1JQ2KW0CZ/_30A8014-2.jpg","alt":"Black and white photo of Felicity and Ronan sitting together on a bench","width":2048,"height":1366}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1781655573624-1EWVEC7OF0YYFT9AGIO6/_30A7725.jpg","alt":"The garden ceremony beside the white rotunda at Settlers Country Manor","width":2048,"height":1366}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1781655515055-6Z74S1LHMM678IU1M1AA/_30A8091.jpg","alt":"Felicity and Ronan beneath a brick archway with lanterns","width":2048,"height":1638}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1781655543732-TA89KUL2MEA9FWI8MF7B/_30A7265.jpg","alt":"The garden pond and footbridge surrounded by autumn trees","width":2048,"height":1366}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1781655593853-CBW2MEEPAZYY784SWM7V/_Q9A9693.jpg","alt":"A guest gives a speech with a microphone","width":2048,"height":1366}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1781655599741-UNFHF0WY9M9NN2T764VV/_Q9A9810.jpg","alt":"A guest in a yellow jacket reads her speech","width":1638,"height":2048}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1781655489823-JMAFBKFEI6SJOEY6MY1G/_Q9A9733.jpg","alt":"A guest reads his speech beside the wedding cake","width":2048,"height":1365}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1781655605058-CDHNP7EGZAA5EEVYK3X8/_Q9A0098.jpg","alt":"Black and white photo of Ronan dipping Felicity during their first dance","width":2048,"height":1638}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1781655605065-GSXIX3GK3L3VXY2Q8V12/_Q9A0075.jpg","alt":"Black and white photo of Felicity and Ronan's first dance in the grand hall","width":2048,"height":1638}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1781655726206-JZIGG9CDHTBG0M372O5B/_30A8851.jpg","alt":"Two guests on a leather chesterfield for an evening portrait","width":2048,"height":1638}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1781655496494-1TE9CWSMB156NNGPFA3C/_30A8812.jpg","alt":"A guest kisses his partner's cheek on a leather sofa","width":2048,"height":1638}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1781655501816-S5OROC5T0R22QZVK6TFU/_30A8948.jpg","alt":"Two guests in tartan and pink on a leather sofa","width":2048,"height":1366}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1781655757624-OZ7I72YEB8CM63424JBR/_30A9009.jpg","alt":"A groomsman in sunglasses sticks his tongue out for the camera","width":1366,"height":2048}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1781655508715-7GK9RGCEKXP43PPFGPQF/_30A8983.jpg","alt":"Felicity and Ronan smile at each other on a leather chesterfield","width":2048,"height":1638}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1781655508559-9GXG2WP9XAG0R6INO36X/_30A9001-Edit.jpg","alt":"Portrait of Felicity in her strapless gown","width":1366,"height":2048}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1781655510790-E4TTLBPMGUUHLZLAZZE0/_30A8977.jpg","alt":"Felicity and Ronan pose on a chesterfield at Settlers Country Manor","width":2048,"height":1638}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-felicity-and-ronan/mono/_30A6750/public","alt":"Black and white portrait of Felicity before the ceremony","width":1366,"height":2048}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-felicity-and-ronan/colour/_30A6741/public","alt":"Felicity in her gown standing in a doorway","width":1366,"height":2048}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-felicity-and-ronan/colour/_30A6704/public","alt":"Felicity and her bridesmaids in robes beside the pond","width":2048,"height":1366}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-felicity-and-ronan/colour/_30A6660/public","alt":"Lumi the dog in a bow tie at Settlers Country Manor","width":2048,"height":1366}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-felicity-and-ronan/colour/_Q9A9213/public","alt":"Felicity puts in her earrings during preparations","width":2048,"height":1366}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-felicity-and-ronan/colour/_30A6818/public","alt":"Felicity and a bridesmaid in a vintage Bentley","width":2048,"height":1366}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-felicity-and-ronan/colour/_30A6925/public","alt":"Felicity and her bridesmaids in front of the white rotunda at Settlers Country Manor","width":1366,"height":2048}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-felicity-and-ronan/colour/_Q9A9277/public","alt":"A groomsman in a bow tie laughs and looks down","width":1366,"height":2048}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-felicity-and-ronan/colour/_Q9A9275-Edit/public","alt":"A groomsman in round glasses laughs heartily","width":1366,"height":2048}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-felicity-and-ronan/mono/_30A7138/public","alt":"Black and white close-up of Felicity's rose bouquet","width":2048,"height":2048}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-felicity-and-ronan/colour/_30A7152/public","alt":"Ronan and his groomsmen sit on brick steps","width":2048,"height":1366}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-felicity-and-ronan/colour/_30A7337/public","alt":"The pond and white bridge in the gardens at Settlers Country Manor","width":2048,"height":1366}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-felicity-and-ronan/colour/_30A7887/public","alt":"Ronan's hands rest on Felicity's waist, showing their rings","width":1638,"height":2048}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-felicity-and-ronan/colour/_Q9A9305-Edit/public","alt":"Felicity smiles up at Ronan beside a lantern","width":2048,"height":1366}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-felicity-and-ronan/colour/_30A8023/public","alt":"Felicity and Ronan kiss on a garden bench beside a lamp","width":2048,"height":1366}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-felicity-and-ronan/colour/_30A6940/public","alt":"Felicity and her bridesmaids pose with a gold frame by the rotunda","width":1638,"height":2048}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-felicity-and-ronan/colour/_30A7846/public","alt":"Felicity and Ronan walk back up the aisle as guests cheer","width":2048,"height":1366}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-felicity-and-ronan/mono/_30A8014/public","alt":"Black and white photo of Felicity and Ronan sitting together on a bench","width":2048,"height":1366}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-felicity-and-ronan/colour/_30A7725/public","alt":"The garden ceremony beside the white rotunda at Settlers Country Manor","width":2048,"height":1366}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-felicity-and-ronan/colour/_30A8091/public","alt":"Felicity and Ronan beneath a brick archway with lanterns","width":2048,"height":1638}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-felicity-and-ronan/colour/_30A7265/public","alt":"The garden pond and footbridge surrounded by autumn trees","width":2048,"height":1366}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-felicity-and-ronan/colour/_Q9A9693/public","alt":"A guest gives a speech with a microphone","width":2048,"height":1366}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-felicity-and-ronan/colour/_Q9A9810/public","alt":"A guest in a yellow jacket reads her speech","width":1638,"height":2048}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-felicity-and-ronan/colour/_Q9A9733/public","alt":"A guest reads his speech beside the wedding cake","width":2048,"height":1365}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-felicity-and-ronan/mono/_Q9A0098/public","alt":"Black and white photo of Ronan dipping Felicity during their first dance","width":2048,"height":1638}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-felicity-and-ronan/mono/_Q9A0075/public","alt":"Black and white photo of Felicity and Ronan's first dance in the grand hall","width":2048,"height":1638}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-felicity-and-ronan/colour/_30A8851/public","alt":"Two guests on a leather chesterfield for an evening portrait","width":2048,"height":1638}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-felicity-and-ronan/colour/_30A8812/public","alt":"A guest kisses his partner's cheek on a leather sofa","width":2048,"height":1638}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-felicity-and-ronan/colour/_30A8948/public","alt":"Two guests in tartan and pink on a leather sofa","width":2048,"height":1366}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-felicity-and-ronan/colour/_30A9009/public","alt":"A groomsman in sunglasses sticks his tongue out for the camera","width":1366,"height":2048}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-felicity-and-ronan/colour/_30A8983/public","alt":"Felicity and Ronan smile at each other on a leather chesterfield","width":2048,"height":1638}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-felicity-and-ronan/colour/_30A9001-Edit/public","alt":"Portrait of Felicity in her strapless gown","width":1366,"height":2048}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-felicity-and-ronan/colour/_30A8977/public","alt":"Felicity and Ronan pose on a chesterfield at Settlers Country Manor","width":2048,"height":1638}
 ---
 There are weddings that unfold with quiet, ordered elegance, and then there are weddings that crackle with life from the very first moment. Felicity and Ronan's day at [Settlers Country Manor](https://www.settlerscountrymanor.co.nz/) was firmly, wonderfully, the latter — a celebration packed with laughter, tears, spontaneous joy, and the kind of energy that fills a room and refuses to leave.
 

@@ -7,26 +7,26 @@ updated: 2026-08-17
 author: "Tony Gorham"
 categories: ["Wedding"]
 tags: ["bridgewater"]
-thumbnail: "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1785798109882-YYVVNIFKV9N3BU483YBY/_30A1292.jpg"
+thumbnail: "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-rebecca-and-nick/colour/_30A1292/public"
 gallery:
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1785797807036-5IM3EUY4F10Q8L1TYCBL/_30A1292.jpg","alt":"Guests with umbrellas watch Rebecca walk down the aisle at Bridgewater Estate","width":4096,"height":3277}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1785797768789-O6WLEWNP96PP5TZCJKB6/_Q9A2090.jpg","alt":"Rebecca and Nick exchange vows under a clear umbrella in the rain","width":4096,"height":2732}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1785797806381-MXANB41PH37DXNHW6C8K/_30A1477.jpg","alt":"Rebecca and Nick with their bridal party under festoon lights","width":4096,"height":2732}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1785797787899-O9XCCZJGUHSJ4RBKG8Z5/_30A0802-Edit.jpg","alt":"Rebecca in her lace gown in the bridal suite at Bridgewater Estate","width":2732,"height":4096}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1785797787662-A1IQFTPCDJF6J9LPQYAN/_30A0845.jpg","alt":"Nick sees Rebecca for the first time in the suite","width":4096,"height":2732}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1785797821260-MV1CUVNRR5GF7KT6XZEJ/_30A0478+-+Copy.jpg","alt":"Close-up of the floral lace on Rebecca's gown","width":4096,"height":2732}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1785797830807-AV2NRGIVKSYZ6QTREFWX/_30A0575+-+Copy.jpg","alt":"Nick and his groomsmen walk down a gravel path","width":3277,"height":4096}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1785797831885-2KYN39JRQZ1S537R84TD/_Q9A1835+-+Copy.jpg","alt":"Rebecca and Nick's invitation with red roses and wax seals","width":4096,"height":3277}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1785797840229-A859EPXVAWVWO8IJXIIC/_Q9A1901+-+Copy.jpg","alt":"Nick leans against a tree in his tuxedo","width":2732,"height":4096}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1785797840719-1V6QJBX9HSAQULDHBLIS/_Q9A2031+-+Copy.jpg","alt":"Rebecca and Nick hold hands as the celebrant reads","width":4096,"height":2732}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1785797846761-D5H338EICRIMUYQ1V5WE/_Q9A2044+-+Copy.jpg","alt":"A guest gives a reading during the ceremony","width":4096,"height":2732}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1785797846336-ZQREDQSDOCLXJS7G9R2Y/_Q9A2445+-+Copy.jpg","alt":"Rebecca dances with a guest at the reception","width":4096,"height":2732}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1785797871776-8GNQYQ0FKL51UCQD87R7/_30A0393.jpg","alt":"Rebecca's perfume, ring box and invitation among red and white roses","width":2732,"height":4096}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1785797881007-CYRZYGCZFLSQ7Q7S9NNW/_30A0478.jpg","alt":"Close-up of the lace appliqué on Rebecca's gown","width":4096,"height":2732}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1785797883965-6KS0DP2PK62AWMXLUAHG/_30A0575.jpg","alt":"Nick and his groomsmen on a garden path","width":3277,"height":4096}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1785797898544-O1AJCZ4QRLI9JV86LRPX/_30A0731.jpg","alt":"The reception table set with a burgundy runner","width":2732,"height":4096}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1785797899510-K030A0J470MEHZOUSMTL/_30A0737.jpg","alt":"Nick smiles in his tuxedo by a doorway","width":2732,"height":4096}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1785797872181-3FQI68P3IZB1I4TP63OZ/_Q9A2490+-+Copy.jpg","alt":"Rebecca and Nick kiss under an umbrella at night","width":4096,"height":2732}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-rebecca-and-nick/colour/_30A1292/public","alt":"Guests with umbrellas watch Rebecca walk down the aisle at Bridgewater Estate","width":2048,"height":1638}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-rebecca-and-nick/colour/_Q9A2090/public","alt":"Rebecca and Nick exchange vows under a clear umbrella in the rain","width":2048,"height":1366}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-rebecca-and-nick/colour/_30A1477-website/public","alt":"Rebecca and Nick with their bridal party under festoon lights","width":2048,"height":1366}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-rebecca-and-nick/colour/_30A0802-Edit/public","alt":"Rebecca in her lace gown in the bridal suite at Bridgewater Estate","width":1366,"height":2048}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-rebecca-and-nick/colour/_30A0845/public","alt":"Nick sees Rebecca for the first time in the suite","width":2048,"height":1366}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-rebecca-and-nick/colour/_30A0478/public","alt":"Close-up of the floral lace on Rebecca's gown","width":2048,"height":1366}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-rebecca-and-nick/colour/_30A0575/public","alt":"Nick and his groomsmen walk down a gravel path","width":1638,"height":2048}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-rebecca-and-nick/colour/_Q9A1835/public","alt":"Rebecca and Nick's invitation with red roses and wax seals","width":2048,"height":1638}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-rebecca-and-nick/colour/_Q9A1901/public","alt":"Nick leans against a tree in his tuxedo","width":1366,"height":2048}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-rebecca-and-nick/colour/_Q9A2031_-_Copy-website/public","alt":"Rebecca and Nick hold hands as the celebrant reads","width":2048,"height":1366}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-rebecca-and-nick/colour/_Q9A2044/public","alt":"A guest gives a reading during the ceremony","width":2048,"height":1366}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-rebecca-and-nick/colour/_Q9A2445/public","alt":"Rebecca dances with a guest at the reception","width":2048,"height":1366}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-rebecca-and-nick/colour/_30A0393/public","alt":"Rebecca's perfume, ring box and invitation among red and white roses","width":1366,"height":2048}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-rebecca-and-nick/colour/_30A0478/public","alt":"Close-up of the lace appliqué on Rebecca's gown","width":2048,"height":1366}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-rebecca-and-nick/colour/_30A0575/public","alt":"Nick and his groomsmen on a garden path","width":1638,"height":2048}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-rebecca-and-nick/colour/_30A0731/public","alt":"The reception table set with a burgundy runner","width":1366,"height":2048}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-rebecca-and-nick/colour/_30A0737/public","alt":"Nick smiles in his tuxedo by a doorway","width":1366,"height":2048}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-rebecca-and-nick/colour/_Q9A2490/public","alt":"Rebecca and Nick kiss under an umbrella at night","width":2048,"height":1366}
 ---
 When couples fully embrace the wedding preparation process, it always shines through in the final images. Rebecca and Nick did exactly that. From our practice shoot to the final timeline details, they brought such an enthusiastic and lovely energy. On their wedding day, all that preparation truly paid off.
 
