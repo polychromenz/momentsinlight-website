@@ -6,8 +6,9 @@
 // Default: blog-post photos, for posts whose wedding already has an export folder (the folder
 // most of the post's photos matched in), saved there.
 // --pages: photos used only on other pages (venue pages, home, weddings...), saved in
-// <export folder>\_from-website; --only=page,page limits it to those pages. The matcher prefers your own exports over these, so
-// exporting one of these weddings later replaces them automatically.
+// <export folder>\_from-website. --only=page,post limits it to those pages and blog posts
+// (by address), including photos they share with others. The matcher prefers your own
+// exports over these, so exporting one of these sessions later replaces them automatically.
 //
 // Files are named <original name>-website.jpg (or .png), in colour\ or mono\ to match the
 // photo on the site. Run scripts/match-exports.mjs first, and again afterwards.
@@ -40,10 +41,13 @@ for (const [url, r] of Object.entries(matches)) {
   if (r.status === 'matched' || /\.gif$/i.test(url)) continue;
   if (PAGES) {
     // Example/draft pages aren't on the live site.
-    const pages = r.usedIn.filter((f) => !isPost(f) && !f.includes('example-page'));
-    if (r.usedIn.some(isPost) || !pages.length) continue;
-    if (ONLY && !pages.some((f) => ONLY.includes(path.basename(f).replace(/\.\w+$/, '')))) continue;
-    todo.push({ url, name: r.name, folder: '_from-website', where: pages.map((f) => path.basename(f).replace(/\.\w+$/, '')).join(', '), why: r.status });
+    const slug = (f) => path.basename(f).replace(/\.\w+$/, '');
+    const live = r.usedIn.filter((f) => !f.includes('example-page'));
+    if (ONLY) {
+      // Named pages or blog posts (by address), whatever else uses the photo.
+      if (!live.some((f) => ONLY.includes(slug(f)))) continue;
+    } else if (r.usedIn.some(isPost) || !live.length) continue;
+    todo.push({ url, name: r.name, folder: '_from-website', where: live.map(slug).join(', '), why: r.status });
   } else {
     const post = r.usedIn.find((f) => home[f]);
     if (!post) continue;

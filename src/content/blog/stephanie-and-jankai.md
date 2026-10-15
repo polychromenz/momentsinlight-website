@@ -11,9 +11,9 @@ thumbnail: "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/colou
 gallery:
   - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/colour/SOCIAL__MIL3720-website/public","alt":"Stephanie and Jankai under a brick arch with her long lace veil spread out","width":2048,"height":1536}
   - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2025-stephanie-and-jankai/colour/_MIL3376/public","alt":"Stephanie smiles beneath her veil","width":2048,"height":1536}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1748985795523-9J2MFLFA1ZAECZ8PS5QA/SOCIAL__ML26943-2.jpg","alt":"Black and white photo of Stephanie fastening her earring","width":2048,"height":1366}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2025-stephanie-and-jankai/mono/_ML26943/public","alt":"Black and white photo of Stephanie fastening her earring","width":2048,"height":1366}
   - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2025-stephanie-and-jankai/colour/_ML26949/public","alt":"A guest in lilac smiles during preparations","width":2048,"height":1366}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1748985327026-GRAJU9T78084FM8WVMGQ/SOCIAL__MIL3322-2.jpg","alt":"Black and white photo of Jankai greeting family before the ceremony","width":2048,"height":1536}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2025-stephanie-and-jankai/mono/_MIL3322/public","alt":"Black and white photo of Jankai greeting family before the ceremony","width":2048,"height":1536}
   - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2025-stephanie-and-jankai/colour/_MIL2899/public","alt":"The reception room at Settlers Country Manor set with chandeliers and gold accents","width":2048,"height":1365}
   - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2025-stephanie-and-jankai/colour/_MIL3374/public","alt":"Stephanie smiles in her tiara during preparations","width":2048,"height":1536}
   - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2025-stephanie-and-jankai/colour/_MIL3249/public","alt":"Close-up of a ring being placed on a finger","width":2048,"height":1536}
@@ -42,10 +42,10 @@ gallery:
   - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2025-stephanie-and-jankai/colour/_MIL4444/public","alt":"Two guests dance with their hands in the air","width":2048,"height":1536}
   - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2025-stephanie-and-jankai/colour/_MIL4507/public","alt":"A guest laughs at his table","width":2048,"height":1536}
   - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2025-stephanie-and-jankai/colour/_MIL4928/public","alt":"Two groomsmen dance across the floor","width":1638,"height":2048}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1748985786841-M1EIWYM6JQ9W50W7Y11C/SOCIAL__MIL4833-2.jpg","alt":"Black and white photo of guests dancing energetically","width":2048,"height":1638}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1748985704211-O01094FY7DDAW3I26R22/SOCIAL__MIL4641-2.jpg","alt":"Black and white photo of Stephanie and Jankai dancing","width":1638,"height":2048}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2025-stephanie-and-jankai/mono/_MIL4833/public","alt":"Black and white photo of guests dancing energetically","width":2048,"height":1638}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2025-stephanie-and-jankai/mono/_MIL4641/public","alt":"Black and white photo of Stephanie and Jankai dancing","width":1638,"height":2048}
   - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2025-stephanie-and-jankai/colour/_MIL4667/public","alt":"Stephanie and Jankai dance together in her blue gown","width":2048,"height":1365}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1748985694949-ZGADE9782FD4N73PVWJH/SOCIAL__MIL4617-2.jpg","alt":"Black and white photo of Stephanie and Jankai's first dance","width":1638,"height":2048}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2025-stephanie-and-jankai/mono/_MIL4617/public","alt":"Black and white photo of Stephanie and Jankai's first dance","width":1638,"height":2048}
   - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2025-stephanie-and-jankai/colour/_MIL4054/public","alt":"Jankai dips Stephanie during their first dance","width":2048,"height":1536}
 ---
 ### Settlers Country Manor Wedding | Settlers Country Manor
