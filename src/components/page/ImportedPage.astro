@@ -11,6 +11,11 @@ const { page } = Astro.props;
 const sections: any[] = page.sections;
 const isAlt = (bg: string) => bg === 'rgb(233, 236, 230)';
 const subject = page.title.split(/\s[|–—-]\s/)[0];
+// The section holding the page's first photo (if it's near the top): its photos load straight
+// away, and that first photo is fetched before anything else.
+const hasPhoto = (s: any) => s.bgImage?.src || (s.kind === 'gallery' && s.images?.length) || s.blocks?.some((b: any) => b.type === 'image');
+const heroAt = sections.findIndex(hasPhoto);
+const hero = heroAt >= 0 && heroAt <= 2 ? heroAt : -1;
 ---
 <BaseLayout title={page.title} description={page.description} image={page.ogImage || undefined}>
   {sections.map((s, i) => {
@@ -41,15 +46,16 @@ const subject = page.title.split(/\s[|–—-]\s/)[0];
               alt=""
               width={bg.width}
               height={bg.height}
-              loading={i === 0 ? 'eager' : 'lazy'}
+              loading={i <= hero ? 'eager' : 'lazy'}
+              priority={i === hero}
               style={`object-position:${Math.round((bg.focal?.[0] ?? 0.5) * 100)}% ${Math.round((bg.focal?.[1] ?? 0.5) * 100)}%`}
             />
             {s.bgOverlay && <span style={`background:${s.bgOverlay.color};opacity:${s.bgOverlay.opacity}`} />}
           </div>
         )}
         <div class="ps-inner">
-          {s.kind === 'fluid' && <FluidSection section={s} cls={cls} />}
-          {s.kind === 'gallery' && <GallerySection section={s} cls={cls} subject={subject} />}
+          {s.kind === 'fluid' && <FluidSection section={s} cls={cls} first={i <= hero} priority={i === hero && !bg?.src} />}
+          {s.kind === 'gallery' && <GallerySection section={s} cls={cls} subject={subject} first={i <= hero} priority={i === hero && !bg?.src} />}
         </div>
       </section>
     );

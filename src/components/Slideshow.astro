@@ -14,8 +14,10 @@ interface Props {
   heightDesktop?: string;
   /** Seconds each photo is shown. */
   interval?: number;
+  /** Near the top of the page: its first photo is fetched before everything else. */
+  first?: boolean;
 }
-const { images, label, heightMobile = '30vh', heightDesktop = '50vh', interval = 5 } = Astro.props;
+const { images, label, heightMobile = '30vh', heightDesktop = '50vh', interval = 5, first = false } = Astro.props;
 // Photos are shown whole inside a box the slideshow's height tall, so each is only as wide as
 // its shape allows at that height (never wider than the screen); tell the browser so it
 // fetches that size rather than a full-screen-width one.
@@ -38,7 +40,7 @@ const sizesFor = (g: { width?: number; height?: number }) => {
     <ul class="slides" aria-live="off">
       {images.map((g, i) => (
         <li class:list={['slide', { active: i === 0 }]} aria-roledescription="slide" aria-label={`${i + 1} of ${images.length}`} aria-hidden={i === 0 ? undefined : 'true'}>
-          <Img src={g.src} alt={g.alt} width={g.width} height={g.height} sizes={sizesFor(g)} loading={i < 2 ? 'eager' : 'lazy'} deferred={i >= 2} />
+          <Img src={g.src} alt={g.alt} width={g.width} height={g.height} sizes={sizesFor(g)} loading={i < 2 ? 'eager' : 'lazy'} priority={first && i === 0} deferred={i >= 2} />
         </li>
       ))}
     </ul>

@@ -1,35 +1,47 @@
 ---
 // Google Analytics 4 and the Meta (Facebook) Pixel, as on the old Squarespace site.
-// Both load asynchronously so they don't slow the page down. IDs live in src/data/site.ts.
-// Only runs on the real site, so local previews don't add test visits to the reports.
+// IDs live in src/data/site.ts. Only runs on the real site, so local previews don't add test
+// visits to the reports.
+//
+// gtag() and fbq() are set up straight away and queue everything (the page view, and the
+// guide signup's lead events); the two libraries themselves are only fetched once the page
+// has finished loading and the browser is idle, so they don't compete with the photos.
+// Their combined ~140KB of script cost phones about 0.7s while the page was loading.
 import { tracking } from '../data/site';
 
 const { googleAnalytics: ga, metaPixel: pixel } = tracking;
 const enabled = import.meta.env.PROD;
 ---
-{enabled && ga && (
-  <>
-    <script async src={`https://www.googletagmanager.com/gtag/js?id=${ga}`}></script>
-    <script is:inline define:vars={{ ga }}>
+{enabled && (ga || pixel) && (
+  <script is:inline define:vars={{ ga, pixel }}>
+    const scripts = [];
+    if (ga) {
       window.dataLayer = window.dataLayer || [];
-      function gtag() { dataLayer.push(arguments); }
-      window.gtag = gtag;
+      window.gtag = function () { dataLayer.push(arguments); };
       gtag('js', new Date());
       gtag('config', ga);
-    </script>
-  </>
-)}
-{enabled && pixel && (
-  <>
-    <script is:inline define:vars={{ pixel }}>
-      !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-      n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;
-      n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;
-      t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,
-      document,'script','https://connect.facebook.net/en_US/fbevents.js');
+      scripts.push('https://www.googletagmanager.com/gtag/js?id=' + ga);
+    }
+    if (pixel && !window.fbq) {
+      // The Meta Pixel's standard queue, without its script tag (added below).
+      const n = (window.fbq = function () { n.callMethod ? n.callMethod.apply(n, arguments) : n.queue.push(arguments); });
+      if (!window._fbq) window._fbq = n;
+      n.push = n; n.loaded = true; n.version = '2.0'; n.queue = [];
       fbq('init', pixel);
       fbq('track', 'PageView');
-    </script>
-    <noscript><img height="1" width="1" style="display:none" alt="" src={`https://www.facebook.com/tr?id=${pixel}&ev=PageView&noscript=1`} /></noscript>
-  </>
+      scripts.push('https://connect.facebook.net/en_US/fbevents.js');
+    }
+    const load = () => scripts.forEach((src) => {
+      const s = document.createElement('script');
+      s.async = true;
+      s.src = src;
+      document.head.appendChild(s);
+    });
+    const idle = () => (window.requestIdleCallback ? requestIdleCallback(load, { timeout: 3000 }) : setTimeout(load, 1500));
+    if (document.readyState === 'complete') idle();
+    else addEventListener('load', idle, { once: true });
+  </script>
+)}
+{enabled && pixel && (
+  <noscript><img height="1" width="1" style="display:none" alt="" src={`https://www.facebook.com/tr?id=${pixel}&ev=PageView&noscript=1`} /></noscript>
 )}

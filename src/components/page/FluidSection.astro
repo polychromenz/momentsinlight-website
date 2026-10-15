@@ -7,8 +7,11 @@ import SummaryList from './SummaryList.astro';
 import GuideSignup from './GuideSignup.astro';
 import { social as socialLinks } from '../../data/site';
 
-interface Props { section: any; cls: string }
-const { section: s, cls } = Astro.props;
+// first: the page's first section, whose photos load straight away; priority: its first photo
+// is the page's main one (no background photo above it).
+interface Props { section: any; cls: string; first?: boolean; priority?: boolean }
+const { section: s, cls, first = false, priority = false } = Astro.props;
+const mainImage = priority ? s.blocks.find((b: any) => b.type === 'image') : undefined;
 const g = s.grid ?? { mRows: 1, mRowMin: 24, dRows: 1, dScale: 0.0215, mGap: 11, dGap: 11 };
 
 const box = (p: number[]) => p.map((v) => `${v}px`).join(' ');
@@ -63,6 +66,8 @@ const pct = (n: number) => `${Math.round(n * 1000) / 10}%`;
             width={b.image.width}
             height={b.image.height}
             sizes="(min-width: 768px) 50vw, 100vw"
+            loading={first ? 'eager' : 'lazy'}
+            priority={b === mainImage}
             class={b.fit}
           />
         );

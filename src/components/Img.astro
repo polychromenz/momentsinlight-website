@@ -15,8 +15,10 @@ interface Props {
   /** Leave the photo unloaded (data-src/data-srcset) until a script sets it, e.g. slideshow
    * photos stacked out of sight, which the browser would otherwise all fetch at once. */
   deferred?: boolean;
+  /** The page's main photo (usually the first one on screen): fetched before everything else. */
+  priority?: boolean;
 }
-const { src, alt, width, height, sizes = '100vw', loading = 'lazy', class: className, style, deferred = false } = Astro.props;
+const { src, alt, width, height, sizes = '100vw', loading = 'lazy', class: className, style, deferred = false, priority = false } = Astro.props;
 const img = responsive(src);
 ---
 <img
@@ -28,9 +30,9 @@ const img = responsive(src);
   alt={alt}
   width={width}
   height={height}
-  loading={loading}
+  loading={priority ? 'eager' : loading}
   decoding="async"
-  fetchpriority={loading === 'eager' ? 'high' : undefined}
+  fetchpriority={priority ? 'high' : undefined}
   class={className}
   style={style}
 />

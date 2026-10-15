@@ -5,8 +5,11 @@
 import Img from '../Img.astro';
 import Slideshow from '../Slideshow.astro';
 
-interface Props { section: any; cls: string; subject?: string }
-const { section: s, cls, subject } = Astro.props;
+// first: the page's first section (its first photos load straight away); priority: its first
+// photo is the page's main one.
+interface Props { section: any; cls: string; subject?: string; first?: boolean; priority?: boolean }
+const { section: s, cls, subject, first = false, priority = false } = Astro.props;
+const load = (n: number) => (first && n < 4 ? 'eager' : 'lazy') as 'eager' | 'lazy';
 const L = s.layout;
 const design: string = s.design === 'fullscreen-slideshow' || s.design === 'reel' ? 'slideshow' : s.design;
 const isReel = s.design === 'reel';
@@ -27,14 +30,14 @@ const css =
 {design === 'masonry' && (
   <ul class="g masonry">
     {s.images.map((i: any, n: number) => (
-      <li>{i.href ? <a href={i.href}><Img src={i.src} alt={alt(i, n)} width={i.width} height={i.height} sizes="(min-width: 768px) 46vw, 44vw" /></a> : <Img src={i.src} alt={alt(i, n)} width={i.width} height={i.height} sizes="(min-width: 768px) 46vw, 44vw" />}</li>
+      <li>{i.href ? <a href={i.href}><Img src={i.src} alt={alt(i, n)} width={i.width} height={i.height} sizes="(min-width: 768px) 46vw, 44vw" loading={load(n)} priority={priority && n === 0} /></a> : <Img src={i.src} alt={alt(i, n)} width={i.width} height={i.height} sizes="(min-width: 768px) 46vw, 44vw" loading={load(n)} priority={priority && n === 0} />}</li>
     ))}
   </ul>
 )}
 {design === 'grid' && (
   <ul class="g grid">
     {s.images.map((i: any, n: number) => (
-      <li><Img src={i.src} alt={alt(i, n)} width={i.width} height={i.height} sizes="(min-width: 768px) 30vw, 45vw" /></li>
+      <li><Img src={i.src} alt={alt(i, n)} width={i.width} height={i.height} sizes="(min-width: 768px) 30vw, 45vw" loading={load(n)} priority={priority && n === 0} /></li>
     ))}
   </ul>
 )}
@@ -45,6 +48,7 @@ const css =
     heightMobile={isReel ? '30vh' : vw(L.m.itemH || L.m.rect?.[2] || 300, 390)}
     heightDesktop={isReel ? '50vh' : vw(L.d.itemH || L.d.rect?.[2] || 600, 1440)}
     interval={5}
+    first={priority}
     images={s.images.map((i: any, n: number) => ({ src: i.src, alt: alt(i, n), width: i.width, height: i.height }))}
   />
   </div>

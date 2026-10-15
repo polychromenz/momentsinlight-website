@@ -15,7 +15,7 @@ const { image, heading, subheading, height, buttonLabel, buttonLink, isFirst } =
 const H = isFirst ? 'h1' : 'h2';
 ---
 <section class:list={['hero', height]}>
-  <Img src={image.src} alt={image.alt} sizes="100vw" loading={isFirst ? 'eager' : 'lazy'} />
+  <Img src={image.src} alt={image.alt} sizes="100vw" loading={isFirst ? 'eager' : 'lazy'} priority={isFirst} />
   <div class="overlay">
     <div class="wrap content">
       <H>{heading}</H>
