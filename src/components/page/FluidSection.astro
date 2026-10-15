@@ -5,6 +5,7 @@
 import Img from '../Img.astro';
 import SummaryList from './SummaryList.astro';
 import GuideSignup from './GuideSignup.astro';
+import Reviews from '../Reviews.astro';
 import { social as socialLinks } from '../../data/site';
 
 // first: the page's first section, whose photos load straight away; priority: its first photo
@@ -104,6 +105,7 @@ const pct = (n: number) => `${Math.round(n * 1000) / 10}%`;
       )}
       {b.type === 'line' && <hr />}
       {b.type === 'guideSignup' && <GuideSignup />}
+      {b.type === 'reviews' && <Reviews />}
     </div>
   ))}
 </div>

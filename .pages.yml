@@ -222,6 +222,68 @@ content:
               - name: background
                 component: background
 
+  - name: reviews
+    label: Reviews
+    description: Google reviews shown on the Testimonials page, newest first (they're sorted by date automatically). Add new ones at the top.
+    type: file
+    path: src/data/reviews.json
+    format: json
+    fields:
+      - name: writeReviewUrl
+        label: "Review us on Google" link
+        type: string
+      - name: allReviewsUrl
+        label: All reviews on Google (link)
+        type: string
+      - name: summary
+        label: Summary card (one point per line; leave empty to hide the card)
+        type: string
+        list: true
+      - name: reviews
+        label: Reviews
+        type: object
+        list:
+          collapsible:
+            collapsed: true
+            summary: "{name} ({date})"
+        fields:
+          - name: name
+            label: Name (as on Google)
+            type: string
+            required: true
+          - name: date
+            label: Date of the review
+            type: date
+            required: true
+          - name: rating
+            label: Stars
+            type: number
+            default: 5
+          - name: text
+            label: Review
+            type: text
+            required: true
+          - name: photos
+            label: Photos (optional)
+            type: object
+            list: true
+            fields:
+              - name: src
+                label: Photo
+                type: image
+              - name: width
+                label: Width in pixels (optional)
+                type: number
+              - name: height
+                label: Height in pixels (optional)
+                type: number
+          - name: reply
+            label: Your reply (optional)
+            type: text
+          - name: url
+            label: Link to the review on Google (optional)
+            type: string
+
   - name: blog
     label: Wedding blog
     type: collection

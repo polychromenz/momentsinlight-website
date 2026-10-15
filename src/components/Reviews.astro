@@ -1,0 +1,330 @@
+---
+// Google reviews wall for /testimonials, built from src/data/reviews.json (edited in Pages CMS
+// under Reviews, or added with scripts/import-reviews.mjs). Replaces the Elfsight widget, which
+// cost phones about 2 seconds of processing and made the page jump as it loaded.
+//
+// Rating header with a "Review us on Google" button, a summary card, then review cards
+// (newest first) with stars, photos and "Read more"; "Load more" shows the next batch.
+// "Read more" opens the full review with Tony's reply; a photo opens full size with the
+// review alongside.
+import data from '../data/reviews.json';
+import Img from './Img.astro';
+
+const FIRST = 11; // cards shown before "Load more" (the summary card makes a row of 12)
+const reviews = [...data.reviews].sort((a, b) => b.date.localeCompare(a.date));
+const count = reviews.length;
+const rating = count ? Math.round((reviews.reduce((s, r) => s + r.rating, 0) / count) * 10) / 10 : 5;
+
+// Initial circle in place of the reviewer's Google profile picture (nothing loads from Google).
+const COLOURS = ['#5a5e3b', '#7a5c3e', '#3e6a7a', '#7a3e5c', '#3e7a62', '#5c3e7a', '#8a5a2b', '#2f5550'];
+const colourFor = (name: string) => COLOURS[[...name].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7) % COLOURS.length];
+const initial = (name: string) => (name.trim()[0] || '?').toUpperCase();
+
+// "4 days ago", as Google shows it; worked out at build time and refreshed in the browser.
+const ago = (date: string, now = Date.now()) => {
+  const days = Math.max(0, Math.floor((now - new Date(date + 'T12:00:00+13:00').getTime()) / 86400000));
+  if (days < 1) return 'today';
+  if (days < 7) return days === 1 ? 'a day ago' : `${days} days ago`;
+  if (days < 30) { const w = Math.floor(days / 7); return w === 1 ? 'a week ago' : `${w} weeks ago`; }
+  if (days < 365) { const m = Math.floor(days / 30.4); return m <= 1 ? 'a month ago' : `${m} months ago`; }
+  const y = Math.floor(days / 365); return y === 1 ? 'a year ago' : `${y} years ago`;
+};
+const longDate = (date: string) => new Date(date + 'T12:00:00').toLocaleDateString('en-NZ', { day: 'numeric', month: 'long', year: 'numeric' });
+const paragraphs = (s: string) => s.split(/\n{2,}/).map((p) => p.trim()).filter(Boolean);
+---
+<section class="reviews" data-reviews aria-label="Google reviews">
+  <header class="head">
+    <div class="score">
+      <span class="num">{rating.toFixed(1)}</span>
+      <span class="meta">
+        <span class="stars" aria-label={`${rating} out of 5 stars`}>{'★★★★★'}</span>
+        <span class="count">{count} reviews on <span class="google" aria-label="Google"><b>G</b><b>o</b><b>o</b><b>g</b><b>l</b><b>e</b></span></span>
+      </span>
+    </div>
+    <a class="write" href={data.writeReviewUrl} target="_blank" rel="noopener">Review us on Google</a>
+  </header>
+
+  <ul class="grid">
+    {data.summary?.length > 0 && (
+      <li class="card summary">
+        <div class="who">
+          <span class="avatar sum" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M12 2l2.4 6.6L21 11l-6.6 2.4L12 20l-2.4-6.6L3 11l6.6-2.4z" /></svg>
+          </span>
+          <span><strong>What clients say</strong><small>From {count} Google reviews</small></span>
+        </div>
+        <span class="stars" aria-hidden="true">{'★★★★★'}</span>
+        <ul class="points">{data.summary.map((p: string) => <li>{p}</li>)}</ul>
+      </li>
+    )}
+    {reviews.map((r, i) => (
+      <li class="card" data-i={i} hidden={i >= FIRST}>
+        <div class="who">
+          <span class="avatar" style={`background:${colourFor(r.name)}`} aria-hidden="true">{initial(r.name)}<i class="g" /></span>
+          <span><strong>{r.name}</strong><small><time datetime={r.date} title={longDate(r.date)}>{ago(r.date)}</time></small></span>
+        </div>
+        <span class="stars" aria-label={`${r.rating} out of 5 stars`}>{'★'.repeat(r.rating)}</span>
+        <div class:list={['text', { short: r.photos.length > 0 }]}>
+          {paragraphs(r.text).map((p) => <p>{p}</p>)}
+        </div>
+        <button type="button" class="more" data-open={i} hidden>Read more</button>
+        {r.photos.length > 0 && (
+          <div class="photos">
+            {r.photos.slice(0, 4).map((ph, n) => (
+              <button type="button" class="ph" data-photo={`${i}:${n}`} aria-label={`Photo ${n + 1} of ${r.photos.length} from ${r.name}'s review`}>
+                <Img src={ph.src} alt="" width={ph.width} height={ph.height} sizes="(min-width: 1200px) 110px, (min-width: 640px) 20vw, 40vw" />
+                {n === 3 && r.photos.length > 4 && <span class="plus">+{r.photos.length - 4}</span>}
+              </button>
+            ))}
+          </div>
+        )}
+      </li>
+    ))}
+  </ul>
+  {count > FIRST && <button type="button" class="load" data-load>Load more</button>}
+
+  <!-- Full review with Tony's reply -->
+  <dialog class="modal" data-review-dialog aria-label="Review">
+    <button type="button" class="close" data-close aria-label="Close">×</button>
+    <div class="modal-body">
+      {reviews.map((r, i) => (
+        <article class="full" data-full={i} hidden>
+          <div class="who">
+            <span class="avatar" style={`background:${colourFor(r.name)}`} aria-hidden="true">{initial(r.name)}<i class="g" /></span>
+            <span><strong>{r.name}</strong><small>{longDate(r.date)}</small></span>
+          </div>
+          <span class="stars" aria-label={`${r.rating} out of 5 stars`}>{'★'.repeat(r.rating)}</span>
+          {paragraphs(r.text).map((p) => <p>{p}</p>)}
+          {r.photos.length > 0 && (
+            <div class="photos wide">
+              {r.photos.map((ph, n) => (
+                <button type="button" class="ph" data-photo={`${i}:${n}`} aria-label={`Photo ${n + 1} of ${r.photos.length}`}>
+                  <Img src={ph.src} alt="" width={ph.width} height={ph.height} sizes="120px" />
+                </button>
+              ))}
+            </div>
+          )}
+          {r.reply && (
+            <div class="reply">
+              <strong>Moments in Light <span class="tag">Owner reply</span></strong>
+              {paragraphs(r.reply).map((p) => <p>{p}</p>)}
+            </div>
+          )}
+          {r.url && <a class="on-google" href={r.url} target="_blank" rel="noopener">See this review on Google</a>}
+        </article>
+      ))}
+    </div>
+  </dialog>
+
+  <!-- Review photos, full size -->
+  <dialog class="lightbox" data-photo-dialog aria-label="Review photo">
+    <button type="button" class="close" data-close aria-label="Close">×</button>
+    <div class="lb-photo">
+      <img alt="" data-lb-img />
+      <button type="button" class="nav prev" data-lb="-1" aria-label="Previous photo">‹</button>
+      <button type="button" class="nav next" data-lb="1" aria-label="Next photo">›</button>
+      <span class="lb-count" data-lb-count></span>
+    </div>
+    <div class="lb-side" data-lb-side></div>
+  </dialog>
+</section>
+
+<script define:vars={{ photos: reviews.map((r) => r.photos.map((p) => p.src)) }}>
+  const root = document.querySelector('[data-reviews]');
+  if (root) {
+    const cards = [...root.querySelectorAll('.card[data-i]')];
+    const STEP = 12;
+
+    // Relative dates, kept current between site rebuilds.
+    const ago = (date) => {
+      const days = Math.max(0, Math.floor((Date.now() - new Date(date + 'T12:00:00+13:00').getTime()) / 86400000));
+      if (days < 1) return 'today';
+      if (days < 7) return days === 1 ? 'a day ago' : days + ' days ago';
+      if (days < 30) { const w = Math.floor(days / 7); return w === 1 ? 'a week ago' : w + ' weeks ago'; }
+      if (days < 365) { const m = Math.floor(days / 30.4); return m <= 1 ? 'a month ago' : m + ' months ago'; }
+      const y = Math.floor(days / 365); return y === 1 ? 'a year ago' : y + ' years ago';
+    };
+    root.querySelectorAll('.card time').forEach((t) => { t.textContent = ago(t.dateTime); });
+
+    // "Read more" only where the text is cut short.
+    const checkMore = () => cards.forEach((c) => {
+      if (c.hidden) return;
+      const t = c.querySelector('.text');
+      c.querySelector('.more').hidden = t.scrollHeight <= t.clientHeight + 2;
+    });
+    checkMore();
+    addEventListener('resize', checkMore);
+    document.fonts?.ready.then(checkMore);
+
+    // Load more
+    const load = root.querySelector('[data-load]');
+    load?.addEventListener('click', () => {
+      const next = cards.filter((c) => c.hidden).slice(0, STEP);
+      next.forEach((c) => { c.hidden = false; });
+      checkMore();
+      if (!cards.some((c) => c.hidden)) load.remove();
+      next[0]?.querySelector('.more:not([hidden]), .ph')?.focus({ preventScroll: true });
+    });
+
+    const lock = (on) => { document.documentElement.style.overflow = on ? 'hidden' : ''; };
+    const wire = (dlg) => {
+      dlg.querySelector('[data-close]').addEventListener('click', () => dlg.close());
+      dlg.addEventListener('click', (e) => { if (e.target === dlg) dlg.close(); });
+      dlg.addEventListener('close', () => { if (!document.querySelector('dialog[open]')) lock(false); });
+    };
+
+    // Full review
+    const modal = root.querySelector('[data-review-dialog]');
+    wire(modal);
+    const openReview = (i) => {
+      modal.querySelectorAll('[data-full]').forEach((a) => { a.hidden = a.dataset.full !== String(i); });
+      modal.showModal(); lock(true);
+      modal.querySelector('.modal-body').scrollTop = 0;
+    };
+    root.querySelectorAll('[data-open]').forEach((b) => b.addEventListener('click', () => openReview(b.dataset.open)));
+
+    // Photos
+    const lb = root.querySelector('[data-photo-dialog]');
+    wire(lb);
+    const img = lb.querySelector('[data-lb-img]');
+    const side = lb.querySelector('[data-lb-side]');
+    const counter = lb.querySelector('[data-lb-count]');
+    let cur = [0, 0];
+    const big = (src) => src.replace(/\/public$/, '/w=1600');
+    const show = () => {
+      const [i, n] = cur;
+      const list = photos[i];
+      img.src = big(list[n]);
+      counter.textContent = list.length > 1 ? `${n + 1} / ${list.length}` : '';
+      lb.querySelectorAll('.nav').forEach((b) => { b.hidden = list.length < 2; });
+      if (list[n + 1]) new Image().src = big(list[n + 1]);
+    };
+    const openPhoto = (i, n) => {
+      cur = [i, n];
+      const full = modal.querySelector(`[data-full="${i}"]`).cloneNode(true);
+      full.hidden = false;
+      full.querySelector('.photos')?.remove();
+      side.replaceChildren(full);
+      show();
+      if (modal.open) modal.close();
+      lb.showModal(); lock(true);
+    };
+    root.querySelectorAll('[data-photo]').forEach((b) => b.addEventListener('click', () => {
+      const [i, n] = b.dataset.photo.split(':').map(Number);
+      openPhoto(i, n);
+    }));
+    lb.querySelectorAll('[data-lb]').forEach((b) => b.addEventListener('click', () => {
+      const len = photos[cur[0]].length;
+      cur[1] = (cur[1] + Number(b.dataset.lb) + len) % len;
+      show();
+    }));
+    lb.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight') lb.querySelector('.next').click();
+      if (e.key === 'ArrowLeft') lb.querySelector('.prev').click();
+    });
+  }
+</script>
+
+<style>
+  .reviews { --card: var(--griseo); --gold: #f5b400; max-width: 1200px; margin: 0 auto; color: var(--black); }
+  .stars { color: var(--gold); letter-spacing: 2px; font-size: 19px; line-height: 1; }
+
+  /* Rating header */
+  .head {
+    display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+    background: var(--card); border-radius: 10px; padding: 20px 24px; margin-bottom: 20px;
+  }
+  .score { display: flex; align-items: center; gap: 10px; }
+  .num { font-size: 40px; font-weight: 600; line-height: 1; }
+  .meta { display: grid; gap: 4px; }
+  .count { font-size: 13px; }
+  .google { font-weight: 500; font-size: 16px; letter-spacing: -0.3px; }
+  .google b { font-weight: 500; }
+  .google b:nth-child(1), .google b:nth-child(4) { color: #4285f4; }
+  .google b:nth-child(2), .google b:nth-child(6) { color: #ea4335; }
+  .google b:nth-child(3) { color: #fbbc05; }
+  .google b:nth-child(5) { color: #34a853; }
+  .write, .load {
+    display: inline-flex; align-items: center; justify-content: center; min-height: 38px; padding: 0 20px;
+    border-radius: 999px; background: var(--green); color: var(--white); font: 600 14px var(--font);
+    text-decoration: none; border: 0; cursor: pointer; transition: background-color 0.2s;
+  }
+  .write:hover, .load:hover { background: var(--green-dark); }
+  .load { display: flex; margin: 20px auto 0; border-radius: 6px; min-width: 150px; }
+
+  /* Cards */
+  .grid { list-style: none; margin: 0; padding: 0; display: grid; gap: 20px; grid-template-columns: 1fr; }
+  @media (min-width: 640px) { .grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (min-width: 960px) { .grid { grid-template-columns: repeat(3, 1fr); } }
+  @media (min-width: 1200px) { .grid { grid-template-columns: repeat(4, 1fr); } }
+  .card { background: var(--card); border-radius: 10px; padding: 22px; display: flex; flex-direction: column; gap: 10px; font-size: 15px; line-height: 1.5; }
+  .card[hidden] { display: none; }
+  .who { display: flex; align-items: center; gap: 10px; }
+  .who strong { display: block; font-weight: 600; font-size: 15px; line-height: 1.3; }
+  .who small { display: block; font-size: 12px; color: #6b6b6b; }
+  .avatar {
+    position: relative; flex: none; width: 40px; height: 40px; border-radius: 50%;
+    display: grid; place-items: center; color: var(--white); font-weight: 600; font-size: 17px;
+  }
+  /* Small Google "G" badge, as on Google's own review cards */
+  .avatar .g {
+    position: absolute; right: -3px; bottom: -3px; width: 17px; height: 17px; border-radius: 50%;
+    background: var(--white) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Cpath fill='%23EA4335' d='M24 9.5c3.5 0 6.6 1.2 9 3.6l6.7-6.7C35.6 2.5 30.2 0 24 0 14.6 0 6.6 5.4 2.7 13.3l7.8 6C12.4 13.7 17.7 9.5 24 9.5z'/%3E%3Cpath fill='%234285F4' d='M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.6 3-2.3 5.5-4.8 7.2l7.6 5.9c4.4-4.1 7-10.1 7-17.6z'/%3E%3Cpath fill='%23FBBC05' d='M10.5 28.7c-.5-1.5-.8-3-.8-4.7s.3-3.2.8-4.7l-7.8-6C1 16.6 0 20.2 0 24s1 7.4 2.7 10.7l7.8-6z'/%3E%3Cpath fill='%2334A853' d='M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.6-5.9c-2.1 1.4-4.8 2.3-8.3 2.3-6.3 0-11.6-4.2-13.5-9.9l-7.8 6C6.6 42.6 14.6 48 24 48z'/%3E%3C/svg%3E") center / 11px no-repeat;
+    box-shadow: 0 0 0 1px rgb(0 0 0 / 0.06);
+  }
+  .avatar.sum { background: var(--green); }
+  .avatar.sum svg { width: 20px; height: 20px; fill: var(--white); }
+  .text { overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 12; line-clamp: 12; }
+  .text.short { -webkit-line-clamp: 4; line-clamp: 4; }
+  .text p { margin: 0 0 0.6em; }
+  .text p:last-child { margin: 0; }
+  .more { align-self: flex-start; background: none; border: 0; padding: 0; font: inherit; font-size: 14px; color: var(--green); text-decoration: underline; text-underline-offset: 2px; cursor: pointer; }
+  .more[hidden] { display: none; }
+  .photos { display: grid; grid-template-columns: repeat(2, 1fr); gap: 4px; margin-top: 4px; }
+  .photos.wide { grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); margin: 12px 0; }
+  .ph { position: relative; padding: 0; border: 0; border-radius: 4px; overflow: hidden; aspect-ratio: 1; cursor: zoom-in; background: #ddd; }
+  .ph :global(img) { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.3s; }
+  .ph:hover :global(img) { transform: scale(1.04); }
+  .plus { position: absolute; inset: 0; display: grid; place-items: center; background: rgb(0 0 0 / 0.45); color: var(--white); font-size: 22px; font-weight: 600; }
+  .summary .points { margin: 4px 0 0; padding: 0; list-style: none; display: grid; gap: 12px; }
+  .summary .points li { position: relative; padding-left: 22px; }
+  .summary .points li::before { content: '✓'; position: absolute; left: 0; color: var(--green); font-weight: 700; }
+
+  /* Dialogs */
+  dialog { border: 0; padding: 0; color: var(--black); }
+  dialog::backdrop { background: rgb(0 0 0 / 0.7); }
+  .close {
+    position: absolute; top: 10px; right: 12px; z-index: 2; width: 36px; height: 36px; border: 0; border-radius: 50%;
+    background: rgb(255 255 255 / 0.9); font-size: 26px; line-height: 1; cursor: pointer; color: var(--black);
+  }
+  .modal { width: min(680px, calc(100vw - 24px)); max-height: calc(100dvh - 48px); border-radius: 12px; }
+  .modal-body { max-height: calc(100dvh - 48px); overflow-y: auto; padding: 32px 28px 28px; font-size: 16px; line-height: 1.6; }
+  .full .stars { display: block; margin: 12px 0 6px; }
+  .full p { margin: 0 0 0.8em; }
+  .reply { background: var(--griseo); border-radius: 8px; padding: 16px 18px; margin-top: 16px; font-size: 15px; }
+  .reply strong { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; font-weight: 600; }
+  .tag { font-size: 10px; letter-spacing: 0.04em; text-transform: uppercase; background: var(--white); padding: 2px 6px; border-radius: 3px; font-weight: 600; }
+  .reply p { margin: 0 0 0.6em; }
+  .reply p:last-child { margin: 0; }
+  .on-google { display: inline-block; margin-top: 14px; font-size: 14px; color: var(--green); }
+
+  .lightbox {
+    width: min(1300px, calc(100vw - 24px)); height: min(860px, calc(100dvh - 48px)); max-width: none; max-height: none;
+    border-radius: 12px; overflow: hidden; display: none; background: #111;
+  }
+  .lightbox[open] { display: grid; grid-template-columns: 1fr; grid-template-rows: minmax(0, 1fr) auto; }
+  .lb-photo { position: relative; display: grid; place-items: center; min-height: 0; background: #111; }
+  .lb-photo img { max-width: 100%; max-height: 100%; object-fit: contain; display: block; }
+  .nav { position: absolute; top: 50%; transform: translateY(-50%); width: 44px; height: 44px; border: 0; border-radius: 50%; background: rgb(255 255 255 / 0.85); font-size: 28px; line-height: 1; cursor: pointer; }
+  .nav[hidden] { display: none; }
+  .prev { left: 12px; }
+  .next { right: 12px; }
+  .lb-count { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); color: var(--white); font-size: 13px; }
+  .lb-side { background: var(--white); overflow-y: auto; max-height: 38dvh; padding: 22px 22px 18px; font-size: 15px; line-height: 1.55; }
+  .lb-side .full { display: block; }
+  @media (min-width: 900px) {
+    .lightbox[open] { grid-template-columns: minmax(0, 1fr) 360px; grid-template-rows: 1fr; }
+    .lb-side { max-height: none; padding: 28px 24px; }
+  }
+  @media (prefers-reduced-motion: reduce) { .ph :global(img) { transition: none; } }
+</style>

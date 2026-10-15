@@ -120,9 +120,7 @@
    "blocks": [
     {
      "id": "yui_3_17_2_1_1787286688448_623",
-     "type": "embed",
-     "html": "<script src=\"https://elfsightcdn.com/platform.js\" async=\"\"></script>\n<div class=\"elfsight-app-95ca0ffd-8bfc-44ba-9b5b-bbfddb30251c\" data-elfsight-app-lazy=\"\" data-miwrid=\"2c693056-8297-4e71-a52d-910dd40bf719\"></div>",
-     "height": 1739,
+     "type": "reviews",
      "area": {
       "m": "1/2/7/10",
       "zm": 1,
@@ -132,8 +130,7 @@
      "valign": {
       "m": "flex-start",
       "d": "flex-start"
-     },
-     "heightM": 1818
+     }
     }
    ]
   }
