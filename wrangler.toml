@@ -3,15 +3,10 @@ name = "momentsinlight-website"
 pages_build_output_dir = "dist"
 compatibility_date = "2026-10-01"
 
-# Database for the wedding photo guide signups. Not created yet, so this is switched off;
-# until it's on, the signup form shows "something went wrong" instead of saving.
-# To switch it on (see docs/forms-setup.md):
-#   1. npx wrangler d1 create momentsinlight-signups
-#   2. remove the "#" from the five lines below and paste in the database_id it printed
-#   3. npx wrangler d1 migrations apply momentsinlight-signups --remote
-#
-# [[d1_databases]]
-# binding = "DB"
-# database_name = "momentsinlight-signups"
-# database_id = "PASTE-THE-ID-HERE"
-# migrations_dir = "migrations"
+# Database for the wedding photo guide signups (see docs/forms-setup.md).
+# The table is created by migrations/0001_guide_signups.sql.
+[[d1_databases]]
+binding = "DB"
+database_name = "momentsinlight-signups"
+database_id = "59f39416-41d5-4ae3-aed9-70a36b2b812c"
+migrations_dir = "migrations"
