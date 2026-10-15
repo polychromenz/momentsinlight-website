@@ -193,6 +193,7 @@ const sizesFor = (g: { width?: number; height?: number }) => {
     flex-wrap: wrap;
     justify-content: center;
     gap: 2px;
+    width: max-content; /* one row when they fit, rather than wrapping at half the width */
     max-width: 90%;
   }
   .dot {
