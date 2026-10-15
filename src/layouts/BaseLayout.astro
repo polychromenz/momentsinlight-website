@@ -9,6 +9,10 @@ import Footer from '../components/Footer.astro';
 import Tracking from '../components/Tracking.astro';
 import { site } from '../data/site';
 import { sized } from '../lib/images.mjs';
+// Body text (400) and headings (500): fetched straight away, so they're usually ready before
+// any text is drawn and the text doesn't jump when the font swaps in.
+import raleway400 from '@fontsource/raleway/files/raleway-latin-400-normal.woff2?url';
+import raleway500 from '@fontsource/raleway/files/raleway-latin-500-normal.woff2?url';
 
 interface Props {
   title: string;
@@ -30,6 +34,8 @@ const ogImage = image ? sized(image, 1500) : undefined;
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{title}</title>
     <meta name="description" content={description} />
+    <link rel="preload" href={raleway400} as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href={raleway500} as="font" type="font/woff2" crossorigin />
     <link rel="canonical" href={canonical} />
     <link rel="icon" href="/favicon.ico" sizes="any" />
     <link rel="sitemap" href="/sitemap-index.xml" />
