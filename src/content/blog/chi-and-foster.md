@@ -12,14 +12,14 @@ gallery:
   - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2025-chiedza-and-foster/colour/_30A9554/public","alt":"Chiedza and Foster embrace on the rotunda by the lake at Abel Estate","width":2048,"height":1366}
   - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2025-chiedza-and-foster/colour/_30A9659/public","alt":"Chiedza and Foster relax together on a velvet sofa","width":2048,"height":1638}
   - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2025-chiedza-and-foster/colour/_Q9A0630/public","alt":"Chiedza and Foster kiss at the end of the aisle in the marquee","width":2048,"height":1366}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1751239727237-WQKR1CVLX2WRYCZ91KUO/SOCIAL__30A8964.jpg","alt":"Black and white photo of Foster and his groomsmen","width":2048,"height":1638}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/mono/SOCIAL__30A8964-website/public","alt":"Black and white photo of Foster and his groomsmen","width":2048,"height":1638}
   - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2025-chiedza-and-foster/colour/_30A9105-Edit/public","alt":"Chiedza looks over her shoulder in front of a lit mirror","width":1456,"height":2048}
   - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2025-chiedza-and-foster/colour/_30A9317/public","alt":"Chiedza and Foster exchange rings during the ceremony","width":2048,"height":1366}
   - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2025-chiedza-and-foster/colour/_30A9368/public","alt":"Foster kisses Chiedza as the celebrant smiles","width":2048,"height":1366}
   - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2025-chiedza-and-foster/colour/_30A9428/public","alt":"Chiedza and Foster walk back up the aisle past their guests","width":2048,"height":1366}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1751239748392-NT1LR7EAHYUT44FA1E6I/SOCIAL__30A9524.jpg","alt":"Chiedza and Foster hug by the lake at sunset","width":2048,"height":1366}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/colour/SOCIAL__30A9524-website/public","alt":"Chiedza and Foster hug by the lake at sunset","width":2048,"height":1366}
   - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2025-chiedza-and-foster/colour/_Q9A0701/public","alt":"Chiedza and Foster celebrate as they walk up the aisle at Abel Estate","width":2048,"height":1366}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1751239731374-W02375BJFKCNJIS4IU1T/SOCIAL__30A9001.jpg","alt":"Foster seated in an armchair in front of a wine rack","width":1366,"height":2048}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/colour/SOCIAL__30A9001-website/public","alt":"Foster seated in an armchair in front of a wine rack","width":1366,"height":2048}
   - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2025-chiedza-and-foster/colour/_30A9669/public","alt":"Chiedza seated in front of Foster beside a wine rack","width":1366,"height":2048}
   - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2025-chiedza-and-foster/colour/_30A0008/public","alt":"Two young guests in suits sit on a velvet sofa","width":2048,"height":1638}
   - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2025-chiedza-and-foster/colour/_30A8920/public","alt":"A place setting with white flowers and a printed menu","width":1366,"height":2048}
