@@ -7,7 +7,7 @@ updated: 2025-09-30
 author: "Tony Gorham"
 categories: ["Info"]
 tags: []
-thumbnail: "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1759186220256-GYIBSO09GC9VCFJV1BGV/_Q9A0292.jpg"
+thumbnail: "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/mono/_Q9A0292-website/public"
 ---
 Creating a mood board for your wedding using Pinterest is a fantastic way to gather inspiration and visualize your dream wedding. Let’s dive into the steps:
 

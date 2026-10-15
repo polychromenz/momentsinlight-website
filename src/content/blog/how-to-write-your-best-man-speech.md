@@ -7,7 +7,7 @@ updated: 2025-09-30
 author: "Tony Gorham"
 categories: []
 tags: []
-thumbnail: "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1759186077773-MFCG45V3KA1D7D4S6BY7/_Q9A1548.jpg"
+thumbnail: "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/mono/_Q9A1548-website/public"
 ---
 1. Start with a Memorable Opener\
    Your opening line sets the tone for your entire speech. Consider a funny joke, a compliment, or an inspirational quote related to brotherhood or marriage. For example:\

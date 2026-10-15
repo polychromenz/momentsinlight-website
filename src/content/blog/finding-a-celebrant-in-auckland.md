@@ -7,7 +7,7 @@ updated: 2025-10-01
 author: "Tony Gorham"
 categories: ["Info"]
 tags: []
-thumbnail: "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1715562659503-6XMKXP1EJ2S76X1R54ES/092A5080_SOCIAL.jpg"
+thumbnail: "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/colour/092A5080_SOCIAL-website/public"
 ---
 Planning a wedding involves many decisions, and choosing the right wedding celebrant is a crucial one. Auckland, New Zealand, offers a diverse selection of experienced celebrants who can create a meaningful and personalized ceremony for your special day. Whether you’re envisioning a traditional, modern, or unique celebration, here are some reputable wedding celebrants in Auckland to consider:
 

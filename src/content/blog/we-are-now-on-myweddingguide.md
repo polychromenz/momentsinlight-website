@@ -7,7 +7,7 @@ updated: 2024-05-31
 author: "Tony Gorham"
 categories: ["Info"]
 tags: []
-thumbnail: "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1717112370485-AQOC5F9S6WHQC7WW9LZ8/myweddingguide_large.png"
+thumbnail: "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/mono/myweddingguide_large-website/public"
 ---
 📸 **Exciting News!** 📸
 

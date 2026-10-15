@@ -7,7 +7,7 @@ updated: 2026-09-09
 author: "Tony Gorham"
 categories: ["Info"]
 tags: []
-thumbnail: "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1759186642065-BDE4D5IANZWVHH8TB6MX/_Q9A0558.jpg"
+thumbnail: "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/colour/_Q9A0558-website/public"
 ---
 The cake rarely gets as much planning attention as the dress or the venue, but it earns its place in the photographs all the same — the design itself, the detail shots before the reception, and of course the cutting, one of the moments every wedding day comes back to. Getting the right baker matters more than it might seem.
 

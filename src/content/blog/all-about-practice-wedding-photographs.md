@@ -7,30 +7,30 @@ updated: 2025-10-14
 author: "Tony Gorham"
 categories: ["Info"]
 tags: []
-thumbnail: "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1742780364028-C88I7ZXUZF0LI803NT7C/SOCIAL__MIL6780.jpg"
+thumbnail: "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/colour/SOCIAL__MIL6780-website/public"
 gallery:
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1742774817617-C4CPIUIDTN9AIM314TET/SOCIAL__MIL6740.jpg","alt":"A couple pose outside The Hotel Britomart during their practice shoot","width":2048,"height":1536}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1742774828404-7CTV51V4UVP4G0V2OPQ8/SOCIAL__MIL6713.jpg","alt":"The couple walk hand in hand across the paved street at Britomart","width":2048,"height":1536}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1742774837561-QW9ES6C7C0V6U5RLP4ON/SOCIAL__MIL6769.jpg","alt":"The couple smile in front of a patterned metal wall","width":1536,"height":2048}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1742774837992-105HH4N5AS4ML00SAAEQ/SOCIAL__MIL6772.jpg","alt":"The couple embrace in front of a patterned metal wall","width":2048,"height":1536}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1742774842525-PBFQU1H339GKCRIPJUKH/SOCIAL__MIL6754.jpg","alt":"The couple face each other and laugh against a decorative wall","width":1536,"height":2048}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1742774875570-AVO9FVOQ9FPXON7ASPQL/SOCIAL__MIL6909.jpg","alt":"The couple embrace beside planters under autumn trees at Britomart","width":1365,"height":2048}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1742774845875-XB7VLE2ECORG3CI838LZ/SOCIAL__MIL6760.jpg","alt":"The couple share a close embrace against a patterned wall","width":2048,"height":1536}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1742774874863-J7PXSR1I44PDI6TFDAT6/SOCIAL__MIL6812-2.jpg","alt":"Black and white photo of the couple kissing among the planters","width":1536,"height":2048}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1742774850440-NFWEZEN8F5OMM021RGX4/SOCIAL__MIL6797.jpg","alt":"The couple stand among flowers in a city laneway","width":1536,"height":2048}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1742774883901-QQBHD5I17QADK8EGRQTH/SOCIAL__MIL6831.jpg","alt":"She rests her head on his shoulder beside the planters","width":1536,"height":2048}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1742774854663-GU9J9YH497RDDD8FHOMN/SOCIAL__MIL6790.jpg","alt":"The couple framed by pink flowers in a Britomart laneway","width":1536,"height":2048}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1742774883428-F232D9I4ZH4BKEJIUU9O/SOCIAL__MIL6835.jpg","alt":"She leans into him among red flowers","width":2048,"height":1536}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1742774900138-Z930JMV6EUECARD9UICP/SOCIAL__MIL6992.jpg","alt":"The couple stand beside a row of parked bicycles on a city street","width":1536,"height":2048}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1742774888218-W5KUIAWHCEDZ2WLCPSBJ/SOCIAL__MIL6850.jpg","alt":"The couple share a laugh beside the planters in evening light","width":2048,"height":1365}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1742774904081-5J1WKTBP4YVLDHP5CGK2/SOCIAL__MIL7095-2.jpg","alt":"Black and white photo of the couple outside a shop front","width":2048,"height":1536}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1742774908858-14QGGGPN4K5RTHQ4JBMI/SOCIAL_20250316-_MIL7109-ARW.jpg","alt":"The couple share a quiet moment under a glass canopy","width":2048,"height":1536}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1742774892003-05LA1J3EPJ6QZU0EBWCK/SOCIAL__MIL6885.jpg","alt":"The couple stand side by side beside the planters","width":1365,"height":2048}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1742774913373-TKCK4THFKGY9NY8250DA/SOCIAL_20250316-_MIL7138-ARW-2.jpg","alt":"Black and white photo of the couple holding each other close","width":2048,"height":1536}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1742774921458-2R25F54G3V17N9IFCUKW/SOCIAL_20250316-_MIL7251-ARW.jpg","alt":"The couple walk away down a long brick-paved lane","width":1536,"height":2048}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1742774895638-BJID9NTIXWXXDYMDFDZA/SOCIAL__MIL6893-2.jpg","alt":"Black and white photo of the couple among the planters at Britomart","width":1365,"height":2048}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1742774926873-8AINLDZ5ESQJNTEKV55K/SOCIAL_20250316-_MIL7278-ARW-Edit.jpg","alt":"The couple stand outside the Tiffany & Co. store","width":1465,"height":2048}
-  - {"src":"https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1742774932415-MVNO6TE7VSMADVTLCY6L/SOCIAL_20250316-_MIL7325-ARW-2.jpg","alt":"Black and white photo of the couple leaning against a stone building","width":1536,"height":2048}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/colour/SOCIAL__MIL6740-website/public","alt":"A couple pose outside The Hotel Britomart during their practice shoot","width":2048,"height":1536}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/colour/SOCIAL__MIL6713-website/public","alt":"The couple walk hand in hand across the paved street at Britomart","width":2048,"height":1536}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/colour/SOCIAL__MIL6769-website/public","alt":"The couple smile in front of a patterned metal wall","width":1536,"height":2048}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/colour/SOCIAL__MIL6772-website/public","alt":"The couple embrace in front of a patterned metal wall","width":2048,"height":1536}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/colour/SOCIAL__MIL6754-website/public","alt":"The couple face each other and laugh against a decorative wall","width":1536,"height":2048}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/colour/SOCIAL__MIL6909-website/public","alt":"The couple embrace beside planters under autumn trees at Britomart","width":1365,"height":2048}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/colour/SOCIAL__MIL6760-website/public","alt":"The couple share a close embrace against a patterned wall","width":2048,"height":1536}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/mono/SOCIAL__MIL6812-2-website/public","alt":"Black and white photo of the couple kissing among the planters","width":1536,"height":2048}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/colour/SOCIAL__MIL6797-website/public","alt":"The couple stand among flowers in a city laneway","width":1536,"height":2048}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/colour/SOCIAL__MIL6831-website/public","alt":"She rests her head on his shoulder beside the planters","width":1536,"height":2048}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/colour/SOCIAL__MIL6790-website/public","alt":"The couple framed by pink flowers in a Britomart laneway","width":1536,"height":2048}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/colour/SOCIAL__MIL6835-website/public","alt":"She leans into him among red flowers","width":2048,"height":1536}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/colour/SOCIAL__MIL6992-website/public","alt":"The couple stand beside a row of parked bicycles on a city street","width":1536,"height":2048}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/colour/SOCIAL__MIL6850-website/public","alt":"The couple share a laugh beside the planters in evening light","width":2048,"height":1365}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/mono/SOCIAL__MIL7095-2-website/public","alt":"Black and white photo of the couple outside a shop front","width":2048,"height":1536}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/colour/SOCIAL_20250316-_MIL7109-ARW-website/public","alt":"The couple share a quiet moment under a glass canopy","width":2048,"height":1536}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/colour/SOCIAL__MIL6885-website/public","alt":"The couple stand side by side beside the planters","width":1365,"height":2048}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/mono/SOCIAL_20250316-_MIL7138-ARW-2-website/public","alt":"Black and white photo of the couple holding each other close","width":2048,"height":1536}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/colour/SOCIAL_20250316-_MIL7251-ARW-website/public","alt":"The couple walk away down a long brick-paved lane","width":1536,"height":2048}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/mono/SOCIAL__MIL6893-2-website/public","alt":"Black and white photo of the couple among the planters at Britomart","width":1365,"height":2048}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/colour/SOCIAL_20250316-_MIL7278-ARW-Edit-website/public","alt":"The couple stand outside the Tiffany & Co. store","width":1465,"height":2048}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/mono/SOCIAL_20250316-_MIL7325-ARW-2-website/public","alt":"Black and white photo of the couple leaning against a stone building","width":1536,"height":2048}
 ---
 **Why Practice Wedding Photographs Are Essential for Your Big Day**
 

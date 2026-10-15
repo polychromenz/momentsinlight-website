@@ -7,7 +7,7 @@ updated: 2024-10-02
 author: "Tony Gorham"
 categories: ["Info"]
 tags: []
-thumbnail: "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1715560513431-J6QCP6JH0T6D1P3UKI31/_W2A1023_SOCIAL.jpg"
+thumbnail: "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/colour/_W2A1023_SOCIAL-website/public"
 ---
 When it comes to dressing your best for your wedding day, finding the perfect suit is essential. Whether you’re looking to buy a suit that you can cherish forever or prefer the convenience of hiring one, Auckland offers several excellent options. Let’s explore both avenues:
 

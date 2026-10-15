@@ -7,7 +7,7 @@ updated: 2025-10-01
 author: "Tony Gorham"
 categories: ["Info"]
 tags: []
-thumbnail: "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1715561060500-YSJX0ZDVXNMUDI188ZOB/092A5202_SOCIAL.jpg"
+thumbnail: "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/colour/092A5202_SOCIAL-website/public"
 ---
 Let’s explore the pros and cons of using rice and paper confetti for weddings in New Zealand. Each option has its unique characteristics, and your choice will depend on your preferences, the wedding venue’s policies, and your commitment to sustainability.
 

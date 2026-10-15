@@ -100,7 +100,8 @@ const worker = async () => {
     let cands = (name && exportsByName.get(name)) || [];
     const homes = [...files].map((f) => postFolder.get(f)).filter(Boolean);
     if (homes.length) {
-      const home = cands.filter((c) => homes.includes(c.folder));
+      // Copies downloaded from the current site can stand in for any folder.
+      const home = cands.filter((c) => homes.includes(c.folder) || c.folder === '_from-website');
       if (home.length) cands = home;
     }
     const entry = { usedIn: [...files], name };

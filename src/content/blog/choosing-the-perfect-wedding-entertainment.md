@@ -6,7 +6,7 @@ updated: 2024-09-20
 author: "Tony Gorham"
 categories: ["Info"]
 tags: []
-thumbnail: "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1718149234635-376ZIPRCR0X1VM5OKWGQ/_W2A6120_SOCIAL.jpg"
+thumbnail: "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/colour/_W2A6120_SOCIAL-website/public"
 ---
 When it comes to planning your wedding, selecting the right entertainment is crucial for creating a memorable experience for you and your guests. Here’s a guide to help you choose the perfect entertainment for your special day:
 

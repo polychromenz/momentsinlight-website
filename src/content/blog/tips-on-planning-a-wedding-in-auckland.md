@@ -6,7 +6,7 @@ updated: 2024-09-20
 author: "Tony Gorham"
 categories: ["Info"]
 tags: []
-thumbnail: "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1718146020638-14KGG0U8RKXPE5ZGGWO9/_W2A0600-2_SOCIAL.jpg"
+thumbnail: "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/mono/_W2A0600-2_SOCIAL-website/public"
 ---
 Certainly! 🌸 Planning a wedding in Auckland, New Zealand offers a delightful mix of natural beauty, cultural richness, and unique venues. Whether you’re envisioning an intimate gathering or a grand celebration, here are some creative wedding ideas to make your special day unforgettable:
 

@@ -7,7 +7,7 @@ updated: 2026-08-26
 author: "Tony Gorham"
 categories: ["Info"]
 tags: []
-thumbnail: "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1786674613005-276SWXC8H6E6VBI973B1/__tay-barn-bronze-nzipp-2026.jpg"
+thumbnail: "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/colour/__tay-barn-bronze-nzipp-2026-website/public"
 ---
 When it comes to planning your wedding, choosing the right photographer can be as crucial as picking the perfect dress or venue. Your wedding photos are the tangible memories that will grace your walls and photo albums for years to come. In bustling Auckland, with its blend of stunning landscapes and urban chic, finding the right photographer means capturing not just images, but the essence of your love story. But how do you wade through the myriad options to find the perfect fit?
 
@@ -23,7 +23,7 @@ When it comes to planning your wedding, choosing the right photographer can be a
 
 ## Understanding the Importance of a Wedding Photographer in Auckland
 
-![Three groomsmen in navy suits share a laugh at an Auckland wedding](https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/e71def28-ed83-4d11-9570-224657c4e330/SOCIAL__30A8964.jpg)
+![Three groomsmen in navy suits share a laugh at an Auckland wedding](https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/colour/SOCIAL__30A8964-website/public)
 
 A wedding photographer is more than just a person with a camera; they are the ones entrusted to capture the fleeting, beautiful moments of your special day. In Auckland, where the picturesque landscapes provide a stunning backdrop, professional photographers are adept at weaving these elements into your narrative. *Wedding photographer Auckland* specialists know how to capture the essence of your love story through their lens.
 
@@ -36,7 +36,7 @@ Moreover, a skilled photographer doesn’t just document; they anticipate. They 
 
 ## Key Factors to Consider When Choosing an Auckland Wedding Photographer
 
-![A bride and groom kiss among clipped topiary in a garden](https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/679ad41e-d505-45b9-997d-44eddc6a086a/SOCIAL__ML25735.jpg)
+![A bride and groom kiss among clipped topiary in a garden](https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/colour/SOCIAL__ML25735-website/public)
 
 Choosing a wedding photographer involves more than just liking their photos; it’s about finding someone who aligns with your vision. A diverse portfolio is often a good indicator of a photographer's range and adaptability. It shows their ability to capture different settings, lighting, and emotions, which is crucial for your wedding day.
 
@@ -58,7 +58,7 @@ Lastly, don’t neglect to discuss photo rights and usage. This conversation is 
 
 ## Why Moments In Light Stands Out Among Auckland Wedding Photographers
 
-![Black and white photo of a couple relaxing together on a leather sofa](https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/950f279c-e273-4ade-8365-fa0c07a6a1fc/SOCIAL__30A9642-Edit-2.jpg)
+![Black and white photo of a couple relaxing together on a leather sofa](https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/mono/SOCIAL__30A9642-Edit-2-website/public)
 
 **Moments In Light** has carved a niche in Auckland's wedding scene by specialising in capturing authentic emotions and candid moments. Tony and his team offer a personalised service that tells each couple’s unique story. Their reputation for creativity and excellence is well-established, making them a preferred choice for many.
 
@@ -68,7 +68,7 @@ Moments In Light is not just about taking pictures; it’s about creating an exp
 
 ## What to Expect in Auckland Wedding Photography Packages
 
-![A printed wedding photo presented in a white folio box](https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/92aa011b-5ac7-4e03-b931-353bdce7d5b1/FULLSIZE__Q9A4508-Edit.jpg)
+![A printed wedding photo presented in a white folio box](https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/colour/FULLSIZE__Q9A4508-Edit-website/public)
 
 When exploring Auckland wedding photography packages, expect a range of options designed to capture every moment of your special day. Standard packages often include pre-wedding consultations to plan and align expectations. This ensures everything goes off without a hitch when the big day arrives.
 
@@ -78,7 +78,7 @@ High-resolution images are typically provided in both digital and print formats,
 
 ## Average Pricing for Wedding Photography in Auckland, New Zealand
 
-![Chart showing typical wedding photography prices by package](https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/f82205c0-0e25-420b-a6ab-af9e298503a9/wedding+prices+chart)
+![Chart showing typical wedding photography prices by package](https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/colour/wedding_prices_chart-website/public)
 
 Understanding the pricing structure for wedding photography in Auckland can help you balance your budget with the quality you desire. Basic packages typically start around $1,500 to $2,500. These usually include essential coverage and a limited number of prints or digital files.
 
@@ -88,7 +88,7 @@ Mid-range options, ranging from $3,000 to $5,000, offer more extensive coverage 
 
 ## Exploring Different Styles of Wedding Photography to Suit Your Love Story
 
-![Black and white photo of a couple walking up the aisle past their guests](https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/b9e36d3a-b44c-46c3-ac66-10b463530095/SOCIAL__30A9433-2.jpg)
+![Black and white photo of a couple walking up the aisle past their guests](https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/mono/SOCIAL__30A9433-2-website/public)
 
 Wedding photography styles vary greatly, and understanding these can help you choose a photographer that matches your vision. Traditional photography offers timeless, posed images that never go out of style. This classic approach often includes formal portraits and group shots.
 
@@ -98,7 +98,7 @@ Contemporary styles blend modern techniques for a fresh and vibrant look. Discus
 
 ## Tips for Preparing for Your Wedding Photoshoot in Auckland
 
-![A couple embrace in front of a patterned metal wall in the city](https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/d275b24a-74ad-4f34-9ede-0877dc6d14ec/SOCIAL__MIL6780.jpg)
+![A couple embrace in front of a patterned metal wall in the city](https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/colour/SOCIAL__MIL6780-website/public)
 
 Preparing for your wedding photoshoot can make a significant difference in the outcome of your images. Creating a shot list with your photographer helps prioritise must-have photos, ensuring nothing is missed. It’s also beneficial to visit the venue together to plan out potential shots and discuss ideas.
 
@@ -108,7 +108,7 @@ Communicating your preferences and any specific requests to your photographer en
 
 ## Capturing Your Unique Love Story with an Auckland Wedding Photographer
 
-![A bride smiles at her groom beside a garden pond](https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/3d43dc36-1eb3-441b-9bef-015493f96ef6/SOCIAL__Q9A1101.jpg)
+![A bride smiles at her groom beside a garden pond](https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/colour/SOCIAL__Q9A1101-website/public)
 
 Each couple's love story is unique, and your wedding photos should reflect that. Personal touches, like incorporating shared hobbies or meaningful locations, add depth to your images. These elements make the photos more personal.
 

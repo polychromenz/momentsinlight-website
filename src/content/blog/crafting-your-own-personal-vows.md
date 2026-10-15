@@ -7,7 +7,7 @@ updated: 2026-01-13
 author: "Sarah Wolff"
 categories: []
 tags: []
-thumbnail: "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1724018003022-KRASINZ56I2M2DNBW2MS/sarahWolff.jpg"
+thumbnail: "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/colour/sarahWolff-website/public"
 ---
 Writing personal vows is often one of the most meaningful aspects of wedding planning. It’s a chance to reflect on why you’re choosing to marry your partner and what makes them so special to you. As a celebrant, helping couples articulate these sentiments is one of the most rewarding parts of my job. It’s not just about the ceremony; it’s about encapsulating the love and commitment that define your relationship.
 

@@ -7,7 +7,7 @@ updated: 2026-09-21
 author: "Tony Gorham"
 categories: ["Info"]
 tags: []
-thumbnail: "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1759206037350-4VEDAVVX64Q5O8QJ6ZVU/SOCIAL__30A3316.jpg"
+thumbnail: "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/colour/SOCIAL__30A3316-website/public"
 ---
 Writing your own wedding vows is a beautiful and personal way to express your love and commitment to your partner. Whether you’re planning a New Zealand wedding or any other celebration, heartfelt vows can make your ceremony even more special. Here’s a guide to help you create meaningful and memorable wedding vows:
 

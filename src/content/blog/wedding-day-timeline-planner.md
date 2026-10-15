@@ -7,7 +7,7 @@ updated: 2026-10-06
 author: "Tony Gorham"
 categories: ["Info"]
 tags: []
-thumbnail: "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1791243012695-J2XKAFA15MRRS7M90DSJ/runorder-wedding-featured-image.jpg"
+thumbnail: "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/colour/runorder-wedding-featured-image-website/public"
 ---
 A good wedding day timeline is the difference between a relaxed day and one spent chasing the clock. After photographing weddings across Auckland, I've seen the same pattern again and again: the days that feel calm aren't the ones with the most time. They're the ones where everyone knows what's happening next.
 

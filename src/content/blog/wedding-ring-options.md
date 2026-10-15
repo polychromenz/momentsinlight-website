@@ -7,7 +7,7 @@ updated: 2025-09-30
 author: "Tony Gorham"
 categories: ["Info"]
 tags: []
-thumbnail: "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1715562020136-KQ24STRY93S30EXCSXDC/092A4427_SOCIAL.jpg"
+thumbnail: "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/mono/092A4427_SOCIAL-website/public"
 ---
 Let’s explore some delightful wedding ring options in Auckland, New Zealand. Whether you’re looking for classic designs, unique custom pieces, or contemporary styles, there are excellent choices available to suit your preferences and budget. Here are some reputable places to find your perfect wedding ring:
 

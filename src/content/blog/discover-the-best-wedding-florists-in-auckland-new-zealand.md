@@ -7,7 +7,7 @@ updated: 2025-10-14
 author: "Tony Gorham"
 categories: ["Info"]
 tags: []
-thumbnail: "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1715557024999-IWA3EOCMVW5CJPDXNOLO/_W2A4718_SOCIAL.jpg"
+thumbnail: "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/colour/_W2A4718_SOCIAL-website/public"
 ---
 1. **Wedding Florist Auckland**\
    **About**: Wedding Florist Auckland, located on the North Shore, specializes exclusively in weddings. Their highly personalized service ensures that each couple receives undivided attention, making your dream wedding a reality.\

@@ -7,7 +7,7 @@ updated: 2026-08-27
 author: "Tony Gorham"
 categories: ["Info"]
 tags: []
-thumbnail: "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1786762919491-XPFPSK91U81ISQRBBDA4/_30A5339.jpg"
+thumbnail: "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/colour/_30A5339-website/public"
 ---
 Choosing an engagement ring is one of the most meaningful purchases you'll ever make — and also one of the most confusing. Between diamond cut comparisons, setting styles, carat weights, and whether to go lab-grown or natural, it's easy to walk into a jeweller feeling overwhelmed and walk out unsure whether you made the right call.
 

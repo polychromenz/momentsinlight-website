@@ -7,7 +7,7 @@ updated: 2025-09-30
 author: "Tony Gorham"
 categories: []
 tags: []
-thumbnail: "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1725859381938-N28OHS1121PR7R43F6QB/092A9373_SOCIAL.jpg"
+thumbnail: "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/colour/092A9373_SOCIAL-website/public"
 ---
 Tips for Picture-Perfect Outfits
 

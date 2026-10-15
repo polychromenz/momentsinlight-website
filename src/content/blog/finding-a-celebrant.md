@@ -7,7 +7,7 @@ updated: 2025-10-01
 author: "Tony Gorham"
 categories: ["Info"]
 tags: []
-thumbnail: "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1716331118084-5M6H86QPPDNJ7ESGWMTZ/anna-the-celebrant.png"
+thumbnail: "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/colour/anna-the-celebrant-website/public"
 ---
 Planning a wedding is a journey filled with loads of decisions, and each one contributes to the uniqueness of your day. One of the choices you'll make is choosing the right marriage celebrant for you – they set the tone for your ceremony and ensure that your marriage is legally official!
 

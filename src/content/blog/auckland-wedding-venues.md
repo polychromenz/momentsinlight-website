@@ -7,7 +7,7 @@ updated: 2026-09-21
 author: "Tony Gorham"
 categories: ["Info"]
 tags: []
-thumbnail: "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1759186493257-WVEJWW3M8P8MCBEPGCO0/_30A9345.jpg"
+thumbnail: "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/colour/_30A9345-website/public"
 ---
 Choosing a venue is one of the first big decisions of planning a wedding, and often one of the most personal — it sets the tone for everything that follows, from the light your ceremony will be held in, to the backdrop of every photograph you'll keep for the rest of your life.
 

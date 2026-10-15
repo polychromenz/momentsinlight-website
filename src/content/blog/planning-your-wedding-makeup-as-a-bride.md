@@ -6,7 +6,7 @@ updated: 2024-09-20
 author: "Tony Gorham"
 categories: ["Info"]
 tags: []
-thumbnail: "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1718147529858-1GY6AJIDPSKJFJMH1S0F/092A4501_SOCIAL.jpg"
+thumbnail: "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/colour/092A4501_SOCIAL-website/public"
 ---
 Planning your wedding makeup as a bride is an exciting part of the journey. Let’s dive into some essential considerations, along with New Zealand-specific tips:
 
