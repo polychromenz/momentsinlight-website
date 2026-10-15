@@ -20,7 +20,7 @@ usually invisible "are you human" check).
 4. **Turnstile:** Cloudflare dashboard > Turnstile > Add widget, for `momentsinlight.co.nz`
    (and the `.pages.dev` preview address). It gives a site key and a secret key. In the site's
    Settings > Variables and secrets add:
-   - `PUBLIC_TURNSTILE_SITE_KEY` = the site key (a build-time variable)
+   - The site key is already in `src/components/page/GuideSignup.astro` (it is public)
    - `TURNSTILE_SECRET_KEY` = the secret key (as a secret)
 
    Then redeploy. Until this is done the form shows a "For testing only" Turnstile box.
