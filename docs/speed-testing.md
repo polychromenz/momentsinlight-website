@@ -76,6 +76,7 @@ If a page drops noticeably, run it with `--why` for that page and ask Claude Cod
 | --- | --- |
 | 15 Oct 2026 | Before and after the move from Squarespace (summary in [project-plan.md](project-plan.md#speed)). New site: mobile 84–99, desktop 76–99; Squarespace was 35–62 on mobile. |
 | 16 Oct 2026 | First health check after launch: mobile 87–97, desktop 88–99; main photo 1.7–3.2s on mobile, under 1s on desktop; no layout shift. Lowest: photo guide on mobile (87, 3.2s). `docs/speed-tests/2026-10-16.json` |
+| 16 Oct 2026 | Testimonials rebuilt without Elfsight: 56 → 98 mobile, 38 → 90 desktop. Portraits photo wall replaced by a slideshow: 92 mobile, 95 desktop, half the data. |
 
 Why not Lighthouse on this computer? It's the same test, but here its test browser kept crashing,
 and results would depend on the local connection. PageSpeed Insights avoids both.

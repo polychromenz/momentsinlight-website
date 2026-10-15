@@ -18,6 +18,7 @@ Related docs:
 | [domain-switch.md](domain-switch.md) | Moving momentsinlight.co.nz to the new site: DNS records, steps, what's left |
 | [photos.md](photos.md) | How photos are hosted (Cloudflare Images), the scripts, and adding photos for a new post |
 | [speed-testing.md](speed-testing.md) | Google PageSpeed health check: how to run it and read the results |
+| [reviews.md](reviews.md) | Testimonials page: Google reviews built into the site (replaced Elfsight), adding new ones |
 | [forms-setup.md](forms-setup.md) | Wedding photo guide signup form (Cloudflare D1 database, Turnstile) |
 | [wedding-exports-checklist.md](wedding-exports-checklist.md) | Lightroom export checklist used for the photo move (finished) |
 
