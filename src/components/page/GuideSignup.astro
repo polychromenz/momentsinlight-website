@@ -63,9 +63,21 @@ const siteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY
     msg.textContent = text[status];
     msg.hidden = false;
   }
-  // Prevent double submissions.
   document.querySelector('#guide-signup')?.addEventListener('submit', (e) => {
-    const btn = (e.currentTarget as HTMLFormElement).querySelector('button');
+    const form = e.currentTarget as HTMLFormElement;
+    // Turnstile puts its pass in this field once its check has finished; sending the form
+    // before then always fails on the server.
+    const token = form.querySelector<HTMLInputElement>('[name="cf-turnstile-response"]');
+    if (!token?.value) {
+      e.preventDefault();
+      if (msg) {
+        msg.textContent = 'Just a moment, the security check is still finishing. Please press Submit again in a few seconds.';
+        msg.hidden = false;
+      }
+      return;
+    }
+    // Prevent double submissions.
+    const btn = form.querySelector('button');
     if (btn) { btn.disabled = true; btn.textContent = 'Sending…'; }
   });
 </script>
