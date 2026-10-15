@@ -225,40 +225,7 @@
      ],
      "textSize": "medium",
      "textAlign": "left",
-     "items": [
-      {
-       "href": "/blog/rebecca-and-nick-bridgewater-estate",
-       "title": "Rebecca & Nick | Bridgewater Estate Wedding",
-       "excerpt": "",
-       "thumb": {
-        "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1785798109882-YYVVNIFKV9N3BU483YBY/_30A1292.jpg",
-        "alt": "Rebecca &amp; Nick | Bridgewater Estate Wedding",
-        "width": 4096,
-        "height": 3277,
-        "focal": [
-         0.5,
-         0.5
-        ]
-       },
-       "metaText": ""
-      },
-      {
-       "href": "/blog/bridgewater-estate-wedding-leah-warwick",
-       "title": "Leah and Warwick - Bridgewater Estate",
-       "excerpt": "",
-       "thumb": {
-        "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1768275585991-6SMRYHOPEWGYRKA45KBI/SOCIAL__30A4469.jpg",
-        "alt": "Leah and Warwick - Bridgewater Estate",
-        "width": 2048,
-        "height": 1366,
-        "focal": [
-         0.5,
-         0.5
-        ]
-       },
-       "metaText": ""
-      }
-     ],
+     "items": [],
      "colWidthPct": 47.7358,
      "showMore": true,
      "thumbRatio": 66.6667,
@@ -283,7 +250,10 @@
       "m": "flex-start",
       "d": "flex-start"
      },
-     "colWidthPctM": 100
+     "colWidthPctM": 100,
+     "filter": {
+      "tag": "bridgewater"
+     }
     }
    ]
   }

@@ -145,56 +145,7 @@
      ],
      "textSize": "large",
      "textAlign": "left",
-     "items": [
-      {
-       "href": "/blog/annabel-and-her-family",
-       "title": "Annabel and her family",
-       "excerpt": "",
-       "thumb": {
-        "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1729116400941-X65X2D2RQQJK0SFUQAKM/SOCIAL__DSC3942-Edit.jpg",
-        "alt": "Annabel and her family",
-        "width": 2048,
-        "height": 1638,
-        "focal": [
-         0.5,
-         0.5
-        ]
-       },
-       "metaText": ""
-      },
-      {
-       "href": "/blog/family-tracey-and-her-boys",
-       "title": "Tracey and her boys",
-       "excerpt": "",
-       "thumb": {
-        "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1715820529779-68R3KY2Y96XH0UTCG03W/092A9336_SOCIAL.jpg",
-        "alt": "Tracey and her boys",
-        "width": 2048,
-        "height": 1365,
-        "focal": [
-         0.5,
-         0.5
-        ]
-       },
-       "metaText": ""
-      },
-      {
-       "href": "/blog/family-dianne",
-       "title": "Dianne and family",
-       "excerpt": "",
-       "thumb": {
-        "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1715807698000-AL1I35SOF0XGM4SQ8LBQ/_W2A2621_SOCIAL.jpg",
-        "alt": "Dianne and family",
-        "width": 2048,
-        "height": 1283,
-        "focal": [
-         0.5,
-         0.5
-        ]
-       },
-       "metaText": ""
-      }
-     ],
+     "items": [],
      "colWidthPct": 49.2453,
      "showMore": true,
      "thumbRatio": 66.6667,
@@ -219,7 +170,12 @@
       "m": "flex-start",
       "d": "flex-start"
      },
-     "colWidthPctM": 100
+     "colWidthPctM": 100,
+     "filter": {
+      "categories": [
+       "Family"
+      ]
+     }
     }
    ]
   }

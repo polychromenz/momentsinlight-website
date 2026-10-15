@@ -1,18 +1,39 @@
 ---
 // A Squarespace "summary" block: a list of blog posts (e.g. the wedding galleries page).
-// The posts, titles and thumbnails are the ones the live block showed; columns come from
-// the live layout and are set per breakpoint by FluidSection (--cols).
+// When the block has a `filter`, the list is built from the blog at build time, newest
+// first: posts in any of `filter.categories`, or with `filter.tag`, up to `filter.limit`.
+// So ticking a category in Pages CMS adds a post to the matching gallery page, and
+// unticking it removes it. Without a filter, the posts the live block showed are used.
+// Columns come from the live layout and are set per breakpoint by FluidSection (--cols).
+import { getCollection } from 'astro:content';
 import Img from '../Img.astro';
 
 interface Props { block: any }
 const { block: b } = Astro.props;
+
+let items: any[] = b.items ?? [];
+if (b.filter) {
+  const { categories, tag, limit } = b.filter as { categories?: string[]; tag?: string; limit?: number };
+  const posts = (await getCollection('blog'))
+    .filter((p) =>
+      (categories ? p.data.categories.some((c) => categories.includes(c)) : true) &&
+      (tag ? p.data.tags.includes(tag) : true),
+    )
+    .sort((a, c) => c.data.date.valueOf() - a.data.date.valueOf())
+    .slice(0, limit ?? Infinity);
+  items = posts.map((p) => ({
+    href: `/blog/${p.id}`,
+    title: p.data.title,
+    thumb: { src: p.data.thumbnail ?? p.data.gallery[0]?.src },
+  }));
+}
 const ratio = b.thumbRatio ? `100 / ${b.thumbRatio}` : '3 / 2';
 const ts = b.titleStyle;
 ---
 <div class="summary" style={`text-align:${b.textAlign}`}>
   {b.header && <h3 class="heading">{b.header}</h3>}
   <ul>
-    {b.items.filter((i: any) => i.href).map((i: any) => (
+    {items.filter((i: any) => i.href).map((i: any) => (
       <li>
         {i.thumb?.src && (
           <a class="thumb" href={i.href} tabindex="-1" aria-hidden="true">

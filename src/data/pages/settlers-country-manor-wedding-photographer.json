@@ -221,40 +221,7 @@
      ],
      "textSize": "medium",
      "textAlign": "left",
-     "items": [
-      {
-       "href": "/blog/fliss-and-ro-wedding-settlers-country-manor",
-       "title": "Felicity & Ronan | Settlers Country Manor, Waimauku",
-       "excerpt": "",
-       "thumb": {
-        "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1781655162621-K5TEQMFUSZM58EWB4WBE/_30A8977.jpg",
-        "alt": "Felicity &amp; Ronan | Settlers Country Manor, Waimauku",
-        "width": 2048,
-        "height": 1638,
-        "focal": [
-         0.5,
-         0.5
-        ]
-       },
-       "metaText": ""
-      },
-      {
-       "href": "/blog/stephanie-and-jankai",
-       "title": "Stephanie and Jankai",
-       "excerpt": "",
-       "thumb": {
-        "src": "https://images.squarespace-cdn.com/content/v1/6626f9fc9b715306f4f4eae7/1748986348080-07R9RDYOX6VCY4BU1Q7C/SOCIAL__MIL3720.jpg",
-        "alt": "Stephanie and Jankai",
-        "width": 2048,
-        "height": 1536,
-        "focal": [
-         0.5,
-         0.5
-        ]
-       },
-       "metaText": ""
-      }
-     ],
+     "items": [],
      "colWidthPct": 632,
      "showMore": true,
      "thumbRatio": null,
@@ -279,7 +246,10 @@
       "m": "flex-start",
       "d": "flex-start"
      },
-     "colWidthPctM": 343
+     "colWidthPctM": 343,
+     "filter": {
+      "tag": "settlers-country-manor"
+     }
     }
    ]
   }
