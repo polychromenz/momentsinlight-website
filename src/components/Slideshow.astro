@@ -99,7 +99,27 @@ const sizesFor = (g: { width?: number; height?: number }) => {
       dots[index]?.setAttribute('aria-current', 'true');
       preload(index + 1);
       preload(index - 1);
+      tintDots();
       schedule();
+    };
+
+    // Dots sitting on the white space beside a narrow (upright) photo would be white on white,
+    // so those get a grey tint instead. Recomputed for each photo and on resize.
+    const tintDots = () => {
+      if (!dots.length) return;
+      const img = slides[index].querySelector('img');
+      const box = show.getBoundingClientRect();
+      const ratio = img?.naturalWidth
+        ? img.naturalWidth / img.naturalHeight
+        : Number(img?.getAttribute('width')) / Number(img?.getAttribute('height')) || 1.5;
+      const w = Math.min(box.width, box.height * ratio);
+      const left = box.left + (box.width - w) / 2;
+      const right = left + w;
+      dots.forEach((d) => {
+        const r = d.getBoundingClientRect();
+        const x = r.left + r.width / 2;
+        d.classList.toggle('off-photo', x < left + 4 || x > right - 4);
+      });
     };
 
     // Restart the 5-second countdown after every change, so a manual click gets a full turn.
@@ -135,6 +155,9 @@ const sizesFor = (g: { width?: number; height?: number }) => {
     document.addEventListener('visibilitychange', schedule);
 
     preload(1);
+    tintDots();
+    slides[0].querySelector('img')?.addEventListener('load', tintDots);
+    addEventListener('resize', tintDots);
     schedule();
   });
 </script>
@@ -215,6 +238,8 @@ const sizesFor = (g: { width?: number; height?: number }) => {
     transition: background-color 0.3s ease, transform 0.3s ease;
   }
   .dot.on::before { background: var(--white); transform: scale(1.25); }
+  .dot.off-photo::before { background: rgb(0 0 0 / 0.22); box-shadow: none; }
+  .dot.off-photo.on::before { background: var(--green); }
   .dot:focus-visible { outline: 2px solid var(--white); outline-offset: -2px; border-radius: 50%; }
 
   /* Phones: swipe instead of arrows, and fewer dots would crowd the photo, so hide them. */
