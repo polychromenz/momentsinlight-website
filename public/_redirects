@@ -15,13 +15,22 @@
 
 # ---- From the Squarespace "URL Mappings" settings ----
 
-# Old wedding post addresses. Squarespace sent these to /weddings; they now go to the
-# post itself, which has the same wedding at its current address.
-/blog/deb-and-joe                  /blog/wedding-deb-and-joe                301
-/blog/ruby-and-oscar               /blog/wedding-ruby-and-oscar             301
-/blog/weddings-catherine-and-marianne  /blog/wedding-catherine-and-marianne 301
-/blog/angela-and-sonni             /blog/wedding-angela-and-sonni           301
-/blog/bronte-and-greg              /blog/wedding-bronte-and-greg            301
+# Older wedding posts that were retired with the move from Squarespace, at their current
+# and earlier addresses. They go to the wedding galleries.
+/blog/wedding-andrea-and-nigel        /wedding-galleries  301
+/blog/wedding-chris-and-andy          /wedding-galleries  301
+/blog/wedding-angela-and-sonni        /wedding-galleries  301
+/blog/wedding-bronte-and-greg         /wedding-galleries  301
+/blog/wedding-melissa-and-logan       /wedding-galleries  301
+/blog/wedding-ruby-and-oscar          /wedding-galleries  301
+/blog/wedding-deb-and-joe             /wedding-galleries  301
+/blog/lisa-and-anthony                /wedding-galleries  301
+/blog/wedding-catherine-and-marianne  /wedding-galleries  301
+/blog/deb-and-joe                     /wedding-galleries  301
+/blog/ruby-and-oscar                  /wedding-galleries  301
+/blog/weddings-catherine-and-marianne /wedding-galleries  301
+/blog/angela-and-sonni                /wedding-galleries  301
+/blog/bronte-and-greg                 /wedding-galleries  301
 
 # Old article addresses (misspelt or renamed)
 /blog/tops-on-how-to-write-your-best-man-speech  /blog/how-to-write-your-best-man-speech  301
