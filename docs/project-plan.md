@@ -9,7 +9,7 @@ Rebuild [momentsinlight.co.nz](https://www.momentsinlight.co.nz) off Squarespace
 - **Why:** SEO tools flag issues that can't be fixed on Squarespace, the design is restrictive, and the subscription is expensive.
 - **Goal:** better SEO and page speed, full design control, lower running costs.
 - **Must keep:** an easy way to add wedding blog posts, every existing URL, and current Google rankings.
-- **Status (15 Oct 2026):** the new site is built and running at [momentsinlight-website.pages.dev](https://momentsinlight-website.pages.dev), every photo is on Cloudflare Images, and the domain is being switched over (nameservers moved to Cloudflare, waiting for the `.nz` registry). See [domain-switch.md](domain-switch.md).
+- **Status (15 Oct 2026):** the new site is built and running at [momentsinlight-website.pages.dev](https://momentsinlight-website.pages.dev), every photo is on Cloudflare Images, and **momentsinlight.co.nz has been serving the new site since the evening of 15 Oct 2026** (DNS on Cloudflare, domain still registered with iwantmyname). See [domain-switch.md](domain-switch.md).
 
 Related docs:
 
@@ -82,10 +82,11 @@ Venue pages share one layout, and so do wedding posts, so both convert in bulk o
    - [x] Every sitemap URL checked on the new site (all 200), redirects and 404 tested
    - [x] Domain added to Cloudflare (Free plan), DNS records copied and checked
    - [x] Nameservers changed at iwantmyname to dora/eoin.ns.cloudflare.com
-   - [ ] Cloudflare shows the domain Active
-   - [ ] Add www and the bare domain as custom domains on the Pages project; root-to-www redirect
-   - [ ] Add both hostnames to the Turnstile widget
-   - [ ] Test the live domain (pages, old links, form, email still arriving)
+   - [x] Cloudflare shows the domain Active
+   - [x] www and the bare domain added as custom domains on the Pages project; root-to-www redirect
+   - [x] Both hostnames on the Turnstile widget
+   - [x] Live domain tested (all pages, canonical tags, old links, contact form, analytics)
+   - [ ] A real guide signup on the live domain
    - [ ] Submit the sitemap in Google Search Console
    - [ ] Keep Squarespace a few weeks as a fallback, then cancel
 

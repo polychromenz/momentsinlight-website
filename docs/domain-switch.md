@@ -10,9 +10,9 @@ keeps working throughout, as its records were copied across first.
 | Step | Status |
 | --- | --- |
 | 1. Domain added to Cloudflare, records copied and checked | Done 15 Oct |
-| 2. Nameservers changed at iwantmyname to `dora.ns.cloudflare.com`, `eoin.ns.cloudflare.com` | Done 15 Oct; waiting for the `.nz` registry and for Cloudflare to show **Active** |
-| 3. Point the domain at the new site | To do once Active |
-| 4. After the switch | To do |
+| 2. Nameservers changed at iwantmyname to `dora.ns.cloudflare.com`, `eoin.ns.cloudflare.com` | Done 15 Oct; registry switched and Cloudflare Active the same evening |
+| 3. Domain pointed at the new site: www and bare domain on the Pages project, root-to-www redirect (301, query string kept), Turnstile hostnames | Done 15 Oct |
+| 4. Live checks | Done 15 Oct: all 121 sitemap pages 200 with correct canonical, all 34 redirects, 404, http to https, bare domain to www, contact form, Google Analytics, Turnstile widget. Still to do: a real guide signup, Search Console, cancel Squarespace later |
 
 DNSSEC was checked and is off (no DS record at the `.nz` registry), so nothing needed turning off first.
 
@@ -55,6 +55,8 @@ there would undo everything.
 - Test on the real domain: every sitemap page, the old Squarespace addresses in `public/_redirects`,
   `momentsinlight.co.nz` redirecting to www, HTTPS, the guide signup (and its D1 entry), the
   Studio Ninja contact form, and that email still arrives.
+- Old `/sitemap.xml` (Squarespace's) redirects to `/sitemap-index.xml`.
+- Canonical tags were fixed on the day of the switch: they ended in `.html` on every page except Home; they now match the real addresses.
 - Google Search Console: submit `https://www.momentsinlight.co.nz/sitemap-index.xml`.
 - Studio Ninja's contact form sends people to `/thanks`, which exists on the new site.
 - Keep Squarespace a few weeks as a fallback (nothing on the new site uses it, photos included),
