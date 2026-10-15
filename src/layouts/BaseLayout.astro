@@ -24,7 +24,9 @@ interface Props {
   background?: 'white' | 'alt';
 }
 const { title, description, image, type = 'website', jsonLd, background = 'white' } = Astro.props;
-const canonical =new URL(Astro.url.pathname.replace(/\/$/, '') || '/', site.url).href;
+// The page's public address. Pages are built as files (weddings.html) but served without
+// the .html (/weddings), which is the address Google should index.
+const canonical = new URL(Astro.url.pathname.replace(/\.html$/, '').replace(/\/index$/, '/').replace(/(.)\/$/, '$1') || '/', site.url).href;
 const ogImage = image ? sized(image, 1500) : undefined;
 ---
 <!doctype html>

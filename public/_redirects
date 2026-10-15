@@ -10,6 +10,9 @@
 /wedding-venues          /west-auckland-wedding-venues     301
 /more                    /wedding-photo-guide              301
 
+# Squarespace's sitemap address (known to Google Search Console) to the new sitemap
+/sitemap.xml             /sitemap-index.xml                301
+
 # The guide download now appears on the guide page itself after signing up
 /thank-you-photo-guide   /wedding-photo-guide              301
 
