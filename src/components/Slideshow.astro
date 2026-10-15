@@ -1,6 +1,7 @@
 ---
 // Fading slideshow, matching the Squarespace slideshows: one photo at a time, shown whole
-// (never cropped), cross-fading to the next every 5 seconds, with arrows and dots.
+// (never cropped), cross-fading to the next every 5 seconds, with arrows and dots (or a
+// "3 / 56" counter for long ones).
 // Swipe on phones; ← → keys when focused. Autoplay pauses while the pointer is over it,
 // while it has keyboard focus, when it's scrolled off screen or the tab is hidden, and is
 // off entirely for visitors who've asked their device for reduced motion.
@@ -16,8 +17,10 @@ interface Props {
   interval?: number;
   /** Near the top of the page: its first photo is fetched before everything else. */
   first?: boolean;
+  /** Show "3 / 56" instead of a row of dots (for long slideshows). */
+  counter?: boolean;
 }
-const { images, label, heightMobile = '30vh', heightDesktop = '50vh', interval = 5, first = false } = Astro.props;
+const { images, label, heightMobile = '30vh', heightDesktop = '50vh', interval = 5, first = false, counter = false } = Astro.props;
 // Photos are shown whole inside a box the slideshow's height tall, so each is only as wide as
 // its shape allows at that height (never wider than the screen); tell the browser so it
 // fetches that size rather than a full-screen-width one.
@@ -52,11 +55,15 @@ const sizesFor = (g: { width?: number; height?: number }) => {
         <button type="button" class="arrow next" aria-label="Next photo">
           <svg viewBox="0 0 12 24" aria-hidden="true"><path d="m2 2 8 10-8 10" /></svg>
         </button>
-        <div class="dots" role="group" aria-label="Choose a photo">
-          {images.map((_, i) => (
-            <button type="button" class:list={['dot', { on: i === 0 }]} data-to={i} aria-label={`Show photo ${i + 1}`} aria-current={i === 0 ? 'true' : undefined} />
-          ))}
-        </div>
+        {counter ? (
+          <span class="counter" aria-hidden="true"><span data-count>1</span> / {images.length}</span>
+        ) : (
+          <div class="dots" role="group" aria-label="Choose a photo">
+            {images.map((_, i) => (
+              <button type="button" class:list={['dot', { on: i === 0 }]} data-to={i} aria-label={`Show photo ${i + 1}`} aria-current={i === 0 ? 'true' : undefined} />
+            ))}
+          </div>
+        )}
       </>
     )}
   </section>
@@ -68,6 +75,7 @@ const sizesFor = (g: { width?: number; height?: number }) => {
   document.querySelectorAll<HTMLElement>('[data-slideshow]').forEach((show) => {
     const slides = [...show.querySelectorAll<HTMLElement>('.slide')];
     const dots = [...show.querySelectorAll<HTMLButtonElement>('.dot')];
+    const count = show.querySelector<HTMLElement>('[data-count]');
     if (slides.length < 2) return;
     const delay = Number(show.dataset.interval || 5) * 1000;
     let index = 0;
@@ -97,6 +105,7 @@ const sizesFor = (g: { width?: number; height?: number }) => {
       slides[index].removeAttribute('aria-hidden');
       dots[index]?.classList.add('on');
       dots[index]?.setAttribute('aria-current', 'true');
+      if (count) count.textContent = String(index + 1);
       preload(index + 1);
       preload(index - 1);
       schedule();
@@ -214,6 +223,11 @@ const sizesFor = (g: { width?: number; height?: number }) => {
     transition: background-color 0.3s ease, transform 0.3s ease;
   }
   .dot.on::before { background: var(--white); transform: scale(1.25); }
+  .counter {
+    position: absolute; left: 50%; bottom: 12px; transform: translateX(-50%);
+    padding: 3px 10px; border-radius: 999px; background: rgb(0 0 0 / 0.45);
+    color: var(--white); font-size: 13px; letter-spacing: 0.04em; font-variant-numeric: tabular-nums;
+  }
   .dot:focus-visible { outline: 2px solid var(--white); outline-offset: -2px; border-radius: 50%; }
 
   /* Phones: swipe instead of arrows, and fewer dots would crowd the photo, so hide them. */
