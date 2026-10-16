@@ -25,7 +25,7 @@ const closing = parts.slice(1).filter((p) => !photos[heading(p)]);
 const [choosing, ...planning] = closing;
 ---
 <BaseLayout title={page.title} description={page.description} image={photos['Abel Estate'][0]}>
-  <section class="intro wrap" data-reveal>
+  <section class="intro wrap">
     <Fragment set:html={intro} />
   </section>
 
@@ -60,6 +60,10 @@ const [choosing, ...planning] = closing;
 </BaseLayout>
 
 <style>
+  /* The intro rises in as the page opens (no waiting for a script, so it counts as loaded straight away). */
+  .intro { animation: rise 1.3s var(--ease) both; }
+  @keyframes rise { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
+  @media (prefers-reduced-motion: reduce) { .intro { animation: none; } }
   .intro { max-width: calc(860px + 2 * var(--pad)); margin: 0 auto; padding-block: 64px 40px; text-align: center; }
   .intro :global(h1) { font-weight: 300; color: var(--ink); font-size: clamp(32px, 2.6vw + 18px, 56px); margin-bottom: 26px; }
   .intro :global(p) { color: #444; line-height: 1.8; }
