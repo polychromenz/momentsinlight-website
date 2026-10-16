@@ -126,7 +126,8 @@ const directions = 'https://www.google.com/maps/dir/?api=1&destination=' + encod
   .form-card.loaded .loading { display: none; }
 
   .map-band { padding-block: 64px 80px; }
-  .map-wrap { position: relative; max-width: calc(1180px + 2 * var(--pad)); margin: 0 auto; }
+  /* The map with the address card beside it (underneath on phones). */
+  .map-wrap { display: grid; gap: 24px; max-width: calc(1180px + 2 * var(--pad)); margin: 0 auto; align-items: center; }
   .map {
     overflow: hidden;
     border-radius: 48px 0;
@@ -137,12 +138,9 @@ const directions = 'https://www.google.com/maps/dir/?api=1&destination=' + encod
   /* Softened to sit with the site's colours. */
   .map :global(iframe) { width: 100%; height: 100%; border: 0; display: block; filter: grayscale(0.35) sepia(0.12) saturate(0.9); }
   .map-card {
-    margin: -48px 20px 0;
-    position: relative;
-    background: var(--white);
-    border-radius: 24px 0;
+    background: var(--champagne);
+    border-radius: 32px 0;
     padding: 24px 26px 26px;
-    box-shadow: 0 18px 34px -24px rgb(0 0 0 / 0.45);
   }
   .map-name { margin: 0 0 4px; font-size: 22px; font-weight: 300; color: var(--ink); }
   .map-address { margin: 0 0 18px; color: #555; font-size: 15px; line-height: 1.6; }
@@ -151,9 +149,12 @@ const directions = 'https://www.google.com/maps/dir/?api=1&destination=' + encod
     .intro { padding-block: 110px 64px; }
     .form-band { padding-block: 90px; }
     .form-card { padding: 26px 20px; }
-    .map { aspect-ratio: 21 / 9; }
-    .map-card { position: absolute; left: 40px; bottom: 40px; margin: 0; max-width: 340px; }
     .map-band { padding-block: 90px 120px; }
+  }
+  @media (min-width: 900px) {
+    .map-wrap { grid-template-columns: minmax(0, 2.2fr) minmax(0, 1fr); gap: 40px; }
+    .map { aspect-ratio: 16 / 10; }
+    .map-card { padding: 34px 32px 34px; }
   }
   @media (min-width: 960px) {
     .form-grid { grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr); gap: 56px; }
