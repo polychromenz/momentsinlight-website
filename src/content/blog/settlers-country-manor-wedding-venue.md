@@ -15,7 +15,7 @@ Nestled in Kumeu, [**Settlers Country Manor**](https://www.settlerscountrymanor.
 
 If you’re planning your day here, you’ll want a photographer who knows the **best photo spots, how to structure timelines around the light, and how to keep things stress-free if the weather shifts**. That’s exactly what I bring to the table.
 
-➡️ Take a look at my [full-day wedding photography pricing](/weddings) starting from **$2,990**, or [get in touch](https://www.momentsinlight.co.nz/contact) to check if your date is available.
+➡️ Take a look at my [full-day wedding photography pricing](/weddings) starting from **$2,995**, or [get in touch](https://www.momentsinlight.co.nz/contact) to check if your date is available.
 
 ## Best Photo Locations at Settlers Country Manor
 
@@ -30,7 +30,7 @@ Because all these locations are within a short walk, we can capture a wide varie
 
 ## Sample Timelines for Golden-Hour Portraits
 
-Settlers Country Manor is especially beautiful at dusk, so I like to build timelines that make the most of that light. A typical **8-hour full-day package** (from $2,990) looks like this:
+Settlers Country Manor is especially beautiful at dusk, so I like to build timelines that make the most of that light. With the **Deluxe Experience** (8+ hours, $3,995), a typical day looks like this:
 
 - **1:30–3:00pm:** Getting ready coverage (bridal party prep + details).
 - **3:00–3:30pm:** Ceremony in the gardens or by the riverside.

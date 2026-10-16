@@ -31,4 +31,4 @@ Thank you for your continued support! We’re excited to be part of the **My Wed
 
 *Note: For the most up-to-date information, visit our My Wedding Guide profile.*
 
-Feel free to customize and share this announcement across your social media platforms, website, and with anyone who’s planning a wedding. Let’s celebrate this milestone together! 📸✨
+Feel free to customise and share this announcement across your social media platforms, website, and with anyone who’s planning a wedding. Let’s celebrate this milestone together! 📸✨

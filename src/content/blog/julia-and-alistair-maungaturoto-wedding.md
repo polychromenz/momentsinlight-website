@@ -37,9 +37,9 @@ The energy throughout the day was incredible. You could feel the history in the 
 
 We also made sure to capture Alistair’s passion for classic American muscle cars. With a little help from a smoke machine, we created some moody, high-impact portraits that really showcased his pride and joy alongside the couple. It was a fun, unique break in the day that felt 100% them.
 
-The reception at the local hall was the beating heart of the community. It was stripped back, genuine, and exactly what a wedding should be: great food and even better company. That fantastic BBQ kept everyone fueled for what was easily the loudest, most energetic band I have ever had the pleasure of photographing. From the first song to the last, the dance floor was packed with every Kiwi classic imaginable.
+The reception at the local hall was the beating heart of the community. It was stripped back, genuine, and exactly what a wedding should be: great food and even better company. That fantastic BBQ kept everyone fuelled for what was easily the loudest, most energetic band I have ever had the pleasure of photographing. From the first song to the last, the dance floor was packed with every Kiwi classic imaginable.
 
-Julia and Alistair, thank you for inviting me to document such a milestone. It was an honor to witness a love that has already stood the test of time and is only just getting started.
+Julia and Alistair, thank you for inviting me to document such a milestone. It was an honour to witness a love that has already stood the test of time and is only just getting started.
 
 **“Tony recently shot our wedding, we have some beautiful photos to remember our day. Tonys communication is fantastic from start to end and he made myself and husband comfortable. Having practice shots was key for us as we are not photogenic type 😂 thanks Moments in Light.”**
 

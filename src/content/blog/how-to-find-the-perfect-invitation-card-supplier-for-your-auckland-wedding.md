@@ -19,14 +19,14 @@ Before you start your search, consider the overall style and theme of your weddi
 Auckland has several reputable invitation card suppliers. Here are a few options to explore:
 
 1. **The Print Shop Auckland**:
-   - The Print Shop offers a comprehensive design and print service for various events, including weddings. [They specialize in wedding invitation cards, as well as other types like table name cards, menus, thank-you cards, and more1](https://printshopauckland.co.nz/invitation-cards.php).
+   - The Print Shop offers a comprehensive design and print service for various events, including weddings. [They specialise in wedding invitation cards, as well as other types like table name cards, menus, thank-you cards, and more1](https://printshopauckland.co.nz/invitation-cards.php).
    - Contact them at 09 281 5101 for a free, no-obligation quote.
 2. **5 Digital**:
    - [5 Digital provides high-quality wedding printing services, including invitations, save-the-dates, menus, and seating plans](https://printshopauckland.co.nz/invitation-cards.php)[2](https://5digital.co.nz/what-we-do/wedding-printing).
    - Check out their offerings and get in touch with them to discuss your requirements.
 3. **MYCARDS**:
    - MYCARDS offers wedding invitations and operates in Henderson, Auckland. [They have a range of designs and options to choose from](https://printshopauckland.co.nz/invitation-cards.php)[3](https://mycards.co.nz/).
-   - Visit their shop or contact them for personalized assistance.
+   - Visit their shop or contact them for personalised assistance.
 4. **Be My Guest Design**:
    - Although based in Dunedin, Be My Guest Design is an excellent option for custom-designed wedding stationery. [They can create unique cards according to your preferences and wording](https://printshopauckland.co.nz/invitation-cards.php)[4](https://bemyguest.co.nz/).
    - Collaborate with their experienced graphic designers to achieve the perfect design.
@@ -46,8 +46,8 @@ Check online reviews and testimonials to learn about other couples’ experience
 
 Invitations are an essential part of your wedding budget. Consider how many guests you’re inviting and allocate funds accordingly. Remember that custom designs may cost more than pre-made templates.
 
-#### **6. Personalize Your Invitations**
+#### **6. Personalise Your Invitations**
 
-Once you’ve chosen a supplier, work closely with them to personalize your invitations. Customize the wording, fonts, colors, and any additional details that make your cards uniquely yours.
+Once you’ve chosen a supplier, work closely with them to personalise your invitations. Customise the wording, fonts, colours, and any additional details that make your cards uniquely yours.
 
 Remember, your wedding invitations are the first glimpse your guests will have of your big day. Choose wisely, let your love story shine through every beautifully crafted card! 💌

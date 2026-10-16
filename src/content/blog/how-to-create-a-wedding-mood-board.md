@@ -9,7 +9,7 @@ categories: ["Info"]
 tags: []
 thumbnail: "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/mono/_Q9A0292-website/public"
 ---
-Creating a mood board for your wedding using Pinterest is a fantastic way to gather inspiration and visualize your dream wedding. Let’s dive into the steps:
+Creating a mood board for your wedding using Pinterest is a fantastic way to gather inspiration and visualise your dream wedding. Let’s dive into the steps:
 
 ### 1. Set Up Your Pinterest Account
 
@@ -21,7 +21,7 @@ Create a new board specifically for your wedding mood board. Give it a descripti
 
 ### 3. Sections and Boards
 
-Organize your pins by creating different sections within your board. For example:
+Organise your pins by creating different sections within your board. For example:
 
 - **Wedding Dresses**
 - **Floral Arrangements**

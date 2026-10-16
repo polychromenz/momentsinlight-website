@@ -13,7 +13,7 @@ Let’s explore some delightful wedding ring options in Auckland, New Zealand. W
 
 ## 1. Culét Jewellery
 
-- **About**: Culét Jewellery, located in Herne Bay, Auckland, specializes in meticulously designed and custom-made diamond engagement rings, wedding bands, and fine jewellery. Their head designer, Scott Rushton, focuses on creating one-of-a-kind pieces tailored to each individual client. Whether you prefer classic or contemporary styles, Culét Jewellery can bring your vision to life.
+- **About**: Culét Jewellery, located in Herne Bay, Auckland, specialises in meticulously designed and custom-made diamond engagement rings, wedding bands, and fine jewellery. Their head designer, Scott Rushton, focuses on creating one-of-a-kind pieces tailored to each individual client. Whether you prefer classic or contemporary styles, Culét Jewellery can bring your vision to life.
 - **Materials**: They work with white gold, rose gold, yellow gold, platinum, palladium, zirconium, and titanium.
 - **Services**:
    - Bespoke diamond engagement rings.
@@ -27,8 +27,8 @@ Visit [Culét Jewellery](https://culet.co.nz/)
 
 ## 2. Aurum Fine Jewellery
 
-- **About**: Aurum Fine Jewellery offers a tremendous selection of handmade wedding rings for both men and women. They specialize in classic and contemporary designs, allowing you to choose from materials like white gold, yellow gold, rose gold, platinum, palladium, zirconium, and titanium.
-- **Customization**: Envisage a unique band that reflects your personal style.
+- **About**: Aurum Fine Jewellery offers a tremendous selection of handmade wedding rings for both men and women. They specialise in classic and contemporary designs, allowing you to choose from materials like white gold, yellow gold, rose gold, platinum, palladium, zirconium, and titanium.
+- **Customisation**: Envisage a unique band that reflects your personal style.
 - **Diamond Options**: Wedding rings can be set with diamonds, and you can add more diamonds later to celebrate important anniversaries.
 - **Men’s Bands**: Men’s wedding rings have evolved, and you can choose from elaborate bands with mixed metals and gemstones.
 - **Location**: By appointment only at 89 College Hill, Ponsonby, Auckland.
@@ -45,7 +45,7 @@ Visit [Aurum Fine Jewellery](https://www.aurum.co.nz/wedding-rings-and-bands)[](
 ## 4. Temple and Grace
 
 - **About**: Temple and Grace offer women’s wedding rings in various materials, including white gold, yellow gold, rose gold, and platinum. Their 2024 collection includes classic wedding rings, eternity rings, stackable rings, and diamond rings.
-- **Customization**: Choose from their elegant designs or create a custom piece that speaks to your style.
+- **Customisation**: Choose from their elegant designs or create a custom piece that speaks to your style.
 - **Location**: Online store serving New Zealand.
 
 Visit [Temple and Grace’s women’s wedding rings](https://www.templeandgrace.co.nz/wedding-rings/womens-wedding-rings)[for timeless elegance](http://www.culet.co.nz/?utm_source=google-business-listing&utm_medium=organic)[4](https://www.templeandgrace.co.nz/wedding-rings/womens-wedding-rings).

@@ -22,14 +22,14 @@ Visit the [DIY Wedding Shop](https://diyweddingshop.co.nz/) for more inspiration
 
 Rustic Table Decor
 
-- **Wooden Cake Toppers**: Personalize your cake with wooden toppers featuring your names or a floral border. [Consider spray-painting them to match your wedding color scheme](https://diyweddingshop.co.nz/)[2](https://theoccasionco.nz/blogs/tips-info/rustic-wedding-table-decor).
+- **Wooden Cake Toppers**: Personalise your cake with wooden toppers featuring your names or a floral border. [Consider spray-painting them to match your wedding colour scheme](https://diyweddingshop.co.nz/)[2](https://theoccasionco.nz/blogs/tips-info/rustic-wedding-table-decor).
 - **Custom Wooden Drink Sticks**: Stir sticks add a rustic touch to your celebration. [Use them for drinks or as decor elements on your tables](https://diyweddingshop.co.nz/)[2](https://theoccasionco.nz/blogs/tips-info/rustic-wedding-table-decor).
 
 #### **3. Essential Table Decorations**
 
 - **Table Numbers and Holders**: Clearly label each table with stylish table numbers or creative holders.
 - **Place Cards**: If you’re assigning seating, elegant place cards are a must.
-- **Centerpieces**: Create eye-catching centrepieces using flowers, candles, or other decorative elements.
+- **Centrepieces**: Create eye-catching centrepieces using flowers, candles, or other decorative elements.
 - **Napkin Holders, Placemats, and Tablecloths**: These details tie everything together and enhance the overall look.
 - **Labels or Signage**: Use labels for dessert tables, gift tables, and other areas.
 - [**Florals**: Leave the floral arrangements to your florist—they’ll design beautiful bouquets and centrepieces](https://diyweddingshop.co.nz/)[3](https://www.theknot.com/content/wedding-table-decorations).

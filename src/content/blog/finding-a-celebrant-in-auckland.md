@@ -9,7 +9,7 @@ categories: ["Info"]
 tags: []
 thumbnail: "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/colour/092A5080_SOCIAL-website/public"
 ---
-Planning a wedding involves many decisions, and choosing the right wedding celebrant is a crucial one. Auckland, New Zealand, offers a diverse selection of experienced celebrants who can create a meaningful and personalized ceremony for your special day. Whether you’re envisioning a traditional, modern, or unique celebration, here are some reputable wedding celebrants in Auckland to consider:
+Planning a wedding involves many decisions, and choosing the right wedding celebrant is a crucial one. Auckland, New Zealand, offers a diverse selection of experienced celebrants who can create a meaningful and personalised ceremony for your special day. Whether you’re envisioning a traditional, modern, or unique celebration, here are some reputable wedding celebrants in Auckland to consider:
 
 ## 1. Sarah Wollf
 
@@ -23,7 +23,7 @@ Learn more [SW (celebrantsarah.nz)](https://www.celebrantsarah.nz/) | [@celebran
 
 **Services**:
 
-- Customized wedding ceremonies.
+- Customised wedding ceremonies.
 - Civil unions and elopements.
 - Speaks Mandarin, Cantonese, and Te Reo Maori.
 
@@ -31,18 +31,18 @@ Learn more about [Jacqueline Nairn | Marriage Celebrant](https://jacquelinenairn
 
 ## 3. Chris Mullane ONZM MBE
 
-**About**: Chris Mullane crafts unique and memorable ceremonies that reflect each couple’s individuality. His experience and creativity ensure a personalized and heartfelt celebration.
+**About**: Chris Mullane crafts unique and memorable ceremonies that reflect each couple’s individuality. His experience and creativity ensure a personalised and heartfelt celebration.
 
 **Services**:
 
 - LGBT-friendly ceremonies.
-- Customized wedding and civil union ceremonies.
+- Customised wedding and civil union ceremonies.
 
 Discover [Chris Mullane’s celebrant services](https://mycelebrantguide.co.nz/listing/268492/chris-mullane-onzm-mbe)
 
 ## 4. Loveworks - James Barr
 
-**About**: James Barr believes that your wedding ceremony should be as beautiful and unique as your love story. He creates personalized ceremonies that resonate with couples and their guests.
+**About**: James Barr believes that your wedding ceremony should be as beautiful and unique as your love story. He creates personalised ceremonies that resonate with couples and their guests.
 
 **Services**:
 
@@ -57,14 +57,14 @@ Explore Loveworks with [James Barr](https://www.loveworks.co.nz/)
 
 **Services**:
 
-- Customized ceremonies.
+- Customised ceremonies.
 - Elopements and intimate weddings.
 
 Learn more about [Ben Married Us Celebrant](https://www.benmarriedus.co.nz/)
 
 ## 6. Adriano Lo Tam Celebrant
 
-**About**: Adriano Lo Tam believes that marriage is a lifetime commitment. His thoughtful and personalized ceremonies celebrate love and commitment.
+**About**: Adriano Lo Tam believes that marriage is a lifetime commitment. His thoughtful and personalised ceremonies celebrate love and commitment.
 
 **Services**:
 

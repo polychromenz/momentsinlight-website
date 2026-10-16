@@ -32,14 +32,14 @@ Here are 13 tips to guide you as you write your own wedding vows:
 5. **Speak from the Heart**: Avoid clichés and generic phrases. Speak genuinely from your heart.
 6. **Consider Your Relationship’s Unique Aspects**: What makes your relationship unique? Incorporate those aspects into your vows.
 7. **Practice Out Loud**: Read your vows aloud to ensure they flow well and sound natural.
-8. **Balance Emotion and Humor**: Mix heartfelt sentiments with light-hearted moments. Laughter is welcome!
+8. **Balance Emotion and Humour**: Mix heartfelt sentiments with light-hearted moments. Laughter is welcome!
 9. **Keep It Concise**: Aim for a few minutes of speaking time. Less is often more.
 10. **Write Separately**: Consider writing your vows separately to maintain an element of surprise during the ceremony.
 11. **Seek Inspiration**: Read poetry, love letters, or watch romantic movies for inspiration.
 12. **Edit and Refine**: Revise your vows until they feel just right.
 13. **Remember Your Audience**: While personal, your vows are also for your guests. Keep them engaged and touched by your words.
 
-Remember, your wedding vows are a declaration of your love and commitment. Take your time, be sincere, and let your heart guide you. Whether you’re standing on a New Zealand beach or in a cozy chapel, your vows will create a lasting memory for both you and your partner.
+Remember, your wedding vows are a declaration of your love and commitment. Take your time, be sincere, and let your heart guide you. Whether you’re standing on a New Zealand beach or in a cosy chapel, your vows will create a lasting memory for both you and your partner.
 
 *Note: The information provided here is based on general advice and inspiration. Feel free to adapt it to your unique relationship and New Zealand wedding setting.*
 

@@ -15,7 +15,7 @@ There’s so much to think of find. Here is my list of New Zealand based supplie
 
 We offer a range of beautifully designed wedding invitations and save the dates, printed on elegant, high quality paper and card stocks that you will treasure for a lifetime.
 
-Each invitation set can be customised to suit your styling requirements, or to better represent your unique personality as a couple. Choosing an invitation set gives us a starting point for the design, and from there we can customise the colours, paper types, shapes etc. Our in-house print capabilities include specialty finishes such as printing with white ink, metallic foiling, and die-cutting to custom shapes.
+Each invitation set can be customised to suit your styling requirements, or to better represent your unique personality as a couple. Choosing an invitation set gives us a starting point for the design, and from there we can customise the colours, paper types, shapes etc. Our in-house print capabilities include speciality finishes such as printing with white ink, metallic foiling, and die-cutting to custom shapes.
 
 [weddinginvites.co.nz](https://weddinginvites.co.nz/) Invites
 

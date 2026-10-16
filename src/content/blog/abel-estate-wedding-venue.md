@@ -1,7 +1,7 @@
 ---
 title: "Abel Estate Wedding Photography"
 seoTitle: "Abel Estate Wedding Photos, Auckland"
-description: "Abel Estate wedding photography in Kumeu: golden-hour pond reflections, garden ceremonies, marquee receptions. Full-day coverage from $2,990."
+description: "Abel Estate wedding photography in Kumeu: golden-hour pond reflections, garden ceremonies, marquee receptions. Full-day coverage from $2,995."
 date: 2025-09-01
 updated: 2025-09-30
 author: "Tony Gorham"
@@ -15,7 +15,7 @@ Located in Kumeu, [**Abel Estate**](https://abelestate.co.nz/) combines a modern
 
 If you’re planning your wedding here, I’ll help you create a photography timeline that makes the most of the **gardens, water reflections, and evening light**, while still keeping things relaxed so you can enjoy time with your guests.
 
-➡️ Explore my full-day wedding photography pricing starting from **$2,990**, or [get in touch](https://www.momentsinlight.co.nz/contact) to reserve your date.
+➡️ Explore my full-day wedding photography pricing starting from **$2,995**, or [get in touch](https://www.momentsinlight.co.nz/contact) to reserve your date.
 
 ## Best Photo Locations at Abel Estate
 

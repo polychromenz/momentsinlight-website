@@ -41,7 +41,7 @@ Some weddings are filled with big moments. Others are filled with meaning in eve
 
 Their celebration took place at [The Barn Waimauku](/the-barn-waimauku-wedding-photographer), a venue that perfectly suits weddings that feel warm, personal, and full of character. But before the celebrations began, they were married in a lovely church ceremony — a meaningful and traditional start to a day that would unfold in such a unique and heartfelt way.
 
-Mikaela has a real love for tea, and that became one of the most memorable touches of the day. After the ceremony, guests were treated to a wide selection of specialty teas — a thoughtful and personal twist that created such a relaxed and welcoming atmosphere. Instead of the usual rush, everyone slowed down, enjoyed the moment, and shared in something that was so distinctly *them*. Even the cake cutting became part of this experience, served alongside tea in a way that felt intimate and intentional.
+Mikaela has a real love for tea, and that became one of the most memorable touches of the day. After the ceremony, guests were treated to a wide selection of speciality teas — a thoughtful and personal twist that created such a relaxed and welcoming atmosphere. Instead of the usual rush, everyone slowed down, enjoyed the moment, and shared in something that was so distinctly *them*. Even the cake cutting became part of this experience, served alongside tea in a way that felt intimate and intentional.
 
 For their portraits, we headed to a family friend’s home near the venue — a beautiful, peaceful setting that gave us space to create something a little more personal. These quieter moments away from the crowd are always special, and Mikaela and Dylan were completely at ease, simply enjoying being together.
 

@@ -53,4 +53,4 @@ And here’s a lovely piece of feedback from the couple:
 
 ***”Tony was incredible to work with for our wedding! From start to finish, his communication was clear and super easy, which made the whole process stress-free. He gave great posing guidance while still keeping everything natural, and his personality made us feel so comfortable in front of the camera.\
 \
-Our portraits turned out stunning, and the candid shots were honestly some of our favorite moments from the day — he captured everything so beautifully and effortlessly. If you’re looking for a photographer who’s talented, fun, and genuinely amazing to be around, Tony is your guy!”*** ⭐⭐⭐⭐⭐
+Our portraits turned out stunning, and the candid shots were honestly some of our favourite moments from the day — he captured everything so beautifully and effortlessly. If you’re looking for a photographer who’s talented, fun, and genuinely amazing to be around, Tony is your guy!”*** ⭐⭐⭐⭐⭐

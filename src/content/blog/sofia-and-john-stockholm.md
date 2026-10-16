@@ -89,7 +89,7 @@ I watched from the shore, heart absolutely full.
 
 ***John and Sofia — thank you for letting me be your photographer, and for making me the proudest father in Stockholm that day. Here's to every adventure ahead.***
 
-**Sofia said** “Tony shot our wedding and was both a brilliant and professional photographer as well as an easy going and comfortable guide to the day. With so much going on in every moment he seemed to always know where to be to capture the special little moments that we didn’t even realize were happening ourselves.\
+**Sofia said** “Tony shot our wedding and was both a brilliant and professional photographer as well as an easy going and comfortable guide to the day. With so much going on in every moment he seemed to always know where to be to capture the special little moments that we didn’t even realise were happening ourselves.\
 \
 The best part of having him around (other than the amazing photos) was that he just knew what everyone needed to be doing and how to do it. Obviously, we spent months planning our special day but there were always little moments where we weren’t entirely sure what to do and Tony, with his experience, was great at making those little suggestions which made the special moments that we will cherish the most. That’s not something we really thought we would be getting from a photographer but just made the whole experience so seamless and easy – it was like having a wedding coach and photographer in one!\
 \

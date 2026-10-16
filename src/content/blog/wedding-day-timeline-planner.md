@@ -18,7 +18,7 @@ In this guide I'll share a sample timeline you can adapt, the timing mistakes I 
 Here's a timeline I'd suggest for a summer wedding with a 3pm ceremony and the reception at the same venue. Shift everything to suit your ceremony time.
 
 <style>
-  .mil-timeline { width: 100%; max-width: 680px; margin: 1.5em auto; border-collapse: collapse; font-family: inherit; color: inherit; font-size: 1rem; line-height: 1.5; }
+  .mil-timeline { width: 100%; max-width: 680px; margin: 1.5em auto; border-collapse: collapse; font-family: inherit; colour: inherit; font-size: 1rem; line-height: 1.5; }
   .mil-timeline caption { caption-side: top; text-align: left; font-weight: 600; padding-bottom: .6em; }
   .mil-timeline th, .mil-timeline td { padding: .7em 1em; text-align: left; vertical-align: top; border-bottom: 1px solid rgba(128,128,128,.25); }
   .mil-timeline thead th { font-size: .8rem; letter-spacing: .08em; text-transform: uppercase; opacity: .7; border-bottom: 2px solid rgba(128,128,128,.4); }

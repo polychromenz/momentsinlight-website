@@ -11,26 +11,26 @@ thumbnail: "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/colou
 ---
 Tips for Picture-Perfect Outfits
 
-Family portraits are treasured keepsakes, capturing memories for years to come. However, one question often looms large as picture day approaches: \*What should we wear?\* Dressing for a family portrait shoot involves more than just coordinating colors or picking out favorite outfits. It’s about achieving a cohesive look that represents your family’s unique style while ensuring the pictures look timeless and polished. Here’s a guide to help you dress your family for a successful portrait shoot.
+Family portraits are treasured keepsakes, capturing memories for years to come. However, one question often looms large as picture day approaches: \*What should we wear?\* Dressing for a family portrait shoot involves more than just coordinating colours or picking out favourite outfits. It’s about achieving a cohesive look that represents your family’s unique style while ensuring the pictures look timeless and polished. Here’s a guide to help you dress your family for a successful portrait shoot.
 
 \1. Coordinate, Don’t Match
 
-Gone are the days of everyone wearing the same outfit in different sizes. Instead, aim to coordinate your outfits by choosing a color palette that complements one another. Select 2-3 base colors and mix in neutrals for balance. This way, each family member can express their style, but the group will still look unified.
+Gone are the days of everyone wearing the same outfit in different sizes. Instead, aim to coordinate your outfits by choosing a colour palette that complements one another. Select 2-3 base colours and mix in neutrals for balance. This way, each family member can express their style, but the group will still look unified.
 
 For example, if you choose navy, white, and blush, some family members can wear solid navy, others can mix in patterns or textures with blush or white, and accessories can bring it all together.
 
 \2. Consider the Location
 
-The setting of your family portrait plays a significant role in determining what you should wear. If your shoot is outdoors in a natural environment (such as a park or beach), soft colors, earthy tones, and relaxed styles may work best. For a more urban setting, you might opt for a modern, sleek look with bold colors or more structured clothing.
+The setting of your family portrait plays a significant role in determining what you should wear. If your shoot is outdoors in a natural environment (such as a park or beach), soft colours, earthy tones, and relaxed styles may work best. For a more urban setting, you might opt for a modern, sleek look with bold colours or more structured clothing.
 
 Examples:
 
-- Outdoor, natural setting: soft blues, creams, olive greens, light grays
+- Outdoor, natural setting: soft blues, creams, olive greens, light greys
 - Urban, industrial setting: blacks, jewel tones, deep reds, metallics
 
 \3. Timeless Over Trendy
 
-While it’s fun to follow fashion trends, family portraits are meant to be timeless. Avoid clothing that will look dated in a few years (think extreme patterns or overly trendy accessories). Instead, focus on classic pieces that won’t go out of style. Think well-tailored shirts, simple dresses, and structured jackets. Simple, solid colors and light patterns tend to stand the test of time.
+While it’s fun to follow fashion trends, family portraits are meant to be timeless. Avoid clothing that will look dated in a few years (think extreme patterns or overly trendy accessories). Instead, focus on classic pieces that won’t go out of style. Think well-tailored shirts, simple dresses, and structured jackets. Simple, solid colours and light patterns tend to stand the test of time.
 
 \4. Pay Attention to Textures and Layers
 
@@ -48,15 +48,15 @@ While style is important, so is comfort. If you or your children are uncomfortab
 
 \7. Limit Distracting Patterns
 
-Patterns can add visual interest, but too many bold or clashing patterns can distract from the main focus of the photo—your family! If you choose to incorporate patterns, aim for subtle ones like stripes, checks, or florals and balance them with solid colors. Avoid logos, large graphics, or busy prints that could take attention away from your faces.
+Patterns can add visual interest, but too many bold or clashing patterns can distract from the main focus of the photo—your family! If you choose to incorporate patterns, aim for subtle ones like stripes, checks, or florals and balance them with solid colours. Avoid logos, large graphics, or busy prints that could take attention away from your faces.
 
-\8. Consider Seasonal Colors
+\8. Consider Seasonal Colours
 
-Take inspiration from the season when choosing your color scheme. In the fall, earthy tones like mustard, burgundy, and forest green work well against the backdrop of changing leaves. For spring or summer, pastel shades and light fabrics reflect the fresh, airy feel of the season. Winter portraits may call for deeper shades like navy, maroon, or emerald, paired with cozy knits.
+Take inspiration from the season when choosing your colour scheme. In the fall, earthy tones like mustard, burgundy, and forest green work well against the backdrop of changing leaves. For spring or summer, pastel shades and light fabrics reflect the fresh, airy feel of the season. Winter portraits may call for deeper shades like navy, maroon, or emerald, paired with cosy knits.
 
-\9. Accessorize Thoughtfully
+\9. Accessorise Thoughtfully
 
-Accessories can enhance your family’s outfits but should be kept minimal and tasteful. A statement necklace, a stylish hat, or a patterned scarf can add personality without overwhelming the photo. For children, consider simple headbands or bows instead of large, distracting accessories. Be mindful of jewelry that might catch the light in an unflattering way.
+Accessories can enhance your family’s outfits but should be kept minimal and tasteful. A statement necklace, a stylish hat, or a patterned scarf can add personality without overwhelming the photo. For children, consider simple headbands or bows instead of large, distracting accessories. Be mindful of jewellery that might catch the light in an unflattering way.
 
 \10. Plan Ahead and Try On Outfits
 

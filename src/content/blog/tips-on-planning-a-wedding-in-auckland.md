@@ -17,7 +17,7 @@ Certainly! 🌸 Planning a wedding in Auckland, New Zealand offers a delightful 
 2. [**Garden Elegance at Sorrento In The Park**](https://www.markovina.co.nz/)
    - **Location**: Central Auckland.
    - **Why?**: Sorrento offers a unique garden setting, perfect for a romantic outdoor ceremony.
-   - **Tip**: Decorate with fairy lights, lanterns, and floral arches for a magical ambiance.
+   - **Tip**: Decorate with fairy lights, lanterns, and floral arches for a magical ambience.
 3. [**Historic Charm at St Matthew-in-the-City**](https://www.markovina.co.nz/)
    - **Venue**: A majestic neo-Gothic church in the heart of Auckland.
    - **Why?**: The stunning architecture and stained glass windows create an ethereal backdrop.
@@ -33,8 +33,8 @@ Certainly! 🌸 Planning a wedding in Auckland, New Zealand offers a delightful 
 6. [**Ocean Views at Okahu**](https://www.markovina.co.nz/)
    - **Location**: Overlooking Okahu Bay.
    - **Why?**: Panoramic views of Rangitoto Island and the sparkling ocean.
-   - **Tip**: Opt for a beach-themed reception with seashell centerpieces.
-7. [**Historical Ambiance at The Officers Mess**](https://www.theofficersmess.co.nz/feedback)
+   - **Tip**: Opt for a beach-themed reception with seashell centrepieces.
+7. [**Historical Ambience at The Officers Mess**](https://www.theofficersmess.co.nz/feedback)
    - **Venue**: Historic Fort Takapuna.
    - **Why?**: Unique and charming, with a touch of nostalgia.
    - **Tip**: Incorporate vintage elements like antique keys or old maps.

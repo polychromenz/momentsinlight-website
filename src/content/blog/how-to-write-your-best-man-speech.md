@@ -25,7 +25,7 @@ thumbnail: "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/mono/
 6. Avoid Talking About Yourself\
    Remember, it's their day, not yours. Focus on the couple and their love story rather than your own experiences.
 7. Be Funny (But in Moderation)\
-   Humor is essential, but avoid overdoing it. Share light-hearted anecdotes without embarrassing anyone.
+   Humour is essential, but avoid overdoing it. Share light-hearted anecdotes without embarrassing anyone.
 8. End with Genuine Congratulations\
    Conclude your speech by sincerely congratulating the bride and groom. Wish them a lifetime of happiness and love.
 

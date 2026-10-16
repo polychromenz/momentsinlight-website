@@ -1,7 +1,7 @@
 ---
 title: "Markovina Vineyard Estate Wedding Photography"
 seoTitle: "Markovina Vineyard Estate Wedding Photos"
-description: "Markovina Vineyard Estate weddings in Auckland: golden-hour portraits, vineyard gardens, Barrel Room ceremonies. Full-day coverage from $2,990."
+description: "Markovina Vineyard Estate weddings in Auckland: golden-hour portraits, vineyard gardens, Barrel Room ceremonies. Full-day coverage from $2,995."
 date: 2025-09-01
 updated: 2025-10-14
 author: "Tony Gorham"
@@ -13,7 +13,7 @@ Set among rolling vines and landscaped gardens, **Markovina Vineyard Estate** is
 
 I’ve photographed here multiple times, including **Paige & Connor’s wedding** — timed for the ten-year anniversary of their first date. Their day showed off everything Markovina has to offer: romantic gardens, a dramatic indoor ceremony space as backup, and golden light for portraits.
 
-➡️ See my wedding photography pricing (full-day coverage from **$2,990**) or [contact me](https://www.momentsinlight.co.nz/contact) to check availability.
+➡️ See my wedding photography pricing (full-day coverage from **$2,995**) or [contact me](https://www.momentsinlight.co.nz/contact) to check availability.
 
 ## Best Photo Locations at Markovina Vineyard Estate
 
@@ -25,7 +25,7 @@ I’ve photographed here multiple times, including **Paige & Connor’s wedding*
 
 ## Sample Timelines for Golden-Hour Portraits
 
-For an **8-hour full-day package** (from $2,990), a typical flow looks like this:
+With the **Deluxe Experience** (8+ hours, $3,995), a typical flow looks like this:
 
 - **1:30–3:00pm:** Bridal prep & details
 - **3:00–3:30pm:** Ceremony outdoors (or indoors if wet weather)

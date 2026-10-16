@@ -56,7 +56,7 @@ During your trial session, your photographer will guide you through various pose
 
 ### **4. Test Your Wedding Look**
 
-If you choose to do a pre-wedding shoot in your wedding attire with hair and makeup done, it can be a great way to see how everything photographs. You might realize that certain makeup tones or dress styles work better in pictures than others, allowing for last-minute adjustments.
+If you choose to do a pre-wedding shoot in your wedding attire with hair and makeup done, it can be a great way to see how everything photographs. You might realise that certain makeup tones or dress styles work better in pictures than others, allowing for last-minute adjustments.
 
 ### **5. Capture Beautiful, Candid Moments**
 

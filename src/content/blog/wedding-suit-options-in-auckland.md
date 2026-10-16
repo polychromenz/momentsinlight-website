@@ -16,7 +16,7 @@ When it comes to dressing your best for your wedding day, finding the perfect su
 - **Frank Casey**\
    **Why Choose Frank Casey?**\
    [Explore Frank Casey](https://frankcaseysuithire.co.nz/)
-   1. **Best Fitting Black Tie Hire**: Frank Casey specializes in black tie events, tuxedo hire, wedding suits, and school ball attire. Their suits are meticulously fitted, ensuring you look sharp for your special occasion.
+   1. **Best Fitting Black Tie Hire**: Frank Casey specialises in black tie events, tuxedo hire, wedding suits, and school ball attire. Their suits are meticulously fitted, ensuring you look sharp for your special occasion.
    2. **Friendly and Professional Staff**: Frank Casey’s knowledgeable staff will assist you in choosing the right suit for your event.
    3. **Convenient Options**: You can either visit their store in Parnell or use their online app to select your suit.
    4. **Nationwide Service**: Frank Casey offers nationwide delivery, making it easy for you to get the perfect suit wherever you are in New Zealand.

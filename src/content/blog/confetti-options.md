@@ -28,14 +28,14 @@ Let’s explore the pros and cons of using rice and paper confetti for weddings 
 
 ### Pros:
 
-1. **Colorful and Customizable**: Paper confetti comes in various colors, shapes, and sizes. You can match it to your wedding theme or choose a mix of vibrant hues.
+1. **Colourful and Customisable**: Paper confetti comes in various colours, shapes, and sizes. You can match it to your wedding theme or choose a mix of vibrant hues.
 2. **Lightweight and Photogenic**: Paper confetti floats beautifully in the air, creating stunning photo opportunities. It adds a whimsical touch to your wedding exit.
 3. **Biodegradable Options**: Some paper confetti is made from biodegradable materials, making it an eco-friendly choice.
 
 ### Cons:
 
 1. **Environmental Impact**: Not all paper confetti is biodegradable. Traditional paper confetti can take longer to break down, especially if it contains synthetic dyes or coatings.
-2. **Venue Restrictions**: Many wedding venues in New Zealand prefer natural confetti (such as petals) to minimize environmental impact. Check with your venue before choosing paper confetti.
+2. **Venue Restrictions**: Many wedding venues in New Zealand prefer natural confetti (such as petals) to minimise environmental impact. Check with your venue before choosing paper confetti.
 3. **Clean-Up Effort**: While paper confetti is lighter than rice, it still requires clean-up. Some venues may charge extra for confetti removal.
 
 ## Eco-Friendly Rice-Paper Confetti
