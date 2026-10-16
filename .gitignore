@@ -11,3 +11,4 @@ Thumbs.db
 # Cloudflare local dev
 .wrangler/
 .dev.vars
+email-preview.html

@@ -1,0 +1,27 @@
+# The weekly stats email (scripts/weekly-stats-email.mjs): every Friday at 8am NZ time.
+# Needs the CF_ANALYTICS_TOKEN and RESEND_API_KEY secrets
+# (GitHub > the repository > Settings > Secrets and variables > Actions).
+# "Run workflow" on the Actions tab sends one straight away.
+name: Weekly stats email
+
+on:
+  schedule:
+    # Thursday 19:00 and 20:00 UTC: one of them is Friday 8am in NZ (daylight saving or not);
+    # the script only sends from that one.
+    - cron: '0 19,20 * * 4'
+  workflow_dispatch: {}
+
+jobs:
+  email:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Send the email
+        env:
+          CF_ANALYTICS_TOKEN: ${{ secrets.CF_ANALYTICS_TOKEN }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          CLOUDFLARE_ACCOUNT_ID: ba83c09be6ee9fa1e0ae58f61811a3db
+        run: node scripts/weekly-stats-email.mjs

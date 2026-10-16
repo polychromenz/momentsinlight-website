@@ -1,0 +1,244 @@
+{
+ "date": "2026-10-16T09:44:20.833Z",
+ "site": "https://www.momentsinlight.co.nz",
+ "runs": 3,
+ "results": [
+  {
+   "device": "mobile",
+   "page": "/",
+   "score": 89,
+   "lcp": 2.1,
+   "fcp": 1.1,
+   "tbt": 416,
+   "cls": 0,
+   "mb": 0.89,
+   "requests": 31,
+   "why": [
+    "script 454ms: https://www.googletagmanager.com/gtag/js",
+    "script 399ms: https://www.momentsinlight.co.nz/",
+    "script 226ms: https://connect.facebook.net/en_US/fbevents.js",
+    "script 186ms: https://connect.facebook.net/signals/config/813954996871495",
+    "Improve image delivery (Est savings of 222 KiB)"
+   ]
+  },
+  {
+   "device": "mobile",
+   "page": "/weddings",
+   "score": 86,
+   "lcp": 2.6,
+   "fcp": 1.5,
+   "tbt": 434,
+   "cls": 0,
+   "mb": 0.63,
+   "requests": 25,
+   "why": [
+    "script 382ms: https://www.googletagmanager.com/gtag/js",
+    "script 286ms: https://www.momentsinlight.co.nz/weddings",
+    "script 218ms: https://connect.facebook.net/en_US/fbevents.js",
+    "script 212ms: https://connect.facebook.net/signals/config/813954996871495"
+   ]
+  },
+  {
+   "device": "mobile",
+   "page": "/wedding-galleries",
+   "score": 86,
+   "lcp": 2.8,
+   "fcp": 1.7,
+   "tbt": 362,
+   "cls": 0,
+   "mb": 0.97,
+   "requests": 30,
+   "why": [
+    "script 510ms: https://www.googletagmanager.com/gtag/js",
+    "script 199ms: https://www.momentsinlight.co.nz/wedding-galleries",
+    "script 188ms: https://connect.facebook.net/en_US/fbevents.js",
+    "Improve image delivery (Est savings of 13 KiB)",
+    "LCP request discovery"
+   ]
+  },
+  {
+   "device": "mobile",
+   "page": "/contact",
+   "score": 88,
+   "lcp": 1.8,
+   "fcp": 0.8,
+   "tbt": 463,
+   "cls": 0,
+   "mb": 1.04,
+   "requests": 42,
+   "why": [
+    "script 327ms: https://www.googletagmanager.com/gtag/js",
+    "script 186ms: https://connect.facebook.net/en_US/fbevents.js",
+    "script 181ms: https://www.momentsinlight.co.nz/contact"
+   ]
+  },
+  {
+   "device": "mobile",
+   "page": "/about",
+   "score": 81,
+   "lcp": 2.1,
+   "fcp": 1.7,
+   "tbt": 670,
+   "cls": 0,
+   "mb": 0.6,
+   "requests": 27,
+   "why": [
+    "script 540ms: https://www.googletagmanager.com/gtag/js",
+    "script 310ms: https://connect.facebook.net/en_US/fbevents.js",
+    "script 236ms: https://www.momentsinlight.co.nz/about",
+    "script 154ms: https://connect.facebook.net/signals/config/813954996871495",
+    "Improve image delivery (Est savings of 17 KiB)",
+    "LCP request discovery"
+   ]
+  },
+  {
+   "device": "mobile",
+   "page": "/blog/ellie-and-ryan-tui-hills",
+   "score": 79,
+   "lcp": 3.5,
+   "fcp": 1.4,
+   "tbt": 400,
+   "cls": 0,
+   "mb": 0.8,
+   "requests": 27,
+   "why": [
+    "script 420ms: https://www.googletagmanager.com/gtag/js",
+    "script 252ms: https://www.momentsinlight.co.nz/blog/ellie-and-ryan-tui-hills",
+    "script 231ms: https://connect.facebook.net/en_US/fbevents.js",
+    "script 176ms: https://connect.facebook.net/signals/config/813954996871495",
+    "Improve image delivery (Est savings of 48 KiB)"
+   ]
+  },
+  {
+   "device": "mobile",
+   "page": "/bridgewater-estate-wedding-photographer",
+   "score": 90,
+   "lcp": 3.2,
+   "fcp": 1.4,
+   "tbt": 176,
+   "cls": 0,
+   "mb": 0.82,
+   "requests": 26,
+   "why": [
+    "script 244ms: https://www.googletagmanager.com/gtag/js",
+    "Improve image delivery (Est savings of 56 KiB)"
+   ]
+  },
+  {
+   "device": "desktop",
+   "page": "/",
+   "score": 78,
+   "lcp": 1,
+   "fcp": 0.4,
+   "tbt": 439,
+   "cls": 0,
+   "mb": 0.95,
+   "requests": 31,
+   "why": [
+    "script 369ms: https://www.googletagmanager.com/gtag/js",
+    "script 317ms: https://www.momentsinlight.co.nz/",
+    "script 190ms: https://connect.facebook.net/en_US/fbevents.js",
+    "Improve image delivery (Est savings of 86 KiB)"
+   ]
+  },
+  {
+   "device": "desktop",
+   "page": "/weddings",
+   "score": 96,
+   "lcp": 0.7,
+   "fcp": 0.3,
+   "tbt": 165,
+   "cls": 0,
+   "mb": 0.75,
+   "requests": 26,
+   "why": [
+    "script 224ms: https://www.googletagmanager.com/gtag/js",
+    "script 176ms: https://www.momentsinlight.co.nz/weddings"
+   ]
+  },
+  {
+   "device": "desktop",
+   "page": "/wedding-galleries",
+   "score": 98,
+   "lcp": 0.6,
+   "fcp": 0.3,
+   "tbt": 137,
+   "cls": 0,
+   "mb": 0.98,
+   "requests": 44,
+   "why": [
+    "script 303ms: https://www.googletagmanager.com/gtag/js",
+    "script 155ms: https://www.momentsinlight.co.nz/wedding-galleries",
+    "Improve image delivery (Est savings of 147 KiB)",
+    "LCP request discovery"
+   ]
+  },
+  {
+   "device": "desktop",
+   "page": "/contact",
+   "score": 81,
+   "lcp": 0.4,
+   "fcp": 0.3,
+   "tbt": 446,
+   "cls": 0,
+   "mb": 1.02,
+   "requests": 43,
+   "why": [
+    "script 284ms: https://www.googletagmanager.com/gtag/js",
+    "script 170ms: https://connect.facebook.net/signals/config/813954996871495",
+    "script 153ms: https://maps.googleapis.com/maps-api-v3/api/js/66/9d/places.js",
+    "LCP request discovery"
+   ]
+  },
+  {
+   "device": "desktop",
+   "page": "/about",
+   "score": 77,
+   "lcp": 0.5,
+   "fcp": 0.5,
+   "tbt": 557,
+   "cls": 0,
+   "mb": 0.6,
+   "requests": 29,
+   "why": [
+    "script 445ms: https://www.googletagmanager.com/gtag/js",
+    "script 216ms: https://www.momentsinlight.co.nz/about",
+    "script 207ms: https://connect.facebook.net/en_US/fbevents.js",
+    "Improve image delivery (Est savings of 21 KiB)",
+    "LCP request discovery"
+   ]
+  },
+  {
+   "device": "desktop",
+   "page": "/blog/ellie-and-ryan-tui-hills",
+   "score": 93,
+   "lcp": 0.7,
+   "fcp": 0.3,
+   "tbt": 197,
+   "cls": 0,
+   "mb": 0.76,
+   "requests": 27,
+   "why": [
+    "script 232ms: https://www.googletagmanager.com/gtag/js",
+    "script 172ms: https://www.momentsinlight.co.nz/blog/ellie-and-ryan-tui-hills",
+    "Improve image delivery (Est savings of 68 KiB)"
+   ]
+  },
+  {
+   "device": "desktop",
+   "page": "/bridgewater-estate-wedding-photographer",
+   "score": 83,
+   "lcp": 1.3,
+   "fcp": 0.3,
+   "tbt": 319,
+   "cls": 0,
+   "mb": 1.36,
+   "requests": 27,
+   "why": [
+    "script 259ms: https://www.googletagmanager.com/gtag/js",
+    "script 188ms: https://connect.facebook.net/en_US/fbevents.js",
+    "Improve image delivery (Est savings of 414 KiB)"
+   ]
+  }
+ ]
+}
