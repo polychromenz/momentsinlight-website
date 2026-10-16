@@ -1,0 +1,76 @@
+---
+// The studio's frame: private (no search engines), the site's fonts and colours, a simple bar
+// at the top. No site menu or footer.
+import '@fontsource/raleway/300.css';
+import '@fontsource/raleway/400.css';
+import '@fontsource/raleway/500.css';
+import '@fontsource/raleway/600.css';
+import '../styles/global.css';
+
+interface Props { title: string }
+const { title } = Astro.props;
+---
+<!doctype html>
+<html lang="en-NZ">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>{title} · Moments Studio</title>
+    <link rel="icon" href="/favicon.ico" sizes="any" />
+  </head>
+  <body class="studio-body">
+    <header class="studio-bar">
+      <a class="studio-brand" href="/studio">Moments <span>Studio</span></a>
+      <slot name="bar" />
+    </header>
+    <slot />
+  </body>
+</html>
+
+<style is:global>
+  .studio-body { background: var(--champagne); min-height: 100vh; }
+  /* Anything switched off stays off, whatever its layout says. */
+  .studio-body [hidden] { display: none !important; }
+  .studio-bar {
+    position: sticky;
+    top: 0;
+    z-index: 40;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+    padding: 12px clamp(14px, 3vw, 32px);
+    background: var(--white);
+    border-bottom: 1px solid #e8dfd2;
+  }
+  .studio-brand { font-size: 18px; font-weight: 300; color: var(--ink); text-decoration: none; letter-spacing: 0.02em; margin-right: auto; }
+  .studio-brand span { font-weight: 600; color: var(--green); }
+  .s-btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 10px 18px; border-radius: 12px 0; border: 1px solid var(--green);
+    background: var(--white); color: var(--green); font: inherit; font-size: 14px; font-weight: 600;
+    cursor: pointer; text-decoration: none; transition: background-color 0.3s var(--ease), color 0.3s var(--ease), border-radius 0.4s var(--ease);
+  }
+  .s-btn:hover { opacity: 1; border-radius: 0 12px; }
+  .s-btn--solid { background: var(--green); color: var(--white); }
+  .s-btn--solid:hover { background: var(--green-dark); }
+  .s-btn--quiet { border-color: transparent; background: transparent; }
+  .s-btn--quiet:hover { background: rgb(90 94 59 / 0.08); }
+  .s-btn--danger { border-color: #b3261e; color: #b3261e; }
+  .s-btn:disabled { opacity: 0.5; cursor: default; }
+  .s-chip { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; letter-spacing: 0.04em; }
+  .s-chip--draft { background: #efe4dc; color: #7a4b2a; }
+  .s-chip--scheduled { background: #e3e7f6; color: #2f3f86; }
+  .s-chip--live { background: #e6ecd9; color: #3e4229; }
+  .s-toast {
+    position: fixed; left: 50%; bottom: 24px; transform: translate(-50%, 20px); z-index: 100;
+    max-width: min(560px, calc(100vw - 32px)); padding: 14px 20px; border-radius: 16px 0;
+    background: var(--olive); color: var(--champagne); font-size: 15px; line-height: 1.5;
+    box-shadow: 0 14px 30px -16px rgb(0 0 0 / 0.5); opacity: 0; pointer-events: none;
+    transition: opacity 0.3s var(--ease), transform 0.4s var(--ease);
+  }
+  .s-toast.show { opacity: 1; transform: translate(-50%, 0); pointer-events: auto; }
+  .s-toast.error { background: #8c1d18; }
+  .s-toast a { color: var(--champagne); }
+</style>

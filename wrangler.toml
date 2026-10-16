@@ -10,3 +10,8 @@ binding = "DB"
 database_name = "momentsinlight-signups"
 database_id = "59f39416-41d5-4ae3-aed9-70a36b2b812c"
 migrations_dir = "migrations"
+
+# Cloudflare Workers AI, for the studio's suggested photo descriptions and Google titles
+# (functions/api/studio/describe.js and seo.js). Free allowance covers normal use.
+[ai]
+binding = "AI"

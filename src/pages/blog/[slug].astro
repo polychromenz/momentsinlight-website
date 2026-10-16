@@ -15,10 +15,10 @@ import ReviewCarousel from '../../components/ReviewCarousel.astro';
 import { site } from '../../data/site';
 import reviews from '../../data/reviews.json';
 import { sized } from '../../lib/images.mjs';
-import { storyName } from '../../lib/blog';
+import { storyName, isLive } from '../../lib/blog';
 
 export async function getStaticPaths() {
-  const posts = (await getCollection('blog')).sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+  const posts = (await getCollection('blog', isLive)).sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
   return posts.map((post) => ({ params: { slug: post.id }, props: { post, posts } }));
 }
 const { post, posts } = Astro.props;

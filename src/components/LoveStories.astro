@@ -4,9 +4,9 @@
 // Wedding category appears here automatically.
 import { getCollection } from 'astro:content';
 import Img from './Img.astro';
-import { storyName } from '../lib/blog';
+import { storyName, isLive } from '../lib/blog';
 
-const posts = (await getCollection('blog'))
+const posts = (await getCollection('blog', isLive))
   .filter((p) => p.data.categories.some((c) => c.toLowerCase() === 'wedding') && p.data.thumbnail)
   .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf())
   .slice(0, 3);

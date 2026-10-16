@@ -11,6 +11,7 @@ export default defineConfig({
   // Styles go inside each page rather than a separate file the browser must fetch before it
   // can draw anything (they're small: ~20KB uncompressed).
   build: { format: 'file', inlineStylesheets: 'always' },
-  integrations: [sitemap()],
+  // The studio (the private post editor) stays out of the sitemap.
+  integrations: [sitemap({ filter: (page) => !page.includes('/studio') })],
   markdown: { rehypePlugins: [rehypeImages] },
 });

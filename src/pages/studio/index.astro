@@ -1,0 +1,96 @@
+---
+// Moments Studio: your posts, newest first, with search and filters, and a New post button.
+import StudioLayout from '../../layouts/StudioLayout.astro';
+---
+<StudioLayout title="Your posts">
+  <a slot="bar" class="s-btn s-btn--quiet" href="/" target="_blank" rel="noopener">View site ↗</a>
+  <a slot="bar" class="s-btn s-btn--solid" href="/studio/edit?new=1">+ New post</a>
+
+  <main class="list-page">
+    <div class="tools">
+      <input class="search" type="search" placeholder="Search posts…" aria-label="Search posts" />
+      <div class="filters" role="group" aria-label="Show">
+        <button type="button" data-filter="all" class="on">All</button>
+        <button type="button" data-filter="Wedding">Love stories</button>
+        <button type="button" data-filter="Portrait">Portraits</button>
+        <button type="button" data-filter="Family">Family</button>
+        <button type="button" data-filter="article">Articles</button>
+        <button type="button" data-filter="unpublished">Drafts &amp; scheduled</button>
+      </div>
+    </div>
+    <p class="status" aria-live="polite">Loading your posts…</p>
+    <ul class="posts"></ul>
+  </main>
+</StudioLayout>
+
+<script>
+  type Post = { id: string; title: string; date: string; draft: boolean; categories: string[]; venue: string; cover: string; coverPosition: string; photos: number };
+  const list = document.querySelector<HTMLUListElement>('.posts')!;
+  const status = document.querySelector<HTMLElement>('.status')!;
+  const search = document.querySelector<HTMLInputElement>('.search')!;
+  let posts: Post[] = [];
+  let filter = 'all';
+
+  const thumb = (src: string) => (src.startsWith('https://imagedelivery.net/') ? src.replace(/\/[^/]+$/, '/w=500,q=75') : src);
+  const presets: Record<string, string> = { top: '50% 0%', upper: '50% 25%', center: '50% 50%', lower: '50% 75%', bottom: '50% 100%' };
+  const state = (p: Post) => (p.draft ? 'draft' : p.date > new Date().toISOString().slice(0, 10) ? 'scheduled' : 'live');
+  const kind = (p: Post) => (['Wedding', 'Portrait', 'Family'].find((c) => p.categories.includes(c)) ?? 'article');
+  const kindLabel: Record<string, string> = { Wedding: 'Love story', Portrait: 'Portrait', Family: 'Family', article: 'Article' };
+  const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
+
+  const render = () => {
+    const q = search.value.trim().toLowerCase();
+    const shown = posts.filter((p) =>
+      (filter === 'all' || (filter === 'unpublished' ? state(p) !== 'live' : kind(p) === filter)) &&
+      (!q || `${p.title} ${p.venue} ${p.id}`.toLowerCase().includes(q)));
+    status.textContent = shown.length ? `${shown.length} post${shown.length === 1 ? '' : 's'}` : 'No posts match.';
+    list.innerHTML = shown.map((p) => {
+      const s = state(p);
+      const chip = s === 'live' ? '' : `<span class="s-chip s-chip--${s}">${s === 'draft' ? 'Draft' : 'Scheduled ' + p.date}</span>`;
+      return `<li><a href="/studio/edit?id=${encodeURIComponent(p.id)}">
+        <span class="cover">${p.cover ? `<img src="${esc(thumb(p.cover))}" alt="" loading="lazy" style="object-position:${presets[p.coverPosition] ?? (p.coverPosition || '50% 50%')}">` : '<span class="no-cover">No photo yet</span>'}</span>
+        <span class="meta">${kindLabel[kind(p)]} · ${new Date(p.date).toLocaleDateString('en-NZ', { day: 'numeric', month: 'short', year: 'numeric' })}${p.photos ? ` · ${p.photos} photos` : ''} ${chip}</span>
+        <span class="title">${esc(p.title)}</span>
+      </a></li>`;
+    }).join('');
+  };
+
+  document.querySelectorAll<HTMLButtonElement>('.filters button').forEach((b) =>
+    b.addEventListener('click', () => {
+      document.querySelectorAll('.filters button').forEach((x) => x.classList.toggle('on', x === b));
+      filter = b.dataset.filter!;
+      render();
+    }),
+  );
+  search.addEventListener('input', render);
+
+  fetch('/studio/posts.json', { cache: 'no-store' })
+    .then((r) => r.json())
+    .then((d) => {
+      posts = d.posts;
+      // Posts saved in the last few minutes may not be in the list yet (the site is still
+      // rebuilding); the editor keeps a note of them.
+      const recent = JSON.parse(localStorage.getItem('studio-recent') ?? '[]') as Post[];
+      for (const r of recent) if (!posts.some((p) => p.id === r.id)) posts.unshift(r);
+      render();
+    })
+    .catch(() => { status.textContent = 'Couldn’t load your posts. Check your connection and reload.'; });
+</script>
+
+<style>
+  .list-page { max-width: 1240px; margin: 0 auto; padding: 28px clamp(14px, 3vw, 32px) 80px; }
+  .tools { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; margin-bottom: 18px; }
+  .search { flex: 1 1 260px; padding: 12px 16px; border: 1px solid #ddd3c4; border-radius: 12px 0; font: inherit; font-size: 15px; background: var(--white); }
+  .filters { display: flex; flex-wrap: wrap; gap: 6px; }
+  .filters button { padding: 8px 14px; border: 1px solid #ddd3c4; border-radius: 999px; background: var(--white); font: inherit; font-size: 14px; cursor: pointer; color: #444; }
+  .filters button.on { background: var(--green); border-color: var(--green); color: var(--white); }
+  .status { color: #777; font-size: 14px; margin: 0 0 14px; }
+  .posts { list-style: none; margin: 0; padding: 0; display: grid; gap: 22px; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
+  .posts :global(a) { display: flex; flex-direction: column; gap: 8px; text-decoration: none; color: var(--ink); background: var(--white); border-radius: 24px 0; overflow: hidden; padding-bottom: 16px; transition: transform 0.4s var(--ease), box-shadow 0.4s var(--ease); }
+  .posts :global(a:hover) { opacity: 1; transform: translateY(-3px); box-shadow: 0 16px 28px -22px rgb(0 0 0 / 0.5); }
+  .posts :global(.cover) { display: block; aspect-ratio: 3 / 2; background: #eee7dc; }
+  .posts :global(.cover img) { width: 100%; height: 100%; object-fit: cover; }
+  .posts :global(.no-cover) { display: grid; place-items: center; height: 100%; color: #999; font-size: 14px; }
+  .posts :global(.meta) { padding: 0 16px; font-size: 12px; color: #777; letter-spacing: 0.03em; }
+  .posts :global(.title) { padding: 0 16px; font-size: 17px; line-height: 1.35; }
+</style>

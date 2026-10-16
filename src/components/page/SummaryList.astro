@@ -7,7 +7,7 @@
 // Columns come from the live layout and are set per breakpoint by FluidSection (--cols).
 import { getCollection } from 'astro:content';
 import Img from '../Img.astro';
-import { coverPosition } from '../../lib/blog';
+import { coverPosition, isLive } from '../../lib/blog';
 
 interface Props { block: any }
 const { block: b } = Astro.props;
@@ -15,7 +15,7 @@ const { block: b } = Astro.props;
 let items: any[] = b.items ?? [];
 if (b.filter) {
   const { categories, tag, limit } = b.filter as { categories?: string[]; tag?: string; limit?: number };
-  const posts = (await getCollection('blog'))
+  const posts = (await getCollection('blog', isLive))
     .filter((p) =>
       (categories ? p.data.categories.some((c) => categories.includes(c)) : true) &&
       (tag ? p.data.tags.includes(tag) : true),

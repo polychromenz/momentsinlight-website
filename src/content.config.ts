@@ -29,6 +29,8 @@ const blog = defineCollection({
     // The couple's or client's Google review to show in the post (reviewer's name as in
     // src/data/reviews.json).
     review: z.string().optional(),
+    // Unpublished: kept in the studio, left out of the live site.
+    draft: z.boolean().default(false),
     // Width and height are optional so photos added through Pages CMS work without them;
     // when present they reserve space while lazy images load, so the page doesn't jump.
     gallery: z

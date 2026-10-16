@@ -3,9 +3,15 @@ import { getCollection } from 'astro:content';
 /** Posts per page on /blog, matching the live site. */
 export const PAGE_SIZE = 20;
 
-/** All posts, newest first. */
+/** Whether a post belongs on the site: not a draft, and its date has arrived (so a post dated
+ *  in the future is scheduled: it appears with the first build on or after that day). Local
+ *  previews (npm run dev) show everything. */
+export const isLive = (p: { data: { draft?: boolean; date: Date } }) =>
+  import.meta.env.DEV || (!p.data.draft && p.data.date.valueOf() <= Date.now());
+
+/** All live posts, newest first. */
 export async function sortedPosts() {
-  return (await getCollection('blog')).sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+  return (await getCollection('blog', isLive)).sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
 }
 
 /** A post's cover photo position as CSS object-position: Pages CMS presets, or an exact value. */
