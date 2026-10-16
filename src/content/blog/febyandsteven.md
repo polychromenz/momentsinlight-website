@@ -7,6 +7,7 @@ updated: 2026-08-17
 author: "Tony Gorham"
 categories: ["Wedding"]
 tags: []
+review: "Steven Dove"
 thumbnail: "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2025-feby-and-steven/colour/_30A8364-Edit/public"
 gallery:
   - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2025-feby-and-steven/colour/_30A8226/public","alt":"Feby and Steven touch foreheads on the veranda","width":1638,"height":2048}

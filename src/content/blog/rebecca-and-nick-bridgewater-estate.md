@@ -7,6 +7,7 @@ updated: 2026-08-17
 author: "Tony Gorham"
 categories: ["Wedding"]
 tags: ["bridgewater"]
+review: "Rebecca Lindner"
 thumbnail: "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-rebecca-and-nick/colour/_30A1292/public"
 gallery:
   - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-rebecca-and-nick/colour/_30A1292/public","alt":"Guests with umbrellas watch Rebecca walk down the aisle at Bridgewater Estate","width":2048,"height":1638}

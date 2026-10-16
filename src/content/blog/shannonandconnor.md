@@ -7,6 +7,7 @@ updated: 2025-12-04
 author: "Tony Gorham"
 categories: ["Wedding"]
 tags: []
+review: "Shannon Boyes"
 thumbnail: "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2025-shannon-and-connor/mono/_Q9A5190-Edit-Edit-2-Edit/public"
 gallery:
   - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2025-shannon-and-connor/colour/_30A6373-Edit/public","alt":"Shannon's veil catches the wind as she stands with Connor in the garden","width":2048,"height":1639}

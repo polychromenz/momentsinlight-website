@@ -7,6 +7,7 @@ updated: 2026-04-01
 author: "Tony Gorham"
 categories: ["Wedding"]
 tags: []
+review: "james"
 thumbnail: "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2025-gel-and-james/mono/_MIL4907/public"
 gallery:
   - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2025-gel-and-james/mono/_MIL4880-Edit/public","alt":"Black and white photo of Gel and James beneath an olive tree in a walled garden","width":2048,"height":1365}
