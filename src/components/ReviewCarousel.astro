@@ -9,14 +9,16 @@ interface Props {
   /** Reviewer names, in the order to show them. */
   names: string[];
   label?: string;
+  /** Smaller text and marks, for a review sitting within a post rather than a feature band. */
+  compact?: boolean;
 }
-const { names, label = 'What couples say' } = Astro.props;
+const { names, label = 'What couples say', compact = false } = Astro.props;
 const picked = names
   .map((n) => reviews.reviews.find((r) => r.name === n))
   .filter((r): r is (typeof reviews.reviews)[number] => !!r);
 const count = reviews.reviews.length;
 ---
-<div class="reviews" data-reviews aria-roledescription="carousel" aria-label={label} tabindex="0">
+<div class:list={['reviews', { compact }]} data-reviews aria-roledescription="carousel" aria-label={label} tabindex="0">
   <div class="track">
     {picked.map((r, i) => (
       <figure class:list={['review', { on: i === 0 }]} aria-hidden={i === 0 ? undefined : 'true'}>
@@ -143,6 +145,13 @@ const count = reviews.reviews.length;
   .dot.on::before { background: var(--champagne); transform: scale(1.3); }
   .all { display: inline-block; margin-top: 22px; color: var(--champagne); font-size: 15px; }
 
+  .compact blockquote { padding-top: 22px; }
+  .compact blockquote p { font-size: clamp(16px, 0.35vw + 15px, 19px); line-height: 1.7; }
+  .compact .mark { font-size: 60px; }
+  .compact .open { top: -12px; }
+  .compact .close { height: 26px; }
+  .compact figcaption { margin-top: 12px; font-size: 12px; }
+  .compact .all { margin-top: 14px; font-size: 14px; }
   @media (prefers-reduced-motion: reduce) {
     .review, .review.on { transition: none; transform: none; }
   }

@@ -91,6 +91,15 @@ const jsonLd = {
       <Content />
       <p class="byline">Written by {d.author}, wedding and portrait photographer, Auckland.</p>
     </div>
+  </article>
+
+  {review && (
+    <section class="review-band">
+      <div class="wrap" data-reveal><ReviewCarousel compact names={[review.name]} label={`${review.name}’s review`} /></div>
+    </section>
+  )}
+
+  <div class="post-photos">
 
     {photos.length > 0 && (
       galleryStyle === 'slideshow' ? (
@@ -103,13 +112,7 @@ const jsonLd = {
         </div>
       )
     )}
-  </article>
-
-  {review && (
-    <section class="review-band">
-      <div class="wrap" data-reveal><ReviewCarousel names={[review.name]} label={`${review.name}’s review`} /></div>
-    </section>
-  )}
+  </div>
 
   {more.length > 0 && (
     <section class="more wrap">
@@ -144,7 +147,8 @@ const jsonLd = {
   @keyframes draw { from { transform: scaleX(0); } to { transform: none; } }
 
   /* The story or article text, in a comfortable reading column. */
-  .post { padding-block: 48px 72px; }
+  .post { padding-block: 48px 48px; }
+  .post-photos { padding-block: 8px 72px; }
   .prose { max-width: calc(720px + 2 * var(--pad)); margin: 0 auto; }
   .prose :global(p) { color: #333; line-height: 1.9; font-size: clamp(16px, 0.2vw + 15.5px, 18px); }
   .post--wedding .prose > :global(p:first-of-type),
@@ -185,8 +189,8 @@ const jsonLd = {
   .photos { max-width: calc(1240px + 2 * var(--pad)); margin: 0 auto; }
   .post-slideshow { margin-top: 40px; }
 
-  .review-band { background: var(--green); color: var(--champagne); padding-block: 80px; }
-  .review-band .wrap { max-width: calc(1000px + 2 * var(--pad)); margin: 0 auto; }
+  .review-band { background: var(--green); color: var(--champagne); padding-block: 48px; margin-bottom: 32px; }
+  .review-band .wrap { max-width: calc(760px + 2 * var(--pad)); margin: 0 auto; }
 
   .more { max-width: calc(1280px + 2 * var(--pad)); margin: 0 auto; padding-block: 80px; }
   .more-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 12px 32px; margin-bottom: 36px; }
@@ -201,8 +205,9 @@ const jsonLd = {
     .hero-eyebrow { color: var(--white); font-size: 13px; margin-bottom: 14px; }
     .hero-title { color: var(--white); font-size: clamp(26px, 6cqi, 64px); }
     .intro { padding-block: 110px 32px; }
-    .post { padding-block: 72px 110px; }
-    .review-band { padding-block: 120px; }
+    .post { padding-block: 72px 56px; }
+    .post-photos { padding-bottom: 110px; }
+    .review-band { padding-block: 64px; margin-bottom: 40px; }
     .more { padding-block: 110px; }
     .closing { padding-block: 120px; }
   }
