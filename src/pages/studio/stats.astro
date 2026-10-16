@@ -1,0 +1,179 @@
+---
+// Moments Studio: visitor numbers from Cloudflare Web Analytics.
+import StudioLayout from '../../layouts/StudioLayout.astro';
+---
+<StudioLayout title="Stats">
+  <a slot="bar" class="s-btn s-btn--quiet" href="/studio">Posts</a>
+  <a slot="bar" class="s-btn s-btn--quiet" href="/studio/reviews">★ Reviews</a>
+
+  <main class="stats-page">
+    <div class="head">
+      <h1>Your visitors</h1>
+      <div class="ranges" role="group" aria-label="Period">
+        <button type="button" data-days="7">7 days</button>
+        <button type="button" data-days="30" class="on">30 days</button>
+        <button type="button" data-days="90">90 days</button>
+      </div>
+    </div>
+    <p class="status" aria-live="polite">Loading…</p>
+
+    <div class="content" hidden>
+      <div class="totals">
+        <div class="total"><span class="n" data-total="visits">–</span><span class="l">Visits</span></div>
+        <div class="total"><span class="n" data-total="views">–</span><span class="l">Page views</span></div>
+        <div class="total"><span class="n" data-total="stories">–</span><span class="l">Love story views</span></div>
+      </div>
+
+      <section class="card">
+        <h2>Day by day</h2>
+        <div class="chart" role="img" aria-label="Page views per day"></div>
+      </section>
+
+      <section class="card">
+        <h2>Top pages</h2>
+        <table class="table pages"><thead><tr><th>Page</th><th>Views</th><th>Visits</th></tr></thead><tbody></tbody></table>
+      </section>
+
+      <div class="cols">
+        <section class="card">
+          <h2>Where visitors come from</h2>
+          <table class="table referrers"><thead><tr><th>Source</th><th>Views</th></tr></thead><tbody></tbody></table>
+        </section>
+        <section class="card">
+          <h2>Devices</h2>
+          <table class="table devices"><thead><tr><th>Device</th><th>Views</th></tr></thead><tbody></tbody></table>
+          <h2 class="gap">Countries</h2>
+          <table class="table countries"><thead><tr><th>Country</th><th>Views</th></tr></thead><tbody></tbody></table>
+        </section>
+      </div>
+      <p class="note">From Cloudflare Web Analytics (no cookies, so it counts slightly differently from Google Analytics). “Visits” are separate trips to the site; “page views” count every page opened.</p>
+    </div>
+  </main>
+</StudioLayout>
+
+<script>
+  type Row = { key: string; views: number; visits: number };
+  const $ = <T extends HTMLElement = HTMLElement>(s: string) => document.querySelector<T>(s)!;
+  const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
+  const num = (n: number) => n.toLocaleString('en-NZ');
+  let titles: Record<string, string> = {};
+
+  // Friendly names for addresses: post titles from the studio's list, and the main pages.
+  const pageNames: Record<string, string> = {
+    '/': 'Home', '/weddings': 'Weddings', '/wedding-galleries': 'Love Stories', '/portraits': 'Portraits', '/portraits-gallery': 'Portrait galleries',
+    '/family': 'Family', '/family-galleries': 'Family galleries', '/premium-portraits': 'Premium portraits', '/headshots': 'Headshots', '/lifestyle': 'Lifestyle',
+    '/about': 'About', '/contact': 'Contact', '/testimonials': 'Testimonials', '/wedding-faqs': 'FAQs', '/wedding-photo-guide': 'Wedding photo guide',
+    '/a-guide-to-your-wedding-photos': 'How I work', '/wedding-resources': 'Wedding resources', '/west-auckland-wedding-venues': 'West Auckland venues', '/blog': 'Blog',
+  };
+  const name = (path: string) => {
+    const p = path.replace(/\/$/, '') || '/';
+    if (pageNames[p]) return pageNames[p];
+    const m = p.match(/^\/blog\/(?!page\/|category\/|tag\/)([^/]+)$/);
+    if (m && titles[m[1]]) return titles[m[1]];
+    return p;
+  };
+  const sourceName = (h: string) => {
+    if (!h) return 'Typed in or bookmarked';
+    if (/google\./.test(h)) return 'Google';
+    if (/instagram/.test(h)) return 'Instagram';
+    if (/facebook|fb\.com|m\.facebook/.test(h)) return 'Facebook';
+    if (/pinterest/.test(h)) return 'Pinterest';
+    if (/bing\./.test(h)) return 'Bing';
+    if (/myweddingguide/.test(h)) return 'My Wedding Guide';
+    if (/momentsinlight/.test(h)) return 'Your own site';
+    return h.replace(/^www\./, '');
+  };
+  const merge = (rows: Row[], f: (k: string) => string) => {
+    const out = new Map<string, Row>();
+    for (const r of rows) {
+      const k = f(r.key);
+      const cur = out.get(k) ?? { key: k, views: 0, visits: 0 };
+      cur.views += r.views; cur.visits += r.visits;
+      out.set(k, cur);
+    }
+    return [...out.values()].sort((a, b) => b.views - a.views);
+  };
+  const table = (sel: string, rows: Row[], cols: ('views' | 'visits')[], link = false) => {
+    const max = Math.max(1, ...rows.map((r) => r.views));
+    $(`${sel} tbody`).innerHTML = rows.length
+      ? rows.map((r) => `<tr><td><span class="bar" style="width:${(r.views / max) * 100}%"></span><span class="label">${link && r.key.startsWith('/') ? `<a href="${esc(r.key)}" target="_blank" rel="noopener">${esc(name(r.key))}</a>` : esc(link ? name(r.key) : r.key)}</span></td>${cols.map((c) => `<td>${num(r[c])}</td>`).join('')}</tr>`).join('')
+      : `<tr><td colspan="${cols.length + 1}" class="empty">Nothing yet</td></tr>`;
+  };
+
+  async function load(days: number) {
+    $('.status').textContent = 'Loading…';
+    $('.status').hidden = false;
+    try {
+      const r = await fetch(`/api/studio/stats?days=${days}`);
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.error || `Something went wrong (${r.status}).`);
+      $('[data-total="visits"]').textContent = num(d.visits);
+      $('[data-total="views"]').textContent = num(d.views);
+      const pages = merge(d.pages, (k) => k.replace(/\/$/, '') || '/');
+      const storyViews = pages.filter((p) => /^\/blog\/(?!page\/|category\/|tag\/)/.test(p.key)).reduce((s, p) => s + p.views, 0);
+      $('[data-total="stories"]').textContent = num(storyViews);
+
+      // Day by day: one bar per day (days with no visits show as empty).
+      const byDay = new Map<string, number>((d.daily as Row[]).map((x) => [x.key, x.views]));
+      const all: { date: string; views: number }[] = [];
+      for (let t = new Date(d.from); t <= new Date(d.to); t = new Date(t.valueOf() + 86400_000)) {
+        const k = t.toISOString().slice(0, 10);
+        all.push({ date: k, views: byDay.get(k) ?? 0 });
+      }
+      const peak = Math.max(1, ...all.map((x) => x.views));
+      $('.chart').innerHTML = all.map((x) => `<span class="col" title="${new Date(x.date).toLocaleDateString('en-NZ', { weekday: 'short', day: 'numeric', month: 'short' })}: ${num(x.views)} views"><span class="fill" style="height:${(x.views / peak) * 100}%"></span></span>`).join('');
+
+      table('.pages', pages.slice(0, 25), ['views', 'visits'], true);
+      table('.referrers', merge(d.referrers, sourceName).slice(0, 10), ['views']);
+      table('.devices', merge(d.devices, (k) => ({ desktop: 'Computer', mobile: 'Phone', tablet: 'Tablet' } as Record<string, string>)[k] ?? (k || 'Other')), ['views']);
+      table('.countries', merge(d.countries, (k) => k || 'Unknown'), ['views']);
+      $('.content').hidden = false;
+      $('.status').hidden = true;
+    } catch (err) {
+      $('.status').textContent = (err as Error).message;
+    }
+  }
+
+  document.querySelectorAll<HTMLButtonElement>('.ranges button').forEach((b) =>
+    b.addEventListener('click', () => {
+      document.querySelectorAll('.ranges button').forEach((x) => x.classList.toggle('on', x === b));
+      load(Number(b.dataset.days));
+    }),
+  );
+
+  fetch('/studio/posts.json').then((r) => r.json()).then((d) => {
+    titles = Object.fromEntries(d.posts.map((p: { id: string; title: string }) => [p.id, p.title]));
+  }).catch(() => {}).finally(() => load(30));
+</script>
+
+<style>
+  .stats-page { max-width: 1100px; margin: 0 auto; padding: 28px clamp(14px, 3vw, 32px) 80px; }
+  .head { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 18px; }
+  .head h1 { margin: 0; padding: 0; font-weight: 300; font-size: 32px; color: var(--ink); }
+  .ranges { display: flex; gap: 6px; }
+  .ranges button { padding: 8px 14px; border: 1px solid #ddd3c4; border-radius: 999px; background: var(--white); font: inherit; font-size: 14px; cursor: pointer; color: #444; }
+  .ranges button.on { background: var(--green); border-color: var(--green); color: var(--white); }
+  .status { color: #666; }
+  .totals { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; margin-bottom: 16px; }
+  .total { background: var(--white); border-radius: 24px 0; padding: 18px 22px; display: flex; flex-direction: column; gap: 4px; }
+  .total .n { font-size: 36px; font-weight: 300; color: var(--ink); }
+  .total .l { font-size: 13px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--green); font-weight: 500; }
+  .card { background: var(--white); border-radius: 24px 0; padding: 18px 22px; margin-bottom: 16px; }
+  .card h2 { margin: 0 0 12px; font-weight: 400; font-size: 20px; color: var(--ink); }
+  .card h2.gap { margin-top: 22px; }
+  .cols { display: grid; gap: 16px; }
+  .chart { display: flex; align-items: flex-end; gap: 3px; height: 160px; }
+  .chart :global(.col) { flex: 1; height: 100%; display: flex; align-items: flex-end; }
+  .chart :global(.fill) { width: 100%; min-height: 2px; background: var(--sage); border-radius: 4px 4px 0 0; transition: background-color 0.2s; }
+  .chart :global(.col:hover .fill) { background: var(--green); }
+  .table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  .table th { text-align: left; font-weight: 600; color: #777; font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; padding: 6px 8px; border-bottom: 1px solid #eee6d9; }
+  .table th:not(:first-child), .table :global(td:not(:first-child)) { text-align: right; width: 80px; }
+  .table :global(td) { padding: 7px 8px; border-bottom: 1px solid #f3eee6; }
+  .table :global(td:first-child) { position: relative; }
+  .table :global(.bar) { position: absolute; left: 0; top: 4px; bottom: 4px; background: #eef1e4; border-radius: 4px; z-index: 0; }
+  .table :global(.label) { position: relative; z-index: 1; }
+  .table :global(.empty) { color: #999; text-align: center !important; }
+  .note { font-size: 13px; color: #888; line-height: 1.6; }
+  @media (min-width: 860px) { .cols { grid-template-columns: 1.3fr 1fr; } }
+</style>

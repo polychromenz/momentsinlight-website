@@ -46,6 +46,19 @@ export async function onRequestGet({ env }) {
   add('ACCESS_TEAM', !!env.ACCESS_TEAM && trimmed(env.ACCESS_TEAM), env.ACCESS_TEAM ? 'Set.' : 'Missing.');
   add('ACCESS_AUD', !!env.ACCESS_AUD && trimmed(env.ACCESS_AUD), env.ACCESS_AUD ? 'Set.' : 'Missing.');
 
+  // Stats (Cloudflare Web Analytics): a read-only analytics key.
+  if (!env.CF_ANALYTICS_TOKEN) add('CF_ANALYTICS_TOKEN', false, 'Missing (needed for the Stats page only).');
+  else {
+    const r = await fetch('https://api.cloudflare.com/client/v4/graphql', {
+      method: 'POST',
+      headers: { authorization: `Bearer ${env.CF_ANALYTICS_TOKEN}`,'content-type': 'application/json' },
+      body: JSON.stringify({ query: 'query { viewer { accounts(filter: { accountTag: "' + env.CF_ACCOUNT_ID + '" }) { rumPageloadEventsAdaptiveGroups(limit: 1, filter: { date_geq: "' + new Date(Date.now() - 86400000).toISOString().slice(0, 10) + '" }) { count } } } }' }),
+    });
+    const d = await r.json().catch(() => ({}));
+    const err = d.errors?.[0]?.message;
+    add('CF_ANALYTICS_TOKEN', r.ok && !err, r.ok && !err ? 'Working: can read your visitor numbers.' : `Cloudflare says: ${err ?? r.status}. The key needs Account > Account Analytics > Read.`);
+  }
+
   // Suggestions (Cloudflare Workers AI).
   add('Suggestions (AI)', !!env.AI, env.AI ? 'Switched on.' : 'Not switched on for this site yet.');
 

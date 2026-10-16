@@ -18,6 +18,7 @@
   - **Unpublish:** takes a post off the site and keeps it as a draft.
   - **Delete post:** removes it completely (its photos stay in your photo library).
 - **★ Reviews** (from the post list): add a new Google review (copy it across from Google), or edit or remove one. See reviews.md.
+- **📈 Stats** (from the post list): visits and page views for the last 7, 30 or 90 days, top pages and love stories, where visitors come from, devices and countries. Numbers come from Cloudflare Web Analytics.
 - Posts with a table (some articles) open in a safe plain-text mode with a preview underneath, so the table can't be damaged.
 
 ## If something goes wrong
@@ -36,6 +37,7 @@ Cloudflare → Workers & Pages → momentsinlight-website → Settings → Varia
 | `CF_ACCOUNT_ID` | Cloudflare account ID |
 | `ACCESS_TEAM` | `holy-disk-a1da` (Cloudflare Zero Trust team) |
 | `ACCESS_AUD` | The Moments Studio Access application's AUD tag |
+| `CF_ANALYTICS_TOKEN` | Cloudflare API token "Moments Studio stats": Account → Account Analytics → Read (Stats page only) |
 
 - **Sign-in:** Cloudflare Zero Trust → Access → Applications → **Moments Studio** (protects `www.momentsinlight.co.nz/studio` and `/api/studio`), policy **studioaccess** (your email addresses).
 - **Scheduled posts:** `.github/workflows/daily-rebuild.yml` calls the Cloudflare deploy hook stored in GitHub as the `CF_DEPLOY_HOOK` secret, every day at about 6am NZ time.
