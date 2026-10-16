@@ -8,6 +8,8 @@
 import { getCollection } from 'astro:content';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import ImportedPage from '../components/page/ImportedPage.astro';
+import RefreshedPage from '../components/page/RefreshedPage.astro';
+import { refreshed } from '../data/refreshed';
 import Sections from '../components/sections/Sections.astro';
 
 export async function getStaticPaths() {
@@ -49,7 +51,7 @@ export async function getStaticPaths() {
 const { kind, page, entry } = Astro.props as any;
 const d = entry?.data;
 ---
-{kind === 'imported' && <ImportedPage page={page} />}
+{kind === 'imported' && (refreshed[page.path] ? <RefreshedPage page={page} options={refreshed[page.path]} /> : <ImportedPage page={page} />)}
 {kind === 'cms' && (
   <BaseLayout
     title={d.seoTitle || `${d.title} | Moments In Light`}

@@ -1,0 +1,73 @@
+---
+// The animated photo of Tony (home and About): shows his smile, plays the animated version
+// through once on hover (once when scrolled into view on phones), with little black cameras
+// floating up like the buttons' hearts.
+interface Props { class?: string }
+const { class: className } = Astro.props;
+---
+<div class:list={['tony-wrap', className]} data-tony data-reveal="photo">
+  <img class="tony" src="/images/tony-solo-still.webp" data-animated="/images/tony-solo.webp" alt="Tony Gorham, photographer at Moments in Light" width="1000" height="1250" loading="lazy" decoding="async" />
+  <span class="cam cam--3" aria-hidden="true"></span>
+</div>
+
+<script>
+  // Tony's photo: shows his smile until hovered, then plays the animated version through once
+  // (it ends on the same smile) while little cameras float up. Phones, which can't hover, play
+  // it once when the photo scrolls into view. The animation is fetched once, on first use, and
+  // replayed from a fresh blob address each time, which makes the browser start it over.
+  const wrap = document.querySelector<HTMLElement>('[data-tony]');
+  const img = wrap?.querySelector('img');
+  if (wrap && img) {
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let blob: Promise<Blob> | undefined;
+    let url = '';
+    let playing = false;
+    const play = async () => {
+      if (reduce || playing) return;
+      playing = true;
+      wrap.classList.remove('snap');
+      void wrap.offsetWidth; // restart the cameras
+      wrap.classList.add('snap');
+      try {
+        blob ??= fetch(img.dataset.animated!).then((r) => r.blob());
+        const next = URL.createObjectURL(await blob);
+        img.src = next;
+        if (url) URL.revokeObjectURL(url);
+        url = next;
+      } catch { /* keep the still photo */ }
+      setTimeout(() => { playing = false; }, 1200);
+    };
+    wrap.addEventListener('mouseenter', play);
+    if (!window.matchMedia('(hover: hover)').matches) {
+      new IntersectionObserver(([e], io) => {
+        if (e.isIntersecting) { setTimeout(play, 600); io.disconnect(); }
+      }, { threshold: 0.6 }).observe(wrap);
+    }
+  }
+</script>
+
+<style>
+  .tony-wrap { position: relative; width: 100%; max-width: 520px; margin: 0 auto; }
+  .tony { width: 100%; height: auto; border-radius: 48px 0; }
+  /* Little black cameras float up from the photo as it plays (like the buttons' hearts). */
+  .tony-wrap::before, .tony-wrap::after, .cam {
+    content: '';
+    position: absolute;
+    top: 6px;
+    background-color: var(--black);
+    -webkit-mask: var(--camera-shape) center / contain no-repeat;
+    mask: var(--camera-shape) center / contain no-repeat;
+    opacity: 0;
+    pointer-events: none;
+    --camera-shape: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill-rule='evenodd' d='M8.6 4h6.8l1.6 2.2H20a2 2 0 0 1 2 2V18a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8.2a2 2 0 0 1 2-2h3zM12 9a4 4 0 1 0 0 8 4 4 0 0 0 0-8zm0 2a2 2 0 1 1 0 4 2 2 0 0 1 0-4z'/%3E%3C/svg%3E");
+  }
+  .tony-wrap::after { right: 24%; width: 26px; height: 26px; }
+  .tony-wrap::before { right: calc(24% + 30px); width: 16px; height: 16px; }
+  .cam--3 { left: 26%; width: 20px; height: 20px; }
+  .tony-wrap.snap::after { animation: heart-float 1.6s var(--ease) forwards; }
+  .tony-wrap.snap::before { animation: heart-float-small 1.6s var(--ease) 0.25s forwards; }
+  .tony-wrap.snap .cam--3 { animation: heart-float 1.6s var(--ease) 0.45s forwards; }
+  @media (prefers-reduced-motion: reduce) {
+    .tony-wrap.snap::before, .tony-wrap.snap::after, .tony-wrap.snap .cam { animation: none; }
+  }
+</style>

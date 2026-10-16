@@ -12,8 +12,10 @@ interface Props {
   categories: string[];
   /** Words on the hover shade, e.g. "View love story". */
   linkLabel?: string;
+  /** Split "Names | Place" titles into a name and a smaller place line (wedding posts). */
+  splitTitles?: boolean;
 }
-const { categories, linkLabel = 'View gallery' } = Astro.props;
+const { categories, linkLabel = 'View gallery', splitTitles = true } = Astro.props;
 const wanted = categories.map((c) => c.toLowerCase());
 const posts = (await getCollection('blog'))
   .filter((p) => p.data.categories.some((c) => wanted.includes(c.toLowerCase())))
@@ -22,7 +24,7 @@ const posts = (await getCollection('blog'))
 <ul class="stories">
   {posts.map((p, i) => {
     const src = p.data.thumbnail ?? p.data.gallery[0]?.src;
-    const { name, place } = storyName(p.data.title);
+    const { name, place } = splitTitles ? storyName(p.data.title) : { name: p.data.title, place: '' };
     return (
       <li data-reveal="photo" style={`--d:${(i % 3) * 0.12}s`}>
         <a class="card" href={`/blog/${p.id}`}>

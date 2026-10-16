@@ -1,0 +1,280 @@
+---
+// An imported Squarespace page (src/data/pages/*.json) shown in the refreshed design used on
+// the home and weddings pages, keeping the page's own words and photos:
+//   - the first heading and its opening words become a centred intro that rises in;
+//   - each further "## heading" starts its own section, with lists shown with sage hearts
+//     and two or more "### headings" set side by side as cards;
+//   - photo grids and reels become the full-width slideshow (photos never cropped);
+//   - a photo beside text stays beside it, in a leaf-cornered frame (Tony's animated photo
+//     uses the same component as the home page);
+//   - post lists become the story card grid; a written list of testimonials becomes the
+//     review carousel; the page ends with a dark green "get in touch" band.
+// Options for each page are in src/data/refreshed.ts.
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Img from '../Img.astro';
+import Slideshow from '../Slideshow.astro';
+import StoryGrid from '../StoryGrid.astro';
+import ReviewCarousel from '../ReviewCarousel.astro';
+import TonyPhoto from '../TonyPhoto.astro';
+import type { RefreshOptions } from '../../data/refreshed';
+
+interface Props { page: any; options: RefreshOptions }
+const { page, options: o } = Astro.props;
+
+import { strip, clean, cardify } from '../../lib/refresh';
+
+const isTestimonials = (h: string) => /what some of my clients have said/i.test(strip(h));
+const isAlt = (bg: string) => bg === 'rgb(233, 236, 230)';
+
+type Button = { label: string; href: string; outline?: boolean };
+type Item =
+  | { kind: 'intro'; heading: string; lead: string; body: string }
+  | { kind: 'prose'; html: string; alt: boolean }
+  | { kind: 'split'; html: string; image: any; buttons: Button[]; alt: boolean }
+  | { kind: 'hero'; image: any; heading: string }
+  | { kind: 'showcase'; images: any[] }
+  | { kind: 'stories'; categories: string[] }
+  | { kind: 'reviews' }
+  | { kind: 'buttons'; buttons: Button[] };
+
+const items: Item[] = [];
+for (const s of page.sections as any[]) {
+  if (s.kind === 'gallery') {
+    if (s.images?.length) items.push({ kind: 'showcase', images: s.images });
+    continue;
+  }
+  const blocks: any[] = s.blocks ?? [];
+  const texts = blocks.filter((b) => b.type === 'text');
+  if (s.bgImage?.src) {
+    items.push({ kind: 'hero', image: s.bgImage, heading: strip(texts.map((b) => b.html).join(' ')) });
+    continue;
+  }
+  const html = clean(texts.filter((b) => !isTestimonials(b.html)).map((b) => b.html).join(''));
+  const image = blocks.find((b) => b.type === 'image')?.image;
+  const seen = new Set<string>();
+  const buttons: Button[] = blocks
+    .filter((b) => b.type === 'button' && b.href && !seen.has(b.href) && seen.add(b.href))
+    .map((b) => ({ label: b.text, href: b.href }));
+  if (image && html) items.push({ kind: 'split', html, image, buttons, alt: isAlt(s.bg) });
+  else {
+    if (html) items.push({ kind: 'prose', html, alt: isAlt(s.bg) });
+    if (buttons.length) items.push({ kind: 'buttons', buttons });
+  }
+  for (const b of blocks.filter((b) => b.type === 'summary' && b.filter?.categories)) {
+    items.push({ kind: 'stories', categories: b.filter.categories });
+  }
+  if (texts.some((b) => isTestimonials(b.html)) && o.reviews?.length) items.push({ kind: 'reviews' });
+}
+
+// The first text with the page heading becomes the intro; its later "## headings" become
+// sections of their own.
+const at = items.findIndex((i) => i.kind === 'prose' && /<h1[ >]/.test(i.html));
+if (at >= 0) {
+  const p = items[at] as Extract<Item, { kind: 'prose' }>;
+  const h1 = p.html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/)!;
+  const [first, ...chapters] = p.html.replace(h1[0], '').split(/(?=<h2[ >])/);
+  const lead = first.match(/^\s*<(h3|p)[^>]*>([\s\S]*?)<\/\1>/);
+  const intro: Item = {
+    kind: 'intro',
+    heading: strip(h1[1]),
+    lead: lead ? lead[2] : '',
+    body: lead ? first.replace(lead[0], '') : first,
+  };
+  const rest: Item[] = chapters.map((html) => ({ kind: 'prose', html, alt: p.alt }));
+  const extra: Item[] = o.buttons?.length ? [{ kind: 'buttons', buttons: o.buttons }] : [];
+  items.splice(at, 1, intro, ...extra, ...rest);
+}
+if (o.reviews?.length && !items.some((i) => i.kind === 'reviews')) {
+  const before = items.findIndex((i) => i.kind === 'stories');
+  items.splice(before >= 0 ? before + 1 : items.length, 0, { kind: 'reviews' });
+}
+
+const closing = o.closing === false ? null : {
+  heading: 'Let’s create something beautiful',
+  text: 'Tell me what you have in mind, and I’ll let you know how we can make it happen.',
+  button: { label: 'Get in touch', href: '/contact' },
+  ...o.closing,
+};
+const linkLabel = (cats: string[]) => o.linkLabel ?? (cats.includes('Wedding') ? 'View love story' : cats.includes('Info') ? 'Read more' : 'View gallery');
+// Camera file names ("_30A1234") aren't useful descriptions; those photos get the page name.
+const subject = page.title.split(/\s[|–—-]\s/)[0];
+const showcaseImages = (list: any[]) => list.map((i, k) => {
+  const named = i.alt && !/^[_A-Z0-9 -]+$/i.test(i.alt.replace(/\.(jpe?g|png|webp)$/i, ''));
+  return { src: i.src, alt: named ? i.alt : `${subject} – photo ${k + 1}`, width: i.width, height: i.height };
+});
+let firstPhoto = true;
+const eager = () => { const e = firstPhoto; firstPhoto = false; return e; };
+---
+<BaseLayout title={page.title} description={page.description} image={page.ogImage || undefined}>
+  {items.map((it, n) => {
+    if (it.kind === 'intro') return (
+      <section class="intro wrap">
+        {o.eyebrow && <p class="eyebrow rise">{o.eyebrow}</p>}
+        <h1 class="display rise">{it.heading}</h1>
+        <hr class="hairline rise" />
+        {it.lead && <p class="lead rise" set:html={it.lead} />}
+        {strip(it.body) && <div class="prose body rise" set:html={cardify(it.body)} />}
+      </section>
+    );
+    if (it.kind === 'buttons') return (
+      <p class="buttons wrap" data-reveal>
+        {it.buttons.map((b) => <a class:list={['btn', { 'btn--outline': b.outline }]} href={b.href}>{b.label}</a>)}
+      </p>
+    );
+    if (it.kind === 'prose') return (
+      <section class:list={['chapter', { alt: it.alt }]}>
+        <div class="prose wrap" data-reveal set:html={cardify(it.html)} />
+      </section>
+    );
+    if (it.kind === 'split') return (
+      <section class:list={['split-band', { alt: it.alt }]}>
+        <div class="split wrap">
+          {it.image.src === '/images/tony-solo.webp'
+            ? <TonyPhoto />
+            : <div class="split-img" data-reveal="photo"><Img src={it.image.src} alt={it.image.alt ?? ''} width={it.image.width} height={it.image.height} sizes="(min-width: 900px) 42vw, 88vw" loading={eager() ? 'eager' : 'lazy'} /></div>}
+          <div class="prose split-text" data-reveal>
+            <Fragment set:html={cardify(it.html)} />
+            {it.buttons.length > 0 && (
+              <p class="buttons">{it.buttons.map((b) => <a class="btn" href={b.href}>{b.label}</a>)}</p>
+            )}
+          </div>
+        </div>
+      </section>
+    );
+    if (it.kind === 'hero') return (
+      <Slideshow hero first label={it.heading} images={[{ src: it.image.src, alt: '', width: it.image.width, height: it.image.height }]}>
+        <h1 class="hero-title">{it.heading}</h1>
+      </Slideshow>
+    );
+    if (it.kind === 'showcase') return (
+      <div class="showcase">
+        <Slideshow
+          hero
+          first={n <= 1}
+          label="Photo gallery"
+          interval={5}
+          images={showcaseImages(it.images)}
+        />
+      </div>
+    );
+    if (it.kind === 'stories') return (
+      <section class="stories wrap">
+        <StoryGrid categories={it.categories} linkLabel={linkLabel(it.categories)} splitTitles={it.categories.includes('Wedding')} />
+      </section>
+    );
+    if (it.kind === 'reviews') return (
+      <section class="reviews-band">
+        <div class="wrap" data-reveal><ReviewCarousel names={o.reviews!} label="What clients say" /></div>
+      </section>
+    );
+  })}
+
+  {closing && (
+    <section class="closing">
+      <div class="wrap" data-reveal>
+        <h2 class="display">{closing.heading}</h2>
+        <p>{closing.text}</p>
+        <p><a class="btn btn--light" href={closing.button.href}>{closing.button.label}</a></p>
+      </div>
+    </section>
+  )}
+</BaseLayout>
+
+<style>
+  /* Intro: centred heading and opening line, rising in as the page opens; the rest of the
+     opening words in a comfortable reading column. */
+  .intro { max-width: calc(860px + 2 * var(--pad)); margin: 0 auto; padding-block: 64px 48px; text-align: center; }
+  .intro h1 { font-size: clamp(34px, 3vw + 18px, 62px); margin: 0 0 24px; padding: 0; }
+  .intro .hairline { margin-bottom: 28px; }
+  .lead { font-size: clamp(19px, 0.6vw + 15px, 23px); font-weight: 300; line-height: 1.6; color: var(--ink); }
+  .body { text-align: left; margin-top: 26px; }
+  .rise { animation: rise 1.3s var(--ease) both; }
+  .rise:nth-child(2) { animation-delay: 0.1s; }
+  .rise:nth-child(3) { animation-delay: 0.2s; }
+  .rise:nth-child(4) { animation-delay: 0.3s; }
+  .rise:nth-child(5) { animation-delay: 0.4s; }
+  hr.rise { animation-name: draw; }
+  @keyframes rise { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
+  @keyframes draw { from { transform: scaleX(0); } to { transform: none; } }
+
+  /* Reading text */
+  .prose { max-width: calc(760px + 2 * var(--pad)); margin: 0 auto; }
+  .prose :global(p) { color: #3a3a3a; line-height: 1.85; }
+  .prose :global(h2) { font-weight: 300; color: var(--ink); font-size: clamp(28px, 1.8vw + 18px, 44px); line-height: 1.15; text-align: center; margin: 0 0 26px; }
+  .prose :global(h3) { font-weight: 400; color: var(--ink); font-size: clamp(21px, 0.6vw + 17px, 26px); line-height: 1.3; margin: 28px 0 12px; }
+  .prose :global(h4) { color: var(--green); }
+  .prose :global(strong) { font-weight: 600; color: var(--ink); }
+  .prose :global(a:not(.btn)) { text-decoration-color: var(--sage); text-underline-offset: 0.2em; transition: text-decoration-color 0.4s var(--ease); }
+  .prose :global(a:not(.btn):hover) { opacity: 1; text-decoration-color: var(--green); }
+  .prose :global(ul) { list-style: none; margin: 8px 0 22px; padding: 0; display: grid; gap: 10px; }
+  .prose :global(li) { position: relative; padding-left: 28px; line-height: 1.7; }
+  .prose :global(li p) { margin: 0; }
+  .prose :global(li)::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0.5em;
+    width: 12px;
+    height: 12px;
+    background-color: var(--sage);
+    -webkit-mask: var(--heart-shape) center / contain no-repeat;
+    mask: var(--heart-shape) center / contain no-repeat;
+  }
+  .prose :global(.price-line) {
+    margin: 28px 0 0;
+    text-align: center;
+    font-size: clamp(24px, 1vw + 18px, 32px);
+    font-weight: 300;
+    color: var(--green);
+  }
+  .prose :global(.price-line strong) { font-weight: 300; color: inherit; }
+  .prose :global(.cards) { display: grid; gap: 20px; margin: 10px 0; }
+  .prose :global(.card) { background: var(--white); border-radius: 32px 0; padding: 30px 30px 26px; }
+  .prose :global(.card h3) { margin-top: 0; }
+  .chapter:not(.alt) .prose :global(.card) { background: var(--champagne); }
+
+  .chapter { padding-block: 56px; }
+  .chapter + .chapter:not(.alt) { padding-top: 0; }
+  .alt { background: var(--champagne); }
+  .chapter.alt, .split-band.alt { padding-block: 72px; }
+  .intro + .chapter:not(.alt) { padding-top: 24px; }
+
+  .buttons { display: flex; flex-wrap: wrap; justify-content: center; gap: 14px; margin: 8px auto 40px; }
+  .split .buttons { justify-content: flex-start; margin: 26px 0 0; }
+
+  .split-band { padding-block: 56px; }
+  .split { display: grid; gap: 40px; align-items: center; max-width: calc(1180px + 2 * var(--pad)); margin: 0 auto; }
+  .split-img :global(img) { width: 100%; height: auto; max-height: 760px; object-fit: contain; border-radius: 48px 0; }
+  .split-text { margin: 0; }
+  .split-text :global(h2), .split-text :global(h3) { text-align: left; }
+
+  .showcase { margin-block: 24px 56px; }
+  .hero-title { margin: 0; padding: 0; color: var(--ink); font-weight: 300; font-size: clamp(30px, 3vw + 14px, 60px); line-height: 1.08; }
+
+  .stories { max-width: calc(1280px + 2 * var(--pad)); margin: 0 auto; padding-block: 24px 90px; }
+
+  .reviews-band { background: var(--green); color: var(--champagne); padding-block: 88px; }
+  .reviews-band .wrap { max-width: calc(1000px + 2 * var(--pad)); margin: 0 auto; }
+
+  .closing { background: var(--olive); color: var(--cream); padding-block: 88px; text-align: center; }
+  .closing h2 { color: var(--champagne); font-size: clamp(30px, 2.4vw + 18px, 54px); margin: 0 0 16px; }
+  .closing .btn { margin-top: 16px; }
+
+  @media (min-width: 768px) {
+    .intro { padding-block: 110px 64px; }
+    .prose :global(.cards) { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+    .chapter { padding-block: 80px; }
+    .chapter.alt, .split-band.alt { padding-block: 110px; }
+    .showcase { margin-block: 40px 90px; }
+    .hero-title { color: var(--white); font-size: clamp(26px, 7cqi, 68px); }
+    .stories { padding-bottom: 130px; }
+    .reviews-band, .closing { padding-block: 120px; }
+  }
+  @media (min-width: 900px) {
+    .split { grid-template-columns: minmax(0, 0.85fr) minmax(0, 1fr); gap: 80px; }
+    .split-band { padding-block: 100px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .rise { animation: none; }
+  }
+</style>

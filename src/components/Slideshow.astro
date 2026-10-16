@@ -58,11 +58,11 @@ const sizesFor = (g: { width?: number; height?: number }) => {
         <button type="button" class="arrow next" aria-label="Next photo">
           <svg viewBox="0 0 12 24" aria-hidden="true"><path d="m2 2 8 10-8 10" /></svg>
         </button>
-        <div class="dots" role="group" aria-label="Choose a photo">
+        {images.length <= 30 && <div class="dots" role="group" aria-label="Choose a photo">
           {images.map((_, i) => (
             <button type="button" class:list={['dot', { on: i === 0 }]} data-to={i} aria-label={`Show photo ${i + 1}`} aria-current={i === 0 ? 'true' : undefined} />
           ))}
-        </div>
+        </div>}
       </>
     )}
     {hasCaption && <div class="caption"><slot /></div>}
@@ -75,7 +75,23 @@ const sizesFor = (g: { width?: number; height?: number }) => {
   document.querySelectorAll<HTMLElement>('[data-slideshow]').forEach((show) => {
     const slides = [...show.querySelectorAll<HTMLElement>('.slide')];
     const dots = [...show.querySelectorAll<HTMLButtonElement>('.dot')];
-    if (slides.length < 2) return;
+    if (slides.length < 2) {
+      // A single photo: still keep an overlaid heading within the photo's width.
+      if (show.hasAttribute('data-hero') && slides[0]) {
+        const fit = () => {
+          const img = slides[0].querySelector('img');
+          const box = show.querySelector('.slides')!.getBoundingClientRect();
+          const r = img?.naturalWidth ? img.naturalWidth / img.naturalHeight : Number(img?.getAttribute('width')) / Number(img?.getAttribute('height')) || 1.5;
+          show.style.setProperty('--pw', `${Math.round(Math.min(box.width, box.height * r))}px`);
+        };
+        fit();
+        const first = slides[0].querySelector('img');
+        if (first?.complete) requestAnimationFrame(fit); // already loaded: measure its real shape
+        first?.addEventListener('load', fit);
+        addEventListener('resize', fit);
+      }
+      return;
+    }
     const delay = Number(show.dataset.interval || 5) * 1000;
     let index = 0;
     let timer = 0;
@@ -176,6 +192,7 @@ const sizesFor = (g: { width?: number; height?: number }) => {
 
     preload(1);
     tintDots();
+    if (slides[0].querySelector('img')?.complete) requestAnimationFrame(tintDots);
     slides[0].querySelector('img')?.addEventListener('load', tintDots);
     addEventListener('resize', tintDots);
     schedule();
