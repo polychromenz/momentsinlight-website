@@ -1,0 +1,167 @@
+---
+// Contact: the imported page's own words (src/data/pages/contact.json) in the refreshed
+// design. The enquiry form (Studio Ninja, with reCAPTCHA) is heavy, so it loads as soon as the
+// visitor does anything (scrolls, moves the mouse, taps, presses a key) rather than holding up
+// the page's first moments; its space is held open so nothing jumps. The map uses the browser's
+// own lazy loading.
+import BaseLayout from '../layouts/BaseLayout.astro';
+import page from '../data/pages/contact.json';
+import { site } from '../data/site';
+
+const blocks = page.sections.map((s: any) => s.blocks ?? []);
+const textOf = (i: number) => blocks[i].find((b: any) => b.type === 'text')?.html ?? '';
+const embedOf = (i: number) => blocks[i].find((b: any) => b.type === 'embed')?.html ?? '';
+const clean = (h: string) => h.replace(/\s*style="text-align:\s*[a-z]+;?"/g, '');
+
+const intro = clean(textOf(0));
+const heading = intro.match(/<h1[^>]*>([\s\S]*?)<\/h1>/)?.[1].replace(/<[^>]+>/g, '').trim() ?? 'Let’s talk';
+const introBody = intro.replace(/<h1[^>]*>[\s\S]*?<\/h1>/, '');
+const reassurance = clean(textOf(2));
+const formHtml = embedOf(1);
+const mapSrc = embedOf(3).match(/src="([^"]+)"/)?.[1] ?? '';
+const tel = site.phone.replace(/\s/g, '');
+const directions = 'https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(`Moments in Light, ${site.address}`);
+---
+<BaseLayout title={page.title} description={page.description} image={page.ogImage || undefined}>
+  <section class="intro wrap">
+    <p class="eyebrow rise">Get in touch</p>
+    <h1 class="display rise">{heading}</h1>
+    <hr class="hairline rise" />
+    <div class="rise intro-body" set:html={introBody} />
+  </section>
+
+  <section class="form-band">
+    <div class="wrap form-grid">
+      <aside class="aside" data-reveal>
+        <div set:html={reassurance} />
+        <a class="phone" href={`tel:${tel}`}>
+          <span class="phone-label">Call or text</span>
+          <span class="phone-number">{site.phone}</span>
+        </a>
+      </aside>
+      <div class="form-card" data-lazy-form>
+        <p class="loading" aria-hidden="true">Loading the enquiry form…</p>
+        <template set:html={formHtml} />
+      </div>
+    </div>
+  </section>
+
+  {mapSrc && (
+    <section class="map-band">
+      <div class="wrap map-wrap" data-reveal>
+        <div class="map">
+          <iframe src={mapSrc} title="Map showing Moments in Light in Waiwera" loading="lazy" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+        </div>
+        <div class="map-card">
+          <p class="map-name">Moments in Light</p>
+          <p class="map-address">{site.address}</p>
+          <a class="btn" href={directions} target="_blank" rel="noopener">Get directions</a>
+        </div>
+      </div>
+    </section>
+  )}
+</BaseLayout>
+
+<script>
+  // Put the form's code in place on the visitor's first move. Scripts inside a <template> don't
+  // run when copied, so each one is recreated (the form needs its resizing script).
+  const box = document.querySelector<HTMLElement>('[data-lazy-form]');
+  const events = ['scroll', 'wheel', 'pointermove', 'pointerdown', 'touchstart', 'keydown', 'focusin'];
+  const load = () => {
+    events.forEach((e) => removeEventListener(e, load));
+    const tpl = box?.querySelector('template');
+    if (!box || !tpl) return;
+    box.append(tpl.content.cloneNode(true));
+    box.querySelectorAll('script').forEach((old) => {
+      const s = document.createElement('script');
+      [...old.attributes].forEach((a) => s.setAttribute(a.name, a.value));
+      s.text = old.text;
+      old.replaceWith(s);
+    });
+    tpl.remove();
+    box.classList.add('loaded');
+  };
+  events.forEach((e) => addEventListener(e, load, { once: true, passive: true }));
+  // Arriving straight at the form (a link to #form, or coming back to the page) loads it at once.
+  if (location.hash || scrollY > 0) load();
+</script>
+
+<style>
+  .intro { max-width: calc(820px + 2 * var(--pad)); margin: 0 auto; padding-block: 64px 48px; text-align: center; }
+  .intro h1 { font-size: clamp(36px, 3vw + 20px, 64px); margin: 0 0 24px; padding: 0; }
+  .intro .hairline { margin-bottom: 28px; }
+  .intro-body :global(h2) { font-weight: 300; color: var(--ink); font-size: clamp(24px, 1.2vw + 18px, 34px); margin: 0 0 16px; }
+  .intro-body :global(p) { color: #444; line-height: 1.85; }
+  .rise { animation: rise 1.3s var(--ease) both; }
+  .rise:nth-child(2) { animation-delay: 0.1s; }
+  .rise:nth-child(3) { animation-delay: 0.2s; }
+  .rise:nth-child(4) { animation-delay: 0.3s; }
+  hr.rise { animation-name: draw; }
+  @keyframes rise { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
+  @keyframes draw { from { transform: scaleX(0); } to { transform: none; } }
+
+  .form-band { background: var(--champagne); padding-block: 56px; }
+  .form-grid { display: grid; gap: 32px; max-width: calc(1180px + 2 * var(--pad)); margin: 0 auto; align-items: start; }
+  .aside :global(p) { color: #444; line-height: 1.8; }
+  .phone {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-top: 24px;
+    padding: 22px 26px;
+    background: var(--white);
+    border-radius: 24px 0;
+    text-decoration: none;
+    color: var(--ink);
+    transition: border-radius 0.6s var(--ease), transform 0.6s var(--ease), box-shadow 0.6s var(--ease);
+  }
+  .phone:hover { opacity: 1; border-radius: 0 24px; transform: translateY(-2px); box-shadow: 0 14px 26px -20px rgb(0 0 0 / 0.45); }
+  .phone-label { font-size: 12px; font-weight: 500; letter-spacing: 0.26em; text-transform: uppercase; color: var(--green); }
+  .phone-number { font-size: 26px; font-weight: 300; }
+
+  /* The form's card holds its full height open from the start (the form then sizes itself). */
+  .form-card { position: relative; background: var(--white); border-radius: 40px 0; padding: 18px 10px; min-height: 1100px; }
+  .form-card :global(iframe) { width: 100%; border: 0; display: block; min-height: 1060px; }
+  .loading { position: absolute; top: 40px; left: 0; right: 0; text-align: center; color: #888; font-size: 15px; }
+  .form-card.loaded .loading { display: none; }
+
+  .map-band { padding-block: 64px 80px; }
+  .map-wrap { position: relative; max-width: calc(1180px + 2 * var(--pad)); margin: 0 auto; }
+  .map {
+    overflow: hidden;
+    border-radius: 48px 0;
+    aspect-ratio: 4 / 3;
+    background: var(--griseo);
+    box-shadow: 0 24px 40px -32px rgb(62 66 41 / 0.6);
+  }
+  /* Softened to sit with the site's colours. */
+  .map :global(iframe) { width: 100%; height: 100%; border: 0; display: block; filter: grayscale(0.35) sepia(0.12) saturate(0.9); }
+  .map-card {
+    margin: -48px 20px 0;
+    position: relative;
+    background: var(--white);
+    border-radius: 24px 0;
+    padding: 24px 26px 26px;
+    box-shadow: 0 18px 34px -24px rgb(0 0 0 / 0.45);
+  }
+  .map-name { margin: 0 0 4px; font-size: 22px; font-weight: 300; color: var(--ink); }
+  .map-address { margin: 0 0 18px; color: #555; font-size: 15px; line-height: 1.6; }
+
+  @media (min-width: 768px) {
+    .intro { padding-block: 110px 64px; }
+    .form-band { padding-block: 90px; }
+    .form-card { padding: 26px 20px; min-height: 1080px; }
+    .form-card :global(iframe) { min-height: 1020px; }
+    .map { aspect-ratio: 21 / 9; }
+    .map-card { position: absolute; left: 40px; bottom: 40px; margin: 0; max-width: 340px; }
+    .map-band { padding-block: 90px 120px; }
+  }
+  @media (min-width: 960px) {
+    .form-grid { grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr); gap: 56px; }
+    .aside { position: sticky; top: 140px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .rise { animation: none; }
+    .phone { transition: none; }
+  }
+</style>
