@@ -1,0 +1,22 @@
+# Rebuild the site every morning, so posts scheduled in Moments Studio (dated in the future)
+# appear on their day. It asks Cloudflare Pages to rebuild through a deploy hook; the hook's
+# address is kept in this repository's secrets as CF_DEPLOY_HOOK
+# (GitHub > the repository > Settings > Secrets and variables > Actions).
+name: Daily rebuild for scheduled posts
+
+on:
+  schedule:
+    # 6:05am in New Zealand (17:05 UTC the day before, during NZDT; 18:05 NZST in winter).
+    - cron: '5 17 * * *'
+  workflow_dispatch: {}
+
+jobs:
+  rebuild:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ask Cloudflare Pages to rebuild
+        env:
+          HOOK: ${{ secrets.CF_DEPLOY_HOOK }}
+        run: |
+          if [ -z "$HOOK" ]; then echo "CF_DEPLOY_HOOK isn't set yet"; exit 0; fi
+          curl -fsS -X POST "$HOOK" > /dev/null && echo "Rebuild requested"
