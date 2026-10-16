@@ -6,7 +6,7 @@ date: 2026-03-01
 updated: 2026-04-02
 author: "Tony Gorham"
 categories: ["Wedding"]
-tags: []
+tags: ["abel-estate"]
 thumbnail: "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-cherry-and-chi/colour/_Q9A8760/public"
 gallery:
   - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-cherry-and-chi/colour/_Q9A8760/public","alt":"Cherry and Chi on the lakeside rotunda at Abel Estate","width":2048,"height":1366}

@@ -6,7 +6,7 @@ date: 2025-08-18
 updated: 2026-04-02
 author: "Tony Gorham"
 categories: ["Wedding"]
-tags: []
+tags: ["markovina"]
 thumbnail: "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2025-paige-and-connor/colour/_Q9A1313-Edit/public"
 gallery:
   - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2025-paige-and-connor/colour/_Q9A1313-Edit/public","alt":"Paige and Connor kiss in front of a large wine barrel","width":2048,"height":1366}

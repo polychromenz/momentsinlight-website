@@ -6,7 +6,7 @@ date: 2026-03-21
 updated: 2026-05-20
 author: "Tony Gorham"
 categories: ["Wedding"]
-tags: []
+tags: ["the-barn-waimauku"]
 thumbnail: "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-tay-and-jesse/colour/_30A8106-Edit/public"
 gallery:
   - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-tay-and-jesse/colour/_30A8202/public","alt":"Tay and Jesse embrace on a railway line in golden light","width":1638,"height":2048}

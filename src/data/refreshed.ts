@@ -10,6 +10,13 @@ export type RefreshOptions = {
   reviews?: string[];
   /** Words on the cards' hover shade. */
   linkLabel?: string;
+  /** A photo to open the page with, the heading laid over it. */
+  heroImage?: { src: string; width: number; height: number; alt?: string };
+  /** Show the love stories with this tag (a venue's weddings), under storiesHeading. */
+  storiesTag?: string;
+  storiesHeading?: string;
+  /** Move the photo slideshow up, after this many text sections. */
+  galleryAfter?: number;
   /** The dark green band at the end; false for none. */
   closing?: false | { heading?: string; text?: string; button?: { label: string; href: string } };
 };
@@ -19,7 +26,26 @@ const businessReviews = ['Chris Tankard', 'Mel IBANZ', 'Nat Hugill', 'Mitch 12',
 const familyReviews = ['Ally Weir', 'Kenjiah Weir', 'Elle Castle', 'Sinead Dudley'];
 const portraitClosing = { heading: 'Let’s create something beautiful', text: 'Tell me what you have in mind, and I’ll help you plan a session that brings out the very best of you.' };
 
+const venueClosing = { heading: 'Getting married here?', text: 'Tell me your date, and I’ll let you know if I’m free.', button: { label: 'Check your date', href: '/contact' } };
+// Wedding reviews for the venue pages: the couple married there first, where there is one.
+const weddingReviews = ['Tayla Johnson', 'Mikaela Ellwood', 'Jade McQuoid', 'Leah Doolan', 'Cerise Brown', 'Josh Stewart', 'Julia Passmore'];
+const venue = (name: string, tag: string, first: string[] = []): RefreshOptions => ({
+  eyebrow: 'Venue guide',
+  storiesTag: tag,
+  storiesHeading: `Love stories at ${name}`,
+  galleryAfter: 2,
+  reviews: [...first, ...weddingReviews.filter((r) => !first.includes(r))].slice(0, 7),
+  closing: venueClosing,
+});
+
 export const refreshed: Record<string, RefreshOptions> = {
+  '/abel-estate': venue('Abel Estate', 'abel-estate'),
+  '/the-barn-waimauku-wedding-photographer': venue('The Barn Waimauku', 'the-barn-waimauku', ['Tayla Johnson', 'Mikaela Ellwood']),
+  '/kumeu-valley-estate-wedding-photographer': venue('Kumeu Valley Estate', 'kumeu-valley-estate', ['Jade McQuoid']),
+  '/markovina-vineyard-estate-wedding-photographer': venue('Markovina Vineyard Estate', 'markovina', ['Paige Eastlake']),
+  '/bridgewater-estate-wedding-photographer': venue('Bridgewater Estate', 'bridgewater', ['Leah Doolan']),
+  '/settlers-country-manor-wedding-photographer': venue('Settlers Country Manor', 'settlers-country-manor'),
+  '/tui-hills': venue('Tui Hills', 'tui-hills', ['Ellen Fenton']),
   '/portraits-gallery': {
     eyebrow: 'Portrait galleries',
     buttons: [{ label: 'Portrait sessions', href: '/portraits' }, { label: 'Testimonials', href: '/testimonials', outline: true }],

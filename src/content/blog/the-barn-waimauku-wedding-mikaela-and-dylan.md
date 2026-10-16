@@ -6,7 +6,7 @@ date: 2026-03-07
 updated: 2026-04-02
 author: "Tony Gorham"
 categories: ["Wedding"]
-tags: []
+tags: ["the-barn-waimauku"]
 thumbnail: "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-mikaela-and-dylan/colour/_Q9A0973-Edit-2/public"
 gallery:
   - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-mikaela-and-dylan/colour/_Q9A0978/public","alt":"Mikaela and Dylan kiss beside a mirror before the celebrations","width":2048,"height":1366}

@@ -22,31 +22,35 @@ interface Props { page: any; options: RefreshOptions }
 const { page, options: o } = Astro.props;
 
 import { strip, clean, cardify } from '../../lib/refresh';
+import { photosFromTag } from '../../lib/blog';
 
 const isTestimonials = (h: string) => /what some of my clients have said/i.test(strip(h));
 const isAlt = (bg: string) => bg === 'rgb(233, 236, 230)';
 
 type Button = { label: string; href: string; outline?: boolean };
 type Item =
-  | { kind: 'intro'; heading: string; lead: string; body: string }
+  | { kind: 'intro'; heading: string; lead: string; body: string; photo?: any }
+  | { kind: 'photo'; image: any }
   | { kind: 'prose'; html: string; alt: boolean }
   | { kind: 'split'; html: string; image: any; buttons: Button[]; alt: boolean }
   | { kind: 'hero'; image: any; heading: string }
   | { kind: 'showcase'; images: any[] }
-  | { kind: 'stories'; categories: string[] }
+  | { kind: 'stories'; categories?: string[]; tag?: string }
   | { kind: 'reviews' }
   | { kind: 'buttons'; buttons: Button[] };
 
 const items: Item[] = [];
 for (const s of page.sections as any[]) {
   if (s.kind === 'gallery') {
-    if (s.images?.length) items.push({ kind: 'showcase', images: s.images });
+    const images = s.fromTag ? await photosFromTag(s.fromTag, s.limit ?? 30) : s.images;
+    if (images?.length) items.push({ kind: 'showcase', images });
     continue;
   }
   const blocks: any[] = s.blocks ?? [];
   const texts = blocks.filter((b) => b.type === 'text');
   if (s.bgImage?.src) {
-    items.push({ kind: 'hero', image: s.bgImage, heading: strip(texts.map((b) => b.html).join(' ')) });
+    const heading = strip(texts.map((b) => b.html).join(' '));
+    items.push(heading ? { kind: 'hero', image: s.bgImage, heading } : { kind: 'photo', image: s.bgImage });
     continue;
   }
   const html = clean(texts.filter((b) => !isTestimonials(b.html)).map((b) => b.html).join(''));
@@ -56,12 +60,13 @@ for (const s of page.sections as any[]) {
     .filter((b) => b.type === 'button' && b.href && !seen.has(b.href) && seen.add(b.href))
     .map((b) => ({ label: b.text, href: b.href }));
   if (image && html) items.push({ kind: 'split', html, image, buttons, alt: isAlt(s.bg) });
+  else if (image && !buttons.length) items.push({ kind: 'photo', image });
   else {
     if (html) items.push({ kind: 'prose', html, alt: isAlt(s.bg) });
     if (buttons.length) items.push({ kind: 'buttons', buttons });
   }
-  for (const b of blocks.filter((b) => b.type === 'summary' && b.filter?.categories)) {
-    items.push({ kind: 'stories', categories: b.filter.categories });
+  for (const b of blocks.filter((b) => b.type === 'summary' && (b.filter?.categories || b.filter?.tag))) {
+    items.push({ kind: 'stories', categories: b.filter.categories, tag: b.filter.tag });
   }
   if (texts.some((b) => isTestimonials(b.html)) && o.reviews?.length) items.push({ kind: 'reviews' });
 }
@@ -71,6 +76,10 @@ for (const s of page.sections as any[]) {
 const at = items.findIndex((i) => i.kind === 'prose' && /<h1[ >]/.test(i.html));
 if (at >= 0) {
   const p = items[at] as Extract<Item, { kind: 'prose' }>;
+  // Pages that use smaller headings for their sections (no "##", several "###") split on those.
+  if (!/<h2[ >]/.test(p.html) && (p.html.match(/<h3[ >]/g) ?? []).length >= 3) {
+    p.html = p.html.replace(/<h3([ >])/g, '<h2$1').replace(/<\/h3>/g, '</h2>');
+  }
   const h1 = p.html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/)!;
   const [first, ...chapters] = p.html.replace(h1[0], '').split(/(?=<h2[ >])/);
   const lead = first.match(/^\s*<(h3|p)[^>]*>([\s\S]*?)<\/\1>/);
@@ -83,6 +92,25 @@ if (at >= 0) {
   const rest: Item[] = chapters.map((html) => ({ kind: 'prose', html, alt: p.alt }));
   const extra: Item[] = o.buttons?.length ? [{ kind: 'buttons', buttons: o.buttons }] : [];
   items.splice(at, 1, intro, ...extra, ...rest);
+  // A photo on its own just before the heading (the venue pages) opens the page, with the
+  // heading laid over it; options.heroImage supplies one for a page without.
+  const photoAt = items.findIndex((i, k) => i.kind === 'photo' && k < items.indexOf(intro));
+  if (photoAt >= 0) (intro as any).photo = (items.splice(photoAt, 1)[0] as any).image;
+  if (o.heroImage) (intro as any).photo = o.heroImage;
+}
+// A venue's love stories, if the page doesn't list them already.
+if (o.storiesTag && !items.some((i) => i.kind === 'stories')) {
+  items.push({ kind: 'stories', tag: o.storiesTag, categories: ['Wedding'] });
+}
+// Move the slideshow up into the text, after a few sections, to break up a long read.
+if (o.galleryAfter != null) {
+  const g = items.findIndex((i) => i.kind === 'showcase');
+  if (g >= 0) {
+    const [show] = items.splice(g, 1);
+    let seen = 0;
+    const to = items.findIndex((i) => i.kind === 'prose' && ++seen === o.galleryAfter);
+    items.splice(to >= 0 ? to + 1 : g, 0, show);
+  }
 }
 if (o.reviews?.length && !items.some((i) => i.kind === 'reviews')) {
   const before = items.findIndex((i) => i.kind === 'stories');
@@ -95,7 +123,8 @@ const closing = o.closing === false ? null : {
   button: { label: 'Get in touch', href: '/contact' },
   ...o.closing,
 };
-const linkLabel = (cats: string[]) => o.linkLabel ?? (cats.includes('Wedding') ? 'View love story' : cats.includes('Info') ? 'Read more' : 'View gallery');
+const linkLabel = (it: { categories?: string[]; tag?: string }) =>
+  o.linkLabel ?? (it.tag || it.categories?.includes('Wedding') ? 'View love story' : it.categories?.includes('Info') ? 'Read more' : 'View gallery');
 // Camera file names ("_30A1234") aren't useful descriptions; those photos get the page name.
 const subject = page.title.split(/\s[|–—-]\s/)[0];
 const showcaseImages = (list: any[]) => list.map((i, k) => {
@@ -107,6 +136,19 @@ const eager = () => { const e = firstPhoto; firstPhoto = false; return e; };
 ---
 <BaseLayout title={page.title} description={page.description} image={page.ogImage || undefined}>
   {items.map((it, n) => {
+    if (it.kind === 'intro' && it.photo) return (
+      <>
+        <Slideshow hero first label={it.heading} images={[{ src: it.photo.src, alt: it.photo.alt ?? '', width: it.photo.width, height: it.photo.height }]}>
+          {o.eyebrow && <p class="hero-eyebrow">{o.eyebrow}</p>}
+          <h1 class="hero-title">{it.heading}</h1>
+        </Slideshow>
+        <section class="intro intro--after wrap">
+          <hr class="hairline rise" />
+          {it.lead && <p class="lead rise" set:html={it.lead} />}
+          {strip(it.body) && <div class="prose body rise" set:html={cardify(it.body)} />}
+        </section>
+      </>
+    );
     if (it.kind === 'intro') return (
       <section class="intro wrap">
         {o.eyebrow && <p class="eyebrow rise">{o.eyebrow}</p>}
@@ -159,7 +201,8 @@ const eager = () => { const e = firstPhoto; firstPhoto = false; return e; };
     );
     if (it.kind === 'stories') return (
       <section class="stories wrap">
-        <StoryGrid categories={it.categories} linkLabel={linkLabel(it.categories)} splitTitles={it.categories.includes('Wedding')} />
+        {o.storiesHeading && <h2 class="display stories-heading" data-reveal>{o.storiesHeading}</h2>}
+        <StoryGrid categories={it.categories} tag={it.tag} linkLabel={linkLabel(it)} splitTitles={!!(it.tag || it.categories?.includes('Wedding'))} />
       </section>
     );
     if (it.kind === 'reviews') return (
@@ -249,6 +292,9 @@ const eager = () => { const e = firstPhoto; firstPhoto = false; return e; };
   .split-text :global(h2), .split-text :global(h3) { text-align: left; }
 
   .showcase { margin-block: 24px 56px; }
+  .hero-eyebrow { margin: 0 0 10px; font-size: 12px; font-weight: 500; letter-spacing: 0.32em; text-transform: uppercase; color: var(--green); }
+  .intro--after { padding-top: 40px; }
+  .stories-heading { text-align: center; font-size: clamp(28px, 1.8vw + 18px, 44px); margin: 0 0 40px; }
   .hero-title { margin: 0; padding: 0; color: var(--ink); font-weight: 300; font-size: clamp(30px, 3vw + 14px, 60px); line-height: 1.08; }
 
   .stories { max-width: calc(1280px + 2 * var(--pad)); margin: 0 auto; padding-block: 24px 90px; }
@@ -266,7 +312,9 @@ const eager = () => { const e = firstPhoto; firstPhoto = false; return e; };
     .chapter { padding-block: 80px; }
     .chapter.alt, .split-band.alt { padding-block: 110px; }
     .showcase { margin-block: 40px 90px; }
-    .hero-title { color: var(--white); font-size: clamp(26px, 7cqi, 68px); }
+    .hero-title { color: var(--white); font-size: clamp(26px, 6cqi, 64px); }
+    .hero-eyebrow { color: var(--white); font-size: 13px; margin-bottom: 14px; }
+    .intro--after { padding-top: 56px; }
     .stories { padding-bottom: 130px; }
     .reviews-band, .closing { padding-block: 120px; }
   }

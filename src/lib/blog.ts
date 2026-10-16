@@ -24,3 +24,15 @@ export function storyName(title: string) {
     place: rest.join(' – ').replace(/\s+Wedding$/i, ''),
   };
 }
+
+/** Photos for a venue slideshow from the love stories with a tag, newest wedding first, taking
+ *  one photo from each wedding in turn so every couple appears early on. */
+export async function photosFromTag(tag: string, limit = 30) {
+  const posts = (await sortedPosts()).filter((p) => p.data.tags.includes(tag));
+  const lists = posts.map((p) => p.data.gallery.filter((g) => g.width && g.height));
+  const picked: { src: string; alt: string; width?: number; height?: number }[] = [];
+  for (let n = 0; picked.length < limit && lists.some((l) => l[n]); n++) {
+    for (const l of lists) if (l[n] && picked.length < limit) picked.push(l[n]);
+  }
+  return picked;
+}

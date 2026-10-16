@@ -6,7 +6,7 @@ date: 2025-06-21
 updated: 2026-04-02
 author: "Tony Gorham"
 categories: ["Wedding"]
-tags: []
+tags: ["abel-estate"]
 thumbnail: "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2025-chiedza-and-foster/colour/_30A9428/public"
 gallery:
   - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2025-chiedza-and-foster/colour/_30A9554/public","alt":"Chiedza and Foster embrace on the rotunda by the lake at Abel Estate","width":2048,"height":1366}

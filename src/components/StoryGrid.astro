@@ -9,16 +9,18 @@ import Img from './Img.astro';
 import { coverPosition, storyName } from '../lib/blog';
 
 interface Props {
-  categories: string[];
+  categories?: string[];
+  /** Only posts with this tag (e.g. a venue's weddings). */
+  tag?: string;
   /** Words on the hover shade, e.g. "View love story". */
   linkLabel?: string;
   /** Split "Names | Place" titles into a name and a smaller place line (wedding posts). */
   splitTitles?: boolean;
 }
-const { categories, linkLabel = 'View gallery', splitTitles = true } = Astro.props;
-const wanted = categories.map((c) => c.toLowerCase());
+const { categories, tag, linkLabel = 'View gallery', splitTitles = true } = Astro.props;
+const wanted = categories?.map((c) => c.toLowerCase());
 const posts = (await getCollection('blog'))
-  .filter((p) => p.data.categories.some((c) => wanted.includes(c.toLowerCase())))
+  .filter((p) => (!wanted || p.data.categories.some((c) => wanted.includes(c.toLowerCase()))) && (!tag || p.data.tags.includes(tag)))
   .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
 ---
 <ul class="stories">
