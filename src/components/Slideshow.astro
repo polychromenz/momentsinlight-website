@@ -27,7 +27,8 @@ const hasCaption = Astro.slots.has('default');
 // its shape allows at that height (never wider than the screen); tell the browser so it
 // fetches that size rather than a full-screen-width one.
 const sizesFor = (g: { width?: number; height?: number }) => {
-  if (hero || !g.width || !g.height) return '100vw';
+  if (!g.width || !g.height) return '100vw';
+  if (hero) return `${Math.min(100, Math.round((g.width / g.height) * 66.667))}vw`;
   const r = Math.round((g.width / g.height) * 1000) / 1000;
   return `(min-width: 768px) min(100vw, calc(${heightDesktop} * ${r})), min(100vw, calc(${heightMobile} * ${r}))`;
 };

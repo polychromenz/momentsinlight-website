@@ -13,7 +13,7 @@ Creating a mood board for your wedding using Pinterest is a fantastic way to gat
 
 ### 1. Set Up Your Pinterest Account
 
-If you don’t already have a [Pinterest](https://nz.pinterest.com/momentsinlightnz/)account, sign up for one. It’s free and easy to use.
+If you don’t already have a [Pinterest](https://nz.pinterest.com/momentsinlightnz/) account, sign up for one. It’s free and easy to use.
 
 ### 2. Start a New Board
 
@@ -46,6 +46,6 @@ Share your mood board with your wedding planner, photographer, florist, and othe
 
 Keep adding to your board as you discover new ideas. Pinterest is a treasure trove of inspiration, so enjoy the process!
 
-We have a range Pinterest [boards](https://nz.pinterest.com/momentsinlightnz/)that you might find helpful.
+We have a range of Pinterest [boards](https://nz.pinterest.com/momentsinlightnz/) that you might find helpful.
 
 Remember, your mood board reflects your unique style and preferences. Happy pinning! 📌✨

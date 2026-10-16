@@ -35,7 +35,7 @@ const [choosing, ...planning] = closing;
       return (
         <div class:list={['venue', { 'venue--flip': i % 2 === 1 }]}>
           <div class="venue-img" data-reveal="photo">
-            <Img src={src} alt={alt} width={w} height={h} sizes="(min-width: 900px) 50vw, 88vw" loading={i === 0 ? 'eager' : 'lazy'} />
+            <Img src={src} alt={alt} width={w} height={h} sizes="(min-width: 900px) 50vw, 88vw" loading={i === 0 ? 'eager' : 'lazy'} priority={i === 0} />
           </div>
           <div class="venue-text" data-reveal set:html={v} />
         </div>

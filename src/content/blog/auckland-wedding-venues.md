@@ -109,9 +109,9 @@ For couples who want the city itself as part of the day — skyline views, water
 
 \
 
-[**The Hotel Britomart** (Britomart) — Upsca](https://thehotelbritomart.com/weddings/)le and intimate, right in the heart of the Britomart precinct, with an urban-chic backdrop that photographs beautifully. I photographed a wedding here myself. See [Shannon & Darren's day](https://www.momentsinlight.co.nz/blog/wedding-shannon-and-darren).
+[**The Hotel Britomart** (Britomart)](https://thehotelbritomart.com/weddings/) — Upscale and intimate, right in the heart of the Britomart precinct, with an urban-chic backdrop that photographs beautifully. I photographed a wedding here myself. See [Shannon & Darren's day](https://www.momentsinlight.co.nz/blog/wedding-shannon-and-darren).
 
-[**Cordis** (Symonds Stre](https://www.momentsinlight.co.nz/blog/wedding-shannon-and-darren)et) — Right in the city, with personalised service and one of the largest pillarless ballrooms in Auckland.
+[**Cordis** (Symonds Street)](https://www.momentsinlight.co.nz/blog/wedding-shannon-and-darren) — Right in the city, with personalised service and one of the largest pillarless ballrooms in Auckland.
 
 ‍
 

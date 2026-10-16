@@ -42,9 +42,11 @@ for (const b of s.blocks) {
     desk.push(`${sel} .btn{${st(b.style)}}`);
   }
   if (b.type === 'embed') {
+    // The recorded height stays reserved (min-height), so a form that resizes itself while it
+    // loads doesn't push the text below it around.
     if (b.heightM === 0) rules.push(`${sel}{display:none;}`);
-    else rules.push(`${sel} iframe{height:${b.heightM}px;}`);
-    desk.push(`${sel}{display:flex;}${sel} iframe{height:${b.height}px;}`);
+    else rules.push(`${sel}{min-height:${b.heightM}px;}${sel} iframe{height:${b.heightM}px;}`);
+    desk.push(`${sel}{display:flex;min-height:${b.height}px;}${sel} iframe{height:${b.height}px;}`);
   }
   if (b.type === 'summary') {
     const cols = (pct: number | undefined) => Math.max(1, Math.round(100 / (pct || 100)));

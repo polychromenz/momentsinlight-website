@@ -31,7 +31,7 @@ In our Print Factory we are passionate about ‘all the beautiful little things�
 
 We really love announcing events, weddings and telling your love story!
 
-[Timberwink](https://timberwinkstudio.com/en-nz/pages/wedding-invitation-packages)Invites | Digital invites | Signs, Seating Charts
+[Timberwink](https://timberwinkstudio.com/en-nz/pages/wedding-invitation-packages) | Invites | Digital invites | Signs, Seating Charts
 
 Semi-Custom Wedding Stationery
 
@@ -39,7 +39,7 @@ While a venue, wedding outfits and meals are all essential parts of the wedding,
 
 Our semi-custom collection includes some of our finest work in an extensive range. It's perfect if you are looking for heartfelt [invitations](https://timberwinkstudio.com/pages/elegant-wedding-invitations) but don’t wish to embark on the process from scratch, or, would like something more cost-effective than fully customised invites. Pick a design you love, and we can make it feel more like you with a few tweaks. Select individual items or the ease of our packages with various add-on options and paper choices to make your ordering process seamless.
 
-[My Cards](https://mycards.co.nz/) | Invites | Placecards | Seating Chart | Digital invites | Bespoke
+[My Cards](https://mycards.co.nz/) | Invites | Place cards | Seating Chart | Digital invites | Bespoke
 
 Ordering Online – we have hundreds more designs in our shop, so if you email through your idea there is a very high chance we can help.\
 Online Ordering is quite complex, so we do not mind if you place your order via email, or pop into our shop.\
@@ -59,7 +59,7 @@ Papier hq started in 2017 with Gabby's vision for an on-trend, cohesive range of
 
 We pride ourselves on being practical and down to earth; designing for the real world, not the etiquette books. But of course, if you want to know what is the "right" way to do it, we can advise. We want you to have the stationery YOU want.
 
-[Smitten with love](https://smittenwithlove.com/collections)Invites
+[Smitten with love](https://smittenwithlove.com/collections) | Invites
 
 Nestled in Central Otago, surrounded by some of New Zealand's most beautiful landscapes, Smitten With Love was born. Drawing inspiration from the scenery, the joy of my couples and such a momentous occasion in their lives, designing heartfelt bespoke and semi-custom wedding stationery followed naturally. I soon discovered helping couples create precious keepsakes, for years to come, was something I was passionate about and continue to be.
 

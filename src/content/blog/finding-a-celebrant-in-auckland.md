@@ -49,7 +49,7 @@ Discover [Chris Mullane’s celebrant services](https://mycelebrantguide.co.nz/l
 - Custom-written ceremonies.
 - LGBT-friendly celebrations.
 
-Explore Loveworks with[James Barr](https://www.loveworks.co.nz/)
+Explore Loveworks with [James Barr](https://www.loveworks.co.nz/)
 
 ## 5. Ben Married Us Celebrant
 

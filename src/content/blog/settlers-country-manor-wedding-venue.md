@@ -11,11 +11,11 @@ thumbnail: "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/colou
 ---
 ### Intro
 
-Nestled in Kumeu, [**Settlers Country Mano**](https://www.settlerscountrymanor.co.nz/)**r** is one of Auckland’s most versatile wedding venues. With stone buildings, mature gardens, and a riverside lawn, it offers a mix of rustic charm and elegant backdrops in one location. I’ve photographed here in all kinds of light and weather, and it’s a dream venue for both golden-hour portraits and wet-weather indoor shots.
+Nestled in Kumeu, [**Settlers Country Manor**](https://www.settlerscountrymanor.co.nz/) is one of Auckland’s most versatile wedding venues. With stone buildings, mature gardens, and a riverside lawn, it offers a mix of rustic charm and elegant backdrops in one location. I’ve photographed here in all kinds of light and weather, and it’s a dream venue for both golden-hour portraits and wet-weather indoor shots.
 
 If you’re planning your day here, you’ll want a photographer who knows the **best photo spots, how to structure timelines around the light, and how to keep things stress-free if the weather shifts**. That’s exactly what I bring to the table.
 
-➡️ Take a look at my [full-day wedding photography pricing](/weddings)starting from **$2,990**, or [get in touch](https://www.momentsinlight.co.nz/contact) to check if your date is available.
+➡️ Take a look at my [full-day wedding photography pricing](/weddings) starting from **$2,990**, or [get in touch](https://www.momentsinlight.co.nz/contact) to check if your date is available.
 
 ## Best Photo Locations at Settlers Country Manor
 
