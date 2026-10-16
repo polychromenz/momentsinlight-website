@@ -15,11 +15,13 @@ desktop; now 98 / 90) and made the page jump while loading.
 
 ## Adding a new review
 
-1. **Pages CMS > Reviews:** add the name, date, stars and text (and your reply, the Google link,
-   and photos if you like). Save; the site updates in a couple of minutes.
-2. Or ask Claude Code to add it (paste the review from Google's email).
-3. While the Elfsight subscription is still active, `node scripts/import-reviews.mjs` adds any
-   new Google reviews automatically (with their photos). It never changes reviews already on
-   the site. Once Elfsight is cancelled, use 1 or 2.
+1. **Moments Studio > ★ Reviews** (www.momentsinlight.co.nz/studio/reviews): **+ Add a review**, then copy
+   across their name, the date, the stars and the text (and your reply, the Google link and their
+   photos if you like). Save; the reviews page and carousels update in about a minute. Edit or
+   remove any review the same way.
+2. To show a couple's review in their love story, choose it under **Their Google review** in that
+   post's settings.
+3. Pages CMS (Reviews) still works too, or ask Claude Code to add it.
 
-Elfsight can be cancelled; nothing on the site uses it any more.
+Elfsight was cancelled in October 2026, so  (which read its feed) no
+longer fetches new reviews.

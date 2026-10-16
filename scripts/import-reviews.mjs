@@ -4,8 +4,8 @@
 //   node scripts/import-reviews.mjs [--dry-run]
 //
 // Reads the reviews feed of the Elfsight Google Reviews widget the old site used, so it only
-// works while that Elfsight subscription is active. After that, add new reviews in Pages CMS
-// (Reviews) instead. Reviews already in the file are left exactly as they are, so edits made
+// works while that Elfsight subscription is active (cancelled October 2026). Add new reviews in
+// Moments Studio instead: www.momentsinlight.co.nz/studio/reviews. Reviews already in the file are left exactly as they are, so edits made
 // in Pages CMS are never overwritten; only new ones are added.
 //
 // Needs CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_IMAGES_TOKEN in .env (see docs/photos.md).

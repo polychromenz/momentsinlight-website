@@ -120,10 +120,6 @@ export const refreshed: Record<string, RefreshOptions> = {
     eyebrow: 'Friends of Moments in Light',
     closing: false,
   },
-  '/sunflowers-2024': {
-    eyebrow: 'Mini sessions',
-    closing: { heading: 'Want to know about the next sessions?', text: 'Get in touch and I’ll let you know when the fields are open.', button: { label: 'Get in touch', href: '/contact' } },
-  },
   '/thanks': {
     heading: 'Thank you',
     buttons: [{ label: 'Love stories', href: '/wedding-galleries' }, { label: 'Back to the home page', href: '/', outline: true }],

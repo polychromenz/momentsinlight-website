@@ -67,6 +67,20 @@ export async function github(env, path, init = {}) {
 export const postPath = (id) => `src/content/blog/${id}.md`;
 export const validId = (id) => typeof id === 'string' && /^[a-z0-9][a-z0-9-]{0,100}$/.test(id);
 
+// Any file in the repository (e.g. src/data/reviews.json).
+export async function readRepoFile(env, path) {
+  const r = await github(env, `contents/${path}?ref=${BRANCH}`);
+  if (r.status === 404) return { exists: false };
+  if (!r.ok) throw new Error(`GitHub ${r.status}: ${r.data?.message ?? ''}`);
+  return { exists: true, sha: r.data.sha, content: b64ToUtf8(r.data.content) };
+}
+export async function writeRepoFile(env, path, content, sha, message) {
+  return github(env, `contents/${path}`, {
+    method: 'PUT',
+    body: JSON.stringify({ message, content: utf8ToB64(content), branch: BRANCH, ...(sha ? { sha } : {}) }),
+  });
+}
+
 export async function readPost(env, id) {
   const r = await github(env, `contents/${postPath(id)}?ref=${BRANCH}`);
   if (r.status === 404) return { exists: false };

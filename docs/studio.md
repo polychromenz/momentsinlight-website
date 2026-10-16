@@ -17,6 +17,7 @@
   - **Update:** saves changes to a published post.
   - **Unpublish:** takes a post off the site and keeps it as a draft.
   - **Delete post:** removes it completely (its photos stay in your photo library).
+- **★ Reviews** (from the post list): add a new Google review (copy it across from Google), or edit or remove one. See reviews.md.
 - Posts with a table (some articles) open in a safe plain-text mode with a preview underneath, so the table can't be damaged.
 
 ## If something goes wrong

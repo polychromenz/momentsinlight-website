@@ -1,0 +1,95 @@
+---
+// Moments Studio: your Google reviews. Add a new one (copied from Google), edit or remove one.
+// Saving updates /testimonials and the review carousels in about a minute.
+import StudioLayout from '../../layouts/StudioLayout.astro';
+---
+<StudioLayout title="Reviews">
+  <a slot="bar" class="s-btn s-btn--quiet" href="/studio">Posts</a>
+  <a slot="bar" class="s-btn s-btn--quiet" href="/testimonials" target="_blank" rel="noopener">View reviews page ↗</a>
+  <button slot="bar" type="button" class="s-btn s-btn--solid" data-act="add">+ Add a review</button>
+
+  <main class="reviews-page">
+    <p class="intro">Your Google reviews, newest first. When a new one comes in on Google, click <strong>+ Add a review</strong> and copy it across. To show a couple’s review in their love story, choose it under “Their Google review” in that post.</p>
+    <p class="status" aria-live="polite">Loading your reviews…</p>
+    <ul class="list"></ul>
+  </main>
+
+  <dialog class="sheet" aria-label="Review">
+    <form method="dialog" class="form">
+      <h2 class="form-title">New review</h2>
+      <label>Name (as on Google)
+        <input name="name" required placeholder="e.g. Leah Doolan" />
+      </label>
+      <div class="row">
+        <label>Date
+          <input name="date" type="date" required />
+        </label>
+        <label>Stars
+          <select name="rating">
+            <option value="5">★★★★★ 5</option>
+            <option value="4">★★★★ 4</option>
+            <option value="3">★★★ 3</option>
+            <option value="2">★★ 2</option>
+            <option value="1">★ 1</option>
+          </select>
+        </label>
+      </div>
+      <label>Their review
+        <textarea name="text" rows="8" required placeholder="Paste the review text from Google"></textarea>
+      </label>
+      <label>Your reply (optional)
+        <textarea name="reply" rows="3" placeholder="Paste your reply from Google, if you replied"></textarea>
+      </label>
+      <label>Link to the review on Google (optional)
+        <input name="url" type="url" placeholder="https://" />
+      </label>
+      <div class="photos-field">
+        <span class="label">Their photos (optional)</span>
+        <ul class="thumbs"></ul>
+        <label class="s-btn s-btn--quiet add-photos">+ Add photos<input type="file" accept="image/*" multiple hidden /></label>
+      </div>
+      <div class="form-actions">
+        <button type="button" class="s-btn s-btn--danger" data-act="remove" hidden>Remove review</button>
+        <span class="spacer"></span>
+        <button type="button" class="s-btn s-btn--quiet" data-act="cancel">Cancel</button>
+        <button type="button" class="s-btn s-btn--solid" data-act="save">Save</button>
+      </div>
+    </form>
+  </dialog>
+  <div class="s-toast" role="status"></div>
+</StudioLayout>
+
+<script>
+  import '../../studio/reviews';
+</script>
+
+<style>
+  .reviews-page { max-width: 980px; margin: 0 auto; padding: 28px clamp(14px, 3vw, 32px) 80px; }
+  .intro { color: #555; line-height: 1.7; margin: 0 0 18px; }
+  .status { color: #777; font-size: 14px; }
+  .list { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; }
+  .list :global(li) { background: var(--white); border-radius: 20px 0; padding: 18px 20px; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px 16px; align-items: start; }
+  .list :global(.who) { font-weight: 600; color: var(--ink); }
+  .list :global(.when) { font-size: 13px; color: #888; margin-left: 8px; font-weight: 400; }
+  .list :global(.stars) { color: var(--gold); letter-spacing: 1px; }
+  .list :global(.text) { grid-column: 1; margin: 0; color: #444; line-height: 1.6; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+  .list :global(.tags) { grid-column: 1; font-size: 12px; color: #888; }
+  .list :global(.edit) { grid-row: 1 / span 3; grid-column: 2; }
+
+  .sheet { width: min(640px, calc(100vw - 24px)); max-height: calc(100dvh - 24px); border: 0; border-radius: 28px 0; padding: 0; box-shadow: 0 30px 60px -30px rgb(0 0 0 / 0.5); }
+  .sheet::backdrop { background: rgb(30 32 20 / 0.45); }
+  .form { display: flex; flex-direction: column; gap: 14px; padding: 24px; }
+  .form-title { margin: 0; font-weight: 300; font-size: 26px; color: var(--ink); }
+  .form label { display: flex; flex-direction: column; gap: 5px; font-weight: 600; font-size: 14px; color: #444; }
+  .form input, .form select, .form textarea { font: inherit; font-weight: 400; font-size: 15px; padding: 10px 12px; border: 1px solid #ddd3c4; border-radius: 10px 0; }
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .photos-field { display: flex; flex-direction: column; gap: 8px; }
+  .photos-field .label { font-weight: 600; font-size: 14px; color: #444; }
+  .thumbs { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+  .thumbs :global(li) { position: relative; width: 84px; height: 84px; border-radius: 10px 0; overflow: hidden; background: #eee; }
+  .thumbs :global(img) { width: 100%; height: 100%; object-fit: cover; }
+  .thumbs :global(button) { position: absolute; top: 3px; right: 3px; width: 24px; height: 24px; border: 0; border-radius: 50%; background: rgb(255 255 255 / 0.9); cursor: pointer; }
+  .add-photos { align-self: flex-start; }
+  .form-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 6px; }
+  .spacer { flex: 1; }
+</style>
