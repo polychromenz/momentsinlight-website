@@ -193,26 +193,117 @@ const inFolder = (item: (typeof nav)[number]) => item.children?.some((c) => isCu
       cursor: pointer;
     }
     .top:hover { opacity: 0.7; }
-    .top[aria-current='page'], .top.current { text-decoration: underline; text-underline-offset: 0.2em; }
+    .top[aria-current='page']::before, .top.current::before { transform: scaleX(1); background: var(--green); }
 
+    /* Top-level links: a sage line draws in underneath on hover. */
+    .desktop-nav > ul > li { position: relative; }
+    .top { position: relative; }
+    .top::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: -7px;
+      height: 1px;
+      background: var(--sage);
+      transform: scaleX(0);
+      transition: transform 0.6s var(--ease);
+    }
+    .top:hover::before, .has-sub:hover > .top::before, .top[aria-expanded='true']::before { transform: scaleX(1); }
+    .top:hover { opacity: 1; color: var(--green); }
+
+    /* Hearts rise from a menu's name as its dropdown opens, like the buttons' hearts. */
+    .has-sub > .top::after {
+      content: '';
+      position: absolute;
+      left: calc(50% - 7px);
+      bottom: 100%;
+      width: 14px;
+      height: 14px;
+      background-color: var(--heart);
+      -webkit-mask: var(--heart-shape) center / contain no-repeat;
+      mask: var(--heart-shape) center / contain no-repeat;
+      opacity: 0;
+      pointer-events: none;
+    }
+    @media (hover: hover) {
+      .has-sub:hover > .top::after { animation: heart-float 1.4s var(--ease) forwards; }
+    }
+    .top[aria-expanded='true']::after { animation: heart-float 1.4s var(--ease) forwards; }
+
+    /* Dropdowns: float down and fade in, items arriving one after another; a small heart
+       pops in beside the item under the pointer. */
     .has-sub { position: relative; }
     .sub {
-      display: none;
       position: absolute;
-      top: 100%;
+      top: calc(100% + 12px);
       left: 50%;
-      transform: translateX(-50%);
-      min-width: 14rem;
+      min-width: 15rem;
       list-style: none;
       margin: 0;
-      padding: 14px 0 10px;
+      padding: 16px 0 14px;
       background: var(--champagne);
+      border-radius: 20px 0;
+      box-shadow: 0 22px 40px -26px rgb(62 66 41 / 0.55);
       text-align: center;
+      opacity: 0;
+      visibility: hidden;
+      transform: translate(-50%, -10px) scale(0.97);
+      transform-origin: top center;
+      transition: opacity 0.35s var(--ease), transform 0.5s var(--ease), visibility 0s linear 0.5s;
     }
-    .sub a { display: block; padding: 6px 20px; color: var(--black); text-decoration: none; font-size: 15px; }
-    .sub a:hover { color: var(--green); opacity: 1; }
+    /* An invisible bridge across the gap, so the pointer can travel down into the menu. */
+    .sub::before { content: ''; position: absolute; left: 0; right: 0; top: -14px; height: 14px; }
+    .sub li { opacity: 0; transform: translateY(-6px); transition: opacity 0.4s var(--ease), transform 0.5s var(--ease); }
+    .sub a {
+      position: relative;
+      display: block;
+      padding: 7px 34px;
+      color: var(--black);
+      text-decoration: none;
+      font-size: 15px;
+      transition: color 0.3s var(--ease), transform 0.4s var(--ease);
+    }
+    .sub a::before {
+      content: '';
+      position: absolute;
+      left: 14px;
+      top: calc(50% - 5px);
+      width: 10px;
+      height: 10px;
+      background-color: var(--heart);
+      -webkit-mask: var(--heart-shape) center / contain no-repeat;
+      mask: var(--heart-shape) center / contain no-repeat;
+      opacity: 0;
+      transform: scale(0.3);
+      transition: opacity 0.3s var(--ease), transform 0.5s var(--ease);
+    }
+    .sub a:hover, .sub a:focus-visible, .sub a[aria-current='page'] { color: var(--green); opacity: 1; }
+    .sub a:hover { transform: translateX(4px); }
+    .sub a:hover::before, .sub a:focus-visible::before, .sub a[aria-current='page']::before { opacity: 1; transform: none; }
+
     .has-sub:hover .sub,
     .has-sub:focus-within .sub,
-    .top[aria-expanded='true'] + .sub { display: block; }
+    .top[aria-expanded='true'] + .sub {
+      opacity: 1;
+      visibility: visible;
+      transform: translate(-50%, 0) scale(1);
+      transition: opacity 0.35s var(--ease), transform 0.5s var(--ease), visibility 0s;
+    }
+    .has-sub:hover .sub li,
+    .has-sub:focus-within .sub li,
+    .top[aria-expanded='true'] + .sub li { opacity: 1; transform: none; }
+    .sub li:nth-child(1) { transition-delay: 0.05s; }
+    .sub li:nth-child(2) { transition-delay: 0.1s; }
+    .sub li:nth-child(3) { transition-delay: 0.15s; }
+    .sub li:nth-child(4) { transition-delay: 0.2s; }
+    .sub li:nth-child(5) { transition-delay: 0.25s; }
+    .sub li:nth-child(6) { transition-delay: 0.3s; }
+    .sub li:nth-child(n + 7) { transition-delay: 0.35s; }
+  }
+  @media (min-width: 1000px) and (prefers-reduced-motion: reduce) {
+    .sub, .sub li, .sub a, .sub a::before, .top::before { transition: none; }
+    .sub li { transition-delay: 0s !important; }
+    .has-sub:hover > .top::after, .top[aria-expanded='true']::after { animation: none; }
   }
 </style>

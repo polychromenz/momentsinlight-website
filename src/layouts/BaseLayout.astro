@@ -64,7 +64,7 @@ const ogImage = image ? sized(image, 1500) : undefined;
     <Footer />
     <script>
       // Fade sections marked data-reveal up into view as they scroll on screen (see global.css).
-      const items = document.querySelectorAll<HTMLElement>('[data-reveal]');
+      const items = document.querySelectorAll<HTMLElement>('[data-reveal], [data-stagger]');
       if ('IntersectionObserver' in window) {
         const io = new IntersectionObserver((entries) => {
           entries.forEach((e) => {

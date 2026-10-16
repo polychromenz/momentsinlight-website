@@ -113,7 +113,7 @@ const sizesFor = (g: { width?: number; height?: number }) => {
     // Dots sitting on the white space beside a narrow (upright) photo would be white on white,
     // so those get a grey tint instead. Recomputed for each photo and on resize.
     const tintDots = () => {
-      if (!dots.length || show.hasAttribute('data-hero')) return; // white dots read fine on olive
+      if (!dots.length) return;
       const img = slides[index].querySelector('img');
       const box = show.getBoundingClientRect();
       const ratio = img?.naturalWidth
@@ -263,33 +263,34 @@ const sizesFor = (g: { width?: number; height?: number }) => {
     .slide, .slide.active { transition: none; }
   }
 
-  /* Full-width opening slideshow. Phones: the photo box is 3:2 (a landscape photo fills the
-     width exactly) with the heading in an olive band below. Desktop: as tall as fits under
-     the menu, heading over the bottom of the photo. Photos are always shown whole. */
-  .slideshow--hero { height: auto; min-height: 0; background: var(--olive); }
-  .slideshow--hero .slides { height: 66.667vw; }
-  .slideshow--hero .slide { transition-duration: 1.4s, 0s; }
-  .slideshow--hero .slide.active { transition-duration: 1.4s; }
-  .slideshow--hero .arrow { top: calc(66.667vw / 2); z-index: 2; }
-  .slideshow--hero .dots { z-index: 2; }
-  .caption {
-    padding: 26px var(--pad) 30px;
-    color: var(--white);
-    text-align: center;
+  /* Full-width opening slideshow on champagne (the menu bar's colour), so where a photo
+     doesn't fill the width it blends into the page. Photos are always shown whole. The heading
+     sits underneath and rises gently into place as the page loads.
+     Phones: the photo box is 3:2, so a landscape photo fills the width exactly.
+     Desktop: as tall as fits under the menu, leaving room for the heading. */
+  .slideshow--hero {
+    --hh: 66.667vw;
+    height: auto;
+    min-height: 0;
+    background: var(--champagne);
+  }
+  .slideshow--hero .slides { height: var(--hh); }
+  .slideshow--hero .slide { transition: opacity 1.6s var(--ease), visibility 0s linear 1.6s; }
+  .slideshow--hero .slide.active { transition: opacity 1.6s var(--ease), visibility 0s; }
+  .slideshow--hero .arrow { top: calc(var(--hh) / 2); }
+  .slideshow--hero .dots { bottom: auto; top: calc(var(--hh) - 30px); }
+  .caption { padding: 30px var(--pad) 8px; text-align: center; }
+  .caption > :global(*) { animation: rise 1.4s var(--ease) both; }
+  .caption > :global(*:nth-child(2)) { animation-delay: 0.15s; }
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(18px); }
+    to { opacity: 1; transform: none; }
   }
   @media (min-width: 768px) {
-    .slideshow--hero { height: auto; }
-    .slideshow--hero .slides { height: clamp(380px, min(66.667vw, calc(100svh - 120px)), 1100px); }
-    .slideshow--hero .arrow { top: 50%; }
-    .slideshow--hero .dots { bottom: 18px; }
-    .slideshow--hero .caption {
-      position: absolute;
-      inset: auto 0 0;
-      z-index: 1;
-      padding: 120px var(--pad) 56px;
-      background: linear-gradient(180deg, rgb(0 0 0 / 0) 0%, rgb(0 0 0 / 0.5) 100%);
-      pointer-events: none;
-    }
-    .slideshow--hero .caption :global(a) { pointer-events: auto; }
+    .slideshow--hero { --hh: clamp(380px, min(66.667vw, calc(100svh - 300px)), 1000px); height: auto; }
+    .caption { padding: 40px var(--pad) 12px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .caption > :global(*) { animation: none; }
   }
 </style>

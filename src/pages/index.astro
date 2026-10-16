@@ -3,6 +3,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import Img from '../components/Img.astro';
 import Slideshow from '../components/Slideshow.astro';
 import LoveStories from '../components/LoveStories.astro';
+import ReviewCarousel from '../components/ReviewCarousel.astro';
 import { site } from '../data/site';
 import reviews from '../data/reviews.json';
 
@@ -30,7 +31,6 @@ const doors = [
 
 const reviewCount = reviews.reviews.length;
 const rating = (reviews.reviews.reduce((t, r) => t + r.rating, 0) / reviewCount).toFixed(1);
-const featured = reviews.reviews.find((r) => r.name === 'Tayla Johnson')!;
 
 const jsonLd = {
   '@context': 'https://schema.org',
@@ -74,16 +74,16 @@ const jsonLd = {
     <p class="lead">I photograph weddings across Auckland and beyond, capturing the day with a calm, considered approach.</p>
     <p>My focus is on creating images that feel natural, effortless, and true to you — without over-direction or anything feeling forced. The result is a collection of photographs that not only look beautiful, but feel genuine and lasting over time.</p>
     <p>Based in Auckland, available throughout New Zealand.</p>
-    <ul class="proof">
+    <ul class="proof" data-stagger>
       <li><a href="/testimonials"><span class="stars" aria-hidden="true">★★★★★</span> {rating} from {reviewCount} Google reviews</a></li>
       <li>NZIPP Iris Awards 2026 · Bronze</li>
       <li>Featured in My Wedding Guide</li>
     </ul>
   </section>
 
-  <section class="doors wrap">
+  <section class="doors wrap" data-stagger>
     {doors.map((d) => (
-      <a class="door" href={d.href} data-reveal>
+      <a class="door" href={d.href}>
         <Img src={d.src} alt={d.alt} width={d.w} height={d.h} sizes="(min-width: 768px) 29vw, 88vw" />
         <span>{d.label}</span>
       </a>
@@ -106,17 +106,12 @@ const jsonLd = {
 
   <section class="review">
     <div class="wrap" data-reveal>
-      <span class="quote-mark" aria-hidden="true">“</span>
-      <blockquote>
-        <p>{featured.text}</p>
-      </blockquote>
-      <p class="who"><span class="stars" aria-hidden="true">★★★★★</span> {featured.name}</p>
-      <a class="all" href="/testimonials">Read all {reviewCount} reviews</a>
+      <ReviewCarousel names={['Tayla Johnson', 'Jade McQuoid', 'Leah Doolan', 'Mikaela Ellwood', 'Cerise Brown', 'Josh Stewart', 'Julia Passmore']} />
     </div>
   </section>
 
   <section class="approach wrap">
-    <img class="tony" src="/images/tony-solo.webp" alt="Tony Gorham, photographer at Moments in Light" width="1000" height="1250" loading="lazy" decoding="async" data-reveal />
+    <img class="tony" src="/images/tony-solo.webp" alt="Tony Gorham, photographer at Moments in Light" width="1000" height="1250" loading="lazy" decoding="async" data-reveal="photo" />
     <div class="approach-text" data-reveal>
       <p class="eyebrow">Hello, I’m Tony</p>
       <h2 class="display">My approach</h2>
@@ -133,20 +128,20 @@ const jsonLd = {
         <p>If you’re planning your wedding and are looking for a photographer who will capture it in a natural, refined way, I’d love to hear about your plans.</p>
         <p><a class="btn btn--light" href="/contact">Check your date</a></p>
       </div>
-      <Img class="cta-img" src={cf('2026-tay-and-jesse/colour/_30A8106-Edit')} alt="Tay and Jesse at The Barn, Waimauku" width={2048} height={1638} sizes="(min-width: 900px) 44vw, 88vw" />
+      <div data-reveal="photo"><Img class="cta-img" src={cf('2026-tay-and-jesse/colour/_30A8106-Edit')} alt="Tay and Jesse at The Barn, Waimauku" width={2048} height={1638} sizes="(min-width: 900px) 44vw, 88vw" /></div>
     </div>
   </section>
 </BaseLayout>
 
 <style>
   /* Phone layout first, desktop below. */
-  .hero-eyebrow { margin: 0 0 10px; font-size: 12px; font-weight: 500; letter-spacing: 0.32em; text-transform: uppercase; }
+  .hero-eyebrow { margin: 0 0 10px; font-size: 12px; font-weight: 500; letter-spacing: 0.32em; text-transform: uppercase; color: var(--green); }
   .hero-title {
     margin: 0 auto;
     padding: 0;
     max-width: 1000px;
-    color: var(--white);
-    font-size: clamp(28px, 3.6vw + 12px, 64px);
+    color: var(--ink);
+    font-size: clamp(28px, 3vw + 12px, 56px);
     font-weight: 300;
     line-height: 1.1;
   }
@@ -160,7 +155,7 @@ const jsonLd = {
 
   .doors { display: grid; gap: 36px; padding-bottom: 80px; max-width: 1440px; margin: 0 auto; }
   .door { display: flex; flex-direction: column; gap: 16px; text-decoration: none; color: var(--ink); }
-  .door :global(img) { width: 100%; height: auto; border-radius: 32px 0; transition: transform 0.6s ease, box-shadow 0.6s ease; }
+  .door :global(img) { width: 100%; height: auto; border-radius: 32px 0; transition: transform 0.8s var(--ease), box-shadow 0.8s var(--ease); }
   .door span { font-size: 13px; font-weight: 500; letter-spacing: 0.26em; text-transform: uppercase; }
 
   .stories-band { background: var(--champagne); padding-block: 72px; }
@@ -172,12 +167,6 @@ const jsonLd = {
 
   .review { background: var(--olive); color: var(--champagne); padding-block: 88px; text-align: center; }
   .review .wrap { max-width: calc(1000px + 2 * var(--pad)); margin: 0 auto; }
-  .quote-mark { display: block; height: 44px; font-size: 100px; font-weight: 300; line-height: 1; color: var(--sage); }
-  blockquote { margin: 0; }
-  blockquote p { font-size: clamp(21px, 1.2vw + 15px, 32px); font-weight: 300; line-height: 1.5; }
-  .who { margin-top: 26px; font-size: 13px; font-weight: 500; letter-spacing: 0.28em; text-transform: uppercase; color: var(--pale-sage); }
-  .review .stars { color: var(--light-gold); }
-  .all { color: var(--champagne); font-size: 15px; }
 
   .approach { display: grid; gap: 40px; align-items: center; max-width: calc(1180px + 2 * var(--pad)); margin: 0 auto; padding-block: 80px; }
   .tony { width: 100%; max-width: 520px; height: auto; border-radius: 48px 0; margin: 0 auto; }

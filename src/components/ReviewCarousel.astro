@@ -1,0 +1,147 @@
+---
+// A slow carousel of Google reviews for the dark green bands on the refreshed pages.
+// All reviews share one grid cell, so the band is as tall as the longest and never jumps.
+// Cross-fades every 8 seconds; arrows, dots and swipe to move; pauses on hover, keyboard
+// focus, off screen or a hidden tab; no autoplay for visitors who ask for less motion.
+import reviews from '../data/reviews.json';
+
+interface Props {
+  /** Reviewer names, in the order to show them. */
+  names: string[];
+  label?: string;
+}
+const { names, label = 'What couples say' } = Astro.props;
+const picked = names
+  .map((n) => reviews.reviews.find((r) => r.name === n))
+  .filter((r): r is (typeof reviews.reviews)[number] => !!r);
+const count = reviews.reviews.length;
+---
+<div class="reviews" data-reviews aria-roledescription="carousel" aria-label={label} tabindex="0">
+  <div class="track">
+    {picked.map((r, i) => (
+      <figure class:list={['review', { on: i === 0 }]} aria-hidden={i === 0 ? undefined : 'true'}>
+        <blockquote>
+          <span class="mark open" aria-hidden="true">“</span>
+          <p>{r.text}</p>
+          <span class="mark close" aria-hidden="true">”</span>
+        </blockquote>
+        <figcaption><span class="stars" aria-hidden="true">★★★★★</span> {r.name}</figcaption>
+      </figure>
+    ))}
+  </div>
+  {picked.length > 1 && (
+    <div class="controls">
+      <button type="button" class="arrow prev" aria-label="Previous review">
+        <svg viewBox="0 0 12 24" aria-hidden="true"><path d="M10 2 2 12l8 10" /></svg>
+      </button>
+      <div class="dots">
+        {picked.map((_, i) => (
+          <button type="button" class:list={['dot', { on: i === 0 }]} data-to={i} aria-label={`Show review ${i + 1}`} aria-current={i === 0 ? 'true' : undefined} />
+        ))}
+      </div>
+      <button type="button" class="arrow next" aria-label="Next review">
+        <svg viewBox="0 0 12 24" aria-hidden="true"><path d="m2 2 8 10-8 10" /></svg>
+      </button>
+    </div>
+  )}
+  <a class="all" href="/testimonials">Read all {count} reviews</a>
+</div>
+
+<script>
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  document.querySelectorAll<HTMLElement>('[data-reviews]').forEach((box) => {
+    const items = [...box.querySelectorAll<HTMLElement>('.review')];
+    const dots = [...box.querySelectorAll<HTMLButtonElement>('.dot')];
+    if (items.length < 2) return;
+    let index = 0, timer = 0, hovered = false, focused = false, visible = false;
+
+    const go = (to: number) => {
+      const next = (to + items.length) % items.length;
+      if (next === index) return;
+      items[index].classList.remove('on');
+      items[index].setAttribute('aria-hidden', 'true');
+      dots[index].classList.remove('on');
+      dots[index].removeAttribute('aria-current');
+      index = next;
+      items[index].classList.add('on');
+      items[index].removeAttribute('aria-hidden');
+      dots[index].classList.add('on');
+      dots[index].setAttribute('aria-current', 'true');
+      schedule();
+    };
+    const schedule = () => {
+      clearTimeout(timer);
+      if (reduce || hovered || focused || !visible || document.hidden) return;
+      timer = window.setTimeout(() => go(index + 1), 8000);
+    };
+
+    box.querySelector('.prev')!.addEventListener('click', () => go(index - 1));
+    box.querySelector('.next')!.addEventListener('click', () => go(index + 1));
+    dots.forEach((d) => d.addEventListener('click', () => go(Number(d.dataset.to))));
+    box.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight') { e.preventDefault(); go(index + 1); }
+      if (e.key === 'ArrowLeft') { e.preventDefault(); go(index - 1); }
+    });
+    let startX = 0, startY = 0;
+    box.addEventListener('touchstart', (e) => { startX = e.touches[0].clientX; startY = e.touches[0].clientY; }, { passive: true });
+    box.addEventListener('touchend', (e) => {
+      const dx = e.changedTouches[0].clientX - startX;
+      const dy = e.changedTouches[0].clientY - startY;
+      if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) go(index + (dx < 0 ? 1 : -1));
+    }, { passive: true });
+    box.addEventListener('mouseenter', () => { hovered = true; schedule(); });
+    box.addEventListener('mouseleave', () => { hovered = false; schedule(); });
+    box.addEventListener('focusin', () => { focused = true; schedule(); });
+    box.addEventListener('focusout', (e) => { if (!box.contains(e.relatedTarget as Node)) { focused = false; schedule(); } });
+    new IntersectionObserver(([e]) => { visible = e.isIntersecting; schedule(); }, { threshold: 0.4 }).observe(box);
+    document.addEventListener('visibilitychange', schedule);
+  });
+</script>
+
+<style>
+  .reviews { text-align: center; outline-offset: 8px; }
+  .reviews:focus-visible { outline: 1px solid var(--pale-sage); }
+  .track { display: grid; }
+  .review {
+    grid-area: 1 / 1;
+    margin: 0;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(14px);
+    transition: opacity 0.9s var(--ease), transform 1.1s var(--ease), visibility 0s linear 0.9s;
+  }
+  .review.on { opacity: 1; visibility: visible; transform: none; transition: opacity 0.9s var(--ease) 0.15s, transform 1.1s var(--ease) 0.15s, visibility 0s; }
+  blockquote { position: relative; margin: 0; padding: 34px 0 10px; }
+  blockquote p { margin: 0; font-size: clamp(20px, 1.1vw + 15px, 30px); font-weight: 300; line-height: 1.5; }
+  .mark { position: absolute; font-size: 96px; font-weight: 300; line-height: 1; color: var(--pale-sage); opacity: 0.8; }
+  .open { left: 50%; top: -18px; transform: translateX(-50%); }
+  .close { position: static; display: block; height: 40px; margin-top: 6px; }
+  figcaption { margin-top: 20px; font-size: 13px; font-weight: 500; letter-spacing: 0.28em; text-transform: uppercase; color: var(--pale-sage); }
+  .stars { color: var(--light-gold); }
+
+  .controls { display: flex; justify-content: center; align-items: center; gap: 18px; margin-top: 30px; }
+  .arrow {
+    display: grid; place-items: center;
+    width: 42px; height: 42px; padding: 0;
+    border: 1px solid rgb(246 241 234 / 0.35); border-radius: 50%;
+    background: none; color: var(--champagne); cursor: pointer;
+    transition: background-color 0.4s var(--ease), border-color 0.4s var(--ease), transform 0.4s var(--ease);
+  }
+  .arrow:hover { background: rgb(246 241 234 / 0.12); border-color: var(--champagne); }
+  .prev:hover { transform: translateX(-3px); }
+  .next:hover { transform: translateX(3px); }
+  .arrow svg { width: 9px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.5; }
+  .dots { display: flex; gap: 4px; }
+  .dot { width: 22px; height: 22px; padding: 0; border: 0; background: none; cursor: pointer; position: relative; }
+  .dot::before {
+    content: ''; position: absolute; left: 5px; right: 5px; top: 10px; height: 2px;
+    background: rgb(246 241 234 / 0.35);
+    transition: background-color 0.4s var(--ease), transform 0.4s var(--ease);
+  }
+  .dot.on::before { background: var(--champagne); transform: scaleX(1.5); }
+  .all { display: inline-block; margin-top: 22px; color: var(--champagne); font-size: 15px; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .review, .review.on { transition: none; transform: none; }
+  }
+</style>

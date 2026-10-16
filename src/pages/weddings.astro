@@ -3,7 +3,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import Img from '../components/Img.astro';
 import Slideshow from '../components/Slideshow.astro';
 import LoveStories from '../components/LoveStories.astro';
-import reviews from '../data/reviews.json';
+import ReviewCarousel from '../components/ReviewCarousel.astro';
 
 // Slideshow, in the live site's order. [path, width, height]
 // Shown full width on deep olive, each photo whole (never cropped).
@@ -90,7 +90,6 @@ const faqs = [
   ['Can we have something different, or a second photographer?', 'Absolutely. No two weddings are the same, and I’m happy to quote for a custom package or a second photographer.'],
 ];
 
-const featured = reviews.reviews.find((r) => r.name === 'Mikaela Ellwood')!;
 ---
 <BaseLayout
   title="Auckland Wedding Photographers | Moments In Light"
@@ -121,9 +120,9 @@ const featured = reviews.reviews.find((r) => r.name === 'Mikaela Ellwood')!;
         <p class="eyebrow">Two experiences</p>
         <h2 class="display">Everything you need, all included</h2>
       </div>
-      <div class="packages">
+      <div class="packages" data-stagger>
         {packages.map((p) => (
-          <article class:list={['package', { 'package--dark': p.dark }]} data-reveal>
+          <article class:list={['package', { 'package--dark': p.dark }]}>
             <h3>{p.name}</h3>
             <p class="pk-intro">{p.intro}</p>
             <ul>
@@ -151,9 +150,9 @@ const featured = reviews.reviews.find((r) => r.name === 'Mikaela Ellwood')!;
       <h2 class="display">Your day, chapter by chapter</h2>
     </div>
     {chapters.map((c, i) => (
-      <div class:list={['chapter', { 'chapter--flip': i % 2 === 1 }]} data-reveal>
-        <Img src={c.src} alt={c.alt} width={c.w} height={c.h} sizes="(min-width: 768px) 52vw, 88vw" />
-        <div class="chapter-text">
+      <div class:list={['chapter', { 'chapter--flip': i % 2 === 1 }]}>
+        <div class="chapter-img" data-reveal="photo"><Img src={c.src} alt={c.alt} width={c.w} height={c.h} sizes="(min-width: 768px) 52vw, 88vw" /></div>
+        <div class="chapter-text" data-reveal>
           <p class="chapter-n">{c.n}</p>
           <h3 class="display">{c.title}</h3>
           <p>{c.text}</p>
@@ -164,9 +163,7 @@ const featured = reviews.reviews.find((r) => r.name === 'Mikaela Ellwood')!;
 
   <section class="review">
     <div class="wrap" data-reveal>
-      <span class="quote-mark" aria-hidden="true">“</span>
-      <blockquote><p>{featured.text}</p></blockquote>
-      <p class="who"><span class="stars" aria-hidden="true">★★★★★</span> {featured.name}</p>
+      <ReviewCarousel names={['Mikaela Ellwood', 'Josh Stewart', 'Cerise Brown', 'Tayla Johnson', 'Leah Doolan', 'Jade McQuoid', 'Julia Passmore']} />
     </div>
   </section>
 
@@ -188,12 +185,14 @@ const featured = reviews.reviews.find((r) => r.name === 'Mikaela Ellwood')!;
         <p class="eyebrow">Good to know</p>
         <h2 class="display">Questions couples ask</h2>
       </div>
+      <div class="faq-list" data-stagger>
       {faqs.map(([q, a], i) => (
         <details open={i === 0}>
           <summary>{q}</summary>
           <p>{a}</p>
         </details>
       ))}
+      </div>
       <p class="all-faqs"><a href="/wedding-faqs">See all questions →</a></p>
     </div>
   </section>
@@ -211,8 +210,8 @@ const featured = reviews.reviews.find((r) => r.name === 'Mikaela Ellwood')!;
 </BaseLayout>
 
 <style>
-  .hero-eyebrow { margin: 0 0 10px; font-size: 12px; font-weight: 500; letter-spacing: 0.32em; text-transform: uppercase; }
-  .hero-title { margin: 0; padding: 0; color: var(--white); font-size: clamp(32px, 3.6vw + 14px, 68px); font-weight: 300; line-height: 1.08; }
+  .hero-eyebrow { margin: 0 0 10px; font-size: 12px; font-weight: 500; letter-spacing: 0.32em; text-transform: uppercase; color: var(--green); }
+  .hero-title { margin: 0; padding: 0; color: var(--ink); font-size: clamp(32px, 3vw + 14px, 60px); font-weight: 300; line-height: 1.08; }
 
   .intro { max-width: calc(880px + 2 * var(--pad)); margin: 0 auto; padding-block: 72px 64px; text-align: center; }
   .intro .lead { font-size: clamp(19px, 0.7vw + 15px, 26px); font-weight: 300; line-height: 1.55; color: var(--ink); margin-bottom: 1.1em; }
@@ -262,11 +261,6 @@ const featured = reviews.reviews.find((r) => r.name === 'Mikaela Ellwood')!;
 
   .review { background: var(--green); color: var(--champagne); padding-block: 88px; text-align: center; }
   .review .wrap { max-width: calc(1000px + 2 * var(--pad)); margin: 0 auto; }
-  .quote-mark { display: block; height: 44px; font-size: 100px; font-weight: 300; line-height: 1; color: var(--pale-sage); }
-  blockquote { margin: 0; }
-  blockquote p { font-size: clamp(21px, 1.2vw + 15px, 32px); font-weight: 300; line-height: 1.5; }
-  .who { margin-top: 26px; font-size: 13px; font-weight: 500; letter-spacing: 0.28em; text-transform: uppercase; color: var(--cream); }
-  .review .stars { color: var(--light-gold); }
 
   .stories { max-width: calc(1240px + 2 * var(--pad)); margin: 0 auto; padding-block: 80px; }
   .stories-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 16px 32px; margin-bottom: 40px; }
@@ -277,10 +271,12 @@ const featured = reviews.reviews.find((r) => r.name === 'Mikaela Ellwood')!;
   .faq { background: var(--champagne); padding-block: 72px; }
   .faq-inner { max-width: calc(900px + 2 * var(--pad)); margin: 0 auto; display: grid; gap: 12px; }
   .faq .head { margin-bottom: 20px; }
-  details { background: var(--white); border-radius: 24px 0; padding: 22px 26px; }
+  .faq-list { display: grid; gap: 12px; }
+  details { background: var(--white); border-radius: 24px 0; padding: 22px 26px; transition: box-shadow 0.5s var(--ease), transform 0.5s var(--ease); }
+  details:hover { box-shadow: 0 14px 28px -24px rgb(0 0 0 / 0.5); transform: translateY(-2px); }
   summary { list-style: none; cursor: pointer; display: flex; justify-content: space-between; gap: 16px; font-size: 18px; font-weight: 500; }
   summary::-webkit-details-marker { display: none; }
-  summary::after { content: '+'; font-size: 24px; font-weight: 300; line-height: 1; color: var(--green); transition: transform 0.3s ease; }
+  summary::after { content: '+'; font-size: 24px; font-weight: 300; line-height: 1; color: var(--green); transition: transform 0.5s var(--ease); }
   details[open] summary::after { transform: rotate(45deg); }
   details p { margin: 14px 0 0; line-height: 1.75; color: #444; }
   .all-faqs { text-align: center; margin-top: 16px; }
@@ -300,7 +296,7 @@ const featured = reviews.reviews.find((r) => r.name === 'Mikaela Ellwood')!;
     .chapters { padding-block: 130px; gap: 80px; }
     .chapter { grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 64px; }
     .chapter--flip { grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr); }
-    .chapter--flip :global(img) { order: 2; }
+    .chapter--flip .chapter-img { order: 2; }
     .review { padding-block: 130px; }
     .stories { padding-block: 120px; }
     .faq { padding-block: 110px; }
