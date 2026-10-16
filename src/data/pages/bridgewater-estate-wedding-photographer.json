@@ -181,6 +181,34 @@
    ]
   },
   {
+   "id": "showcase-bridgewater",
+   "kind": "gallery",
+   "bg": "rgb(255, 255, 255)",
+   "bgImage": null,
+   "bgOverlay": null,
+   "headingColor": null,
+   "textColor": null,
+   "divider": null,
+   "pad": {
+    "d": [
+     0,
+     0
+    ],
+    "m": [
+     0,
+     0
+    ]
+   },
+   "design": "showcase",
+   "fromTag": "bridgewater",
+   "limit": 30,
+   "images": [],
+   "layout": {
+    "d": {},
+    "m": {}
+   }
+  },
+  {
    "id": "6a7be031927c4a6ae40768e7",
    "kind": "fluid",
    "bg": "rgb(233, 236, 230)",

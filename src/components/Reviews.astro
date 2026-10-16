@@ -41,7 +41,7 @@ const paragraphs = (s: string) => s.split(/\n{2,}/).map((p) => p.trim()).filter(
         <span class="count">{count} reviews on <span class="google" aria-label="Google"><b>G</b><b>o</b><b>o</b><b>g</b><b>l</b><b>e</b></span></span>
       </span>
     </div>
-    <a class="write" href={data.writeReviewUrl} target="_blank" rel="noopener">Review us on Google</a>
+    <a class="btn write" href={data.writeReviewUrl} target="_blank" rel="noopener">Review us on Google</a>
   </header>
 
   <ul class="grid">
@@ -248,12 +248,7 @@ const paragraphs = (s: string) => s.split(/\n{2,}/).map((p) => p.trim()).filter(
   .google b:nth-child(2), .google b:nth-child(6) { color: #ea4335; }
   .google b:nth-child(3) { color: #fbbc05; }
   .google b:nth-child(5) { color: #34a853; }
-  .write {
-    display: inline-flex; align-items: center; justify-content: center; min-height: 38px; padding: 0 20px;
-    border-radius: 999px; background: var(--green); color: var(--white); font: 600 14px var(--font);
-    text-decoration: none; border: 0; cursor: pointer; transition: background-color 0.2s;
-  }
-  .write:hover { background: var(--green-dark); }
+  /* "Review us on Google" is the site's standard button (global .btn: shape, sheen and hearts). */
   /* "Load more" is the site's standard button (global .btn: shape, sheen and hearts). */
   .load { display: flex; width: fit-content; margin: 32px auto 40px; }
 

@@ -7,6 +7,7 @@
 // Columns come from the live layout and are set per breakpoint by FluidSection (--cols).
 import { getCollection } from 'astro:content';
 import Img from '../Img.astro';
+import { coverPosition } from '../../lib/blog';
 
 interface Props { block: any }
 const { block: b } = Astro.props;
@@ -24,7 +25,7 @@ if (b.filter) {
   items = posts.map((p) => ({
     href: `/blog/${p.id}`,
     title: p.data.title,
-    thumb: { src: p.data.thumbnail ?? p.data.gallery[0]?.src },
+    thumb: { src: p.data.thumbnail ?? p.data.gallery[0]?.src, position: coverPosition(p.data.thumbnailPosition) },
   }));
 }
 const ratio = b.thumbRatio ? `100 / ${b.thumbRatio}` : '3 / 2';
@@ -37,7 +38,7 @@ const ts = b.titleStyle;
       <li>
         {i.thumb?.src && (
           <a class="thumb" href={i.href} tabindex="-1" aria-hidden="true">
-            <Img src={i.thumb.src} alt="" sizes="(min-width: 768px) 45vw, 90vw" style={`aspect-ratio:${ratio}`} />
+            <Img src={i.thumb.src} alt="" sizes="(min-width: 768px) 45vw, 90vw" style={`aspect-ratio:${ratio};object-position:${i.thumb.position ?? '50% 50%'}`} />
           </a>
         )}
         <a

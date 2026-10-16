@@ -1,0 +1,101 @@
+---
+// West Auckland wedding venues: the imported page's own text (src/data/pages/
+// west-auckland-wedding-venues.json, unchanged), laid out with a photo beside each venue.
+// The text is split at its headings: the intro, one row per venue, then the closing sections.
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Img from '../components/Img.astro';
+import page from '../data/pages/west-auckland-wedding-venues.json';
+
+const cf = (path: string) => `https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/${path}/public`;
+// The venue photos from the previous home page. [path, width, height, alt]
+const photos: Record<string, [string, number, number, string]> = {
+  'Abel Estate': [cf('2026-cherry-and-chi/colour/_Q9A8507'), 2048, 1364, 'Cherry and Chi walk back up the aisle past their guests at Abel Estate'],
+  'The Barn Waimauku': [cf('2026-tay-and-jesse/colour/_30A8144'), 2048, 1161, 'Tay and Jesse’s wedding at The Barn Waimauku'],
+  'Kumeu Valley Estate': [cf('_from-website/colour/_30A9039-website'), 2048, 1151, 'Jade and Ben’s wedding at Kumeu Valley Estate'],
+  'Markovina Vineyard Estate': [cf('_from-website/colour/_Q9A0716-website'), 2048, 1364, 'A wedding at Markovina Vineyard Estate'],
+  'Bridgewater Estate': [cf('2026-leah-and-warwick/colour/_30A5026'), 2048, 1364, 'Leah and Warwick’s wedding at Bridgewater Estate'],
+};
+
+const html: string = page.sections[0].blocks[0].html;
+const parts = html.split(/(?=<h2>)/);
+const intro = parts[0];
+const heading = (p: string) => p.match(/^<h2>(.*?)<\/h2>/)?.[1].replace(/&amp;/g, '&') ?? '';
+const venues = parts.slice(1).filter((p) => photos[heading(p)]);
+const closing = parts.slice(1).filter((p) => !photos[heading(p)]);
+const [choosing, ...planning] = closing;
+---
+<BaseLayout title={page.title} description={page.description} image={photos['Abel Estate'][0]}>
+  <section class="intro wrap" data-reveal>
+    <Fragment set:html={intro} />
+  </section>
+
+  <section class="venues wrap">
+    {venues.map((v, i) => {
+      const [src, w, h, alt] = photos[heading(v)];
+      return (
+        <div class:list={['venue', { 'venue--flip': i % 2 === 1 }]}>
+          <div class="venue-img" data-reveal="photo">
+            <Img src={src} alt={alt} width={w} height={h} sizes="(min-width: 900px) 50vw, 88vw" loading={i === 0 ? 'eager' : 'lazy'} />
+          </div>
+          <div class="venue-text" data-reveal set:html={v} />
+        </div>
+      );
+    })}
+  </section>
+
+  {choosing && (
+    <section class="choosing">
+      <div class="wrap inner" data-reveal set:html={choosing} />
+    </section>
+  )}
+
+  {planning.length > 0 && (
+    <section class="planning">
+      <div class="wrap inner" data-reveal>
+        <Fragment set:html={planning.join('')} />
+        <p class="cta"><a class="btn btn--light" href="/contact">Check your date</a></p>
+      </div>
+    </section>
+  )}
+</BaseLayout>
+
+<style>
+  .intro { max-width: calc(860px + 2 * var(--pad)); margin: 0 auto; padding-block: 64px 40px; text-align: center; }
+  .intro :global(h1) { font-weight: 300; color: var(--ink); font-size: clamp(32px, 2.6vw + 18px, 56px); margin-bottom: 26px; }
+  .intro :global(p) { color: #444; line-height: 1.8; }
+
+  .venues { max-width: calc(1180px + 2 * var(--pad)); margin: 0 auto; padding-block: 30px 80px; display: grid; gap: 64px; }
+  .venue { display: grid; gap: 26px; align-items: center; }
+  .venue-img :global(img) { width: 100%; height: auto; border-radius: 48px 0; }
+  .venue--flip .venue-img :global(img) { border-radius: 0 48px 0 48px; }
+  .venue-text :global(h2) { font-weight: 300; color: var(--ink); font-size: clamp(28px, 1.6vw + 18px, 40px); margin: 0 0 16px; }
+  .venue-text :global(p) { color: #444; line-height: 1.8; }
+  .venue-text :global(ul) { list-style: none; margin: 4px 0 0; padding: 0; }
+  .venue-text :global(li p) { margin: 0 0 6px; }
+  .venue-text :global(li a) { text-decoration: none; border-bottom: 1px solid var(--sage); padding-bottom: 1px; transition: border-color 0.4s var(--ease); }
+  .venue-text :global(li a:hover) { opacity: 1; border-color: var(--green); }
+  .venue-text :global(li a::before) { content: '→ '; }
+  .venue-text :global(p:empty) { display: none; }
+
+  .choosing { background: var(--champagne); padding-block: 72px; }
+  .inner { max-width: calc(860px + 2 * var(--pad)); margin: 0 auto; }
+  .choosing :global(h2) { font-weight: 300; color: var(--ink); font-size: clamp(28px, 1.8vw + 18px, 44px); text-align: center; margin-bottom: 26px; }
+  .choosing :global(ul) { list-style: none; margin: 0 0 24px; padding: 0; display: grid; gap: 10px; }
+  .choosing :global(li) { background: var(--white); border-radius: 20px 0; padding: 16px 22px; }
+  .choosing :global(li p) { margin: 0; }
+  .choosing :global(strong) { color: var(--green); font-weight: 600; }
+
+  .planning { background: var(--olive); color: var(--cream); padding-block: 80px; text-align: center; }
+  .planning :global(h2) { color: var(--champagne); font-weight: 300; font-size: clamp(28px, 1.8vw + 18px, 44px); margin-bottom: 22px; }
+  .planning :global(p) { line-height: 1.8; }
+  .cta { margin-top: 28px; }
+
+  @media (min-width: 900px) {
+    .intro { padding-block: 110px 60px; }
+    .venues { gap: 100px; padding-bottom: 120px; }
+    .venue { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 72px; }
+    .venue--flip { grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); }
+    .venue--flip .venue-img { order: 2; }
+    .choosing, .planning { padding-block: 110px; }
+  }
+</style>

@@ -2,6 +2,7 @@
 // A Squarespace gallery section (masonry, slideshow, reel or grid) rebuilt from imported data.
 // Reels use the same fading slideshow as the Weddings page, at the same height.
 // Column counts, gaps and heights are the live site's at 390px and 1440px.
+import { getCollection } from 'astro:content';
 import Img from '../Img.astro';
 import Slideshow from '../Slideshow.astro';
 
@@ -9,6 +10,21 @@ import Slideshow from '../Slideshow.astro';
 // photo is the page's main one.
 interface Props { section: any; cls: string; subject?: string; first?: boolean; priority?: boolean }
 const { section: s, cls, subject, first = false, priority = false } = Astro.props;
+// "showcase": the refreshed full-width slideshow (champagne either side of narrower photos,
+// never cropped). With `fromTag`, its photos come from the love stories with that tag, taking
+// one from each in turn, so a new wedding at the venue adds to it automatically.
+if (s.fromTag) {
+  const posts = (await getCollection('blog'))
+    .filter((p) => p.data.tags.includes(s.fromTag))
+    .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+  const lists = posts.map((p) => p.data.gallery.filter((g) => g.width && g.height));
+  const picked: any[] = [];
+  for (let n = 0; picked.length < (s.limit ?? 30) && lists.some((l) => l[n]); n++) {
+    for (const l of lists) if (l[n] && picked.length < (s.limit ?? 30)) picked.push(l[n]);
+  }
+  s.images = picked;
+  s.layout ??= { d: {}, m: {} };
+}
 const load = (n: number) => (first && n < 4 ? 'eager' : 'lazy') as 'eager' | 'lazy';
 const L = s.layout;
 const design: string = s.design === 'fullscreen-slideshow' || s.design === 'reel' ? 'slideshow' : s.design;
@@ -40,6 +56,15 @@ const css =
       <li><Img src={i.src} alt={alt(i, n)} width={i.width} height={i.height} sizes="(min-width: 768px) 30vw, 45vw" loading={load(n)} priority={priority && n === 0} /></li>
     ))}
   </ul>
+)}
+{design === 'showcase' && (
+  <Slideshow
+    hero
+    first={priority}
+    label="Photo gallery"
+    interval={5}
+    images={s.images.map((i: any, n: number) => ({ src: i.src, alt: alt(i, n), width: i.width, height: i.height }))}
+  />
 )}
 {design === 'slideshow' && (
   <div class:list={{ reel: isReel }}>

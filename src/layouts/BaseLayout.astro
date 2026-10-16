@@ -63,7 +63,23 @@ const ogImage = image ? sized(image, 1500) : undefined;
     </main>
     <Footer />
     <script>
-      // Fade sections marked data-reveal up into view as they scroll on screen (see global.css).
+      // Every other page gets the same motion automatically: photos and text blocks that start
+      // below the first screen are tagged here (anything already on screen shows at once).
+      // Pages tagged by hand (home, weddings) are left as they are.
+      if (!document.querySelector('main [data-reveal], main [data-stagger]')) {
+        const fold = window.innerHeight * 0.9;
+        const below = (el: Element) => el.getBoundingClientRect().top > fold;
+        const skip = (el: Element) => el.closest('.slideshow, [data-reviews], .mobile-menu, form, details');
+        document.querySelectorAll('main img').forEach((img) => {
+          const box = img.closest('li, figure, a') ?? img;
+          if (!skip(box) && below(box) && !box.hasAttribute('data-reveal')) box.setAttribute('data-reveal', 'photo');
+        });
+        document.querySelectorAll('main :is(h1, h2, h3, h4, p, ul, ol, blockquote, .btn)').forEach((el) => {
+          if (skip(el) || el.closest('[data-reveal]') || !below(el)) return;
+          el.setAttribute('data-reveal', '');
+        });
+      }
+      // Fade marked sections up into view as they scroll on screen (see global.css).
       const items = document.querySelectorAll<HTMLElement>('[data-reveal], [data-stagger]');
       if ('IntersectionObserver' in window) {
         const io = new IntersectionObserver((entries) => {

@@ -18,6 +18,9 @@ const blog = defineCollection({
     tags: z.array(z.string()).default([]),
     // Image used for the post on blog listings and when shared on social media.
     thumbnail: z.string().optional(),
+    // Where the faces are in the thumbnail, so cropped covers keep them: a preset from Pages CMS
+    // (top, upper, center, lower, bottom) or an exact CSS position such as "52% 26%".
+    thumbnailPosition: z.string().optional(),
     // Width and height are optional so photos added through Pages CMS work without them;
     // when present they reserve space while lazy images load, so the page doesn't jump.
     gallery: z

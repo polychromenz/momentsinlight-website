@@ -313,6 +313,17 @@ content:
         label: Featured image (optional)
         description: Shown on the blog listing and when the post is shared. Leave empty to use the first gallery photo.
         type: image
+      - name: thumbnailPosition
+        label: Cover photo position (optional)
+        description: Where the faces are in the featured image, so covers crop around them on the gallery pages and blog list. Leave empty for the centre.
+        type: select
+        options:
+          values:
+            - { value: top, label: Top }
+            - { value: upper, label: Upper }
+            - { value: center, label: Centre }
+            - { value: lower, label: Lower }
+            - { value: bottom, label: Bottom }
       - name: date
         label: Post date
         description: Posts are listed newest first, and the previous/next links at the bottom of each post follow this order automatically.

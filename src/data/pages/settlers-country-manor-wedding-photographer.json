@@ -181,6 +181,34 @@
    ]
   },
   {
+   "id": "showcase-settlers-country-manor",
+   "kind": "gallery",
+   "bg": "rgb(255, 255, 255)",
+   "bgImage": null,
+   "bgOverlay": null,
+   "headingColor": null,
+   "textColor": null,
+   "divider": null,
+   "pad": {
+    "d": [
+     0,
+     0
+    ],
+    "m": [
+     0,
+     0
+    ]
+   },
+   "design": "showcase",
+   "fromTag": "settlers-country-manor",
+   "limit": 30,
+   "images": [],
+   "layout": {
+    "d": {},
+    "m": {}
+   }
+  },
+  {
    "id": "6a7bdeac2cbb20535dd8d5e4",
    "kind": "fluid",
    "bg": "rgb(233, 236, 230)",

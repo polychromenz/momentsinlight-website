@@ -14,7 +14,8 @@ export async function getStaticPaths() {
   const files = import.meta.glob<any>('../data/pages/*.json', { eager: true });
   const imported = Object.values(files)
     .map((m) => m.default ?? m)
-    .filter((p) => p.path && p.path !== '/' && p.path !== '/weddings')
+    // Home, /weddings and /west-auckland-wedding-venues have their own page files.
+    .filter((p) => p.path && !['/', '/weddings', '/west-auckland-wedding-venues'].includes(p.path))
     .map((page) => ({ params: { slug: page.path.replace(/^\//, '') }, props: { kind: 'imported', page } }));
 
   const cms = (await getCollection('pages', (p) => import.meta.env.DEV || !p.data.draft)).map((entry) => ({
@@ -24,7 +25,7 @@ export async function getStaticPaths() {
 
   // Addresses already in use by other pages, plus redirects from old Squarespace addresses.
   const taken = new Map(imported.map((r) => [r.params.slug, 'an existing page']));
-  ['weddings', 'blog', 'api', 's', 'images', '_astro'].forEach((s) => taken.set(s, 'a built-in page or folder'));
+  ['weddings', 'west-auckland-wedding-venues', 'blog', 'api', 's', 'images', '_astro'].forEach((s) => taken.set(s, 'a built-in page or folder'));
   const { readFileSync, existsSync } = await import('node:fs');
   const redirectsFile = `${process.cwd()}/public/_redirects`;
   if (existsSync(redirectsFile)) {
