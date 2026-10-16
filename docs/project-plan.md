@@ -91,6 +91,14 @@ Venue pages share one layout, and so do wedding posts, so both convert in bulk o
    - [x] A real guide signup on the live domain (after fixing the Turnstile site key)
    - [x] Sitemap submitted in Google Search Console; test email arrived
    - [ ] Keep Squarespace a few weeks as a fallback, then cancel
+7. **After launch (from 16 Oct 2026)**
+   - [x] Design refresh live; old site kept at before-refresh.momentsinlight-website.pages.dev
+   - [x] Moments Studio: post editor, Reviews, Stats, Share it (see [studio.md](studio.md))
+   - [x] Blog and Love Stories search; share buttons on every post
+   - [ ] **Weekly stats email**, every Friday at 8am NZ time to tony@momentsinlight.co.nz: last 7 days' visits and page views compared with the week before, top pages and love stories, where visitors came from, link to Stats. Plan: a scheduled GitHub Action reads Cloudflare Web Analytics and sends through **Resend** (free; sends as e.g. stats@momentsinlight.co.nz; doesn't touch normal email). Tony's setup when ready: sign up at resend.com, add its 3 DNS records in Cloudflare, then add two GitHub secrets (the Resend key and a copy of the Cloudflare stats key). Claude builds the email and steps through the setup.
+   - [ ] Josh & Paul love story (week of 23 Oct; Tony waits a week so the couple can share first)
+   - [ ] Test Studio Reviews with the next Google review
+   - [ ] Speed check (around late Oct)
 
 ## Image exports and matching
 
