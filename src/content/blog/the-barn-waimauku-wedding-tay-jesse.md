@@ -55,7 +55,3 @@ Then it was back to the party — and what a party it was.
 The dance floor filled, the energy lifted, and everyone leaned right into the celebration. The kind of night where no one wants it to end, and the perfect way to finish a day that had already delivered so much.
 
 Tay and Jesse’s wedding was the perfect mix of emotion, personality, and full-on celebration. A day that felt real, relaxed, and completely true to who they are.
-
-**“10/10 would recommend booking Tony, he is beyond just talent! He is kind, passionate about what he does, easy to communicate with, very professional, works very quickly and he’s an all round great guy. He captured our wedding in the most beautiful way, we feel so beyond lucky to have these photos forever now thanks to Tony from moments in light!”**
-
-⭐⭐⭐⭐⭐

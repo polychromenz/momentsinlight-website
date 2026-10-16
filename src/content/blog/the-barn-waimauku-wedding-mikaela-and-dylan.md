@@ -55,7 +55,3 @@ And just when you thought the day couldn’t hold any more emotion, it opened up
 As the evening carried on, everyone gathered outside for a ceilidh led by Noel Armstrong. What followed was something truly special — laughter, music, and people of all ages coming together on the dance floor. It wasn’t about perfect steps or polished moves, just connection, energy, and shared celebration. The kind of moment that brings everyone closer and leaves a lasting impression.
 
 Mikaela and Dylan’s wedding was full of heart — thoughtful, emotional, and deeply personal from beginning to end. A day that reflected not just their love for each other, but the people and moments that have shaped their story..
-
-**“Absolutely excellent wedding photographer. From day dot Tony was organised and professional with a streamlined process so we were never left guessing. He creatively captures people and atmosphere in a way that means we will have beautiful memories of our day for our whole lives. Ten out of ten would recommend!”**
-
-⭐⭐⭐⭐⭐

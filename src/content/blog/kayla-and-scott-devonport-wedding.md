@@ -51,7 +51,3 @@ The celebration moved to the Devonport Yacht Club, where the reception quickly t
 Kayla and Scott, thank you for trusting me to document your day. Cyclone warning and all, it was an unforgettable celebration full of heart, style, and brilliant energy.
 
 Here is a glimpse into their classy Devonport wedding...
-
-*“Tony was awesome! We picked Moments in Light because we liked the "start to end" flexibility, rather than many other photographers who only offer ~6hr slots. It meant Tony could join us when getting ready, then throughout the ceremony, reception and the party! Tony has an awesome calming energy, and never once made us feel silly as a couple who have never had professional photography in our lives. Tony dealt well with rambunctious family, was cool as a cucumber with cyclone alerts going off during our day, got awesome action shots on the dance floor, and also took special extra portraits of family and friends during downtime. Would absolutely recommend!”*
-
-⭐⭐⭐⭐⭐

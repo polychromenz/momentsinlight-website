@@ -73,5 +73,3 @@ After the ceremony, we did a shoot with the bridal party and Gel had supplied pl
 Next was the ceremony, David left at this point, and I stayed up until after the first dance and then left the happy couple to enjoy time with family and friends. I have to say, I really enjoyed this day it was lovely from start to finish. We are so lucky to do what we do.
 
 Check out our wedding packages [here](/weddings)
-
-***Tony and David did an amazing job at our wedding! They were both so kind and passionate throughout the whole process. Having the pre shoot was so useful and definitely helped with the nerves and feeling prepared for the day. We appreciate you guys going above and beyond for Gel and I. We'd definitely recommend moments in light for wedding photos!*** ⭐⭐⭐⭐⭐

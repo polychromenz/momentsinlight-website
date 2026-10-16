@@ -57,9 +57,3 @@ I met Leah and Warwick at their venue on the day, [**Bridgewater Estate**](/brid
 Leah’s father escorted her up the aisle in full naval uniform, and the strong black-and-white theme added a sense of timeless elegance and class throughout the day. Every wedding is special in its own way, but this one was an absolute corker. The guests were full of warmth and fun, which made the later portraits especially enjoyable. Capturing people as they relax, laugh, and simply be themselves is one of the true blessings of working as a wedding photographer in Auckland.
 
 One of the best parts of my job is spending so much time with the couple on their wedding day—often more than anyone else there. It gives me a real sense of who they are as people, as parents, and most importantly, as a couple. Leah and Warwick have that magic ingredient between them, and I have no doubt they’re heading into a very happy life together.
-
-Here’s a lovely piece of feedback from the couple:
-
-“**Tony has been INCREDIBLE! Not only did he make my husband and I feel comfortable but he also made all of our guests (we received many messages raving about how fun he was)! Everything has been easy, from communication to execution. We adore our photos and adore Tony**!”
-
-⭐⭐⭐⭐⭐

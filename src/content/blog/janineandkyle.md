@@ -49,9 +49,3 @@ The ceremony and reception were held in their neighbour / landlord’s gardens, 
 Janine had clearly put a huge amount of thought and heart into planning the day. Every detail was beautifully executed, and I genuinely can’t imagine how she could have improved on it. The styling, the atmosphere, the flow of the day—it was all spot on.
 
 In the evening, I set up for portraits—this time outside in the dark, which was a fun new twist for me. At one point I had an actual queue of eager guests waiting their turn… no coaxing required! It was a long day, but I left tired, happy, and grateful to have captured such a memorable celebration.
-
-And here’s a lovely piece of feedback from the couple:
-
-***”Tony was incredible to work with for our wedding! From start to finish, his communication was clear and super easy, which made the whole process stress-free. He gave great posing guidance while still keeping everything natural, and his personality made us feel so comfortable in front of the camera.\
-\
-Our portraits turned out stunning, and the candid shots were honestly some of our favourite moments from the day — he captured everything so beautifully and effortlessly. If you’re looking for a photographer who’s talented, fun, and genuinely amazing to be around, Tony is your guy!”*** ⭐⭐⭐⭐⭐

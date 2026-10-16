@@ -55,9 +55,3 @@ Both Kirstin and Justin were quite camera-shy, so rather than asking them to “
 Their family and friends were warm, welcoming, and full of kindness, and once again I felt incredibly grateful to work with such wonderful people. I’ve truly been blessed with amazing couples over the years.
 
 The church was a standout for me. **Holy Cross Catholic Church** is stunning inside, with architecture that reminded me of the hull of an upside-down boat—peaceful, grand, and beautifully atmospheric.
-
-Here’s a lovely piece of feedback from the couple:
-
-**“Excellent photos. Tony went above and beyond with the photography. The photos turned out amazing and everyone was asking if he was a family friend and he slotted in so nicely and was friendly with everyone.”**
-
-⭐⭐⭐⭐⭐

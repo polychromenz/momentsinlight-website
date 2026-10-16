@@ -38,5 +38,3 @@ gallery:
 I’m starting to think I might be a lucky charm. The weather had been awful all day, but just as the ceremony concluded, the clouds parted and the most beautiful light appeared. This was a last-minute booking — I was only there to photograph the ceremony and the couple shoot, which isn’t my usual approach. In fact, we hadn’t even met beforehand or done a practice shoot. I met Feby for the first time as she stepped out of the car at the venue!
 
 Despite that, everything came together perfectly. With that soft evening light, a gorgeous couple, and the stunning grounds of the [Waitākere Resort and Spa](https://www.waitakereresort.co.nz/), we captured some truly natural, heartfelt images.
-
-*“****Tony was great for our wedding. The shoot was a lot of fun, he made everyone feel at ease and the photos were amazing!****”* ⭐⭐⭐⭐⭐

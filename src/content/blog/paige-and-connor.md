@@ -70,11 +70,3 @@ As the evening light faded, we embraced the dusky skies with a little flash and 
 Then the party began. With the help of their incredible celebrant and DJ, Gary the Marry, the dance floor came alive instantly. This family knows how to celebrate — there was laughter, there were tears, and there was dancing well into the night.
 
 For me, it was an honour to capture every smile, every embrace, every joyful tear. These are the memories that will last a lifetime, a love story 10 years in the making and only just beginning.
-
-**Paige said**
-
-*“We had the absolute pleasure of working with Tony for our wedding, and we couldn’t be happier with the experience! From the very beginning, his communication was exceptional, always prompt, clear, and so friendly. He made us feel completely at ease and was incredibly organised and reliable throughout the entire process.\
-\
-On the day, Tony was an absolute dream to work with. Calm, professional, and full of positive energy, they captured every special moment so beautifully without ever feeling intrusive. The attention to detail and creativity in their shots are just amazing — we are genuinely blown away by the final photos!\
-\
-If you’re looking for a photographer who is not only talented but also wonderful to work with, we couldn’t recommend Tony more highly. Thank you for helping make our day so special and for giving us memories we’ll treasure forever!”* ⭐⭐⭐⭐⭐

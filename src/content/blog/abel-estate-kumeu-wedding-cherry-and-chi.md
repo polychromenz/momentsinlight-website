@@ -42,10 +42,3 @@ As the evening settled in, we stepped away for some portraits — and this is wh
 There’s something about that soft evening light, the calm after the excitement of the day, where couples can just be together. Cherry and Chi absolutely loved this part — no pressure, no audience, just the two of them taking it all in. Those moments always create something special, and these were no exception. Some of my favourite images from the entire day came from that quiet window of time.
 
 Cherry and Chi’s wedding was the perfect blend of elegance, personality, and genuine connection. A beautiful beginning for two people who are clearly meant to be.
-
-**“Tony is an incredibly dedicated photographer who goes above and beyond to make us feel comfortable in front of the camera. We had a very fun engagement shoot at Muriwai and Tony gave us many tips to prepare us for the wedding day. Leading up to our wedding day, he checked in with us multiple times to go over details and carefully noted all of our requests. We really appreciated his dedication.\
-We could tell our guests loved the energy he brought on the wedding day — it really helped lighten the mood during the group photos. The portraits he did for our guests after the reception was a highlight! And we loved all the candid moments he captured.\
-\
-We are so glad we picked Tony to be our wedding photographer! 5 out of 5!”**
-
-⭐⭐⭐⭐⭐

@@ -38,9 +38,3 @@ Cerise and Nick were absolute dream clients. Both experienced photographers them
 The wedding day followed suit—just as hot, if not hotter! The light was incredibly bright, but with Cerise and Nick so completely present and unafraid to show their emotions, we captured photographs filled with genuine love, connection, and feeling. When a couple lets themselves fully experience the day, it always shines through in the images.
 
 The reception was held at the wonderful [**The Stables Matakana**](https://stablesmatakana.co.nz/our-weddings), a beautifully relaxed setting that suited the vibe of the day perfectly. After some powerful speeches and great food, the atmosphere softened even further, giving way to more priceless moments as guests relaxed, connected, and truly soaked it all in.
-
-And here’s a lovely piece of feedback from the couple:
-
-**“Tony was amazing in the months leading up to our wedding and the day itself. He took great pride in getting us ready and comfortable in front of the camera, and did an engagement shoot beforehand to get to know us and give us a chance to get to know him. On the day, weather was all over the place but every photo came out beautiful, and was delivered so quickly. Thanks Tony!”**
-
-⭐⭐⭐⭐⭐

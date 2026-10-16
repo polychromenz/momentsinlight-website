@@ -40,7 +40,3 @@ As the day unfolded, it was filled with warmth, laughter, and so many genuine in
 What stood out most was how relaxed everything felt. There was no rush, no pressure — just a beautifully paced day where Jade and Ben could be fully present, soaking in every moment. That’s when the magic really happens, and it’s those moments that create images that feel as real as the memories themselves.
 
 From start to finish, this was a wedding full of elegance, connection, and quiet romance — the kind of day that doesn’t just look beautiful, but truly feels it.
-
-**“We had the best experience having Tony photograph our wedding! He was attentive from start to finish, going above and beyond to capture all the moments from our wedding. Tony was so personable, even our guests were commenting on how great he was. Couldn't recommend him and moments in light more!”**
-
-⭐⭐⭐⭐⭐
