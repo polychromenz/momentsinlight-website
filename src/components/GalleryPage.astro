@@ -4,6 +4,8 @@
 // band. The intro paragraphs go in the default slot.
 import BaseLayout from '../layouts/BaseLayout.astro';
 import StoryGrid from './StoryGrid.astro';
+import BlogSearch from './BlogSearch.astro';
+import BlogSearch from './BlogSearch.astro';
 
 interface Props {
   title: string;
@@ -17,12 +19,15 @@ interface Props {
   closingHeading?: string;
   closingText?: string;
   closingButton?: { label: string; href: string };
+  /** A search box above the cards. */
+  search?: boolean;
 }
 const {
   title, description, image, eyebrow, heading, categories, linkLabel, buttons = [],
   closingHeading = 'Is your date still free?',
   closingText = 'Tell me your date and venue, and I’ll let you know.',
   closingButton = { label: 'Check your date', href: '/contact' },
+  search = false,
 } = Astro.props;
 ---
 <BaseLayout title={title} description={description} image={image}>
@@ -39,7 +44,11 @@ const {
   </section>
 
   <section class="grid wrap">
-    <StoryGrid categories={categories} linkLabel={linkLabel} />
+    {search ? (
+      <BlogSearch categories={categories} placeholder="Search couples, venues or places"><StoryGrid categories={categories} linkLabel={linkLabel} /></BlogSearch>
+    ) : (
+      <StoryGrid categories={categories} linkLabel={linkLabel} />
+    )}
   </section>
 
   <section class="closing">

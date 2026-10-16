@@ -2,9 +2,10 @@
 // The blog list in the refreshed design, used by /blog, its later pages, and the category and
 // tag pages: a heading that rises in, filter buttons, story cards (cover cropped around the
 // post's "Cover photo position", the same hover as the gallery pages), page buttons and a
-// closing band.
+// closing band. A search box above the cards searches every post (or just the category's).
 import type { CollectionEntry } from 'astro:content';
 import Img from './Img.astro';
+import BlogSearch from './BlogSearch.astro';
 import { coverPosition, storyName } from '../lib/blog';
 
 interface Props {
@@ -39,6 +40,7 @@ const month = (d: Date) => d.toLocaleDateString('en-NZ', { month: 'long', year: 
 </header>
 
 <section class="list wrap">
+  <BlogSearch categories={active && active !== 'all' ? [active] : []}>
   <ul class="cards">
     {posts.map((p, i) => {
       const href = `/blog/${p.id}`;
@@ -71,6 +73,7 @@ const month = (d: Date) => d.toLocaleDateString('en-NZ', { month: 'long', year: 
       {older ? <a class="btn" href={older}>Older posts →</a> : <span />}
     </nav>
   )}
+  </BlogSearch>
 </section>
 
 <section class="closing">

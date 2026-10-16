@@ -1,0 +1,60 @@
+---
+// Share buttons at the end of a post: Facebook, Pinterest (with the cover photo), WhatsApp,
+// email and copy link. Plain links, so there are no tracking scripts and nothing slows the page.
+import { sized } from '../lib/images.mjs';
+
+interface Props {
+  url: string;
+  title: string;
+  image?: string;
+  label?: string;
+}
+const { url, title, image, label = 'Share' } = Astro.props;
+const u = encodeURIComponent(url);
+const t = encodeURIComponent(title);
+const links = [
+  { name: 'Facebook', href: `https://www.facebook.com/sharer/sharer.php?u=${u}`, icon: 'M14 8.5V6.8c0-.8.5-1 .9-1H17V2h-3c-3.3 0-4 2.4-4 4v2.5H8V12h2v10h4V12h2.8l.4-3.5H14z' },
+  ...(image ? [{ name: 'Pinterest', href: `https://pinterest.com/pin/create/button/?url=${u}&media=${encodeURIComponent(sized(image, 1500))}&description=${t}`, icon: 'M12 2a10 10 0 0 0-3.6 19.3c-.1-.8-.2-2 0-2.9l1.2-5s-.3-.6-.3-1.5c0-1.4.8-2.5 1.8-2.5.9 0 1.3.7 1.3 1.4 0 .9-.6 2.2-.9 3.4-.2 1 .5 1.9 1.6 1.9 1.9 0 3.3-2 3.3-4.9 0-2.5-1.8-4.3-4.5-4.3-3 0-4.8 2.3-4.8 4.6 0 .9.3 1.9.8 2.4.1.1.1.2.1.3l-.3 1.3c0 .2-.2.3-.4.2-1.4-.6-2.2-2.6-2.2-4.2 0-3.4 2.5-6.6 7.2-6.6 3.8 0 6.7 2.7 6.7 6.3 0 3.8-2.4 6.8-5.7 6.8-1.1 0-2.2-.6-2.5-1.3l-.7 2.6c-.2 1-.9 2.2-1.4 2.9A10 10 0 1 0 12 2z' }] : []),
+  { name: 'WhatsApp', href: `https://wa.me/?text=${encodeURIComponent(`${title} ${url}`)}`, icon: 'M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm5.3 14.1c-.2.6-1.3 1.2-1.8 1.3-.5 0-1 .2-3.3-.7-2.8-1.1-4.5-3.9-4.7-4.1-.1-.2-1.1-1.5-1.1-2.8 0-1.4.7-2 1-2.3.2-.3.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.8 2c.1.2.1.3 0 .5l-.3.5-.4.5c-.1.1-.3.3-.1.6.2.3.8 1.3 1.7 2.1 1.1 1 2.1 1.3 2.4 1.5.3.1.5.1.6-.1l.9-1.1c.2-.3.4-.2.6-.1l1.9.9c.3.1.5.2.5.3.1.1.1.6-.1 1.2z' },
+  { name: 'Email', href: `mailto:?subject=${t}&body=${u}`, icon: 'M3 5h18v14H3V5zm2 2v.4l7 4.6 7-4.6V7H5zm14 2.8-7 4.6-7-4.6V17h14V9.8z' },
+];
+---
+<div class="share">
+  <p class="share-label">{label}</p>
+  <ul>
+    {links.map((l) => (
+      <li><a href={l.href} target="_blank" rel="noopener" aria-label={`Share on ${l.name}`} title={l.name}><svg viewBox="0 0 24 24" aria-hidden="true"><path d={l.icon} /></svg></a></li>
+    ))}
+    <li><button type="button" class="copy" data-url={url} aria-label="Copy link" title="Copy link"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10.6 13.4a1 1 0 0 1 0-1.4l3.5-3.5a1 1 0 1 1 1.4 1.4L12 13.4a1 1 0 0 1-1.4 0zm-2.8 5.7a4 4 0 0 1-2.9-6.8l2.1-2.1a1 1 0 1 1 1.4 1.4l-2.1 2.1a2 2 0 0 0 2.9 2.9l2.1-2.1a1 1 0 1 1 1.4 1.4l-2.1 2.1a4 4 0 0 1-2.8 1.1zm8.5-6a1 1 0 0 1-.7-1.7l2.1-2.1a2 2 0 0 0-2.9-2.9l-2.1 2.1a1 1 0 1 1-1.4-1.4l2.1-2.1a4 4 0 0 1 5.7 5.7L17 12.8a1 1 0 0 1-.7.3z" /></svg><span class="copied" aria-live="polite"></span></button></li>
+  </ul>
+</div>
+
+<script>
+  document.querySelectorAll<HTMLButtonElement>('.share .copy').forEach((b) =>
+    b.addEventListener('click', async () => {
+      const note = b.querySelector('.copied')!;
+      try { await navigator.clipboard.writeText(b.dataset.url!); note.textContent = 'Link copied'; }
+      catch { note.textContent = b.dataset.url!; }
+      b.classList.add('done');
+      setTimeout(() => { b.classList.remove('done'); note.textContent = ''; }, 2200);
+    }),
+  );
+</script>
+
+<style>
+  .share { display: flex; align-items: center; flex-wrap: wrap; gap: 10px 16px; margin-top: 1.6em; }
+  .share-label { margin: 0 !important; font-size: 12px !important; font-weight: 500; letter-spacing: 0.22em; text-transform: uppercase; color: var(--green) !important; }
+  .share ul { display: flex; gap: 10px; margin: 0 !important; padding: 0 !important; list-style: none; }
+  .share li { padding: 0 !important; margin: 0 !important; }
+  .share li::before { display: none !important; }
+  .share a, .share button {
+    position: relative; display: grid; place-items: center; width: 42px; height: 42px; padding: 0;
+    border: 1px solid #ddd3c4; border-radius: 12px 0; background: var(--white); color: var(--green); cursor: pointer;
+    transition: border-radius 0.5s var(--ease), background-color 0.4s var(--ease), color 0.4s var(--ease), border-color 0.4s var(--ease);
+  }
+  .share a:hover, .share button:hover, .share button.done { opacity: 1; border-radius: 0 12px; background: var(--green); border-color: var(--green); color: var(--white); }
+  .share svg { width: 19px; height: 19px; fill: currentColor; }
+  .copied { position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%); white-space: nowrap; font-size: 12px; color: var(--ink); background: var(--champagne); padding: 4px 10px; border-radius: 8px 0; pointer-events: none; }
+  .copied:empty { display: none; }
+  @media (prefers-reduced-motion: reduce) { .share a, .share button { transition: none; } }
+</style>

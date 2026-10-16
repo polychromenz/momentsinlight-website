@@ -12,6 +12,7 @@ import Gallery from '../../components/Gallery.astro';
 import Slideshow from '../../components/Slideshow.astro';
 import StoryGrid from '../../components/StoryGrid.astro';
 import ReviewCarousel from '../../components/ReviewCarousel.astro';
+import ShareButtons from '../../components/ShareButtons.astro';
 import { site } from '../../data/site';
 import reviews from '../../data/reviews.json';
 import { sized } from '../../lib/images.mjs';
@@ -90,6 +91,7 @@ const jsonLd = {
     <div class="prose wrap" data-reveal>
       <Content />
       <p class="byline">Written by {d.author}, wedding and portrait photographer, Auckland.</p>
+      <ShareButtons url={new URL(`/blog/${post.id}`, site.url).href} title={d.title} image={coverSrc} label={isStory ? `Share this ${kind === 'wedding' ? 'love story' : 'session'}` : 'Share this article'} />
     </div>
   </article>
 

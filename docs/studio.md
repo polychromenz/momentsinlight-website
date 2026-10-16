@@ -19,6 +19,7 @@
   - **Delete post:** removes it completely (its photos stay in your photo library).
 - **★ Reviews** (from the post list): add a new Google review (copy it across from Google), or edit or remove one. See reviews.md.
 - **📈 Stats** (from the post list): visits and page views for the last 7, 30 or 90 days, top pages and love stories, where visitors come from, devices and countries. Numbers come from Cloudflare Web Analytics.
+- **Share it** (in Settings, once a post is live): Facebook and Pinterest buttons (Pinterest gets the cover photo and title), Copy link, and Copy Instagram caption (Instagram doesn’t take posts from websites, so paste the caption into the app).
 - Posts with a table (some articles) open in a safe plain-text mode with a preview underneath, so the table can't be damaged.
 
 ## If something goes wrong

@@ -215,7 +215,31 @@ function refreshStatus() {
   const live = $<HTMLAnchorElement>('.view-live');
   live.hidden = s !== 'live';
   live.href = `/blog/${id}`;
+  refreshShare(s === 'live');
 }
+
+// ---------- Share it (shown once the post is live) ----------
+const SITE = 'https://www.momentsinlight.co.nz';
+function refreshShare(isLive: boolean) {
+  $<HTMLFieldSetElement>('.share-box').hidden = !isLive;
+  if (!isLive) return;
+  const url = `${SITE}/blog/${id}`;
+  const cover = coverSrc();
+  $<HTMLAnchorElement>('[data-share="facebook"]').href = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`;
+  const pin = $<HTMLAnchorElement>('[data-share="pinterest"]');
+  pin.hidden = !cover;
+  pin.href = `https://pinterest.com/pin/create/button/?url=${encodeURIComponent(url)}&media=${encodeURIComponent(thumb(cover, 1500))}&description=${encodeURIComponent(data.title)}`;
+}
+async function copyText(text: string, done: string) {
+  try { await navigator.clipboard.writeText(text); toast(done); }
+  catch { prompt('Copy this:', text); }
+}
+$('[data-share="link"]').addEventListener('click', () => copyText(`${SITE}/blog/${id}`, 'Link copied.'));
+// Instagram doesn't take posts from websites, so this copies a caption to paste in the app.
+$('[data-share="caption"]').addEventListener('click', () => {
+  const caption = [data.title, data.description, `${SITE.replace('https://', '')}/blog/${id}`].filter(Boolean).join('\n\n');
+  copyText(caption, 'Caption copied. Paste it into Instagram with your photos.');
+});
 
 // ---------- Cover photo and focus point ----------
 const coverFrame = $('.cover-frame');
@@ -506,7 +530,7 @@ async function save(draft: boolean) {
     toast(
       s === 'draft' ? 'Draft saved. It’s not on the site.' :
       s === 'scheduled' ? `Scheduled. It will appear on the site on ${next.date}.` :
-      `Published. It’ll be live in about a minute: <a href="/blog/${id}" target="_blank" rel="noopener">view it</a>.`,
+      `Published. It’ll be live in about a minute: <a href="/blog/${id}" target="_blank" rel="noopener">view it</a>. Then share it from <strong>Share it</strong> in Settings.`,
       false, 10000,
     );
     refreshPreview();
