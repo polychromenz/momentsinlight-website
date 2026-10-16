@@ -7,6 +7,7 @@ updated: 2026-05-21
 author: "Tony Gorham"
 categories: ["Wedding"]
 tags: []
+review: "Julia Passmore"
 thumbnail: "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-julia-and-alistair/colour/_Q9A3673-Edit/public"
 gallery:
   - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-julia-and-alistair/colour/_Q9A3598/public","alt":"Julia looks out of the window in her wedding dress","width":1366,"height":2048}

@@ -324,6 +324,27 @@ content:
             - { value: center, label: Centre }
             - { value: lower, label: Lower }
             - { value: bottom, label: Bottom }
+      - name: opening
+        label: Opening (optional)
+        description: How the post starts. Leave empty for the usual - a photo opening for love stories and sessions, a text opening for articles.
+        type: select
+        options:
+          values:
+            - { value: photo, label: "Photo: the cover photo full width, with the title over it" }
+            - { value: text, label: "Text: a centred heading" }
+      - name: galleryStyle
+        label: Gallery style (optional)
+        description: How the photos are laid out. Leave empty for the story flow.
+        type: select
+        options:
+          values:
+            - { value: story, label: "Story flow: one large photo, then a pair, and so on" }
+            - { value: columns, label: "Columns: every photo whole, in two or three columns" }
+            - { value: slideshow, label: "Slideshow: one photo at a time, full width" }
+      - name: review
+        label: Their Google review (optional)
+        description: The reviewer's name exactly as on Google (e.g. Leah Doolan) to show their review in the post.
+        type: string
       - name: date
         label: Post date
         description: Posts are listed newest first, and the previous/next links at the bottom of each post follow this order automatically.

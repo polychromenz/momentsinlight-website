@@ -3,12 +3,15 @@
 //   grid     – square tiles, 3 across on desktop / 2 on phones (as on the live site)
 //   masonry  – uncropped photos in columns, 3 across / 2 on phones
 //   carousel – one row that scrolls sideways with CSS scroll-snap and arrow buttons
+//   story    – the blog's editorial flow: one large photo, then a pair side by side, and so
+//              on. Every photo is shown whole: a pair's widths follow the photos' shapes, so
+//              both sit at exactly the same height without cropping.
 // Clicking any photo opens a full-screen viewer: swipe, use the arrows or the keyboard
 // (← → Esc) to move through the photos at full size.
 // Every image is lazy-loaded. Width and height (when known) reserve space so nothing jumps.
 import Img from './Img.astro';
 
-export type GalleryLayout = 'grid' | 'masonry' | 'carousel';
+export type GalleryLayout = 'grid' | 'masonry' | 'carousel' | 'story';
 interface Props {
   images: { src: string; alt: string; width?: number; height?: number }[];
   layout?: GalleryLayout;
@@ -26,7 +29,19 @@ const sizes = {
   grid: '(min-width: 768px) 23vw, 42vw',
   masonry: '(min-width: 768px) 23vw, 42vw',
   carousel: '(min-width: 768px) 60vw, 85vw',
+  story: '(min-width: 768px) 70vw, 92vw',
 }[layout];
+
+// Story layout: rows of one (a landscape photo, large) or two (side by side).
+const ratio = (g: { width?: number; height?: number }) => (g.width && g.height ? g.width / g.height : 1.5);
+const rows: number[][] = [];
+if (layout === 'story') {
+  let big = true;
+  for (let i = 0; i < images.length; ) {
+    if ((big && ratio(images[i]) >= 1) || i === images.length - 1) { rows.push([i]); i += 1; big = false; }
+    else { rows.push([i, i + 1]); i += 2; big = true; }
+  }
+}
 
 const tile = (g: (typeof images)[number], i: number) => ({ index: i, label: `View photo ${i + 1} of ${images.length} full size` });
 ---
@@ -50,6 +65,18 @@ const tile = (g: (typeof images)[number], i: number) => ({ index: i, label: `Vie
           <svg viewBox="0 0 12 24" aria-hidden="true"><path d="m2 2 8 10-8 10" /></svg>
         </button>
       </section>
+    ) : layout === 'story' ? (
+      <div class="gallery story" role="list" aria-label={label}>
+        {rows.map((r, n) => (
+          <div class:list={['row', { 'row--tall': r.length === 1 && ratio(images[r[0]]) < 1, 'row--flip': n % 4 === 3 }]} role="presentation" data-reveal="photo">
+            {r.map((i) => (
+              <button type="button" class="open" role="listitem" data-index={i} aria-label={tile(images[i], i).label} style={`flex:${ratio(images[i])} 1 0`}>
+                <Img src={images[i].src} alt={images[i].alt} width={images[i].width} height={images[i].height} sizes={r.length === 1 ? sizes : '(min-width: 768px) 36vw, 46vw'} />
+              </button>
+            ))}
+          </div>
+        ))}
+      </div>
     ) : (
       <ul class:list={['gallery', layout]} aria-label={label}>
         {images.map((g, i) => (
@@ -191,6 +218,18 @@ const tile = (g: (typeof images)[number], i: number) => ({ index: i, label: `Vie
   .masonry li { break-inside: avoid; margin-bottom: 20px; }
   .masonry :global(img) { width: 100%; height: auto; }
 
+  /* Story: rows of one large photo or a pair, never cropped, with the site's leaf corners. */
+  .story { margin-top: 40px; display: grid; gap: 14px; }
+  .story .row { display: flex; gap: 14px; }
+  .story .open { min-width: 0; }
+  .story :global(img) { width: 100%; height: auto; border-radius: 32px 0; transition: transform 1.2s var(--ease), filter 0.8s var(--ease); }
+  .story .row--flip :global(img) { border-radius: 0 32px 0 32px; }
+  .story .row--tall .open { flex: none !important; width: auto; margin: 0 auto; }
+  .story .row--tall :global(img) { width: auto; max-width: 100%; max-height: 88vh; }
+  @media (hover: hover) {
+    .story .open:hover :global(img) { opacity: 1; filter: brightness(1.04); }
+  }
+
   /* Carousel: native horizontal scrolling with scroll-snap; every photo shares one height. */
   .carousel { position: relative; --slide-h: min(62vw, 420px); }
   .track {
@@ -325,6 +364,7 @@ const tile = (g: (typeof images)[number], i: number) => ({ index: i, label: `Vie
     .grid { grid-template-columns: repeat(3, 1fr); }
     .masonry { columns: 3; }
     .carousel { --slide-h: min(42vw, 600px); }
+    .story, .story .row { gap: 20px; }
     .track { gap: 20px; }
     .prev { left: -22px; }
     .next { right: -22px; }

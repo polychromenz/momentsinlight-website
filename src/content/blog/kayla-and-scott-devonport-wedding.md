@@ -7,6 +7,7 @@ updated: 2026-06-17
 author: "Tony Gorham"
 categories: ["Wedding"]
 tags: []
+review: "Kayla Wells"
 thumbnail: "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-kayla-and-scott/colour/_30A0947-Edit/public"
 thumbnailPosition: "52% 26%"
 gallery:

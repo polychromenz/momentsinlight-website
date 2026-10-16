@@ -7,6 +7,7 @@ updated: 2026-04-01
 author: "Tony Gorham"
 categories: ["Wedding"]
 tags: []
+review: "Kirstin Anne Laico"
 thumbnail: "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-kirstin-and-justin/colour/_30A6750/public"
 gallery:
   - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-kirstin-and-justin/colour/_Q9A4130/public","alt":"The interior of the church before the ceremony","width":2048,"height":1366}

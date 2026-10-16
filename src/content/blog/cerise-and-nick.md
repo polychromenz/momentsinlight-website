@@ -7,6 +7,7 @@ updated: 2026-08-17
 author: "Tony Gorham"
 categories: ["Wedding"]
 tags: []
+review: "Cerise Brown"
 thumbnail: "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-cerise-and-nick/colour/_30A2719/public"
 gallery:
   - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-cerise-and-nick/colour/_30A3791/public","alt":"The entrance sign at The Stables and Secret Garden in Matakana","width":2048,"height":1638}

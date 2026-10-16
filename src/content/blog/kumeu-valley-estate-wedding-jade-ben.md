@@ -7,6 +7,7 @@ updated: 2026-08-17
 author: "Tony Gorham"
 categories: ["Wedding"]
 tags: ["kumeu-valley-estate"]
+review: "Jade McQuoid"
 thumbnail: "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-jade-and-ben/colour/_30A8992/public"
 gallery:
   - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-jade-and-ben/colour/_30A8995/public","alt":"Jade and Ben under a flower-covered arch at Kumeu Valley Estate","width":1638,"height":2048}

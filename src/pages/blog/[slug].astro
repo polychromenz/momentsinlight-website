@@ -1,28 +1,63 @@
 ---
+// A blog post, in one of two refreshed layouts chosen by its category:
+//   Love stories and sessions (Wedding, Portrait, Family): a photo opening (the cover full
+//   width, never cropped, with the names over it), the story, the photos in the editorial
+//   "story" flow, the couple's own Google review, "More love stories" cards and a closing band.
+//   Articles (everything else): a text opening, a comfortable reading column, "Related
+//   articles" cards and a closing band.
+// Each post can override the opening and the gallery style in Pages CMS (opening, galleryStyle).
 import { getCollection, render } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import Gallery from '../../components/Gallery.astro';
-import { Image } from 'astro:assets';
+import Slideshow from '../../components/Slideshow.astro';
+import StoryGrid from '../../components/StoryGrid.astro';
+import ReviewCarousel from '../../components/ReviewCarousel.astro';
 import { site } from '../../data/site';
+import reviews from '../../data/reviews.json';
 import { sized } from '../../lib/images.mjs';
+import { storyName } from '../../lib/blog';
 
 export async function getStaticPaths() {
-  // Newest first. Like Squarespace, "previous" is the next newer post and "next" the next older one.
   const posts = (await getCollection('blog')).sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
-  const link = (p?: (typeof posts)[number]) => (p ? { title: p.data.title, href: `/blog/${p.id}` } : undefined);
-  return posts.map((post, i) => ({
-    params: { slug: post.id },
-    props: { post, prev: post.data.prev ?? link(posts[i - 1]), next: post.data.next ?? link(posts[i + 1]) },
-  }));
+  return posts.map((post) => ({ params: { slug: post.id }, props: { post, posts } }));
 }
-
-const { post, prev, next } = Astro.props;
+const { post, posts } = Astro.props;
 const { Content } = await render(post);
 const d = post.data;
-const cover = d.thumbnail ?? d.gallery[0]?.src;
+const cats = d.categories.map((c) => c.toLowerCase());
+const kind: 'wedding' | 'portrait' | 'family' | 'article' =
+  cats.includes('wedding') ? 'wedding' : cats.includes('portrait') ? 'portrait' : cats.includes('family') ? 'family' : 'article';
+const isStory = kind !== 'article';
 
-// The live site shows the date as "22 Jul".
-const dateLabel = d.date.toLocaleDateString('en-NZ', { day: 'numeric', month: 'short', timeZone: 'Pacific/Auckland' });
+const coverSrc = d.thumbnail ?? d.gallery[0]?.src;
+const coverMeta = d.gallery.find((g) => g.src === coverSrc) ?? d.gallery[0];
+const opening = coverSrc ? d.opening ?? (isStory ? 'photo' : 'text') : 'text';
+const galleryStyle = d.galleryStyle ?? 'story';
+// With a photo opening, the cover isn't repeated as the first photo of the gallery.
+const photos = opening === 'photo' ? d.gallery.filter((g) => g.src !== coverSrc) : d.gallery;
+
+// "Rebecca & Nick | Bridgewater Estate Wedding" -> heading "Rebecca & Nick", place "Bridgewater Estate".
+const split = kind === 'wedding' ? storyName(d.title) : { name: d.title, place: '' };
+const heading = split.name;
+const place = d.venue || split.place;
+const month = d.date.toLocaleDateString('en-NZ', { month: 'long', year: 'numeric', timeZone: 'Pacific/Auckland' });
+const label = { wedding: 'Love story', portrait: 'Portrait session', family: 'Family session', article: d.categories[0] === 'Info' ? 'Wedding planning' : 'Journal' }[kind];
+const eyebrow = [place || label, month].filter(Boolean).join(' · ');
+
+const review = d.review ? reviews.reviews.find((r) => r.name === d.review) : undefined;
+
+// More from the same kind: posts sharing a tag (the same venue) first, then the newest.
+const sameKind = posts.filter((p) => p.id !== post.id && (isStory ? p.data.categories.some((c) => d.categories.includes(c)) : !['Wedding', 'Portrait', 'Family'].some((c) => p.data.categories.includes(c))) && (p.data.thumbnail || p.data.gallery.length));
+const shared = (p: (typeof posts)[number]) => p.data.tags.some((t) => d.tags.includes(t));
+const more = [...sameKind.filter(shared), ...sameKind.filter((p) => !shared(p))].slice(0, 3).map((p) => p.id);
+const moreHeading = { wedding: 'More love stories', portrait: 'More portrait sessions', family: 'More family sessions', article: 'Related articles' }[kind];
+const moreLink = { wedding: ['All love stories', '/wedding-galleries'], portrait: ['All portrait sessions', '/portraits-gallery'], family: ['All family sessions', '/family-galleries'], article: ['All wedding resources', '/wedding-resources'] }[kind];
+const closing = {
+  wedding: { heading: 'Is your date still free?', text: 'Tell me your date and venue, and I’ll let you know.', button: 'Check your date' },
+  portrait: { heading: 'Let’s create something beautiful', text: 'Tell me what you have in mind, and I’ll help you plan a session that brings out the very best of you.', button: 'Get in touch' },
+  family: { heading: 'Let’s capture your family', text: 'Tell me a little about your family and where you’d love your photos taken.', button: 'Get in touch' },
+  article: { heading: 'Planning your wedding?', text: 'If you’re looking for a photographer who will capture your day in a natural, refined way, I’d love to hear about your plans.', button: 'Check your date' },
+}[kind];
 
 const jsonLd = {
   '@context': 'https://schema.org',
@@ -33,101 +68,145 @@ const jsonLd = {
   dateModified: (d.updated ?? d.date).toISOString(),
   author: { '@type': 'Person', name: d.author },
   publisher: { '@type': 'Organization', name: site.name, url: site.url },
-  image: (cover ? [cover] : []).concat(d.gallery.slice(0, 2).map((g) => g.src)).map((src) => sized(src, 1500)),
+  image: (coverSrc ? [coverSrc] : []).concat(d.gallery.slice(0, 2).map((g) => g.src)).map((src) => sized(src, 1500)),
   mainEntityOfPage: new URL(`/blog/${post.id}`, site.url).href,
 };
 ---
-<BaseLayout title={d.seoTitle ?? d.title} description={d.description} image={cover} type="article" jsonLd={jsonLd} background="alt">
-  <article class="post">
-    <p class="meta">
-      <time datetime={d.date.toISOString()}>{dateLabel}</time>
-      <span class="sep" aria-hidden="true">-</span>
-      Written By <span class="author">{d.author}</span>
-    </p>
-    <h1>{d.title}</h1>
+<BaseLayout title={d.seoTitle ?? d.title} description={d.description} image={coverSrc} type="article" jsonLd={jsonLd}>
+  {opening === 'photo' ? (
+    <Slideshow hero first label={heading} images={[{ src: coverSrc!, alt: coverMeta?.alt ?? '', width: coverMeta?.width, height: coverMeta?.height }]}>
+      <p class="hero-eyebrow">{eyebrow}</p>
+      <h1 class="hero-title">{heading}</h1>
+    </Slideshow>
+  ) : (
+    <header class="intro wrap">
+      <p class="eyebrow rise">{eyebrow}</p>
+      <h1 class="display rise">{d.title}</h1>
+      <hr class="hairline rise" />
+    </header>
+  )}
 
-    <div class="prose">
+  <article class:list={['post', `post--${kind}`]}>
+    <div class="prose wrap" data-reveal>
       <Content />
+      <p class="byline">Written by {d.author}, wedding and portrait photographer, Auckland.</p>
     </div>
 
-    <Gallery images={d.gallery} layout="grid" label={`Photographs from ${d.title}`} subject={d.title.split(/\s[|–-]\s/)[0]} />
-
-    {d.tags.length > 0 && (
-      <p class="tags">
-        {d.tags.map((t) => <a href={`/blog/tag/${encodeURIComponent(t)}`}>{t}</a>)}
-      </p>
+    {photos.length > 0 && (
+      galleryStyle === 'slideshow' ? (
+        <div class="post-slideshow">
+          <Slideshow hero label={`Photographs from ${d.title}`} interval={5} images={photos.map((g) => ({ src: g.src, alt: g.alt, width: g.width, height: g.height }))} />
+        </div>
+      ) : (
+        <div class="photos wrap">
+          <Gallery images={photos} layout={galleryStyle === 'columns' ? 'masonry' : 'story'} label={`Photographs from ${d.title}`} subject={heading} />
+        </div>
+      )
     )}
-
-    <aside class="author-box">
-      <Image src={site.monogramWhite} alt="" width={40} height={40} densities={[1, 2]} />
-      <p>{d.author}</p>
-      <p>Wedding Photographer based in Auckland. Specialising in weddings and portraits.</p>
-      <p>{site.url}</p>
-    </aside>
   </article>
 
-  {(prev || next) && (
-    <nav class="pager" aria-label="More posts">
-      {prev ? (
-        <a class="prev" href={prev.href}>
-          <svg viewBox="0 0 12 24" aria-hidden="true"><path d="M10 2 2 12l8 10" /></svg>
-          <span class="sr-only">Previous: </span><span class="title">{prev.title}</span>
-        </a>
-      ) : <span />}
-      {next ? (
-        <a class="next" href={next.href}>
-          <span class="sr-only">Next: </span><span class="title">{next.title}</span>
-          <svg viewBox="0 0 12 24" aria-hidden="true"><path d="m2 2 8 10-8 10" /></svg>
-        </a>
-      ) : <span />}
-    </nav>
+  {review && (
+    <section class="review-band">
+      <div class="wrap" data-reveal><ReviewCarousel names={[review.name]} label={`${review.name}’s review`} /></div>
+    </section>
   )}
+
+  {more.length > 0 && (
+    <section class="more wrap">
+      <div class="more-head" data-reveal>
+        <h2 class="display">{moreHeading}</h2>
+        <a href={moreLink[1]}>{moreLink[0]} →</a>
+      </div>
+      <StoryGrid ids={more} splitTitles={kind === 'wedding'} linkLabel={isStory ? (kind === 'wedding' ? 'View love story' : 'View gallery') : 'Read more'} />
+    </section>
+  )}
+
+  <section class="closing">
+    <div class="wrap" data-reveal>
+      <h2 class="display">{closing.heading}</h2>
+      <p>{closing.text}</p>
+      <p><a class="btn btn--light" href="/contact">{closing.button}</a></p>
+    </div>
+  </section>
 </BaseLayout>
 
 <style>
-  /* Phone layout first (390px reference), desktop overrides below (1440px reference). */
-  .post { padding: 23px var(--pad) 60px; }
+  /* Openings */
+  .hero-eyebrow { margin: 0 0 10px; font-size: 12px; font-weight: 500; letter-spacing: 0.32em; text-transform: uppercase; color: var(--green); }
+  .hero-title { margin: 0; padding: 0; color: var(--ink); font-weight: 300; font-size: clamp(30px, 3vw + 14px, 60px); line-height: 1.08; }
+  .intro { max-width: calc(860px + 2 * var(--pad)); margin: 0 auto; padding-block: 64px 24px; text-align: center; }
+  .intro h1 { font-size: clamp(32px, 2.6vw + 18px, 56px); margin: 0 0 24px; padding: 0; }
+  .rise { animation: rise 1.3s var(--ease) both; }
+  .rise:nth-child(2) { animation-delay: 0.1s; }
+  .rise:nth-child(3) { animation-delay: 0.2s; }
+  hr.rise { animation-name: draw; }
+  @keyframes rise { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
+  @keyframes draw { from { transform: scaleX(0); } to { transform: none; } }
 
-  .meta { font-size: var(--fs-meta); line-height: 1.2; letter-spacing: 0.02em; color: var(--green); margin: 0 0 19px; }
-  .sep { margin: 0 0.6em; }
-  h1 { font-size: var(--fs-h2); line-height: 1.2; margin: 0 0 44px; }
-
-  /* Section headings in posts are bold body-size text on the live site. */
-  .prose :global(h2) { font-size: inherit; line-height: inherit; font-weight: 700; color: var(--black); margin: 0 0 0.9em; }
-  .prose :global(h2 a) { color: var(--green); }
-  .prose :global(blockquote) { margin: 0; }
-  .prose :global(blockquote p) { margin: 0; }
-
-  .tags { display: flex; flex-wrap: wrap; gap: 0 1em; margin: 70px 0 0; font-size: var(--fs-meta); letter-spacing: 0.02em; }
-  .tags a { color: var(--green); text-decoration: none; }
-  .tags a:hover { text-decoration: underline; }
-
-  /* Photos placed inside the story text. */
-  .prose :global(img) { width: 100%; height: auto; margin: 1.5em 0; }
-  .prose :global(table) { width: 100%; border-collapse: collapse; }
-
-  .author-box { margin-top: 45px; font-size: 15px; line-height: 24px; }
-  .author-box img { width: 40px; height: auto; margin-bottom: 12px; }
-  .author-box p { margin: 0 0 12px; }
-
-  .pager {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 20px;
-    padding: 12px var(--pad);
-    min-height: 104px;
-    align-items: center;
+  /* The story or article text, in a comfortable reading column. */
+  .post { padding-block: 48px 72px; }
+  .prose { max-width: calc(720px + 2 * var(--pad)); margin: 0 auto; }
+  .prose :global(p) { color: #333; line-height: 1.9; font-size: clamp(16px, 0.2vw + 15.5px, 18px); }
+  .post--wedding .prose > :global(p:first-of-type),
+  .post--portrait .prose > :global(p:first-of-type),
+  .post--family .prose > :global(p:first-of-type) { font-size: clamp(19px, 0.5vw + 16px, 23px); font-weight: 300; line-height: 1.65; color: var(--ink); }
+  .prose :global(h2) { font-weight: 300; color: var(--ink); font-size: clamp(24px, 1.2vw + 18px, 34px); line-height: 1.2; margin: 1.6em 0 0.6em; }
+  .prose :global(h3) { font-weight: 500; color: var(--ink); font-size: clamp(19px, 0.4vw + 17px, 22px); margin: 1.4em 0 0.5em; }
+  .prose :global(h2 a), .prose :global(h3 a) { color: inherit; text-decoration-color: var(--sage); }
+  .prose :global(strong) { font-weight: 600; color: var(--ink); }
+  .prose :global(a:not(.btn)) { text-decoration-color: var(--sage); text-underline-offset: 0.2em; transition: text-decoration-color 0.4s var(--ease); }
+  .prose :global(a:not(.btn):hover) { opacity: 1; text-decoration-color: var(--green); }
+  .prose :global(ul), .prose :global(ol) { margin: 0 0 1.2em; padding-left: 0; }
+  .prose :global(ul) { list-style: none; }
+  .prose :global(ul > li) { position: relative; padding-left: 28px; margin-bottom: 0.5em; line-height: 1.8; }
+  .prose :global(ul > li)::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0.55em;
+    width: 12px;
+    height: 12px;
+    background-color: var(--sage);
+    -webkit-mask: var(--heart-shape) center / contain no-repeat;
+    mask: var(--heart-shape) center / contain no-repeat;
   }
-  .pager a { display: flex; align-items: center; gap: 18px; text-decoration: none; color: var(--green); line-height: 1; }
-  .pager .next { justify-content: flex-end; text-align: right; }
-  .pager svg { flex: none; width: 12px; height: 24px; fill: none; stroke: var(--black); stroke-width: 1.2; }
+  .prose :global(ol) { padding-left: 1.4em; }
+  .prose :global(ol > li) { margin-bottom: 0.5em; line-height: 1.8; }
+  .prose :global(li p) { margin: 0; }
+  .prose :global(blockquote) { margin: 1.6em 0; padding: 4px 0 4px 22px; border-left: 2px solid var(--sage); }
+  .prose :global(blockquote p) { font-size: clamp(18px, 0.4vw + 16px, 21px); font-weight: 300; color: var(--ink); }
+  .prose :global(img) { width: 100%; height: auto; margin: 1.6em 0; border-radius: 32px 0; }
+  .prose :global(table) { width: 100%; border-collapse: collapse; margin: 1.4em 0; font-size: 15px; }
+  .prose :global(th), .prose :global(td) { text-align: left; padding: 10px 12px; border-bottom: 1px solid #ece6db; vertical-align: top; }
+  .prose :global(th) { font-weight: 600; color: var(--ink); background: var(--champagne); }
+  .prose :global(hr) { border: 0; height: 1px; background: #e8e1d5; margin: 2em 0; }
+  .byline { margin-top: 2.4em !important; padding-top: 1.2em; border-top: 1px solid #ece6db; font-size: 14px !important; color: #777 !important; letter-spacing: 0.02em; }
+
+  .photos { max-width: calc(1240px + 2 * var(--pad)); margin: 0 auto; }
+  .post-slideshow { margin-top: 40px; }
+
+  .review-band { background: var(--green); color: var(--champagne); padding-block: 80px; }
+  .review-band .wrap { max-width: calc(1000px + 2 * var(--pad)); margin: 0 auto; }
+
+  .more { max-width: calc(1280px + 2 * var(--pad)); margin: 0 auto; padding-block: 80px; }
+  .more-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 12px 32px; margin-bottom: 36px; }
+  .more-head h2 { margin: 0; font-size: clamp(28px, 1.8vw + 18px, 44px); }
+  .more-head a { font-size: 15px; }
+
+  .closing { background: var(--olive); color: var(--cream); padding-block: 88px; text-align: center; }
+  .closing h2 { color: var(--champagne); font-size: clamp(30px, 2.4vw + 18px, 54px); margin: 0 0 16px; }
+  .closing .btn { margin-top: 16px; }
 
   @media (min-width: 768px) {
-    .post { width: 68vw; margin: 0 auto; padding: 58px 0 100px; }
-    .meta { margin-bottom: 31px; }
-    h1 { margin-bottom: 38px; }
-    .tags { margin-top: 93px; }
-    .author-box { margin-top: 44px; }
-    .pager { padding: 43px var(--pad); min-height: 118px; }
+    .hero-eyebrow { color: var(--white); font-size: 13px; margin-bottom: 14px; }
+    .hero-title { color: var(--white); font-size: clamp(26px, 6cqi, 64px); }
+    .intro { padding-block: 110px 32px; }
+    .post { padding-block: 72px 110px; }
+    .review-band { padding-block: 120px; }
+    .more { padding-block: 110px; }
+    .closing { padding-block: 120px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .rise { animation: none; }
   }
 </style>

@@ -9,6 +9,7 @@ venue: Tui Hills
 venueUrl: https://tuihills.co.nz/
 categories: ["Wedding"]
 tags: ["tui-hills"]
+review: "Ellen Fenton"
 gallery:
   - { src: "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-ellen-and-ryan/colour/_30A5340/public", alt: "Ellie and Ryan's wedding at Tui Hills", width: 2048, height: 1366 }
   - { src: "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-ellen-and-ryan/colour/_30A5188/public", alt: "Ellie and Ryan's wedding at Tui Hills", width: 1366, height: 2048 }

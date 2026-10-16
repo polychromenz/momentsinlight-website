@@ -7,6 +7,7 @@ updated: 2026-08-17
 author: "Tony Gorham"
 categories: ["Wedding"]
 tags: ["bridgewater"]
+review: "Leah Doolan"
 thumbnail: "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-leah-and-warwick/colour/_30A4469/public"
 gallery:
   - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-leah-and-warwick/colour/_30A3821/public","alt":"Leah and Warwick's name cards beside bride and groom salt and pepper shakers","width":2048,"height":1366}

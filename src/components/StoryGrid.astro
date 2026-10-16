@@ -12,19 +12,22 @@ interface Props {
   categories?: string[];
   /** Only posts with this tag (e.g. a venue's weddings). */
   tag?: string;
+  /** Exactly these posts, in this order (e.g. "More love stories" under a post). */
+  ids?: string[];
   /** Words on the hover shade, e.g. "View love story". */
   linkLabel?: string;
   /** Split "Names | Place" titles into a name and a smaller place line (wedding posts). */
   splitTitles?: boolean;
 }
-const { categories, tag, linkLabel = 'View gallery', splitTitles = true } = Astro.props;
+const { categories, tag, ids, linkLabel = 'View gallery', splitTitles = true } = Astro.props;
 const wanted = categories?.map((c) => c.toLowerCase());
 const posts = (await getCollection('blog'))
   .filter((p) => (!wanted || p.data.categories.some((c) => wanted.includes(c.toLowerCase()))) && (!tag || p.data.tags.includes(tag)))
   .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+const shown = ids ? ids.map((id) => posts.find((p) => p.id === id)).filter((p) => !!p) : posts;
 ---
 <ul class="stories">
-  {posts.map((p, i) => {
+  {shown.map((p, i) => {
     const src = p.data.thumbnail ?? p.data.gallery[0]?.src;
     const { name, place } = splitTitles ? storyName(p.data.title) : { name: p.data.title, place: '' };
     return (

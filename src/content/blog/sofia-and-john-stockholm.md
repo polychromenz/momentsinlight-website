@@ -7,6 +7,7 @@ updated: 2026-08-17
 author: "Tony Gorham"
 categories: ["Wedding"]
 tags: []
+review: "Sofia Karsberg"
 thumbnail: "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-sofia-and-john/colour/_Q9A5538-2/public"
 gallery:
   - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-sofia-and-john/mono/_Q9A4339-Edit/public","alt":"Black and white close-up of a bracelet being fastened on Sofia's wrist","width":2048,"height":1365}

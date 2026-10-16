@@ -21,6 +21,14 @@ const blog = defineCollection({
     // Where the faces are in the thumbnail, so cropped covers keep them: a preset from Pages CMS
     // (top, upper, center, lower, bottom) or an exact CSS position such as "52% 26%".
     thumbnailPosition: z.string().optional(),
+    // Per-post layout choices (empty = the default for the post's type):
+    //   opening: 'photo' (cover full width, names over it) or 'text' (centred heading)
+    //   galleryStyle: 'story' (large photo then pairs), 'columns' (uncropped) or 'slideshow'
+    opening: z.enum(['photo', 'text']).optional(),
+    galleryStyle: z.enum(['story', 'columns', 'slideshow']).optional(),
+    // The couple's or client's Google review to show in the post (reviewer's name as in
+    // src/data/reviews.json).
+    review: z.string().optional(),
     // Width and height are optional so photos added through Pages CMS work without them;
     // when present they reserve space while lazy images load, so the page doesn't jump.
     gallery: z

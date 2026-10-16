@@ -7,6 +7,7 @@ updated: 2026-01-13
 author: "Tony Gorham"
 categories: ["Wedding"]
 tags: []
+review: "Janine Kruger"
 thumbnail: "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2025-janine-and-kyle/colour/SOCIAL__Q9A9656-Edit-website/public"
 gallery:
   - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2025-janine-and-kyle/colour/_Q9A8556/public","alt":"Janine has her hair styled during bridal preparations","width":2048,"height":1366}
