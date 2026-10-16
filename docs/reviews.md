@@ -23,5 +23,5 @@ desktop; now 98 / 90) and made the page jump while loading.
    post's settings.
 3. Pages CMS (Reviews) still works too, or ask Claude Code to add it.
 
-Elfsight was cancelled in October 2026, so  (which read its feed) no
+Elfsight was cancelled in October 2026, so `scripts/import-reviews.mjs` (which read its feed) no
 longer fetches new reviews.
