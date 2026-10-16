@@ -32,7 +32,9 @@ const directions = 'https://www.google.com/maps/dir/?api=1&destination=' + encod
 
   <section class="form-band">
     <div class="wrap form-grid">
-      <aside class="aside" data-reveal>
+      <!-- A CSS rise rather than data-reveal: on phones this is the biggest thing on the first
+           screen, and the reveal waited on scripts (the map's, when busy) for up to 8s. -->
+      <aside class="aside rise">
         <div set:html={reassurance} />
         <a class="phone" href={`tel:${tel}`}>
           <span class="phone-label">Call or text</span>
@@ -96,6 +98,7 @@ const directions = 'https://www.google.com/maps/dir/?api=1&destination=' + encod
   .rise:nth-child(2) { animation-delay: 0.1s; }
   .rise:nth-child(3) { animation-delay: 0.2s; }
   .rise:nth-child(4) { animation-delay: 0.3s; }
+  .aside.rise { animation-delay: 0.4s; }
   hr.rise { animation-name: draw; }
   @keyframes rise { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
   @keyframes draw { from { transform: scaleX(0); } to { transform: none; } }
