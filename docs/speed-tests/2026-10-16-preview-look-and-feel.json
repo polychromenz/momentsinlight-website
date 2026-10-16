@@ -1,0 +1,770 @@
+{
+ "date": "2026-10-16T02:20:00.109Z",
+ "site": "https://look-and-feel.momentsinlight-website.pages.dev",
+ "runs": 1,
+ "results": [
+  {
+   "device": "mobile",
+   "page": "C:/Program Files/Git/",
+   "failed": true
+  },
+  {
+   "device": "mobile",
+   "page": "/weddings",
+   "score": 91,
+   "lcp": 2.5,
+   "fcp": 1.5,
+   "tbt": 299,
+   "cls": 0,
+   "mb": 0.64,
+   "requests": 22,
+   "why": [
+    "script 327ms: https://www.googletagmanager.com/gtag/js",
+    "script 221ms: https://look-and-feel.momentsinlight-website.pages.dev/weddings",
+    "script 202ms: https://connect.facebook.net/en_US/fbevents.js",
+    "Improve image delivery (Est savings of 18 KiB)"
+   ]
+  },
+  {
+   "device": "mobile",
+   "page": "/wedding-galleries",
+   "score": 87,
+   "lcp": 3.1,
+   "fcp": 1.1,
+   "tbt": 296,
+   "cls": 0,
+   "mb": 1.12,
+   "requests": 28,
+   "why": [
+    "script 366ms: https://www.googletagmanager.com/gtag/js",
+    "script 179ms: https://connect.facebook.net/en_US/fbevents.js",
+    "LCP request discovery"
+   ]
+  },
+  {
+   "device": "mobile",
+   "page": "/portraits-gallery",
+   "score": 92,
+   "lcp": 2.6,
+   "fcp": 1.4,
+   "tbt": 230,
+   "cls": 0,
+   "mb": 0.87,
+   "requests": 28,
+   "why": [
+    "script 280ms: https://www.googletagmanager.com/gtag/js",
+    "script 163ms: https://connect.facebook.net/en_US/fbevents.js",
+    "script 162ms: https://look-and-feel.momentsinlight-website.pages.dev/portraits-galle",
+    "Improve image delivery (Est savings of 56 KiB)",
+    "LCP request discovery"
+   ]
+  },
+  {
+   "device": "mobile",
+   "page": "/family-galleries",
+   "score": 93,
+   "lcp": 1.4,
+   "fcp": 1.1,
+   "tbt": 336,
+   "cls": 0,
+   "mb": 0.63,
+   "requests": 23,
+   "why": [
+    "script 383ms: https://www.googletagmanager.com/gtag/js",
+    "script 203ms: https://connect.facebook.net/en_US/fbevents.js",
+    "Improve image delivery (Est savings of 34 KiB)",
+    "LCP request discovery"
+   ]
+  },
+  {
+   "device": "mobile",
+   "page": "/portraits",
+   "score": 88,
+   "lcp": 2.6,
+   "fcp": 1.4,
+   "tbt": 356,
+   "cls": 0,
+   "mb": 0.66,
+   "requests": 21,
+   "why": [
+    "script 365ms: https://www.googletagmanager.com/gtag/js",
+    "script 233ms: https://connect.facebook.net/en_US/fbevents.js",
+    "script 203ms: https://look-and-feel.momentsinlight-website.pages.dev/portraits",
+    "Improve image delivery (Est savings of 39 KiB)",
+    "LCP request discovery"
+   ]
+  },
+  {
+   "device": "mobile",
+   "page": "/premium-portraits",
+   "score": 89,
+   "lcp": 2.9,
+   "fcp": 1.4,
+   "tbt": 298,
+   "cls": 0,
+   "mb": 0.75,
+   "requests": 25,
+   "why": [
+    "script 304ms: https://www.googletagmanager.com/gtag/js",
+    "script 226ms: https://connect.facebook.net/en_US/fbevents.js",
+    "Improve image delivery (Est savings of 92 KiB)"
+   ]
+  },
+  {
+   "device": "mobile",
+   "page": "/lifestyle",
+   "score": 97,
+   "lcp": 1.5,
+   "fcp": 1.2,
+   "tbt": 199,
+   "cls": 0,
+   "mb": 0.58,
+   "requests": 21,
+   "why": [
+    "script 279ms: https://www.googletagmanager.com/gtag/js",
+    "Improve image delivery (Est savings of 13 KiB)",
+    "LCP request discovery"
+   ]
+  },
+  {
+   "device": "mobile",
+   "page": "/headshots",
+   "score": 98,
+   "lcp": 1.7,
+   "fcp": 1.2,
+   "tbt": 155,
+   "cls": 0,
+   "mb": 0.68,
+   "requests": 21,
+   "why": [
+    "script 255ms: https://www.googletagmanager.com/gtag/js",
+    "script 163ms: https://look-and-feel.momentsinlight-website.pages.dev/headshots",
+    "Improve image delivery (Est savings of 14 KiB)"
+   ]
+  },
+  {
+   "device": "mobile",
+   "page": "/family",
+   "score": 95,
+   "lcp": 1.7,
+   "fcp": 1.4,
+   "tbt": 239,
+   "cls": 0,
+   "mb": 0.65,
+   "requests": 22,
+   "why": [
+    "script 307ms: https://www.googletagmanager.com/gtag/js",
+    "script 164ms: https://look-and-feel.momentsinlight-website.pages.dev/family",
+    "script 157ms: https://connect.facebook.net/en_US/fbevents.js",
+    "Improve image delivery (Est savings of 24 KiB)"
+   ]
+  },
+  {
+   "device": "mobile",
+   "page": "/wedding-resources",
+   "score": 94,
+   "lcp": 2.1,
+   "fcp": 1.4,
+   "tbt": 254,
+   "cls": 0,
+   "mb": 0.86,
+   "requests": 26,
+   "why": [
+    "script 314ms: https://www.googletagmanager.com/gtag/js",
+    "script 199ms: https://look-and-feel.momentsinlight-website.pages.dev/wedding-resourc",
+    "script 170ms: https://connect.facebook.net/en_US/fbevents.js",
+    "Improve image delivery (Est savings of 20 KiB)",
+    "LCP request discovery"
+   ]
+  },
+  {
+   "device": "mobile",
+   "page": "/about",
+   "score": 96,
+   "lcp": 1.7,
+   "fcp": 1.4,
+   "tbt": 207,
+   "cls": 0,
+   "mb": 0.59,
+   "requests": 24,
+   "why": [
+    "script 293ms: https://www.googletagmanager.com/gtag/js",
+    "Improve image delivery (Est savings of 17 KiB)",
+    "LCP request discovery"
+   ]
+  },
+  {
+   "device": "mobile",
+   "page": "/testimonials",
+   "score": 98,
+   "lcp": 1.6,
+   "fcp": 1.4,
+   "tbt": 137,
+   "cls": 0,
+   "mb": 1.02,
+   "requests": 31,
+   "why": [
+    "script 216ms: https://www.googletagmanager.com/gtag/js",
+    "Improve image delivery (Est savings of 255 KiB)"
+   ]
+  },
+  {
+   "device": "mobile",
+   "page": "/contact",
+   "score": 67,
+   "lcp": 1.7,
+   "fcp": 1.7,
+   "tbt": 769,
+   "cls": 0.246,
+   "mb": 2.48,
+   "requests": 46,
+   "why": [
+    "script 535ms: https://cdn.studioninja.co/build/master-form-builder-21-27f07/apps/sn-",
+    "script 489ms: https://www.gstatic.com/recaptcha/releases/4EDjxXf4knsx6UBM1L2V6cv8/re",
+    "script 305ms: https://www.googletagmanager.com/gtag/js",
+    "script 234ms: https://maps.googleapis.com/maps/api/js",
+    "layout shift 0.124: I promise not to spam you or share your details wi",
+    "layout shift 0.122: I promise not to spam you or share your details wi",
+    "Font display (Est savings of 10 ms)"
+   ]
+  },
+  {
+   "device": "mobile",
+   "page": "/west-auckland-wedding-venues",
+   "score": 66,
+   "lcp": 6.3,
+   "fcp": 1.2,
+   "tbt": 455,
+   "cls": 0,
+   "mb": 1.09,
+   "requests": 25,
+   "why": [
+    "script 326ms: https://www.googletagmanager.com/gtag/js",
+    "script 200ms: https://connect.facebook.net/en_US/fbevents.js",
+    "Improve image delivery (Est savings of 449 KiB)"
+   ]
+  },
+  {
+   "device": "mobile",
+   "page": "/abel-estate",
+   "score": 92,
+   "lcp": 3.2,
+   "fcp": 1.4,
+   "tbt": 151,
+   "cls": 0,
+   "mb": 0.86,
+   "requests": 24,
+   "why": [
+    "script 232ms: https://www.googletagmanager.com/gtag/js",
+    "Improve image delivery (Est savings of 68 KiB)"
+   ]
+  },
+  {
+   "device": "mobile",
+   "page": "/the-barn-waimauku-wedding-photographer",
+   "score": 97,
+   "lcp": 2.3,
+   "fcp": 1,
+   "tbt": 120,
+   "cls": 0,
+   "mb": 0.81,
+   "requests": 23,
+   "why": [
+    "script 192ms: https://www.googletagmanager.com/gtag/js",
+    "script 152ms: https://look-and-feel.momentsinlight-website.pages.dev/the-barn-waimau",
+    "Improve image delivery (Est savings of 83 KiB)"
+   ]
+  },
+  {
+   "device": "mobile",
+   "page": "/kumeu-valley-estate-wedding-photographer",
+   "score": 76,
+   "lcp": 4.7,
+   "fcp": 1.4,
+   "tbt": 298,
+   "cls": 0,
+   "mb": 1.19,
+   "requests": 23,
+   "why": [
+    "script 380ms: https://www.googletagmanager.com/gtag/js",
+    "script 313ms: https://look-and-feel.momentsinlight-website.pages.dev/kumeu-valley-es",
+    "script 180ms: https://connect.facebook.net/en_US/fbevents.js",
+    "Improve image delivery (Est savings of 151 KiB)"
+   ]
+  },
+  {
+   "device": "mobile",
+   "page": "/markovina-vineyard-estate-wedding-photographer",
+   "score": 90,
+   "lcp": 2.8,
+   "fcp": 1.4,
+   "tbt": 267,
+   "cls": 0,
+   "mb": 0.84,
+   "requests": 23,
+   "why": [
+    "script 320ms: https://www.googletagmanager.com/gtag/js",
+    "script 208ms: https://look-and-feel.momentsinlight-website.pages.dev/markovina-viney",
+    "script 159ms: https://connect.facebook.net/en_US/fbevents.js",
+    "script 152ms: https://connect.facebook.net/signals/config/813954996871495",
+    "Improve image delivery (Est savings of 117 KiB)"
+   ]
+  },
+  {
+   "device": "mobile",
+   "page": "/bridgewater-estate-wedding-photographer",
+   "score": 85,
+   "lcp": 3.2,
+   "fcp": 1.4,
+   "tbt": 360,
+   "cls": 0,
+   "mb": 0.89,
+   "requests": 23,
+   "why": [
+    "script 348ms: https://www.googletagmanager.com/gtag/js",
+    "script 229ms: https://connect.facebook.net/en_US/fbevents.js",
+    "script 213ms: https://look-and-feel.momentsinlight-website.pages.dev/bridgewater-est",
+    "script 170ms: https://connect.facebook.net/signals/config/813954996871495",
+    "Improve image delivery (Est savings of 92 KiB)"
+   ]
+  },
+  {
+   "device": "mobile",
+   "page": "/settlers-country-manor-wedding-photographer",
+   "score": 92,
+   "lcp": 2.9,
+   "fcp": 1.2,
+   "tbt": 221,
+   "cls": 0,
+   "mb": 0.8,
+   "requests": 23,
+   "why": [
+    "script 270ms: https://www.googletagmanager.com/gtag/js",
+    "script 161ms: https://connect.facebook.net/en_US/fbevents.js",
+    "script 160ms: https://look-and-feel.momentsinlight-website.pages.dev/settlers-countr",
+    "Improve image delivery (Est savings of 129 KiB)"
+   ]
+  },
+  {
+   "device": "mobile",
+   "page": "/tui-hills",
+   "score": 93,
+   "lcp": 2.7,
+   "fcp": 1.4,
+   "tbt": 197,
+   "cls": 0,
+   "mb": 0.69,
+   "requests": 23,
+   "why": [
+    "script 244ms: https://www.googletagmanager.com/gtag/js",
+    "script 184ms: https://connect.facebook.net/signals/config/813954996871495"
+   ]
+  },
+  {
+   "device": "mobile",
+   "page": "/blog",
+   "score": 86,
+   "lcp": 1.7,
+   "fcp": 0.8,
+   "tbt": 544,
+   "cls": 0,
+   "mb": 1.02,
+   "requests": 25,
+   "why": [
+    "script 604ms: https://www.googletagmanager.com/gtag/js",
+    "script 281ms: https://connect.facebook.net/en_US/fbevents.js",
+    "script 181ms: https://connect.facebook.net/signals/config/813954996871495",
+    "script 181ms: https://look-and-feel.momentsinlight-website.pages.dev/blog",
+    "Improve image delivery (Est savings of 141 KiB)",
+    "LCP request discovery"
+   ]
+  },
+  {
+   "device": "mobile",
+   "page": "/blog/ellie-and-ryan-tui-hills",
+   "score": 96,
+   "lcp": 1.2,
+   "fcp": 0.9,
+   "tbt": 230,
+   "cls": 0,
+   "mb": 0.65,
+   "requests": 23,
+   "why": [
+    "script 263ms: https://www.googletagmanager.com/gtag/js",
+    "script 170ms: https://connect.facebook.net/en_US/fbevents.js",
+    "Improve image delivery (Est savings of 34 KiB)"
+   ]
+  },
+  {
+   "device": "mobile",
+   "page": "/wedding-photo-guide",
+   "score": 88,
+   "lcp": 3,
+   "fcp": 0.9,
+   "tbt": 310,
+   "cls": 0,
+   "mb": 1.52,
+   "requests": 32,
+   "why": [
+    "script 364ms: https://www.googletagmanager.com/gtag/js",
+    "script 202ms: https://connect.facebook.net/en_US/fbevents.js",
+    "Improve image delivery (Est savings of 157 KiB)"
+   ]
+  },
+  {
+   "device": "desktop",
+   "page": "C:/Program Files/Git/",
+   "failed": true
+  },
+  {
+   "device": "desktop",
+   "page": "/weddings",
+   "failed": true
+  },
+  {
+   "device": "desktop",
+   "page": "/wedding-galleries",
+   "score": 91,
+   "lcp": 1.4,
+   "fcp": 0.3,
+   "tbt": 182,
+   "cls": 0,
+   "mb": 1.38,
+   "requests": 43,
+   "why": [
+    "script 259ms: https://look-and-feel.momentsinlight-website.pages.dev/wedding-galleri",
+    "script 203ms: https://www.googletagmanager.com/gtag/js",
+    "Improve image delivery (Est savings of 297 KiB)",
+    "LCP request discovery"
+   ]
+  },
+  {
+   "device": "desktop",
+   "page": "/portraits-gallery",
+   "score": 98,
+   "lcp": 0.5,
+   "fcp": 0.3,
+   "tbt": 130,
+   "cls": 0,
+   "mb": 1.19,
+   "requests": 37,
+   "why": [
+    "script 197ms: https://www.googletagmanager.com/gtag/js",
+    "script 172ms: https://look-and-feel.momentsinlight-website.pages.dev/portraits-galle",
+    "Improve image delivery (Est savings of 199 KiB)",
+    "LCP request discovery"
+   ]
+  },
+  {
+   "device": "desktop",
+   "page": "/family-galleries",
+   "failed": true
+  },
+  {
+   "device": "desktop",
+   "page": "/portraits",
+   "score": 91,
+   "lcp": 0.4,
+   "fcp": 0.3,
+   "tbt": 250,
+   "cls": 0,
+   "mb": 0.96,
+   "requests": 21,
+   "why": [
+    "script 261ms: https://www.googletagmanager.com/gtag/js",
+    "Improve image delivery (Est savings of 147 KiB)",
+    "LCP request discovery"
+   ]
+  },
+  {
+   "device": "desktop",
+   "page": "/premium-portraits",
+   "failed": true
+  },
+  {
+   "device": "desktop",
+   "page": "/lifestyle",
+   "score": 90,
+   "lcp": 0.3,
+   "fcp": 0.3,
+   "tbt": 267,
+   "cls": 0,
+   "mb": 0.63,
+   "requests": 21,
+   "why": [
+    "script 245ms: https://www.googletagmanager.com/gtag/js",
+    "script 157ms: https://connect.facebook.net/en_US/fbevents.js",
+    "Improve image delivery (Est savings of 15 KiB)"
+   ]
+  },
+  {
+   "device": "desktop",
+   "page": "/headshots",
+   "score": 83,
+   "lcp": 0.4,
+   "fcp": 0.3,
+   "tbt": 392,
+   "cls": 0,
+   "mb": 1.13,
+   "requests": 21,
+   "why": [
+    "script 332ms: https://www.googletagmanager.com/gtag/js",
+    "script 180ms: https://connect.facebook.net/en_US/fbevents.js",
+    "Improve image delivery (Est savings of 41 KiB)"
+   ]
+  },
+  {
+   "device": "desktop",
+   "page": "/family",
+   "score": 88,
+   "lcp": 0.4,
+   "fcp": 0.3,
+   "tbt": 290,
+   "cls": 0,
+   "mb": 0.83,
+   "requests": 22,
+   "why": [
+    "script 306ms: https://www.googletagmanager.com/gtag/js",
+    "Improve image delivery (Est savings of 39 KiB)",
+    "LCP request discovery"
+   ]
+  },
+  {
+   "device": "desktop",
+   "page": "/wedding-resources",
+   "score": 97,
+   "lcp": 0.5,
+   "fcp": 0.3,
+   "tbt": 152,
+   "cls": 0,
+   "mb": 1.1,
+   "requests": 41,
+   "why": [
+    "script 191ms: https://www.googletagmanager.com/gtag/js",
+    "Improve image delivery (Est savings of 97 KiB)",
+    "LCP request discovery"
+   ]
+  },
+  {
+   "device": "desktop",
+   "page": "/about",
+   "score": 80,
+   "lcp": 0.4,
+   "fcp": 0.3,
+   "tbt": 465,
+   "cls": 0,
+   "mb": 0.59,
+   "requests": 26,
+   "why": [
+    "script 404ms: https://www.googletagmanager.com/gtag/js",
+    "script 181ms: https://look-and-feel.momentsinlight-website.pages.dev/about",
+    "script 167ms: https://connect.facebook.net/en_US/fbevents.js",
+    "Improve image delivery (Est savings of 21 KiB)",
+    "LCP request discovery"
+   ]
+  },
+  {
+   "device": "desktop",
+   "page": "/testimonials",
+   "failed": true
+  },
+  {
+   "device": "desktop",
+   "page": "/contact",
+   "score": 91,
+   "lcp": 0.5,
+   "fcp": 0.5,
+   "tbt": 218,
+   "cls": 0.092,
+   "mb": 2.93,
+   "requests": 65,
+   "why": [
+    "script 319ms: https://cdn.studioninja.co/build/master-form-builder-21-27f07/apps/sn-",
+    "script 296ms: https://www.gstatic.com/recaptcha/releases/4EDjxXf4knsx6UBM1L2V6cv8/re",
+    "script 152ms: Unattributable",
+    "layout shift 0.090: section.ps > div.ps-inner > div.fg > div.blk",
+    "layout shift 0.002: ::after"
+   ]
+  },
+  {
+   "device": "desktop",
+   "page": "/west-auckland-wedding-venues",
+   "score": 78,
+   "lcp": 1.5,
+   "fcp": 0.3,
+   "tbt": 405,
+   "cls": 0,
+   "mb": 1.09,
+   "requests": 25,
+   "why": [
+    "script 278ms: https://www.googletagmanager.com/gtag/js",
+    "script 210ms: https://connect.facebook.net/en_US/fbevents.js",
+    "script 173ms: https://look-and-feel.momentsinlight-website.pages.dev/west-auckland-w",
+    "Improve image delivery (Est savings of 337 KiB)",
+    "LCP request discovery"
+   ]
+  },
+  {
+   "device": "desktop",
+   "page": "/abel-estate",
+   "score": 96,
+   "lcp": 0.7,
+   "fcp": 0.3,
+   "tbt": 153,
+   "cls": 0,
+   "mb": 1.11,
+   "requests": 24,
+   "why": [
+    "script 201ms: https://www.googletagmanager.com/gtag/js",
+    "script 163ms: https://look-and-feel.momentsinlight-website.pages.dev/abel-estate",
+    "Improve image delivery (Est savings of 108 KiB)"
+   ]
+  },
+  {
+   "device": "desktop",
+   "page": "/the-barn-waimauku-wedding-photographer",
+   "score": 98,
+   "lcp": 1,
+   "fcp": 0.3,
+   "tbt": 94,
+   "cls": 0,
+   "mb": 1.23,
+   "requests": 23,
+   "why": [
+    "script 174ms: https://www.googletagmanager.com/gtag/js",
+    "Improve image delivery (Est savings of 385 KiB)"
+   ]
+  },
+  {
+   "device": "desktop",
+   "page": "/kumeu-valley-estate-wedding-photographer",
+   "score": 80,
+   "lcp": 1,
+   "fcp": 0.3,
+   "tbt": 421,
+   "cls": 0,
+   "mb": 2.29,
+   "requests": 23,
+   "why": [
+    "script 345ms: https://www.googletagmanager.com/gtag/js",
+    "script 195ms: https://connect.facebook.net/en_US/fbevents.js",
+    "script 189ms: https://look-and-feel.momentsinlight-website.pages.dev/kumeu-valley-es",
+    "Improve image delivery (Est savings of 616 KiB)"
+   ]
+  },
+  {
+   "device": "desktop",
+   "page": "/markovina-vineyard-estate-wedding-photographer",
+   "score": 91,
+   "lcp": 0.6,
+   "fcp": 0.3,
+   "tbt": 247,
+   "cls": 0,
+   "mb": 1.34,
+   "requests": 23,
+   "why": [
+    "script 252ms: https://www.googletagmanager.com/gtag/js",
+    "script 219ms: https://look-and-feel.momentsinlight-website.pages.dev/markovina-viney",
+    "script 154ms: https://connect.facebook.net/en_US/fbevents.js",
+    "Improve image delivery (Est savings of 215 KiB)"
+   ]
+  },
+  {
+   "device": "desktop",
+   "page": "/bridgewater-estate-wedding-photographer",
+   "score": 83,
+   "lcp": 1.4,
+   "fcp": 0.3,
+   "tbt": 286,
+   "cls": 0,
+   "mb": 1.59,
+   "requests": 24,
+   "why": [
+    "script 260ms: https://www.googletagmanager.com/gtag/js",
+    "script 197ms: https://look-and-feel.momentsinlight-website.pages.dev/bridgewater-est",
+    "Improve image delivery (Est savings of 651 KiB)"
+   ]
+  },
+  {
+   "device": "desktop",
+   "page": "/settlers-country-manor-wedding-photographer",
+   "score": 80,
+   "lcp": 1.3,
+   "fcp": 0.3,
+   "tbt": 375,
+   "cls": 0,
+   "mb": 1.36,
+   "requests": 24,
+   "why": [
+    "script 326ms: https://www.googletagmanager.com/gtag/js",
+    "script 236ms: https://look-and-feel.momentsinlight-website.pages.dev/settlers-countr",
+    "script 171ms: https://connect.facebook.net/en_US/fbevents.js",
+    "Improve image delivery (Est savings of 392 KiB)"
+   ]
+  },
+  {
+   "device": "desktop",
+   "page": "/tui-hills",
+   "score": 87,
+   "lcp": 0.7,
+   "fcp": 0.3,
+   "tbt": 307,
+   "cls": 0,
+   "mb": 0.85,
+   "requests": 23,
+   "why": [
+    "script 278ms: https://www.googletagmanager.com/gtag/js",
+    "script 164ms: https://connect.facebook.net/en_US/fbevents.js",
+    "Improve image delivery (Est savings of 27 KiB)"
+   ]
+  },
+  {
+   "device": "desktop",
+   "page": "/blog",
+   "score": 86,
+   "lcp": 0.5,
+   "fcp": 0.2,
+   "tbt": 336,
+   "cls": 0,
+   "mb": 1.21,
+   "requests": 30,
+   "why": [
+    "script 297ms: https://www.googletagmanager.com/gtag/js",
+    "script 172ms: https://connect.facebook.net/en_US/fbevents.js",
+    "Improve image delivery (Est savings of 231 KiB)",
+    "LCP request discovery"
+   ]
+  },
+  {
+   "device": "desktop",
+   "page": "/blog/ellie-and-ryan-tui-hills",
+   "score": 85,
+   "lcp": 0.8,
+   "fcp": 0.3,
+   "tbt": 338,
+   "cls": 0,
+   "mb": 1.04,
+   "requests": 35,
+   "why": [
+    "script 296ms: https://www.googletagmanager.com/gtag/js",
+    "script 166ms: https://connect.facebook.net/en_US/fbevents.js",
+    "Improve image delivery (Est savings of 227 KiB)"
+   ]
+  },
+  {
+   "device": "desktop",
+   "page": "/wedding-photo-guide",
+   "score": 96,
+   "lcp": 0.7,
+   "fcp": 0.3,
+   "tbt": 169,
+   "cls": 0,
+   "mb": 1.5,
+   "requests": 30,
+   "why": [
+    "script 269ms: https://www.googletagmanager.com/gtag/js",
+    "Improve image delivery (Est savings of 77 KiB)"
+   ]
+  }
+ ]
+}
