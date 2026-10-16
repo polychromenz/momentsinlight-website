@@ -21,7 +21,8 @@ import type { RefreshOptions } from '../../data/refreshed';
 interface Props { page: any; options: RefreshOptions }
 const { page, options: o } = Astro.props;
 
-import { strip, clean, cardify } from '../../lib/refresh';
+import { strip, clean, cardify, faqify } from '../../lib/refresh';
+import GuideSignup from './GuideSignup.astro';
 import { photosFromTag } from '../../lib/blog';
 
 const isTestimonials = (h: string) => /what some of my clients have said/i.test(strip(h));
@@ -31,6 +32,7 @@ type Button = { label: string; href: string; outline?: boolean };
 type Item =
   | { kind: 'intro'; heading: string; lead: string; body: string; photo?: any }
   | { kind: 'photo'; image: any }
+  | { kind: 'signup'; html: string; image?: any }
   | { kind: 'prose'; html: string; alt: boolean }
   | { kind: 'split'; html: string; image: any; buttons: Button[]; alt: boolean }
   | { kind: 'hero'; image: any; heading: string }
@@ -55,6 +57,8 @@ for (const s of page.sections as any[]) {
   }
   const html = clean(texts.filter((b) => !isTestimonials(b.html)).map((b) => b.html).join(''));
   const image = blocks.find((b) => b.type === 'image')?.image;
+  // The free guide's signup form, with the section's text and photo around it.
+  if (blocks.some((b) => b.type === 'guideSignup')) { items.push({ kind: 'signup', html, image }); continue; }
   const seen = new Set<string>();
   const buttons: Button[] = blocks
     .filter((b) => b.type === 'button' && b.href && !seen.has(b.href) && seen.add(b.href))
@@ -117,6 +121,23 @@ if (o.reviews?.length && !items.some((i) => i.kind === 'reviews')) {
   items.splice(before >= 0 ? before + 1 : items.length, 0, { kind: 'reviews' });
 }
 
+const faqItems: { q: string; a: string }[] = [];
+if (o.faq) {
+  for (const it of items) {
+    if (it.kind !== 'prose') continue;
+    // An opening line in a small heading (h4) reads as the lead-in.
+    const lead = it.html.replace(/<h4>\s*<\/h4>/g, '').replace(/<h4>([\s\S]*?)<\/h4>/g, '<p class="faq-lead">$1</p>');
+    const f = faqify(lead);
+    it.html = f.html;
+    faqItems.push(...f.items);
+  }
+}
+const jsonLd = faqItems.length ? {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: faqItems.map((it) => ({ '@type': 'Question', name: it.q, acceptedAnswer: { '@type': 'Answer', text: strip(it.a) } })),
+} : undefined;
+
 const closing = o.closing === false ? null : {
   heading: 'Let’s create something beautiful',
   text: 'Tell me what you have in mind, and I’ll let you know how we can make it happen.',
@@ -134,7 +155,7 @@ const showcaseImages = (list: any[]) => list.map((i, k) => {
 let firstPhoto = true;
 const eager = () => { const e = firstPhoto; firstPhoto = false; return e; };
 ---
-<BaseLayout title={page.title} description={page.description} image={page.ogImage || undefined}>
+<BaseLayout title={page.title} description={page.description} image={page.ogImage || undefined} jsonLd={jsonLd}>
   {items.map((it, n) => {
     if (it.kind === 'intro' && it.photo) return (
       <>
@@ -179,6 +200,17 @@ const eager = () => { const e = firstPhoto; firstPhoto = false; return e; };
             {it.buttons.length > 0 && (
               <p class="buttons">{it.buttons.map((b) => <a class="btn" href={b.href}>{b.label}</a>)}</p>
             )}
+          </div>
+        </div>
+      </section>
+    );
+    if (it.kind === 'signup') return (
+      <section class="signup-band">
+        <div class="split wrap">
+          {it.image && <div class="split-img" data-reveal="photo"><Img src={it.image.src} alt={it.image.alt ?? ''} width={it.image.width} height={it.image.height} sizes="(min-width: 900px) 42vw, 88vw" /></div>}
+          <div class="signup-card" data-reveal>
+            <div class="prose" set:html={it.html} />
+            <GuideSignup />
           </div>
         </div>
       </section>
@@ -292,6 +324,25 @@ const eager = () => { const e = firstPhoto; firstPhoto = false; return e; };
   .split-text :global(h2), .split-text :global(h3) { text-align: left; }
 
   .showcase { margin-block: 24px 56px; }
+
+  /* Free guide signup: the form in a white card on champagne, beside its photo. */
+  .signup-band { background: var(--champagne); padding-block: 64px; }
+  .signup-card { background: var(--white); border-radius: 40px 0; padding: 32px clamp(20px, 3vw, 44px); }
+  .signup-card .prose { margin: 0 0 18px; }
+  .signup-card .prose :global(h2) { text-align: left; margin-bottom: 14px; }
+
+  /* FAQ pages: each question opens to its answer. */
+  .prose :global(.faq-lead) { font-size: clamp(18px, 0.5vw + 15px, 22px); font-weight: 300; line-height: 1.65; color: var(--ink); text-align: center; margin-bottom: 30px; }
+  .prose :global(.faq-list) { display: grid; gap: 12px; }
+  .prose :global(details) { background: var(--white); border-radius: 24px 0; padding: 20px 24px; transition: box-shadow 0.5s var(--ease), transform 0.5s var(--ease); }
+  .chapter:not(.alt) .prose :global(details) { background: var(--champagne); }
+  .prose :global(details:hover) { box-shadow: 0 14px 28px -24px rgb(0 0 0 / 0.5); transform: translateY(-2px); }
+  .prose :global(summary) { list-style: none; cursor: pointer; display: flex; justify-content: space-between; gap: 16px; font-size: 17px; font-weight: 500; color: var(--ink); }
+  .prose :global(summary::-webkit-details-marker) { display: none; }
+  .prose :global(summary::after) { content: '+'; font-size: 24px; font-weight: 300; line-height: 1; color: var(--green); transition: transform 0.5s var(--ease); }
+  .prose :global(details[open] summary::after) { transform: rotate(45deg); }
+  .prose :global(.answer) { padding-top: 12px; }
+  .prose :global(.answer p:last-child) { margin-bottom: 0; }
   .hero-eyebrow { margin: 0 0 10px; font-size: 12px; font-weight: 500; letter-spacing: 0.32em; text-transform: uppercase; color: var(--green); }
   .intro--after { padding-top: 40px; }
   .stories-heading { text-align: center; font-size: clamp(28px, 1.8vw + 18px, 44px); margin: 0 0 40px; }
@@ -312,6 +363,7 @@ const eager = () => { const e = firstPhoto; firstPhoto = false; return e; };
     .chapter { padding-block: 80px; }
     .chapter.alt, .split-band.alt { padding-block: 110px; }
     .showcase { margin-block: 40px 90px; }
+    .signup-band { padding-block: 100px; }
     .hero-title { color: var(--white); font-size: clamp(26px, 6cqi, 64px); }
     .hero-eyebrow { color: var(--white); font-size: 13px; margin-bottom: 14px; }
     .intro--after { padding-top: 56px; }

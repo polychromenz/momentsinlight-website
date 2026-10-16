@@ -8,6 +8,8 @@ export type RefreshOptions = {
   buttons?: { label: string; href: string; outline?: boolean }[];
   /** Google reviewers (by name, as in src/data/reviews.json) for a review carousel. */
   reviews?: string[];
+  /** Questions written as bold lines become open-and-close items (and Google's FAQ listing). */
+  faq?: boolean;
   /** Words on the cards' hover shade. */
   linkLabel?: string;
   /** A photo to open the page with, the heading laid over it. */
@@ -88,6 +90,17 @@ export const refreshed: Record<string, RefreshOptions> = {
     eyebrow: 'Planning your wedding',
     buttons: [{ label: 'Love stories', href: '/wedding-galleries' }, { label: 'Wedding packages', href: '/weddings', outline: true }],
     closing: { heading: 'Is your date still free?', text: 'Tell me your date and venue, and I’ll let you know.', button: { label: 'Check your date', href: '/contact' } },
+  },
+  '/wedding-photo-guide': {
+    eyebrow: 'Free guide',
+    reviews: weddingReviews,
+    closing: { heading: 'Is your date still free?', text: 'Tell me your date and venue, and I’ll let you know.', button: { label: 'Check your date', href: '/contact' } },
+  },
+  '/wedding-faqs': {
+    eyebrow: 'Good to know',
+    faq: true,
+    buttons: [{ label: 'Wedding packages', href: '/weddings' }, { label: 'How I work', href: '/a-guide-to-your-wedding-photos', outline: true }],
+    closing: { heading: 'Still have a question?', text: 'There really is no such thing as a silly question. Get in touch any time.', button: { label: 'Get in touch', href: '/contact' } },
   },
   '/about': {
     eyebrow: 'Hello, I’m Tony',

@@ -23,3 +23,19 @@ export const cardify = (h: string) => {
   return `${before}<div class="cards">${[...cards, last].map((c) => `<div class="card">${c}</div>`).join('')}</div>${tail}`;
 };
 
+
+/** Questions written as a bold line ("<p><strong>Question?</strong></p>") followed by answer
+ *  paragraphs become open-and-close items. Returns the HTML and the questions and answers
+ *  (for Google's FAQ listing). */
+export const faqify = (h: string) => {
+  const q = /<p>\s*<strong>([^<]+?)<\/strong>\s*<\/p>/g;
+  const marks = [...h.matchAll(q)];
+  if (marks.length < 2) return { html: h, items: [] as { q: string; a: string }[] };
+  const before = h.slice(0, marks[0].index);
+  const items = marks.map((m, i) => ({
+    q: m[1].trim(),
+    a: h.slice(m.index! + m[0].length, i + 1 < marks.length ? marks[i + 1].index : h.length).replace(/<p>\s*<\/p>/g, '').trim(),
+  }));
+  const html = `${before}<div class="faq-list">${items.map((it) => `<details><summary>${it.q}</summary><div class="answer">${it.a}</div></details>`).join('')}</div>`;
+  return { html, items };
+};
