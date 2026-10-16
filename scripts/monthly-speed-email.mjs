@@ -22,19 +22,48 @@ const PAGES = [
   ['/bridgewater-estate-wedding-photographer', 'Bridgewater Estate'],
 ];
 
-// Run the usual speed test (3 runs each, median) and read what it saved.
-const before = new Set(fs.existsSync('docs/speed-tests') ? fs.readdirSync('docs/speed-tests') : []);
-const out = execFileSync('node', ['scripts/speed-test.mjs', '--why', `--pages=${PAGES.map((p) => p[0]).join(',')}`], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'inherit'] });
-console.log(out);
-const file = out.match(/Saved to (\S+)/)?.[1];
-if (!file) throw new Error('The speed test didn’t save its results.');
-const results = JSON.parse(fs.readFileSync(file, 'utf8')).results;
+// Run the usual speed test (3 runs each, median) and read what it saved. --results=<file> reuses
+// a saved test instead (for trying out changes to this email).
+const reuse = process.argv.find((a) => a.startsWith('--results='))?.split('=')[1];
+let file = reuse;
+if (!file) {
+  const out = execFileSync('node', ['scripts/speed-test.mjs', '--why', `--pages=${PAGES.map((p) => p[0]).join(',')}`], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'inherit'] });
+  console.log(out);
+  file = out.match(/Saved to (\S+)/)?.[1];
+  if (!file) throw new Error('The speed test didn’t save its results.');
+}
+const test = JSON.parse(fs.readFileSync(file, 'utf8'));
+const results = test.results;
 
-// The previous result for each page and device, from the most recent earlier test that has it.
-const earlier = [...before].filter((f) => f.endsWith('.json')).sort().reverse()
+// Last month's result for each page and device: the most recent test at least 20 days older
+// (so a test run by hand during the month doesn't count as "last month").
+const cutoff = new Date(test.date).valueOf() - 20 * 86400_000;
+const lastMonth = fs.readdirSync('docs/speed-tests').filter((f) => f.endsWith('.json')).sort().reverse()
   .map((f) => JSON.parse(fs.readFileSync(`docs/speed-tests/${f}`, 'utf8')))
-  .filter((t) => (t.site ?? SITE) === SITE);
-const previous = (page, device) => earlier.map((t) => t.results.find((r) => r.page === page && r.device === device && !r.failed)).find(Boolean);
+  .filter((t) => (t.site ?? SITE) === SITE && new Date(t.date).valueOf() <= cutoff);
+const previous = (page, device) => lastMonth.map((t) => t.results.find((r) => r.page === page && r.device === device && !r.failed)).find(Boolean);
+
+// What's worth flagging. Google's scores swing from test to test, computer scores most of all
+// (between about 75 and 98, depending on whether Google Analytics and the Facebook Pixel start
+// inside the test's window), so a low score on its own isn't flagged. Only things a visitor
+// would notice are: the main photo slow to show, or the page jumping about as it loads. A low
+// or falling score counts only when last month's test was low too (two months running).
+const SLOW_PHOTO = { mobile: 4, desktop: 2.5 }; // seconds
+// Google's reasons that aren't just Google Analytics / the Facebook Pixel starting up: the
+// site's own heavy scripts, or styles and fonts holding the page back. (Photo size is covered
+// by the slow main photo check above.)
+const realReasons = (r) => (r.why ?? []).filter((w) => {
+  const script = w.match(/^script (\d+)ms: (.*)$/);
+  if (script) return !/googletagmanager|google-analytics|facebook/.test(script[2]) && Number(script[1]) >= 500;
+  return !/^(LCP request discovery|Improve image delivery)/.test(w);
+});
+const low = (r) => r && r.score < 80 && realReasons(r).length > 0;
+const problems = (r, p, device) => {
+  const out = [];
+  if (r.lcp > SLOW_PHOTO[device]) out.push(`the main photo takes ${r.lcp}s to show`);
+  if (r.cls > 0.1) out.push('the page jumps about while it loads');
+  if (low(r) && low(p)) out.push(`the score has been under 80 two months running (${p.score}, now ${r.score})`);  return out;
+};
 
 const colour = (s) => (s >= 90 ? '#5a7d2a' : s >= 50 ? '#b07d1a' : '#a0522d');
 const flags = [];
@@ -42,9 +71,10 @@ const cell = (page, device) => {
   const r = results.find((x) => x.page === page && x.device === device);
   if (!r || r.failed) return '<span style="color:#999">didn’t run</span>';
   const p = previous(page, device);
+  const found = problems(r, p, device);
+  if (found.length) flags.push({ page, device, r, found });
   const diff = p ? r.score - p.score : 0;
-  if (r.score < 80 || diff < -10) flags.push({ page, device, r, p });
-  const arrow = !p || Math.abs(diff) < 3 ? '' : ` <span style="font-size:12px;color:${diff > 0 ? '#5a7d2a' : '#a0522d'}">${diff > 0 ? '▲' : '▼'}${Math.abs(diff)}</span>`;
+  const arrow = !p || Math.abs(diff) < 5 ? '' : ` <span style="font-size:12px;color:#999">${diff > 0 ? '▲' : '▼'}${Math.abs(diff)}</span>`;
   return `<strong style="color:${colour(r.score)};font-weight:600">${r.score}</strong>${arrow}`;
 };
 const rows = PAGES.map(([page, label]) => [`<a href="${SITE}${esc(page)}" style="color:#1a1a1a;text-decoration:none">${esc(label)}</a>`, cell(page, 'mobile'), cell(page, 'desktop')]);
@@ -59,11 +89,11 @@ const plain = (why) => why.replace(/^script (\d+)ms: (.*)$/, (_, ms, url) => {
 
 const body = `
 ${table(['Page', 'Phone', 'Computer'], rows)}
-<p style="margin:12px 0 0;font-size:12px;color:#888;line-height:1.6">Scores out of 100: 90+ good, 50–89 needs work. Arrows show the change since the last test; scores move a few points between tests even when nothing has changed, so small moves aren’t shown.</p>
+<p style="margin:12px 0 0;font-size:12px;color:#888;line-height:1.6">Scores out of 100: 90+ good, 50–89 needs work. Small grey arrows show the change since last month. Google’s scores move from test to test even when nothing has changed; computer scores especially swing between about 75 and 98, depending on when Google Analytics and the Facebook Pixel start. That’s normal and visitors don’t notice it, so a score on its own isn’t flagged.</p>
 ${flags.length ? `${h2('Worth a look')}
-${flags.map(({ page, device, r, p }) => `<p style="margin:0 0 14px;font-size:14px;line-height:1.6"><strong>${esc(name(page))}</strong> on ${device === 'mobile' ? 'phone' : 'computer'}: ${r.score}${p ? ` (was ${p.score})` : ''}. Main photo shows after ${r.lcp}s.${(r.why ?? []).length ? `<br><span style="color:#666">Slowed by: ${r.why.slice(0, 3).map((w) => esc(plain(w))).join('; ')}</span>` : ''}</p>`).join('')}
+${flags.map(({ page, device, r, found }) => `<p style="margin:0 0 14px;font-size:14px;line-height:1.6"><strong>${esc(name(page))}</strong> on ${device === 'mobile' ? 'phone' : 'computer'}: ${found.map(esc).join('; ')}.${(r.why ?? []).length ? `<br><span style="color:#666">Slowed by: ${r.why.slice(0, 3).map((w) => esc(plain(w))).join('; ')}</span>` : ''}</p>`).join('')}
 <p style="margin:0;font-size:14px;color:#555">Send this to Claude Code and ask it to look into it.</p>`
-  : `<p style="margin:22px 0 0;font-size:15px;color:#5a5e3b">All good: nothing has slowed down. 🎉</p>`}`;
+  : `<p style="margin:22px 0 0;font-size:15px;color:#5a5e3b">All good: every page shows its main photo quickly and nothing jumps about while loading. 🎉</p>`}`;
 
 const month = new Date().toLocaleDateString('en-NZ', { month: 'long', year: 'numeric', timeZone: 'Pacific/Auckland' });
 const subject = flags.length ? `Website speed, ${month}: ${flags.length} ${flags.length === 1 ? 'page' : 'pages'} worth a look` : `Website speed, ${month}: all good`;
