@@ -108,9 +108,13 @@ h4 { font-size: calc(18.2px + 0.33vw); line-height: 1.2; margin: 0 0 0.8em; colo
   border: 0;
   border-radius: 16px 0;
   background-color: var(--green);
-  background-image: linear-gradient(110deg, transparent 35%, rgb(255 255 255 / 0.22) 50%, transparent 65%);
-  background-size: 250% 100%;
-  background-position: 130% 0;
+  /* The sheen that glides across on hover, over a soft highlight that gives the button a
+     gentle, satin depth whatever its colour. */
+  background-image:
+    linear-gradient(110deg, transparent 35%, rgb(255 255 255 / 0.22) 50%, transparent 65%),
+    linear-gradient(180deg, rgb(255 255 255 / 0.12) 0%, rgb(255 255 255 / 0) 60%);
+  background-size: 250% 100%, 100% 100%;
+  background-position: 130% 0, 0 0;
   background-repeat: no-repeat;
   color: var(--white);
   font: inherit;
@@ -120,13 +124,14 @@ h4 { font-size: calc(18.2px + 0.33vw); line-height: 1.2; margin: 0 0 0.8em; colo
   line-height: 1.2;
   text-decoration: none;
   cursor: pointer;
-  box-shadow: 0 0 0 rgb(0 0 0 / 0);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.16), 0 6px 14px -10px rgb(62 66 41 / 0.55);
   transition:
-    background-color 0.35s ease,
-    background-position 0.8s ease,
-    transform 0.35s ease,
-    box-shadow 0.35s ease,
-    letter-spacing 0.35s ease;
+    background-color 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+    background-position 0.9s cubic-bezier(0.22, 1, 0.36, 1),
+    border-radius 0.6s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+    letter-spacing 0.45s cubic-bezier(0.22, 1, 0.36, 1);
 }
 .btn--dark { background-color: var(--black); }
 
@@ -151,9 +156,10 @@ h4 { font-size: calc(18.2px + 0.33vw); line-height: 1.2; margin: 0 0 0.8em; colo
     opacity: 1;
     color: var(--white);
     background-color: var(--green-dark);
-    background-position: -30% 0;
+    background-position: -30% 0, 0 0;
+    border-radius: 0 16px; /* the leaf corners swap sides */
     transform: translateY(-2px);
-    box-shadow: 0 8px 18px -10px rgb(71 74 46 / 0.6);
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.16), 0 12px 22px -12px rgb(62 66 41 / 0.6);
     letter-spacing: 0.06em;
   }
   .btn--dark:hover { background-color: #1f2117; }
@@ -179,7 +185,7 @@ h4 { font-size: calc(18.2px + 0.33vw); line-height: 1.2; margin: 0 0 0.8em; colo
 /* People who've asked their device for less motion get the colour change only. */
 @media (prefers-reduced-motion: reduce) {
   .btn { transition: background-color 0.2s ease; }
-  .btn:hover { transform: none; background-position: 130% 0; letter-spacing: 0.04em; }
+  .btn:hover { transform: none; background-position: 130% 0, 0 0; border-radius: 16px 0; letter-spacing: 0.04em; }
   .btn:hover::after, .btn:hover::before { animation: none; }
 }
 
@@ -218,6 +224,8 @@ h4 { font-size: calc(18.2px + 0.33vw); line-height: 1.2; margin: 0 0 0.8em; colo
 .js [data-reveal='photo'] { transform: scale(1.04); filter: blur(4px); clip-path: inset(6% 4% 0 4%); transition: opacity 1.2s var(--ease), transform 1.6s var(--ease), filter 1.2s var(--ease), clip-path 1.6s var(--ease); }
 .js [data-reveal].in { opacity: 1; transform: none; filter: none; }
 .js [data-reveal='photo'].in { clip-path: inset(-60px); /* leaves room for hover shadows */ }
+/* Items in a row can start a beat apart: style="--d: 0.15s". */
+.js [data-reveal] { transition-delay: var(--d, 0s); }
 .js [data-stagger] > * { opacity: 0; transform: translateY(20px); transition: opacity 1s var(--ease), transform 1.2s var(--ease); }
 .js [data-stagger].in > * { opacity: 1; transform: none; }
 .js [data-stagger].in > :nth-child(2) { transition-delay: 0.12s; }

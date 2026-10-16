@@ -1,0 +1,22 @@
+---
+// Love Stories (the wedding galleries page): every post in the Wedding category.
+import GalleryPage from '../components/GalleryPage.astro';
+import page from '../data/pages/wedding-galleries.json';
+---
+<GalleryPage
+  title={page.title}
+  description={page.description}
+  image={page.ogImage}
+  eyebrow="Real weddings, real couples"
+  heading="Love Stories"
+  categories={['Wedding']}
+  linkLabel="View love story"
+  buttons={[
+    { label: 'Wedding packages', href: '/weddings' },
+    { label: 'FAQs', href: '/wedding-faqs', outline: true },
+  ]}
+>
+  <p>Take a look at some of the awesome couples I have worked with: a small selection of the images from each big day, with my notes on the way it went down.</p>
+  <p>Every wedding is different, shaped by the people, the setting, and the moments that unfold naturally throughout the day. You’ll find vineyard estates and rustic barns, garden ceremonies and celebrations across Auckland and beyond, each one a real couple on their real day.</p>
+  <p>When you contact me I can provide links to the full wedding so you can see what a whole gallery looks like.</p>
+</GalleryPage>

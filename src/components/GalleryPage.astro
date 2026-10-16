@@ -1,0 +1,86 @@
+---
+// The refreshed gallery page (Love Stories, and later Portraits and Family): an intro with
+// buttons, a grid of story cards from the chosen blog categories, then a dark green closing
+// band. The intro paragraphs go in the default slot.
+import BaseLayout from '../layouts/BaseLayout.astro';
+import StoryGrid from './StoryGrid.astro';
+
+interface Props {
+  title: string;
+  description: string;
+  image?: string;
+  eyebrow: string;
+  heading: string;
+  categories: string[];
+  linkLabel?: string;
+  buttons?: { label: string; href: string; outline?: boolean }[];
+  closingHeading?: string;
+  closingText?: string;
+  closingButton?: { label: string; href: string };
+}
+const {
+  title, description, image, eyebrow, heading, categories, linkLabel, buttons = [],
+  closingHeading = 'Is your date still free?',
+  closingText = 'Tell me your date and venue, and I’ll let you know.',
+  closingButton = { label: 'Check your date', href: '/contact' },
+} = Astro.props;
+---
+<BaseLayout title={title} description={description} image={image}>
+  <section class="intro wrap">
+    <p class="eyebrow rise">{eyebrow}</p>
+    <h1 class="display rise">{heading}</h1>
+    <hr class="hairline rise" />
+    <div class="text rise"><slot /></div>
+    {buttons.length > 0 && (
+      <p class="buttons rise">
+        {buttons.map((b) => <a class:list={['btn', { 'btn--outline': b.outline }]} href={b.href}>{b.label}</a>)}
+      </p>
+    )}
+  </section>
+
+  <section class="grid wrap">
+    <StoryGrid categories={categories} linkLabel={linkLabel} />
+  </section>
+
+  <section class="closing">
+    <div class="wrap" data-reveal>
+      <h2 class="display">{closingHeading}</h2>
+      <p>{closingText}</p>
+      <p><a class="btn btn--light" href={closingButton.href}>{closingButton.label}</a></p>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .intro { max-width: calc(860px + 2 * var(--pad)); margin: 0 auto; padding-block: 64px 56px; text-align: center; }
+  .intro h1 { font-size: clamp(36px, 3vw + 20px, 64px); margin: 0 0 24px; padding: 0; }
+  .intro .hairline { margin-bottom: 28px; }
+  .text :global(p) { color: #444; line-height: 1.85; }
+  .text :global(p:first-child) { font-size: clamp(18px, 0.6vw + 15px, 22px); font-weight: 300; color: var(--ink); line-height: 1.6; }
+  .buttons { display: flex; flex-wrap: wrap; justify-content: center; gap: 14px; margin-top: 34px; }
+
+  /* The intro rises in as the page opens, a beat apart. */
+  .rise { animation: rise 1.3s var(--ease) both; }
+  .rise:nth-child(2) { animation-delay: 0.1s; }
+  .rise:nth-child(3) { animation-delay: 0.2s; }
+  .rise:nth-child(4) { animation-delay: 0.3s; }
+  .rise:nth-child(5) { animation-delay: 0.4s; }
+  hr.rise { animation-name: draw; }
+  @keyframes rise { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
+  @keyframes draw { from { transform: scaleX(0); } to { transform: none; } }
+
+  .grid { max-width: calc(1280px + 2 * var(--pad)); margin: 0 auto; padding-block: 8px 90px; }
+
+  .closing { background: var(--olive); color: var(--cream); padding-block: 88px; text-align: center; }
+  .closing h2 { color: var(--champagne); font-size: clamp(30px, 2.4vw + 18px, 54px); margin: 0 0 16px; }
+  .closing .btn { margin-top: 16px; }
+
+  @media (min-width: 768px) {
+    .intro { padding-block: 110px 80px; }
+    .grid { padding-bottom: 130px; }
+    .closing { padding-block: 120px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .rise { animation: none; }
+  }
+</style>

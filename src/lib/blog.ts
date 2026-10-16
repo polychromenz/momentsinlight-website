@@ -13,3 +13,14 @@ export function coverPosition(value?: string) {
   const presets: Record<string, string> = { top: '50% 0%', upper: '50% 25%', center: '50% 50%', lower: '50% 75%', bottom: '50% 100%' };
   return value ? presets[value] ?? value : undefined;
 }
+
+/** A post title split for cards: "Rebecca & Nick | Bridgewater Estate Wedding" becomes
+ *  { name: "Rebecca & Nick", place: "Bridgewater Estate" }. Titles without a separator are
+ *  left whole. */
+export function storyName(title: string) {
+  const [first, ...rest] = title.split(/\s+[|–—-]\s+/);
+  return {
+    name: first.replace(/\s+and\s+/i, ' & '),
+    place: rest.join(' – ').replace(/\s+Wedding$/i, ''),
+  };
+}
