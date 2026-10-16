@@ -3,6 +3,7 @@
 import BaseLayout from '../../../layouts/BaseLayout.astro';
 import BlogList from '../../../components/BlogList.astro';
 import { sortedPosts } from '../../../lib/blog';
+import { venues } from '../../../data/venues';
 
 export async function getStaticPaths() {
   const posts = await sortedPosts();
@@ -15,11 +16,14 @@ export async function getStaticPaths() {
 
 const { tag } = Astro.params;
 const { posts } = Astro.props;
+// Venue tags show the venue's name; other tags read as words ("winter-weddings" -> "Winter weddings").
+const venue = venues.find((v) => v.tag === tag);
+const words = tag!.replace(/-/g, ' ');
+const heading = venue?.name ?? words[0].toUpperCase() + words.slice(1);
 ---
 <BaseLayout
   title={`${tag} — Blog — Moments In Light`}
   description={`Posts tagged ${tag} from Moments In Light, Auckland wedding and portrait photographer.`}
-  background="alt"
 >
-  <BlogList posts={posts} />
+  <BlogList posts={posts} heading={heading} eyebrow={venue ? 'Love stories at' : 'Journal'} />
 </BaseLayout>

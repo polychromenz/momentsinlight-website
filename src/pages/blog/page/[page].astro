@@ -17,11 +17,12 @@ const last = Math.ceil(posts.length / PAGE_SIZE);
 <BaseLayout
   title={`Blog (page ${n}) — Moments In Light`}
   description="Real weddings, portrait sessions and wedding planning advice from Auckland wedding photographer Tony Gorham."
-  background="alt"
 >
   <BlogList
     posts={posts.slice((n - 1) * PAGE_SIZE, n * PAGE_SIZE)}
     newer={n === 2 ? '/blog' : `/blog/page/${n - 1}`}
     older={n < last ? `/blog/page/${n + 1}` : undefined}
+    active="all"
+    page={{ n, of: last }}
   />
 </BaseLayout>
