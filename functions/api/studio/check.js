@@ -16,7 +16,10 @@ export async function onRequestGet({ env }) {
       headers: { authorization: `Bearer ${env.GITHUB_TOKEN}`, accept: 'application/vnd.github+json', 'user-agent': 'moments-studio' },
     });
     const d = await r.json().catch(() => ({}));
-    if (r.status === 401) add('GITHUB_TOKEN', false, 'GitHub doesn’t accept this key (it may be mistyped, expired or deleted). Make a new one and replace it.');
+    const t = env.GITHUB_TOKEN;
+    // Enough to compare with the key you made, not enough to use it.
+    const shape = `starts “${t.slice(0, 11)}”, ${t.length} characters long, ends “…${t.slice(-4)}”`;
+    if (r.status === 401) add('GITHUB_TOKEN', false, `GitHub doesn’t accept the key stored here (${shape}). If that doesn’t match your new key, the site hasn’t picked it up yet: replace it and rebuild.`);
     else if (r.status === 404) add('GITHUB_TOKEN', false, `The key can’t see ${REPO}. In the key’s settings, under Repository access, choose this repository.`);
     else if (!r.ok) add('GITHUB_TOKEN', false, `GitHub answered ${r.status}: ${d.message ?? ''}`);
     else if (!d.permissions?.push) add('GITHUB_TOKEN', false, 'The key can read the website but not save to it. In the key’s settings, set Permissions > Contents to “Read and write”.');
