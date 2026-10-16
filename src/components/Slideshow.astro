@@ -112,14 +112,27 @@ const sizesFor = (g: { width?: number; height?: number }) => {
 
     // Dots sitting on the white space beside a narrow (upright) photo would be white on white,
     // so those get a grey tint instead. Recomputed for each photo and on resize.
-    const tintDots = () => {
-      if (!dots.length) return;
+    // The current photo's shown width (photos are fitted whole inside the slide box).
+    const slidesBox = show.querySelector<HTMLElement>('.slides')!;
+    const photoWidth = () => {
       const img = slides[index].querySelector('img');
-      const box = show.getBoundingClientRect();
+      const box = slidesBox.getBoundingClientRect();
       const ratio = img?.naturalWidth
         ? img.naturalWidth / img.naturalHeight
         : Number(img?.getAttribute('width')) / Number(img?.getAttribute('height')) || 1.5;
-      const w = Math.min(box.width, box.height * ratio);
+      return Math.min(box.width, box.height * ratio);
+    };
+    // The heading over the opening slideshow is kept within the photo, so its white text
+    // never sits on the champagne either side of a narrower photo.
+    const fitCaption = () => {
+      if (show.hasAttribute('data-hero')) show.style.setProperty('--pw', `${Math.round(photoWidth())}px`);
+    };
+
+    const tintDots = () => {
+      fitCaption();
+      if (!dots.length) return;
+      const box = slidesBox.getBoundingClientRect();
+      const w = photoWidth();
       const left = box.left + (box.width - w) / 2;
       const right = left + w;
       dots.forEach((d) => {
@@ -286,9 +299,27 @@ const sizesFor = (g: { width?: number; height?: number }) => {
     from { opacity: 0; transform: translateY(18px); }
     to { opacity: 1; transform: none; }
   }
+  .slideshow--hero .arrow, .slideshow--hero .dots { z-index: 2; }
+  /* Desktop: the heading sits over the bottom of the photo on a soft shadow, exactly as wide
+     as the photo showing (set by the script as --pw), easing to each new photo's width. */
   @media (min-width: 768px) {
-    .slideshow--hero { --hh: clamp(380px, min(66.667vw, calc(100svh - 300px)), 1000px); height: auto; }
-    .caption { padding: 40px var(--pad) 12px; }
+    .slideshow--hero { --hh: clamp(380px, min(66.667vw, calc(100svh - 130px)), 1000px); height: auto; }
+    .slideshow--hero .caption {
+      position: absolute;
+      left: 50%;
+      bottom: 0;
+      z-index: 1;
+      width: var(--pw, 100%);
+      transform: translateX(-50%);
+      padding: 110px 40px 58px;
+      background: linear-gradient(180deg, rgb(0 0 0 / 0) 0%, rgb(0 0 0 / 0.5) 100%);
+      color: var(--white);
+      text-shadow: 0 1px 18px rgb(0 0 0 / 0.25);
+      container-type: inline-size;
+      pointer-events: none;
+      transition: width 1.2s var(--ease);
+    }
+    .slideshow--hero .caption :global(a) { pointer-events: auto; }
   }
   @media (prefers-reduced-motion: reduce) {
     .caption > :global(*) { animation: none; }
