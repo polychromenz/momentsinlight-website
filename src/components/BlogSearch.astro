@@ -43,11 +43,13 @@ const { categories = [], placeholder = 'Search names, venues or places' } = Astr
         const q = fold(input.value.trim());
         clear.hidden = !q;
         if (!q) { results.hidden = true; normal.hidden = false; found.textContent = ''; return; }
-        const words = q.split(/\s+/).map((w) => w.replace(/&/g, ''));
-        const posts = (await load()).filter((p) => (!cats.length || p.cats.some((c) => cats.includes(c))) && words.every((w) => p.text.includes(w)));
+        // Each word matches from the start of a word, so "nick" finds Nick but not "panicked".
+        const words = q.split(/\s+/).map((w) => w.replace(/&/g, '')).filter(Boolean)
+          .map((w) => new RegExp(`(?:^|[^a-z0-9])${w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`));
+        const posts = (await load()).filter((p) => (!cats.length || p.cats.some((c) => cats.includes(c))) && words.every((w) => w.test(p.text)));
         if (fold(input.value.trim()) !== q) return; // a newer search has started
         // Names and places first, then newest.
-        const head = (p: Post) => words.every((w) => fold(`${p.name} ${p.place}`).includes(w));
+        const head = (p: Post) => words.every((w) => w.test(fold(`${p.name} ${p.place}`)));
         posts.sort((a, b) => Number(head(b)) - Number(head(a)) || b.date.localeCompare(a.date));
         normal.hidden = true;
         results.hidden = false;
