@@ -52,8 +52,8 @@ into the website. Run Studio Ninja in parallel until each phase is proven, then 
 - [x] DKIM for Google Workspace (`google._domainkey`): in place.
 - [x] SPF includes `_spf.google.com`: in place. Remove `include:spf.studioninja.co` once Studio
       Ninja is cancelled.
-- [ ] **DMARC** record: missing. Add `_dmarc` TXT `v=DMARC1; p=none; rua=mailto:tony@momentsinlight.co.nz`,
-      tighten to `p=quarantine` after a few weeks of clean reports.
+- [x] **DMARC** record: added 17 Oct 2026 in Cloudflare DNS: `_dmarc` TXT `v=DMARC1; p=none; rua=mailto:tony@momentsinlight.co.nz`.
+      Tighten to `p=quarantine` after a few weeks of clean reports.
 - [x] Resend domain verified (sending subdomain `send`).
 - [ ] Google Cloud project with the Gmail API enabled, OAuth consent screen set to Internal,
       OAuth credentials.
@@ -114,7 +114,7 @@ it), so they can never end up in git:
 
 ## Next steps
 
-1. Add the DMARC record.
+1. ~~Add the DMARC record~~ (done 17 Oct 2026).
 2. Download the exports and screenshots into the folder above.
 3. Claude reviews them, maps Studio Ninja's data model and workflows, and designs the D1 schema.
 4. Build phase 1.
