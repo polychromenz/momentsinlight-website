@@ -12,7 +12,7 @@ export async function onRequestPost({ request, env }) {
   const bytes = [...new Uint8Array(await img.arrayBuffer())];
   const who = names ? ` The people may include ${names}; use their first names where it's clearly them.` : '';
   const what = kind === 'portrait' ? 'portrait session' : kind === 'family' ? 'family photo session' : kind === 'article' ? 'photo' : 'wedding';
-  const prompt = `Describe this ${what} photograph in one short sentence of 8 to 16 words, for a website's image description.${who} Say what is happening and where if visible. Don't start with "A photo of" or "The image". Use NZ English.`;
+  const prompt = `Describe this ${what} photograph in one short sentence of 8 to 16 words, for a website's image description.${who} Say what is happening and where if visible. Describe people neutrally ("the couple", "two people", "guests") and never assume genders or roles such as bride and groom unless they are obvious from the names given. Don't start with "A photo of" or "The image". Use NZ English.`;
   try {
     const out = await env.AI.run('@cf/llava-hf/llava-1.5-7b-hf', { image: bytes, prompt, max_tokens: 60 });
     let text = String(out?.description ?? out?.response ?? '').trim();

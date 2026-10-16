@@ -8,7 +8,8 @@ const blog = defineCollection({
   schema: z.object({
     title: z.string(),
     seoTitle: z.string().optional(),
-    description: z.string(),
+    // Google description; can be empty (e.g. a draft), so it never stops the site building.
+    description: z.string().default(''),
     date: z.coerce.date(),
     updated: z.coerce.date().optional(),
     author: z.string().default('Tony Gorham'),
