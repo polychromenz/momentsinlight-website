@@ -48,7 +48,9 @@ body {
 
 img { max-width: 100%; height: auto; display: block; }
 
-h1, h2, h3 { font-weight: 500; color: var(--green); margin: 0; }
+h1, h2, h3 { font-weight: 500; color: var(--green); margin: 0; text-wrap: balance; }
+p { text-wrap: pretty; }
+.lead, .intro p, blockquote p, .closing p, .caption p { text-wrap: balance; }
 /* Page headings: a little extra room above (padding, so section layouts that reset the
    first element's margin don't remove it) and a little less below than Squarespace had. */
 h1 { font-size: var(--fs-h1); line-height: 1.15; margin-bottom: 22px; padding-top: clamp(10px, 1.4vw, 20px); }

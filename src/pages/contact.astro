@@ -41,7 +41,7 @@ const directions = 'https://www.google.com/maps/dir/?api=1&destination=' + encod
       </aside>
       <div class="form-card" data-lazy-form>
         <p class="loading" aria-hidden="true">Loading the enquiry form…</p>
-        <template set:html={formHtml} />
+        <template><Fragment set:html={formHtml} /></template>
       </div>
     </div>
   </section>
@@ -120,8 +120,8 @@ const directions = 'https://www.google.com/maps/dir/?api=1&destination=' + encod
   .phone-number { font-size: 26px; font-weight: 300; }
 
   /* The form's card holds its full height open from the start (the form then sizes itself). */
-  .form-card { position: relative; background: var(--white); border-radius: 40px 0; padding: 18px 10px; min-height: 1100px; }
-  .form-card :global(iframe) { width: 100%; border: 0; display: block; min-height: 1060px; }
+  .form-card { position: relative; background: var(--white); border-radius: 40px 0; padding: 18px 10px; min-height: 640px; }
+  .form-card :global(iframe) { width: 100%; border: 0; display: block; }
   .loading { position: absolute; top: 40px; left: 0; right: 0; text-align: center; color: #888; font-size: 15px; }
   .form-card.loaded .loading { display: none; }
 
@@ -150,8 +150,7 @@ const directions = 'https://www.google.com/maps/dir/?api=1&destination=' + encod
   @media (min-width: 768px) {
     .intro { padding-block: 110px 64px; }
     .form-band { padding-block: 90px; }
-    .form-card { padding: 26px 20px; min-height: 1080px; }
-    .form-card :global(iframe) { min-height: 1020px; }
+    .form-card { padding: 26px 20px; }
     .map { aspect-ratio: 21 / 9; }
     .map-card { position: absolute; left: 40px; bottom: 40px; margin: 0; max-width: 340px; }
     .map-band { padding-block: 90px 120px; }
