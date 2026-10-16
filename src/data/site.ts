@@ -35,7 +35,7 @@ export const nav: NavItem[] = [
     label: 'Galleries',
     href: '/galleries-menu',
     children: [
-      { label: 'Wedding Galleries', href: '/wedding-galleries' },
+      { label: 'Love Stories', href: '/wedding-galleries' },
       { label: 'Portraits Gallery', href: '/portraits-gallery' },
       { label: 'Family Galleries', href: '/family-galleries' },
     ],

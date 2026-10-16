@@ -1,4 +1,5 @@
 ---
+import '@fontsource/raleway/300.css';
 import '@fontsource/raleway/400.css';
 import '@fontsource/raleway/500.css';
 import '@fontsource/raleway/600.css';
@@ -34,6 +35,7 @@ const ogImage = image ? sized(image, 1500) : undefined;
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script is:inline>document.documentElement.classList.add('js');</script>
     <title>{title}</title>
     <meta name="description" content={description} />
     <link rel="preload" href={raleway400} as="font" type="font/woff2" crossorigin />
@@ -60,5 +62,19 @@ const ogImage = image ? sized(image, 1500) : undefined;
       <slot />
     </main>
     <Footer />
+    <script>
+      // Fade sections marked data-reveal up into view as they scroll on screen (see global.css).
+      const items = document.querySelectorAll<HTMLElement>('[data-reveal]');
+      if ('IntersectionObserver' in window) {
+        const io = new IntersectionObserver((entries) => {
+          entries.forEach((e) => {
+            if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
+          });
+        }, { rootMargin: '0px 0px -8% 0px' });
+        items.forEach((el) => io.observe(el));
+      } else {
+        items.forEach((el) => el.classList.add('in'));
+      }
+    </script>
   </body>
 </html>

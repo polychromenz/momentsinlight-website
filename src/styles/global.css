@@ -6,6 +6,16 @@
   --black: #000000;   /* Timeless Black */
   --green: #5a5e3b;   /* Harmony Green (accent) */
   --green-dark: #474a2e;
+  /* Additions for the 2026 refresh (docs/brand-palette.md). */
+  --champagne: #f6f1ea;  /* warm page background, menu bar */
+  --blush: #efe4dc;      /* Linen Blush: a soft band, used rarely */
+  --sage: #a3b07a;       /* fine lines, icons, hearts; not for text */
+  --olive: #3e4229;      /* Deep Olive: dark bands */
+  --gold: #b39a6b;       /* review stars and award marks only */
+  --pale-sage: #c9d1a6;  /* small labels on dark green */
+  --cream: #e8e4d6;      /* body text on dark green */
+  --light-gold: #d8c79f; /* stars on dark green */
+  --ink: #1a1a1a;        /* softened black for the refreshed pages */
 
   --font: 'Raleway', system-ui, sans-serif;
 
@@ -171,6 +181,37 @@ h4 { font-size: calc(18.2px + 0.33vw); line-height: 1.2; margin: 0 0 0.8em; colo
   .btn { transition: background-color 0.2s ease; }
   .btn:hover { transform: none; background-position: 130% 0; letter-spacing: 0.04em; }
   .btn:hover::after, .btn:hover::before { animation: none; }
+}
+
+/* Button variants for the refreshed pages: champagne on dark green, and outlined. */
+.btn--light { background-color: var(--champagne); color: var(--olive); }
+.btn--outline { background-color: transparent; color: var(--green); box-shadow: inset 0 0 0 1px var(--green); }
+.btn--outline-light { background-color: transparent; color: var(--champagne); box-shadow: inset 0 0 0 1px rgb(246 241 234 / 0.7); }
+@media (hover: hover) {
+  .btn--light:hover { background-color: var(--white); color: var(--olive); }
+  .btn--outline:hover { background-color: var(--green); }
+  .btn--outline-light:hover { background-color: var(--champagne); color: var(--olive); }
+}
+
+/* Shared pieces of the refreshed pages (home, weddings). */
+.eyebrow {
+  margin: 0 0 14px;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--green);
+}
+.display { font-weight: 300; color: var(--ink); line-height: 1.12; }
+.hairline { width: 48px; height: 1px; background: var(--sage); margin: 0 auto 28px; border: 0; }
+.stars { color: var(--gold); letter-spacing: 2px; }
+
+/* Gentle fade-up as sections scroll into view (BaseLayout adds .js and the .in class).
+   Without JavaScript, or for visitors who ask for less motion, everything simply shows. */
+.js [data-reveal] { opacity: 0; transform: translateY(16px); transition: opacity 0.9s ease, transform 0.9s ease; }
+.js [data-reveal].in { opacity: 1; transform: none; }
+@media (prefers-reduced-motion: reduce) {
+  .js [data-reveal] { opacity: 1; transform: none; transition: none; }
 }
 
 .skip-link { position: absolute; left: -9999px; }

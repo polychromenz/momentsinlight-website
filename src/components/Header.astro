@@ -101,7 +101,8 @@ const inFolder = (item: (typeof nav)[number]) => item.children?.some((c) => isCu
     position: sticky;
     top: 0;
     z-index: 50;
-    background: var(--griseo);
+    background: var(--champagne);
+    border-bottom: 1px solid #e8dfd2;
   }
   .bar {
     display: flex;
@@ -138,7 +139,7 @@ const inFolder = (item: (typeof nav)[number]) => item.children?.some((c) => isCu
   .mobile-menu {
     position: fixed;
     inset: 97px 0 0;
-    background: var(--white);
+    background: var(--champagne);
     display: flex;
     flex-direction: column;
     padding: 0 var(--pad) 24px;
@@ -205,7 +206,7 @@ const inFolder = (item: (typeof nav)[number]) => item.children?.some((c) => isCu
       list-style: none;
       margin: 0;
       padding: 14px 0 10px;
-      background: var(--griseo);
+      background: var(--champagne);
       text-align: center;
     }
     .sub a { display: block; padding: 6px 20px; color: var(--black); text-decoration: none; font-size: 15px; }

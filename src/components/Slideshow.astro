@@ -16,23 +16,29 @@ interface Props {
   interval?: number;
   /** Near the top of the page: its first photo is fetched before everything else. */
   first?: boolean;
+  /** The full-width opening slideshow of the refreshed pages: deep olive behind the photos
+   * (still shown whole, never cropped), with the slot's content (the page heading) laid over
+   * the bottom on desktop and underneath on phones. */
+  hero?: boolean;
 }
-const { images, label, heightMobile = '30vh', heightDesktop = '50vh', interval = 5, first = false } = Astro.props;
+const { images, label, heightMobile = '30vh', heightDesktop = '50vh', interval = 5, first = false, hero = false } = Astro.props;
+const hasCaption = Astro.slots.has('default');
 // Photos are shown whole inside a box the slideshow's height tall, so each is only as wide as
 // its shape allows at that height (never wider than the screen); tell the browser so it
 // fetches that size rather than a full-screen-width one.
 const sizesFor = (g: { width?: number; height?: number }) => {
-  if (!g.width || !g.height) return '100vw';
+  if (hero || !g.width || !g.height) return '100vw';
   const r = Math.round((g.width / g.height) * 1000) / 1000;
   return `(min-width: 768px) min(100vw, calc(${heightDesktop} * ${r})), min(100vw, calc(${heightMobile} * ${r}))`;
 };
 ---
 {images.length > 0 && (
   <section
-    class="slideshow"
+    class:list={['slideshow', { 'slideshow--hero': hero }]}
     aria-roledescription="carousel"
     aria-label={label}
     data-slideshow
+    data-hero={hero ? '' : undefined}
     data-interval={interval}
     tabindex="0"
     style={`--h-m:${heightMobile};--h-d:${heightDesktop}`}
@@ -59,6 +65,7 @@ const sizesFor = (g: { width?: number; height?: number }) => {
         </div>
       </>
     )}
+    {hasCaption && <div class="caption"><slot /></div>}
   </section>
 )}
 
@@ -106,7 +113,7 @@ const sizesFor = (g: { width?: number; height?: number }) => {
     // Dots sitting on the white space beside a narrow (upright) photo would be white on white,
     // so those get a grey tint instead. Recomputed for each photo and on resize.
     const tintDots = () => {
-      if (!dots.length) return;
+      if (!dots.length || show.hasAttribute('data-hero')) return; // white dots read fine on olive
       const img = slides[index].querySelector('img');
       const box = show.getBoundingClientRect();
       const ratio = img?.naturalWidth
@@ -254,5 +261,35 @@ const sizesFor = (g: { width?: number; height?: number }) => {
   }
   @media (prefers-reduced-motion: reduce) {
     .slide, .slide.active { transition: none; }
+  }
+
+  /* Full-width opening slideshow. Phones: the photo box is 3:2 (a landscape photo fills the
+     width exactly) with the heading in an olive band below. Desktop: as tall as fits under
+     the menu, heading over the bottom of the photo. Photos are always shown whole. */
+  .slideshow--hero { height: auto; min-height: 0; background: var(--olive); }
+  .slideshow--hero .slides { height: 66.667vw; }
+  .slideshow--hero .slide { transition-duration: 1.4s, 0s; }
+  .slideshow--hero .slide.active { transition-duration: 1.4s; }
+  .slideshow--hero .arrow { top: calc(66.667vw / 2); z-index: 2; }
+  .slideshow--hero .dots { z-index: 2; }
+  .caption {
+    padding: 26px var(--pad) 30px;
+    color: var(--white);
+    text-align: center;
+  }
+  @media (min-width: 768px) {
+    .slideshow--hero { height: auto; }
+    .slideshow--hero .slides { height: clamp(380px, min(66.667vw, calc(100svh - 120px)), 1100px); }
+    .slideshow--hero .arrow { top: 50%; }
+    .slideshow--hero .dots { bottom: 18px; }
+    .slideshow--hero .caption {
+      position: absolute;
+      inset: auto 0 0;
+      z-index: 1;
+      padding: 120px var(--pad) 56px;
+      background: linear-gradient(180deg, rgb(0 0 0 / 0) 0%, rgb(0 0 0 / 0.5) 100%);
+      pointer-events: none;
+    }
+    .slideshow--hero .caption :global(a) { pointer-events: auto; }
   }
 </style>

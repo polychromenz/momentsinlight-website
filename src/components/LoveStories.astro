@@ -1,0 +1,76 @@
+---
+// The latest wedding posts as "Love stories": one large and two smaller, each photo shown
+// whole (never cropped). Built from the blog at build time, so a new wedding post in the
+// Wedding category appears here automatically.
+import { getCollection } from 'astro:content';
+import Img from './Img.astro';
+
+const posts = (await getCollection('blog'))
+  .filter((p) => p.data.categories.some((c) => c.toLowerCase() === 'wedding') && p.data.thumbnail)
+  .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf())
+  .slice(0, 3);
+
+// "Rebecca & Nick | Bridgewater Estate Wedding" -> couple "Rebecca & Nick", place "Bridgewater Estate".
+const split = (title: string) => {
+  const [couple, ...rest] = title.split(/\s+[|–—-]\s+/);
+  const place = rest.join(' – ').replace(/\s+Wedding$/i, '');
+  return { couple: couple.replace(/\s+and\s+/i, ' & '), place };
+};
+
+const stories = posts.map((p) => {
+  const src = p.data.thumbnail!;
+  const match = p.data.gallery.find((g) => g.src === src) ?? p.data.gallery[0];
+  const { couple, place } = split(p.data.title);
+  return {
+    href: `/blog/${p.id}`,
+    src,
+    alt: match?.alt || p.data.title,
+    width: match?.width ?? 1500,
+    height: match?.height ?? 1000,
+    couple,
+    place: p.data.venue || place,
+  };
+});
+const [lead, ...others] = stories;
+---
+{lead && (
+  <div class="stories">
+    <a class="story story--lead" href={lead.href} data-reveal>
+      <Img src={lead.src} alt={lead.alt} width={lead.width} height={lead.height} sizes="(min-width: 900px) 56vw, 88vw" />
+      <span class="couple">{lead.couple}</span>
+      {lead.place && <span class="place">{lead.place}</span>}
+    </a>
+    <div class="side">
+      {others.map((s) => (
+        <a class="story" href={s.href} data-reveal>
+          <Img src={s.src} alt={s.alt} width={s.width} height={s.height} sizes="(min-width: 900px) 36vw, 88vw" />
+          <span class="couple">{s.couple}</span>
+          {s.place && <span class="place">{s.place}</span>}
+        </a>
+      ))}
+    </div>
+  </div>
+)}
+
+<style>
+  .stories { display: grid; gap: 36px; }
+  .side { display: grid; gap: 36px; align-content: start; }
+  .story { display: flex; flex-direction: column; gap: 8px; text-decoration: none; color: var(--ink); }
+  .story :global(img) { width: 100%; height: auto; border-radius: 32px 0; transition: transform 0.6s ease, box-shadow 0.6s ease; }
+  .side .story :global(img) { border-radius: 24px 0; }
+  .couple { margin-top: 8px; font-size: 22px; font-weight: 300; line-height: 1.25; }
+  .story--lead .couple { font-size: 26px; }
+  .place { font-size: 14px; letter-spacing: 0.04em; color: #666; }
+  @media (hover: hover) {
+    .story:hover { opacity: 1; }
+    .story:hover :global(img) { transform: translateY(-4px); box-shadow: 0 18px 30px -22px rgb(0 0 0 / 0.45); }
+  }
+  @media (min-width: 900px) {
+    .stories { grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 32px; align-items: start; }
+    .side { gap: 32px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .story :global(img) { transition: none; }
+    .story:hover :global(img) { transform: none; }
+  }
+</style>
