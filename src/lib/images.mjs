@@ -4,6 +4,9 @@
 //  - Squarespace (until every photo has moved): ?format=NNNw.
 // Anything else (local files, animated GIFs) is used as it is.
 export const WIDTHS = [500, 750, 1000, 1500, 2048];
+/** Cloudflare Images quality (1–100). 75 makes files about 20–30% smaller with no visible
+ *  difference (see docs/photo-quality-comparison.jpg). */
+export const QUALITY = 75;
 
 const isCloudflare = (src) => src.startsWith('https://imagedelivery.net/');
 // Squarespace's resizing would flatten animated GIFs.
@@ -11,7 +14,7 @@ const isSquarespace = (src) => src.includes('squarespace-cdn.com') && !/\.gif$/i
 
 /** The photo at (about) the given width, or the address unchanged if it can't be resized. */
 export function sized(src, width) {
-  if (isCloudflare(src)) return src.replace(/\/[^/]+$/, `/w=${width}`);
+  if (isCloudflare(src)) return src.replace(/\/[^/]+$/, `/w=${width},q=${QUALITY}`);
   if (isSquarespace(src)) return `${src.split('?')[0]}?format=${width}w`;
   return src;
 }

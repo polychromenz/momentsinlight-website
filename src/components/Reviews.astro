@@ -194,7 +194,7 @@ const paragraphs = (s: string) => s.split(/\n{2,}/).map((p) => p.trim()).filter(
     const side = lb.querySelector('[data-lb-side]');
     const counter = lb.querySelector('[data-lb-count]');
     let cur = [0, 0];
-    const big = (src) => src.replace(/\/public$/, '/w=1600');
+    const big = (src) => src.replace(/\/public$/, '/w=1600,q=75');
     const show = () => {
       const [i, n] = cur;
       const list = photos[i];
