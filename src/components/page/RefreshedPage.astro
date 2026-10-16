@@ -21,7 +21,7 @@ import type { RefreshOptions } from '../../data/refreshed';
 interface Props { page: any; options: RefreshOptions }
 const { page, options: o } = Astro.props;
 
-import { strip, clean, cardify, faqify } from '../../lib/refresh';
+import { strip, clean, cardify, faqify, stepify } from '../../lib/refresh';
 import GuideSignup from './GuideSignup.astro';
 import { photosFromTag } from '../../lib/blog';
 
@@ -75,13 +75,18 @@ for (const s of page.sections as any[]) {
   if (texts.some((b) => isTestimonials(b.html)) && o.reviews?.length) items.push({ kind: 'reviews' });
 }
 
+// A page without a heading of its own gets one from the options.
+if (o.heading && !items.some((i) => i.kind === 'prose' && /<h1[ >]/.test(i.html))) {
+  const first = items.find((i) => i.kind === 'prose') as Extract<Item, { kind: 'prose' }> | undefined;
+  if (first) first.html = `<h1>${o.heading}</h1>${first.html}`;
+}
 // The first text with the page heading becomes the intro; its later "## headings" become
 // sections of their own.
 const at = items.findIndex((i) => i.kind === 'prose' && /<h1[ >]/.test(i.html));
 if (at >= 0) {
   const p = items[at] as Extract<Item, { kind: 'prose' }>;
   // Pages that use smaller headings for their sections (no "##", several "###") split on those.
-  if (!/<h2[ >]/.test(p.html) && (p.html.match(/<h3[ >]/g) ?? []).length >= 3) {
+  if (o.splitOnH3 || (!/<h2[ >]/.test(p.html) && (p.html.match(/<h3[ >]/g) ?? []).length >= 3)) {
     p.html = p.html.replace(/<h3([ >])/g, '<h2$1').replace(/<\/h3>/g, '</h2>');
   }
   const h1 = p.html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/)!;
@@ -101,6 +106,15 @@ if (at >= 0) {
   const photoAt = items.findIndex((i, k) => i.kind === 'photo' && k < items.indexOf(intro));
   if (photoAt >= 0) (intro as any).photo = (items.splice(photoAt, 1)[0] as any).image;
   if (o.heroImage) (intro as any).photo = o.heroImage;
+}
+// Any other long text splits at its headings too (and at the smaller ones, with splitOnH3).
+for (let k = items.length - 1; k >= 0; k--) {
+  const it = items[k];
+  if (it.kind !== 'prose') continue;
+  const html = o.splitOnH3 ? it.html.replace(/<h3([ >])/g, '<h2$1').replace(/<\/h3>/g, '</h2>') : it.html;
+  const parts = html.split(/(?=<h2[ >])/).filter((x) => strip(x));
+  if (parts.length > 1) items.splice(k, 1, ...parts.map((h): Item => ({ kind: 'prose', html: h, alt: it.alt })));
+  else it.html = html;
 }
 // A venue's love stories, if the page doesn't list them already.
 if (o.storiesTag && !items.some((i) => i.kind === 'stories')) {
@@ -186,7 +200,7 @@ const eager = () => { const e = firstPhoto; firstPhoto = false; return e; };
     );
     if (it.kind === 'prose') return (
       <section class:list={['chapter', { alt: it.alt }]}>
-        <div class="prose wrap" data-reveal set:html={cardify(it.html)} />
+        <div class="prose wrap" data-reveal set:html={o.steps ? stepify(it.html) : cardify(it.html)} />
       </section>
     );
     if (it.kind === 'split') return (
@@ -330,6 +344,16 @@ const eager = () => { const e = firstPhoto; firstPhoto = false; return e; };
   .signup-card { background: var(--white); border-radius: 40px 0; padding: 32px clamp(20px, 3vw, 44px); }
   .signup-card .prose { margin: 0 0 18px; }
   .signup-card .prose :global(h2) { text-align: left; margin-bottom: 14px; }
+
+  /* Steps: a numbered timeline joined by a fine sage line. */
+  .prose :global(.steps) { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 0; }
+  .prose :global(.step) { position: relative; display: grid; grid-template-columns: 52px minmax(0, 1fr); gap: 18px; padding: 0 0 30px; }
+  .prose :global(.step)::before { content: ''; position: absolute; left: 25px; top: 52px; bottom: 6px; width: 1px; background: var(--sage); opacity: 0.6; }
+  .prose :global(.step:last-child)::before { display: none; }
+  .prose :global(.step-n) { display: grid; place-items: center; width: 52px; height: 52px; border-radius: 16px 0; background: var(--champagne); color: var(--green); font-size: 16px; font-weight: 600; letter-spacing: 0.04em; }
+  .alt .prose :global(.step-n) { background: var(--white); }
+  .prose :global(.step-body h3) { margin: 12px 0 6px; font-size: clamp(19px, 0.4vw + 17px, 22px); }
+  .prose :global(.step-body p:last-child) { margin-bottom: 0; }
 
   /* FAQ pages: each question opens to its answer. */
   .prose :global(.faq-lead) { font-size: clamp(18px, 0.5vw + 15px, 22px); font-weight: 300; line-height: 1.65; color: var(--ink); text-align: center; margin-bottom: 30px; }

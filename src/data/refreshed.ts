@@ -10,6 +10,12 @@ export type RefreshOptions = {
   reviews?: string[];
   /** Questions written as bold lines become open-and-close items (and Google's FAQ listing). */
   faq?: boolean;
+  /** Bold lines followed by text become a numbered timeline of steps. */
+  steps?: boolean;
+  /** Start a new section at each smaller heading (###) as well. */
+  splitOnH3?: boolean;
+  /** A heading for a page that has none of its own. */
+  heading?: string;
   /** Words on the cards' hover shade. */
   linkLabel?: string;
   /** A photo to open the page with, the heading laid over it. */
@@ -101,6 +107,27 @@ export const refreshed: Record<string, RefreshOptions> = {
     faq: true,
     buttons: [{ label: 'Wedding packages', href: '/weddings' }, { label: 'How I work', href: '/a-guide-to-your-wedding-photos', outline: true }],
     closing: { heading: 'Still have a question?', text: 'There really is no such thing as a silly question. Get in touch any time.', button: { label: 'Get in touch', href: '/contact' } },
+  },
+  '/a-guide-to-your-wedding-photos': {
+    eyebrow: 'How I work',
+    steps: true,
+    splitOnH3: true,
+    buttons: [{ label: 'Wedding packages', href: '/weddings' }, { label: 'FAQs', href: '/wedding-faqs', outline: true }],
+    reviews: weddingReviews,
+    closing: { heading: 'Is your date still free?', text: 'Tell me your date and venue, and I’ll let you know.', button: { label: 'Check your date', href: '/contact' } },
+  },
+  '/links': {
+    eyebrow: 'Friends of Moments in Light',
+    closing: false,
+  },
+  '/sunflowers-2024': {
+    eyebrow: 'Mini sessions',
+    closing: { heading: 'Want to know about the next sessions?', text: 'Get in touch and I’ll let you know when the fields are open.', button: { label: 'Get in touch', href: '/contact' } },
+  },
+  '/thanks': {
+    heading: 'Thank you',
+    buttons: [{ label: 'Love stories', href: '/wedding-galleries' }, { label: 'Back to the home page', href: '/', outline: true }],
+    closing: false,
   },
   '/about': {
     eyebrow: 'Hello, I’m Tony',

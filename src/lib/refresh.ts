@@ -39,3 +39,17 @@ export const faqify = (h: string) => {
   const html = `${before}<div class="faq-list">${items.map((it) => `<details><summary>${it.q}</summary><div class="answer">${it.a}</div></details>`).join('')}</div>`;
   return { html, items };
 };
+
+/** Steps written as a bold line ("<p><strong>You make an enquiry</strong></p>") followed by
+ *  their text become a numbered timeline. */
+export const stepify = (h: string) => {
+  const q = /<p>\s*<strong>([^<]+?)<\/strong>\s*<\/p>/g;
+  const marks = [...h.matchAll(q)];
+  if (marks.length < 2) return h;
+  const before = h.slice(0, marks[0].index);
+  const steps = marks.map((m, i) => {
+    const body = h.slice(m.index! + m[0].length, i + 1 < marks.length ? marks[i + 1].index : h.length).replace(/<p>\s*<\/p>/g, '').trim();
+    return `<li class="step"><span class="step-n">${String(i + 1).padStart(2, '0')}</span><div class="step-body"><h3>${m[1].trim()}</h3>${body}</div></li>`;
+  });
+  return `${before}<ol class="steps">${steps.join('')}</ol>`;
+};

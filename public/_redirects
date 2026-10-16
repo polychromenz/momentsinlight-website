@@ -6,9 +6,11 @@
 
 # Squarespace menu folders, which redirected to their first page
 /galleries-menu          /wedding-galleries                301
+/galleries               /wedding-galleries                301
 /portraits-1             /portraits                        301
 /wedding-venues          /west-auckland-wedding-venues     301
 /more                    /wedding-photo-guide              301
+/more-1                  /wedding-photo-guide              301
 
 # Squarespace's sitemap address (known to Google Search Console) to the new sitemap
 /sitemap.xml             /sitemap-index.xml                301
