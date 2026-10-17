@@ -604,9 +604,20 @@ $('[data-act="delete"]').addEventListener('click', async () => {
       return;
     }
   } else {
+    // Started from the SEO page: ?title=…&kind=Wedding|Info&venue=…&seoTitle=…&description=…&outline=venue
+    const p = (k: string) => params.get(k)?.trim() ?? '';
+    if (p('title')) data.title = p('title');
+    if (['Wedding', 'Portrait', 'Family', 'Info'].includes(p('kind'))) data.categories = [p('kind')];
+    if (p('venue')) data.venue = p('venue');
+    if (p('seoTitle')) data.seoTitle = p('seoTitle');
+    if (p('description')) data.description = p('description');
     $('.loading').remove();
     fillForm();
-    startStory('');
+    if (data.title) field<HTMLInputElement>('slug').value = slugify(data.title);
+    const v = data.venue || 'the venue';
+    startStory(p('outline') === 'venue'
+      ? ['About ' + v, 'The best photo spots', 'Ceremony and reception', 'Light and timing', 'If it rains', 'Real weddings at ' + v].map((h) => '## ' + h + '\n\n').join('')
+      : '');
     titleEl.focus();
   }
   dirty = false;

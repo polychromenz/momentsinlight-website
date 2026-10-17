@@ -2,6 +2,7 @@
  "path": "/links",
  "title": "Links | Moments In Light",
  "description": "Professional photography in Auckland. Weddings, portraits, and family moments captured with creativity and care.",
+ "noindex": true,
  "ogImage": "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/share/Moments_in_Light_250x250/public",
  "type": {
   "d": {

@@ -6,7 +6,7 @@ import { sortedPosts, PAGE_SIZE } from '../../lib/blog';
 const posts = await sortedPosts();
 ---
 <BaseLayout
-  title="Blog — Moments In Light"
+  title="Auckland Wedding Blog | Moments In Light"
   description="Real weddings, portrait sessions and wedding planning advice from Auckland wedding photographer Tony Gorham."
 >
   <BlogList posts={posts.slice(0, PAGE_SIZE)} older={posts.length > PAGE_SIZE ? '/blog/page/2' : undefined} active="all" page={{ n: 1, of: Math.ceil(posts.length / PAGE_SIZE) }} />

@@ -1,0 +1,136 @@
+---
+// Moments Studio > Payments: every invoice (to be sent, sent, overdue, paid), filtered and
+// searchable, with what's owing at the top and an export. Each row opens the job, where invoices
+// are sent, edited and marked paid. Data from functions/api/studio/crm/payments.js.
+import StudioLayout from '../../layouts/StudioLayout.astro';
+---
+<StudioLayout title="Payments" section="payments">
+  <button slot="bar" type="button" class="s-btn s-btn--quiet" data-export>Export</button>
+  <main class="pay">
+    <div class="pay-head">
+      <h1>Payments</h1>
+      <div class="totals"></div>
+    </div>
+    <div class="pay-tools">
+      <div class="filter" role="group" aria-label="Show">
+        <button type="button" data-show="unpaid" class="on">Unpaid</button>
+        <button type="button" data-show="overdue">Overdue</button>
+        <button type="button" data-show="paid">Paid</button>
+        <button type="button" data-show="all">All</button>
+      </div>
+      <input class="search" type="search" placeholder="Search…" aria-label="Search payments" />
+    </div>
+    <div class="card"><table class="tbl"><thead><tr><th>Status</th><th>Due</th><th>Invoice</th><th>Client</th><th>For</th><th class="r">Amount</th></tr></thead><tbody><tr><td colspan="6" class="muted">Loading…</td></tr></tbody></table></div>
+    <p class="hint">Unpaid includes invoices not sent yet (they go out by themselves on their send date). Open a job to send, change or mark an invoice paid.</p>
+  </main>
+</StudioLayout>
+
+<script>
+  const $ = <T extends HTMLElement = HTMLElement>(s: string) => document.querySelector<T>(s)!;
+  const esc = (s: unknown) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
+  const money = (c: number) => `$${(c / 100).toLocaleString('en-NZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const day = (d: string) => new Date(`${d.slice(0, 10)}T12:00:00Z`).toLocaleDateString('en-NZ', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' });
+  let all: any[] = [];
+  let today = '';
+  let show = 'unpaid';
+
+  const kind = (i: any) => (i.status === 'paid' ? 'paid' : i.status === 'void' ? 'void' : i.due_date < today ? 'overdue' : i.status === 'scheduled' ? 'scheduled' : 'sent');
+  const label: Record<string, string> = { paid: 'Paid', void: 'Cancelled', overdue: 'Overdue', scheduled: 'To be sent', sent: 'Unpaid' };
+  const inDays = (d: string) => {
+    const n = Math.round((Date.parse(`${d}T12:00:00Z`) - Date.parse(`${today}T12:00:00Z`)) / 86400000);
+    return n === 0 ? 'today' : n > 0 ? `in ${n} day${n === 1 ? '' : 's'}` : `${-n} day${n === -1 ? '' : 's'} ago`;
+  };
+  const client = (i: any) => [i.first_name, i.last_name].filter(Boolean).join(' ') || i.job;
+
+  function rows() {
+    const q = $<HTMLInputElement>('.search').value.trim().toLowerCase();
+    return all.filter((i) => {
+      const k = kind(i);
+      if (show === 'unpaid' && !['sent', 'scheduled', 'overdue'].includes(k)) return false;
+      if (show === 'overdue' && k !== 'overdue') return false;
+      if (show === 'paid' && k !== 'paid') return false;
+      return !q || [i.number, client(i), i.job, i.label].join(' ').toLowerCase().includes(q);
+    }).sort((a, b) => (show === 'paid' ? (b.paid_at ?? '').localeCompare(a.paid_at ?? '') : a.due_date.localeCompare(b.due_date)));
+  }
+
+  function draw() {
+    const list = rows();
+    $('tbody').innerHTML = list.map((i) => {
+      const k = kind(i);
+      return `<tr class="${k}" data-job="${i.job_id}">
+        <td><span class="st st--${k}">${label[k]}</span></td>
+        <td>${k === 'paid' && i.paid_at ? `Paid ${day(i.paid_at)}` : `${day(i.due_date)} <small>(${inDays(i.due_date)})</small>`}</td>
+        <td>${esc(i.number)}</td>
+        <td><a href="/studio/crm/job?id=${i.job_id}">${esc(client(i))}</a></td>
+        <td>${esc(i.label)}<br><small>${esc(i.job_type)}${i.event_date ? ` · ${day(i.event_date)}` : ''}</small></td>
+        <td class="r">${money(i.amount)}</td></tr>`;
+    }).join('') || '<tr><td colspan="6" class="muted">Nothing here.</td></tr>';
+    const owing = all.filter((i) => ['sent', 'scheduled', 'overdue'].includes(kind(i)));
+    const overdue = all.filter((i) => kind(i) === 'overdue');
+    const year = today.slice(0, 4);
+    const paidYear = all.filter((i) => i.status === 'paid' && (i.paid_at ?? '').startsWith(year));
+    const sum = (l: any[]) => money(l.reduce((a, i) => a + i.amount, 0));
+    $('.totals').innerHTML = `<div><span>Total due</span><strong>${sum(owing)}</strong></div>
+      <div><span>Overdue</span><strong class="${overdue.length ? 'down' : ''}">${sum(overdue)}</strong></div>
+      <div><span>Paid in ${year}</span><strong>${sum(paidYear)}</strong></div>
+      ${show !== 'all' ? `<div><span>Showing</span><strong>${sum(list)}</strong></div>` : ''}`;
+  }
+
+  async function load() {
+    const r = await fetch('/api/studio/crm/payments');
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) { $('tbody').innerHTML = `<tr><td colspan="6">${esc(d.error || 'Couldn’t load payments.')}</td></tr>`; return; }
+    all = d.invoices; today = d.today;
+    draw();
+  }
+
+  document.addEventListener('click', (e) => {
+    const t = e.target as HTMLElement;
+    const b = t.closest<HTMLButtonElement>('[data-show]');
+    if (b) { show = b.dataset.show!; document.querySelectorAll('[data-show]').forEach((x) => x.classList.toggle('on', x === b)); draw(); return; }
+    if (t.closest('[data-export]')) {
+      const cell = (v: unknown) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+      const lines = [['Status', 'Due', 'Invoice', 'Client', 'Job', 'For', 'Amount', 'Paid'].map(cell).join(',')]
+        .concat(rows().map((i) => [label[kind(i)], i.due_date, i.number, client(i), i.job, i.label, (i.amount / 100).toFixed(2), i.paid_at?.slice(0, 10) ?? ''].map(cell).join(',')));
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob([lines.join('\n')], { type: 'text/csv' }));
+      a.download = `payments-${show}-${today}.csv`;
+      a.click();
+      return;
+    }
+    const row = t.closest<HTMLElement>('tr[data-job]');
+    if (row && !t.closest('a')) location.href = `/studio/crm/job?id=${row.dataset.job}`;
+  });
+  $('.search').addEventListener('input', draw);
+  load();
+</script>
+
+<style is:global>
+  .pay { max-width: 1200px; margin: 0 auto; padding: 24px clamp(14px, 3vw, 32px) 80px; }
+  .pay-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; flex-wrap: wrap; margin-bottom: 14px; }
+  .pay h1 { margin: 0; font-weight: 300; font-size: 32px; color: var(--ink); }
+  .pay .totals { display: flex; gap: 22px; flex-wrap: wrap; }
+  .pay .totals div { display: flex; flex-direction: column; align-items: flex-end; }
+  .pay .totals span { font-size: 11px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--green); }
+  .pay .totals strong { font-size: 24px; font-weight: 300; color: var(--ink); }
+  .pay .totals strong.down { color: #a8432a; }
+  .pay-tools { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+  .pay .filter { display: flex; gap: 6px; flex-wrap: wrap; }
+  .pay .filter button { padding: 7px 14px; border: 1px solid #ddd3c4; border-radius: 999px; background: var(--white); font: inherit; font-size: 14px; cursor: pointer; }
+  .pay .filter button.on { background: var(--green); border-color: var(--green); color: var(--white); }
+  .pay .search { font: inherit; font-size: 14px; padding: 8px 12px; border: 1px solid #ddd3c4; border-radius: 10px 0; background: var(--white); min-width: 220px; }
+  .pay .card { background: var(--white); border-radius: 24px 0; padding: 8px 18px; overflow-x: auto; animation: s-rise 0.6s var(--ease) both; }
+  .pay .tbl { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 760px; }
+  .pay .tbl th { text-align: left; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--green); font-weight: 600; padding: 10px 8px; border-bottom: 1px solid #ece4d7; }
+  .pay .tbl td { padding: 10px 8px; border-bottom: 1px solid #f3eee6; vertical-align: top; }
+  .pay .tbl tbody tr:nth-child(even) td { background: #faf6ee; }
+  .pay .tbl tbody tr[data-job] { cursor: pointer; }
+  .pay .tbl tbody tr[data-job]:hover td { background: #f3ede1; }
+  .pay .tbl .r { text-align: right; white-space: nowrap; }
+  .pay .tbl a { color: var(--ink); }
+  .pay .tbl small, .pay .muted, .pay .hint { color: #888; }
+  .pay .hint { font-size: 13px; margin-top: 10px; }
+  .pay .st { font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: 999px; white-space: nowrap; }
+  .pay .st--sent { background: #e3e7f6; color: #2f3f86; } .pay .st--scheduled { background: #eee; color: #666; }
+  .pay .st--overdue { background: #f6e3dc; color: #8a3a22; } .pay .st--paid { background: #e6ecd9; color: #3e4229; } .pay .st--void { background: #eee; color: #999; }
+</style>

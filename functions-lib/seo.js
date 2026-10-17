@@ -112,6 +112,7 @@ export async function keywordIdeas(env, seeds) {
 
 // ---- Venue page ideas from enquiries ----
 const norm = (s) => String(s || '').toLowerCase().replace(/\b(the|estate|vineyard|winery|venue|weddings?|and|events?|lodge|ltd|nz|auckland|new zealand)\b/g, ' ').replace(/[^a-z]+/g, ' ').trim();
+const GENERIC = new Set(['beach', 'home', 'park', 'garden', 'gardens', 'church', 'tbc', 'tba', 'unknown', 'not sure', 'private', 'house', 'our home', 'backyard', 'farm', 'na', 'n a', 'none', 'yes', 'no']);
 async function venueCounts(env) {
   const { venues } = await builtPosts(env).catch(() => ({ venues: [] }));
   let sn = { results: [] };
@@ -120,9 +121,9 @@ async function venueCounts(env) {
   const have = (venues ?? []).map((v) => norm(v.name)).filter(Boolean);
   const counts = new Map();
   for (const r of [...sn.results, ...jobs.results]) {
-    const raw = String(r.v || '').split(/[,\n]/)[0].trim();
+    const raw = String(r.v || '').split(/[,\n]/)[0].replace(/\b\d{3,}\b/g, '').replace(/\s+/g, ' ').trim();
     const key = norm(raw).split(' ').slice(0, 3).join(' ');
-    if (!key || key.length < 3) continue;
+    if (!key || key.length < 3 || GENERIC.has(key)) continue;
     const cur = counts.get(key) ?? { name: raw, count: 0, last: '' };
     cur.count++; if (r.at > cur.last) cur.last = r.at;
     counts.set(key, cur);
@@ -140,12 +141,29 @@ export async function contentStatus(env) {
   const s = await seoSettings(env.DB);
   const thisMonth = posts.filter((p) => !p.draft && p.date.slice(0, 7) === nz.date.slice(0, 7)).length;
   // Weddings 2 weeks to 6 months ago with no post that mentions the couple's names.
-  const jobs = (await env.DB.prepare(`SELECT j.id, j.title, j.partner_name, j.event_date, c.first_name FROM jobs j JOIN clients c ON c.id = j.client_id
+  const jobs = (await env.DB.prepare(`SELECT j.id, j.title, j.partner_name, j.event_date, j.venue, c.first_name FROM jobs j JOIN clients c ON c.id = j.client_id
     WHERE j.job_type = 'Wedding' AND j.stage IN ('booked', 'completed') AND j.event_date BETWEEN ?1 AND ?2 ORDER BY j.event_date`)
-    .bind(iso(new Date(Date.now() - 180 * DAY)), iso(new Date(Date.now() - 14 * DAY))).all()).results;
+    .bind(iso(new Date(Date.now() - 365 * DAY)), iso(new Date(Date.now() - 14 * DAY))).all()).results;
+  // Studio Ninja weddings (read from Gmail): signed contracts matched to their enquiry for the date and venue.
+  try {
+    const sn = (await env.DB.prepare(`SELECT kind, data FROM sn_gmail WHERE kind IN ('lead', 'contract_signed')`).all()).results.map((r) => ({ kind: r.kind, d: JSON.parse(r.data) }));
+    const words = (x) => String(x || '').toLowerCase().replace(/[^a-z ]/g, ' ').split(/\s+/).filter((w) => w.length > 2);
+    const from = iso(new Date(Date.now() - 365 * DAY)), to = iso(new Date(Date.now() - 14 * DAY));
+    for (const c of sn.filter((x) => x.kind === 'contract_signed')) {
+      const job = words(c.d.job);
+      const l = sn.find((x) => x.kind === 'lead' && words(`${x.d.first_name} ${x.d.last_name}`).length && words(`${x.d.first_name} ${x.d.last_name}`).every((w) => job.includes(w)) && x.d.event_date);
+      const m = l?.d.event_date.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+      if (!m) continue;
+      const date = `${m[3]}-${m[2]}-${m[1]}`;
+      if (date < from || date > to || /portrait|headshot|family/i.test(`${l.d.service} ${c.d.job}`)) continue;
+      if (jobs.some((j) => j.event_date === date)) continue;
+      jobs.push({ id: null, title: `${l.d.first_name} ${l.d.last_name}`.trim(), partner_name: '', event_date: date, venue: l.d.venue || '', first_name: l.d.first_name || '' });
+    }
+    jobs.sort((a, b) => a.event_date.localeCompare(b.event_date));
+  } catch { /* the Studio Ninja emails aren't there */ }
   const titles = posts.map((p) => p.title.toLowerCase());
-  const notBlogged = jobs.filter((j) => !titles.some((t) => t.includes(j.first_name.toLowerCase()) && (!j.partner_name || t.includes(j.partner_name.toLowerCase().split(' ')[0]))));
-  return { posts_goal: s.posts_goal, this_month: thisMonth, not_blogged: notBlogged.map((j) => ({ id: j.id, couple: j.partner_name ? `${j.first_name} & ${j.partner_name}` : j.title, event_date: j.event_date })) };
+  const notBlogged = jobs.filter((j) => j.first_name && !titles.some((t) => t.includes(j.first_name.toLowerCase()) && (!j.partner_name || t.includes(j.partner_name.toLowerCase().split(' ')[0]))));
+  return { posts_goal: s.posts_goal, this_month: thisMonth, not_blogged: notBlogged.map((j) => ({ id: j.id, couple: j.partner_name ? `${j.first_name} & ${j.partner_name}` : j.title, first_name: j.first_name, event_date: j.event_date, venue: j.venue || '' })) };
 }
 
 /** Weekly: a task for each wedding that's been 2+ weeks without a blog post (once each). */
@@ -154,10 +172,11 @@ export async function contentTasks(env) {
   if (nz.weekday !== 'Mon' || nz.hour < 7) return 'not Monday';
   const c = await contentStatus(env);
   const now = new Date().toISOString();
-  if (c.not_blogged.length) await env.DB.batch(c.not_blogged.map((j) => env.DB.prepare(
+  const mine = c.not_blogged.filter((j) => j.id);
+  if (mine.length) await env.DB.batch(mine.map((j) => env.DB.prepare(
     `INSERT INTO tasks (title, notes, due_date, kind, created_at) SELECT ?1, ?2, ?3, 'content', ?4 WHERE NOT EXISTS (SELECT 1 FROM tasks WHERE title = ?1)`,
   ).bind(`Blog ${j.couple}’s wedding`, `Their wedding was ${j.event_date}; it isn’t on the blog yet.`, nz.date, now)));
-  return `${c.not_blogged.length} weddings to blog`;
+  return `${mine.length} weddings to blog`;
 }
 
 // ---- The monthly site health check ----
@@ -305,7 +324,8 @@ export async function competitorReport(env) {
     const w = ` ${slugWords(p.url)} `;
     for (const v of known) if (!v.hasPage && v.key.length >= 4 && w.includes(` ${v.key} `)) {
       const g = gaps.get(v.key) ?? { name: v.name, enquiries: v.count, pages: [] };
-      if (g.pages.length < 6) g.pages.push({ contact_id: p.contact_id, url: p.url });
+      if (!g.pages.some((x) => x.contact_id === p.contact_id)) g.pages.push({ contact_id: p.contact_id, url: p.url, count: 0 });
+      g.pages.find((x) => x.contact_id === p.contact_id).count++;
       gaps.set(v.key, g);
     }
   }

@@ -7,6 +7,7 @@
 //                         { action: 'competitor', id }          read that competitor's sitemap now
 //                         { action: 'competitor_keywords', id }  the searches they rank for (DataForSEO)
 //                         { action: 'track', keywords: [...] }   add searches to the tracked list
+//                         { action: 'competitor_remove', id }    remove a competitor (and what was saved about them)
 import { json } from '../../../../functions-lib/studio.js';
 import { gscReady, searchReport, trackedKeywords, keywordIdeas, venueIdeas, contentStatus, siteHealth, seoSettings, saveSeoSettings, competitorReport, checkCompetitor } from '../../../../functions-lib/seo.js';
 import { connection } from '../../../../functions-lib/gmail.js';
@@ -52,6 +53,19 @@ export async function onRequestPost({ request, env }) {
       const c = await env.DB.prepare(`SELECT id, business, website FROM contacts WHERE id = ?1 AND type = 'Competitor'`).bind(Number(d.id)).first();
       if (!c) return json({ error: 'That competitor doesn’t exist.' }, 404);
       return json(await competitorKeywords(env, c));
+    }
+    if (d.action === 'competitor_remove') {
+      const id = Number(d.id);
+      const c = await env.DB.prepare(`SELECT id FROM contacts WHERE id = ?1 AND type = 'Competitor'`).bind(id).first();
+      if (!c) return json({ error: 'That competitor doesn’t exist.' }, 404);
+      await env.DB.batch([
+        env.DB.prepare('DELETE FROM competitor_pages WHERE contact_id = ?1').bind(id),
+        env.DB.prepare('DELETE FROM competitor_keywords WHERE contact_id = ?1').bind(id),
+        env.DB.prepare('DELETE FROM tasks WHERE contact_id = ?1').bind(id),
+        env.DB.prepare('DELETE FROM contact_messages WHERE contact_id = ?1').bind(id),
+        env.DB.prepare('DELETE FROM contacts WHERE id = ?1').bind(id),
+      ]);
+      return json({ ok: true });
     }
     if (d.action === 'track') {
       const s = await seoSettings(env.DB);

@@ -62,6 +62,13 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
   const api = async (part: string) => { const r = await fetch(`/api/studio/crm/seo?part=${part}`); return { ok: r.ok, d: await r.json().catch(() => ({})) }; };
   const post = async (body: any) => { const r = await fetch('/api/studio/crm/seo', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) }); return { ok: r.ok, d: await r.json().catch(() => ({})) }; };
   let settings: any = { keywords: [] };
+  // New drafts in the post editor, filled in.
+  const draftVenue = (name: string) => '/studio/edit?' + new URLSearchParams({ title: `${name} Wedding Photography: A Photographer’s Guide`, kind: 'Info', venue: name, seoTitle: `${name} Wedding Photographer`.slice(0, 60), description: `Planning a wedding at ${name}? A local photographer’s guide to the venue, the best photo spots, timing and real weddings there.`, outline: 'venue' });
+  const draftWedding = (j: any) => '/studio/edit?' + new URLSearchParams({ title: j.couple, kind: 'Wedding', venue: j.venue || '' });
+  // Competitor searches: sortable.
+  let kgData: any[] = [];
+  let compTracked: Set<string> = new Set();
+  let kgSort = { key: '', desc: true };
   let tracked: Set<string> = new Set();
   const pos = (p: number | null) => (p == null ? '<span class="muted">not ranking</span>' : `<b class="${p <= 3 ? 'top' : p <= 10 ? 'p1' : 'p2'}">${p.toFixed(1)}</b>`);
   const change = (now: number | null, before: number | null) => (now == null || before == null || Math.abs(now - before) < 0.5 ? '' : now < before ? `<span class="up">▲ ${(before - now).toFixed(1)}</span>` : `<span class="down">▼ ${(now - before).toFixed(1)}</span>`);
@@ -108,7 +115,7 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
 
   async function loadVenues() {
     const { d } = await api('venues');
-    $('.venues').innerHTML = (d.venues ?? []).map((v: any) => `<li><span class="what"><strong>${esc(v.name)}</strong><br><small>${v.count} enquiries · last ${new Date(v.last).toLocaleDateString('en-NZ', { month: 'short', year: 'numeric' })}</small></span>${v.hasPage ? '<span class="chip ok">Has a page</span>' : '<span class="chip idea">Page idea</span>'}</li>`).join('') || '<li class="muted">Not enough enquiries yet.</li>';
+    $('.venues').innerHTML = (d.venues ?? []).map((v: any) => `<li><span class="what"><strong>${esc(v.name)}</strong><br><small>${v.count} enquiries · last ${new Date(v.last).toLocaleDateString('en-NZ', { month: 'short', year: 'numeric' })}</small></span>${v.hasPage ? '<span class="chip ok">Has a page</span>' : `<a class="chip idea" href="${esc(draftVenue(v.name))}" title="Start a draft blog post about this venue">Page idea · Draft a post</a>`}</li>`).join('') || '<li class="muted">Not enough enquiries yet.</li>';
   }
 
   async function loadContent() {
@@ -117,7 +124,7 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
     const pct = d.posts_goal ? Math.min(100, Math.round((d.this_month / d.posts_goal) * 100)) : 100;
     $('.content-body').innerHTML = `<p class="goal"><strong>${d.this_month}</strong> of ${d.posts_goal} posts this month</p><div class="bar"><span style="width:${pct}%"></span></div>
       <h3>Weddings not on the blog yet</h3>
-      <ul class="list">${(d.not_blogged ?? []).map((j: any) => `<li><span class="what"><a href="/studio/crm/job?id=${j.id}">${esc(j.couple)}</a><br><small>Wedding ${new Date(`${j.event_date}T12:00:00Z`).toLocaleDateString('en-NZ', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' })}</small></span><a class="s-btn s-btn--quiet" href="/studio/edit?new=1">Write it</a></li>`).join('') || '<li class="muted">All caught up.</li>'}</ul>`;
+      <ul class="list">${(d.not_blogged ?? []).map((j: any) => `<li><span class="what">${j.id ? `<a href="/studio/crm/job?id=${j.id}">${esc(j.couple)}</a>` : `<strong>${esc(j.couple)}</strong>`}<br><small>Wedding ${new Date(`${j.event_date}T12:00:00Z`).toLocaleDateString('en-NZ', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' })}${j.venue ? ` · ${esc(j.venue)}` : ''}</small></span><a class="s-btn s-btn--quiet" href="${esc(draftWedding(j))}">Write it</a></li>`).join('') || '<li class="muted">All caught up.</li>'}</ul>`;
   }
 
   async function loadHealth() {
@@ -137,6 +144,14 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
       ${sec('Pages without exactly one main heading', s.h1.map((x: any) => `${link(x.path)} <small>${x.h1} headings</small>`), 'All good.')}`;
   }
 
+  const vol = (v: number | null) => (v == null ? '–' : num(v));
+  function kgBody() {
+    const val = (g: any, k: string) => (k === 'keyword' ? g.keyword : k === 'volume' ? g.volume ?? -1 : k === 'count' ? g.who.length : Math.min(...g.who.map((w: any) => w.position ?? 99)));
+    const rows = [...kgData];
+    if (kgSort.key) rows.sort((a, b) => { const x = val(a, kgSort.key), y = val(b, kgSort.key); const c = typeof x === 'string' ? x.localeCompare(y) : x - y; return kgSort.desc ? -c : c; });
+    const trackBtn = (k: string) => (compTracked.has(k) ? '<small class="up">tracking</small>' : `<button type="button" class="add" data-track="${esc(k)}" title="Track this search">+</button>`);
+    return rows.map((g: any) => `<tr><td>${esc(g.keyword)}</td><td>${vol(g.volume)}</td><td title="${esc(g.who.map((w: any) => `${w.business} #${w.position}`).join(', '))}">${g.who.length}</td><td>#${Math.min(...g.who.map((w: any) => w.position ?? 99))}</td><td>${trackBtn(g.keyword)}</td></tr>`).join('');
+  }
   async function loadCompetitors() {
     const { d } = await api('competitors');
     const b = $('.comp-body');
@@ -145,23 +160,42 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
     const names = Object.fromEntries(list.map((c: any) => [c.id, c.business]));
     const short = (u: string) => { try { return decodeURIComponent(new URL(u).pathname); } catch { return u; } };
     const gaps = d.venue_gaps ?? [];
-    const tracked = new Set(d.tracked ?? []);
-    const vol = (v: number | null) => (v == null ? '–' : num(v));
+    const tracked = new Set<string>(d.tracked ?? []);
+    compTracked = tracked;
     const trackBtn = (k: string) => (tracked.has(k) ? '<small class="up">tracking</small>' : `<button type="button" class="add" data-track="${esc(k)}" title="Track this search">+</button>`);
-    const kg = d.keyword_gaps ?? [];
+    kgData = d.keyword_gaps ?? [];
+    const kg = kgData;
+    const th = (key: string, label: string) => `<th><button type="button" class="sort${kgSort.key === key ? ' on' : ''}" data-sort="${key}">${label}${kgSort.key === key ? (kgSort.desc ? ' ▼' : ' ▲') : ''}</button></th>`;
     const gapHtml = kg.length ? `<h3>Searches your competitors rank for</h3><p class="hint">From the competitors whose keywords you've fetched; the ones several of them are on page 1–2 for come first. Their own business names are left out. + adds a search to the ones you track (and to your Rankings fix lists).</p>
-      <table class="tbl"><thead><tr><th>Search</th><th>Searches a month</th><th>Competitors</th><th>Best position</th><th></th></tr></thead><tbody>${kg.map((g: any) => `<tr><td>${esc(g.keyword)}</td><td>${vol(g.volume)}</td><td title="${esc(g.who.map((w: any) => `${w.business} #${w.position}`).join(', '))}">${g.who.length}</td><td>#${Math.min(...g.who.map((w: any) => w.position ?? 99))}</td><td>${trackBtn(g.keyword)}</td></tr>`).join('')}</tbody></table>
+      <table class="tbl kg-table"><thead><tr>${th('keyword', 'Search')}${th('volume', 'Searches a month')}${th('count', 'Competitors')}${th('best', 'Best position')}<th></th></tr></thead><tbody>${kgBody()}</tbody></table>
       <button type="button" class="s-btn s-btn--quiet" data-track-all>Track the top 10 of these</button>` : '';
     const kwHtml = (c: any) => c.keywords?.length ? `<details class="ckw"><summary>${c.keywords.length} searches they rank for (${new Date(c.keywords[0].fetched_at).toLocaleDateString('en-NZ', { day: 'numeric', month: 'short' })})</summary><table class="tbl"><thead><tr><th>Search</th><th>Searches a month</th><th>Their position</th><th></th></tr></thead><tbody>${c.keywords.map((k: any) => `<tr><td>${esc(k.keyword)}${k.brand ? ' <small class="muted">(their name)</small>' : ''}</td><td>${vol(k.volume)}</td><td><a href="${esc(k.url)}" target="_blank" rel="noopener">#${k.position}</a></td><td>${k.brand ? '' : trackBtn(k.keyword)}</td></tr>`).join('')}</tbody></table></details>` : '';
-    b.innerHTML = gapHtml + `${gaps.length ? `<h3>Venues they have pages about and you don't</h3><ul class="list">${gaps.map((g: any) => `<li><span class="what"><strong>${esc(g.name)}</strong>${g.enquiries ? ` <small>· ${g.enquiries} of your enquiries</small>` : ''}<br><small>${g.pages.map((p: any) => `<a href="${esc(p.url)}" target="_blank" rel="noopener">${esc(names[p.contact_id])}</a>`).join(', ')}</small></span><span class="chip idea">Page idea</span></li>`).join('')}</ul>` : ''}
+    b.innerHTML = gapHtml + `${gaps.length ? `<h3>Venues they have pages about and you don't</h3><ul class="list">${gaps.map((g: any) => `<li><span class="what"><strong>${esc(g.name)}</strong>${g.enquiries ? ` <small>· ${g.enquiries} of your enquiries</small>` : ''}<br><small>${g.pages.map((p: any) => `<a href="${esc(p.url)}" target="_blank" rel="noopener">${esc(names[p.contact_id])}</a>${p.count > 1 ? ` (${p.count} pages)` : ''}`).join(', ')}</small></span><a class="chip idea" href="${esc(draftVenue(g.name))}" title="Start a draft blog post about this venue">Page idea · Draft a post</a></li>`).join('')}</ul>` : ''}
       ${list.map((c: any) => `<details class="comp"${c.new_pages.length ? ' open' : ''}><summary><strong>${esc(c.business)}</strong> <small>${c.watch_error ? `<span class="down">${esc(c.watch_error)}</span>` : c.watch_checked_at ? `${num(c.pages)} pages · ${c.new_pages.length ? `<b class="down">${c.new_pages.length} new</b> in 3 months` : 'nothing new'} · checked ${new Date(c.watch_checked_at).toLocaleDateString('en-NZ', { day: 'numeric', month: 'short' })}` : 'not checked yet'}</small>
-        <button type="button" class="s-btn s-btn--quiet" data-comp="${c.id}">Check pages</button> <button type="button" class="s-btn s-btn--quiet" data-comp-kw="${c.id}">${c.keywords?.length ? 'Refresh keywords' : 'Keywords they rank for'}</button></summary>
+        <button type="button" class="s-btn s-btn--quiet" data-comp="${c.id}">Check pages</button> <button type="button" class="s-btn s-btn--quiet" data-comp-kw="${c.id}">${c.keywords?.length ? 'Refresh keywords' : 'Keywords they rank for'}</button> <button type="button" class="s-btn s-btn--quiet danger" data-comp-rm="${c.id}" data-name="${esc(c.business)}">Remove</button></summary>
         ${kwHtml(c)}
         ${c.new_pages.length ? `<ul>${c.new_pages.map((p: any) => `<li><a href="${esc(p.url)}" target="_blank" rel="noopener">${esc(p.name)}</a> <small>${esc(short(p.url))} · found ${new Date(p.first_seen).toLocaleDateString('en-NZ', { day: 'numeric', month: 'short' })}</small></li>`).join('')}</ul>` : `<p class="muted">${c.website ? (c.watch_checked_at ? 'No new pages lately. (The first check just notes what is there.)' : 'Click Check pages for the first look.') : `<a href="/studio/contacts/contact?id=${c.id}">Add their website</a> first.`}</p>`}</details>`).join('')}`;
   }
 
   document.addEventListener('click', async (e) => {
     const t = e.target as HTMLElement;
+    const sb = t.closest<HTMLButtonElement>('[data-sort]');
+    if (sb) {
+      const k = sb.dataset.sort!;
+      // First click: biggest first (A–Z for searches, best first for position); click again to flip.
+      kgSort = kgSort.key === k ? { key: k, desc: !kgSort.desc } : { key: k, desc: k === 'volume' || k === 'count' };
+      $('.kg-table tbody').innerHTML = kgBody();
+      document.querySelectorAll<HTMLButtonElement>('.kg-table [data-sort]').forEach((b) => { const on = b.dataset.sort === kgSort.key; b.classList.toggle('on', on); b.textContent = b.textContent!.replace(/ [▲▼]$/, '') + (on ? (kgSort.desc ? ' ▼' : ' ▲') : ''); });
+      return;
+    }
+    const rm = t.closest<HTMLButtonElement>('[data-comp-rm]');
+    if (rm) {
+      e.preventDefault();
+      if (!confirm(`Remove ${rm.dataset.name} from your competitors? This also forgets their pages and keywords.`)) return;
+      const { ok, d } = await post({ action: 'competitor_remove', id: Number(rm.dataset.compRm) });
+      toast(ok ? 'Removed.' : d.error || 'Couldn’t remove it.', !ok);
+      await loadCompetitors(); return;
+    }
     const kb = t.closest<HTMLButtonElement>('[data-comp-kw]');
     if (kb) {
       e.preventDefault(); kb.disabled = true; kb.textContent = 'Asking DataForSEO…';
@@ -230,6 +264,12 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
   @media (max-width: 600px) { .seo .card { padding: 16px 14px; } .seo .tbl { font-size: 13px; } .seo .tbl th, .seo .tbl td { padding: 6px 5px; } }
   .seo details.comp summary { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
   .seo details.comp summary small { flex: 1; color: #888; }
+  .seo .tbl tbody tr:nth-child(even) td { background: #faf6ee; }
+  .seo .tbl th .sort { border: 0; background: none; padding: 0; font: inherit; color: inherit; letter-spacing: inherit; text-transform: inherit; cursor: pointer; }
+  .seo .tbl th .sort.on { color: var(--green); }
+  .seo a.chip { text-decoration: none; white-space: nowrap; }
+  .seo a.chip.idea:hover { background: var(--green); color: var(--white); }
+  .seo .s-btn.danger { color: #a8432a; }
   .seo details.ckw { margin: 4px 0 8px; } .seo details.ckw summary { font-size: 13px; color: var(--green); }
   .seo .card-head > span { display: flex; gap: 6px; flex-wrap: wrap; }
   .seo .card h2 { margin: 0 0 8px; font-weight: 300; font-size: 22px; color: var(--ink); }
