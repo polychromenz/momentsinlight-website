@@ -7,7 +7,7 @@ Agreed 17 Oct 2026 with Tony: Studio Ninja's Wedding Workflow (see
 
 - **Automatic email:** sent by the system at the set time.
 - **Ready-to-send email:** written from the template with the couple's details filled in, then
-  waits on Tony's "Today" list; he reviews, personalises and sends it.
+  waits on Tony's "Today" list to review, personalise and send.
 - **Action button:** e.g. "Practice photos are ready": Tony pastes the Pic-Time link, the email
   opens pre-filled with the link for him to review and personalise, and sending it ticks the
   task off.
