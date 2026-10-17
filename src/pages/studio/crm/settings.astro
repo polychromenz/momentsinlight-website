@@ -648,10 +648,9 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
   function showSurvey(d: any) {
     if (!d || d.none) { $('.sn-result').innerHTML = '<p class="hint">Not run yet.</p>'; return; }
     if (d.error) { $('.sn-result').innerHTML = `<p class="hint" style="color:#a8432a">${esc(d.error)}</p>`; return; }
-    const years = [2020, 2021, 2022, 2023, 2024, 2025, 2026];
-    $('.sn-result').innerHTML = `<p class="hint">Found ${d.total_found}${d.more ? '+' : ''} Studio Ninja emails (searched ${new Date(d.at).toLocaleString('en-NZ', { dateStyle: 'medium', timeStyle: 'short' })}). Claude can read these results from here; the examples have the details hidden.</p>
-      <table class="list-table sn-table"><thead><tr><th>Kind of email</th>${years.map((y) => `<th>${y}</th>`).join('')}</tr></thead><tbody>
-      ${d.kinds.map((k: any) => `<tr><td><strong>${esc(k.subject)}</strong><br><small>${esc(k.from)}</small></td>${years.map((y) => `<td>${k.years[y] ?? '–'}</td>`).join('')}</tr>`).join('')}
+    $('.sn-result').innerHTML = `<p class="hint">Found ${d.total_found} Studio Ninja emails (searched ${new Date(d.at).toLocaleString('en-NZ', { dateStyle: 'medium', timeStyle: 'short' })}). Claude can read these results from here; the examples have the details hidden.</p>
+      <table class="list-table sn-table"><thead><tr><th>Kind of email</th><th>How many</th><th>Readable</th></tr></thead><tbody>
+      ${d.kinds.map((k: any) => `<tr><td><strong>${esc(k.subject)}</strong><br><small>${esc(k.from)}</small></td><td>${k.count ?? '–'}</td><td>${k.layout && !k.layout.startsWith('(couldn') ? '✓' : '–'}</td></tr>`).join('')}
       </tbody></table>`;
   }
   document.addEventListener('click', async (e) => {

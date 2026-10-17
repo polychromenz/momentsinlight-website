@@ -23,7 +23,7 @@ export async function search(env, q, max = 500) {
   const ids = [];
   let page = '';
   while (ids.length < max) {
-    const d = await gmail(env, `messages?maxResults=${Math.min(100, max - ids.length)}&q=${encodeURIComponent(q)}${page ? `&pageToken=${page}` : ''}`);
+    const d = await gmail(env, `messages?maxResults=${Math.min(500, max - ids.length)}&q=${encodeURIComponent(q)}${page ? `&pageToken=${page}` : ''}`);
     ids.push(...(d.messages ?? []).map((m) => m.id));
     if (!d.nextPageToken) break;
     page = d.nextPageToken;
@@ -65,33 +65,31 @@ function redact(text) {
   }).join('\n');
 }
 
-/** Step 1: the survey. */
+/** Step 1: the survey. Cloudflare allows about 50 outside requests per call, so it stays lean:
+ *  a couple of searches, 24 sampled subjects, then for the main kinds a count and one layout. */
 export async function survey(env) {
-  const ids = await search(env, QUERY, 600);
-  // Kinds from a spread of the emails (newest to oldest).
-  const step = Math.max(1, Math.floor(ids.length / 120));
-  const sample = ids.filter((_, i) => i % step === 0).slice(0, 120);
+  const ids = await search(env, QUERY, 1000);
+  const step = Math.max(1, Math.floor(ids.length / 24));
+  const sample = ids.filter((_, i) => i % step === 0).slice(0, 24);
   const metas = await Promise.all(sample.map((id) => meta(env, id).catch(() => null)));
   const kinds = new Map();
   for (const m of metas.filter(Boolean)) {
-    const from = (header(m, 'from').match(/<([^>]+)>/)?.[1] ?? header(m, 'from')).toLowerCase().replace(/^[^@]+@/, '…@');
-    const k = `${from} · ${kindOf(header(m, 'subject'))}`;
-    const cur = kinds.get(k) ?? { kind: k, from, subject: kindOf(header(m, 'subject')), sampled: 0, example: m.id, years: {} };
+    const from = (header(m, 'from').match(/<([^>]+)>/)?.[1] ?? header(m, 'from')).toLowerCase();
+    const subject = kindOf(header(m, 'subject'));
+    const k = `${from} · ${subject}`;
+    const cur = kinds.get(k) ?? { kind: k, from: from.replace(/^[^@]+@/, '…@'), domain: from.split('@')[1] ?? '', subject, sampled: 0, example: m.id };
     cur.sampled++;
     kinds.set(k, cur);
   }
-  // Each kind: how many per year (Gmail search counts), and its layout.
-  const list = [...kinds.values()].sort((a, b) => b.sampled - a.sampled).slice(0, 15);
+  // The main kinds from Studio Ninja itself: how many there are, and the layout of one.
+  const list = [...kinds.values()].filter((k) => /studioninja/.test(k.domain)).sort((a, b) => b.sampled - a.sampled).slice(0, 7);
   for (const k of list) {
-    const words = k.subject.replace(/<[^>]*>|[#:–-]/g, ' ').split(/\s+/).filter((w) => w.length > 2).slice(0, 4).join(' ');
-    for (const y of [2020, 2021, 2022, 2023, 2024, 2025, 2026]) {
-      const d = await gmail(env, `messages?maxResults=1&q=${encodeURIComponent(`${QUERY} subject:(${words}) after:${y}/01/01 before:${y + 1}/01/01`)}`).catch(() => ({}));
-      if (d.resultSizeEstimate) k.years[y] = d.resultSizeEstimate;
-    }
+    const words = k.subject.replace(/<[^>]*>/g, ' ').replace(/[#:–-]/g, ' ').trim();
+    try { k.count = (await search(env, `from:${k.domain} subject:("${words}")`, 500)).length; } catch (e) { k.count = null; }
     try { k.layout = redact(textOf(await full(env, k.example))); } catch (e) { k.layout = `(couldn’t read: ${e.message})`; }
     delete k.example;
   }
-  const result = { at: new Date().toISOString(), total_found: ids.length, more: ids.length >= 600, kinds: list };
+  const result = { at: new Date().toISOString(), total_found: ids.length, kinds: list, others: [...kinds.values()].filter((k) => !list.includes(k)).map((k) => ({ subject: k.subject, from: k.from, sampled: k.sampled })) };
   await env.DB.prepare(`INSERT INTO settings (key, value, updated_at) VALUES ('sn_survey', ?1, ?2) ON CONFLICT (key) DO UPDATE SET value = ?1, updated_at = ?2`)
     .bind(JSON.stringify(result), result.at).run();
   return result;
