@@ -189,7 +189,9 @@ export async function siteHealth(env, { now = false } = {}) {
       const imgs = [...html.matchAll(/<img\b[^>]*>/gi)].map((m) => m[0]).filter((t) => !/display:\s*none|width="1"/i.test(t));
       const noAlt = imgs.filter((t) => !/\balt="[^"]+"/i.test(t) && !/aria-hidden="true"|role="presentation"/i.test(t)).length;
       const links = [...new Set([...html.matchAll(/href="(\/[^"#?]*)"/g)].map((m) => m[1].replace(/\/$/, '') || '/'))].filter((l) => !/[{$]/.test(l) && !/\.(css|js|png|jpe?g|webp|svg|ico|xml|pdf|ttf|woff2?)$/i.test(l) && !l.startsWith('/_') && !l.startsWith('/api'));
-      st.results.push({ path, title, desc, h1, imgs: imgs.length, noAlt, links });
+      const main = html.match(/<main[\s\S]*<\/main>/i)?.[0] ?? '';
+      const inMain = [...new Set([...main.matchAll(/href="(\/[^"#?]*)"/g)].map((m) => m[1].replace(/\/$/, '') || '/'))];
+      st.results.push({ path, title, desc, h1, imgs: imgs.length, noAlt, links, inMain });
     } catch (e) { st.results.push({ path, error: e.message }); }
   }
   st.done += batch.length;
@@ -209,9 +211,11 @@ export async function siteHealth(env, { now = false } = {}) {
       h1: st.results.filter((r) => !r.error && r.h1 !== 1).map((r) => ({ path: r.path, h1: r.h1 })),
       noAlt: st.results.filter((r) => r.noAlt).map((r) => ({ path: r.path, count: r.noAlt, of: r.imgs })),
       broken: Object.entries(broken).map(([link, from]) => ({ link, from: from.slice(0, 5) })),
+      // Which of your pages link to each page (the Rankings fix list counts these).
+      inlinks: st.results.reduce((m, r) => { for (const l of r.inMain ?? []) if (l !== r.path && known.has(l)) (m[l] ||= []).push(r.path); return m; }, {}),
     };
     st.finished = true;
-    st.results = st.results.map(({ links, ...r }) => r); // the summary has what's needed
+    st.results = st.results.map(({ links, inMain, ...r }) => r); // the summary has what's needed
   }
   await save(st);
   return st.finished ? 'finished' : `checked ${st.done} of ${st.pages.length}`;

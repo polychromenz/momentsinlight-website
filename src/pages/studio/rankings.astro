@@ -1,0 +1,171 @@
+---
+// Moments Studio > Website > Rankings: each tracked search, where you are on Google (phone and
+// desktop, from Auckland), who is above you, and the fix list for the page that should rank.
+// Most important first. Data from functions/api/studio/crm/rankings.js.
+import StudioLayout from '../../layouts/StudioLayout.astro';
+---
+<StudioLayout title="Rankings" section="rankings">
+  <button slot="bar" type="button" class="s-btn s-btn--solid" data-check>Check rankings now</button>
+  <main class="rk">
+    <h1>Rankings and fixes</h1>
+    <p class="intro">Your searches, most worth working on first. For each one: where you are on Google, who is above you, and what to change. Fix something, and next week's check shows whether it moved.</p>
+    <section class="card setup" hidden>
+      <h2>Set up Google rankings</h2>
+      <p>The fix lists below work already. For your real positions on Google (and who's above you), the studio uses DataForSEO: pay as you go, about 10 US cents a month for your searches.</p>
+      <ol>
+        <li>Go to <a href="https://app.dataforseo.com/register" target="_blank" rel="noopener">dataforseo.com</a> and sign up with your email, then confirm it from the email they send.</li>
+        <li>In their dashboard, open <b>API Access</b>. It shows an <b>API login</b> (your email) and an <b>API password</b> (made for you; not your account password). Don't paste them anywhere but Cloudflare.</li>
+        <li>New accounts get US$1 of free credit, enough for weeks of checks. When it runs low, use <b>Add funds</b> (US$50 minimum, which lasts years at this rate).</li>
+        <li>In Cloudflare: <b>Workers &amp; Pages</b> → <b>momentsinlight-website</b> → <b>Settings</b> → <b>Variables and secrets</b> → <b>Add</b>. Choose type <b>Secret</b>, environment <b>Production</b>, and add these two names with their values:
+          <code>DATAFORSEO_LOGIN</code>
+          <code>DATAFORSEO_PASSWORD</code>
+        </li>
+        <li>Save, then go to <b>Deployments</b>, open the ⋯ menu on the top (Production) one and choose <b>Retry deployment</b> so the site picks them up (or just tell me).</li>
+        <li>Come back here and click <b>Check rankings now</b>. Results arrive in about 5 minutes.</li>
+      </ol>
+    </section>
+    <p class="rk-status"></p>
+    <div class="rk-list"><p class="muted">Loading…</p></div>
+  </main>
+  <div class="s-toast" role="status"></div>
+</StudioLayout>
+
+<script>
+  const $ = <T extends HTMLElement = HTMLElement>(s: string) => document.querySelector<T>(s)!;
+  const esc = (s: unknown) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
+  const toast = (text: string, error = false) => { const t = $('.s-toast'); t.textContent = text; t.classList.toggle('error', error); t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 5000); };
+  const post = async (body: any) => { const r = await fetch('/api/studio/crm/rankings', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) }); return { ok: r.ok, d: await r.json().catch(() => ({})) }; };
+  const day = (iso: string) => new Date(`${iso.slice(0, 10)}T12:00:00Z`).toLocaleDateString('en-NZ', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' });
+  let data: any = null;
+  const open = new Set<string>();
+
+  const place = (p: number | null | undefined) => (p == null ? '<span class="pos none">not in top 20</span>' : `<span class="pos ${p <= 3 ? 'top' : p <= 10 ? 'p1' : 'p2'}">#${p}</span>`);
+  const move = (now: number | null, before: number | null) => (before === undefined || now === before ? '' : now == null ? '<small class="down">dropped out</small>' : before == null ? '<small class="up">new</small>' : now < before ? `<small class="up">▲ ${before - now}</small>` : `<small class="down">▼ ${now - before}</small>`);
+  function spark(h: any[], device: string) {
+    const pts = h.filter((x) => x.device === device);
+    if (pts.length < 2) return '';
+    const y = (p: number | null) => ((p ?? 21) / 21) * 26 + 1;
+    return `<svg viewBox="0 0 100 28" class="spark" aria-hidden="true"><polyline points="${pts.map((x, i) => `${(i / (pts.length - 1)) * 100},${y(x.position)}`).join(' ')}"/></svg>`;
+  }
+
+  function card(k: any, i: number) {
+    const r = k.rank;
+    const rankHtml = r.run ? `<div class="ranks">
+        <div><span class="lbl">Phone</span>${r.mobile ? `${place(r.mobile.position)} ${move(r.mobile.position, r.mobile.before)}` : '–'}${spark(k.history, 'mobile')}</div>
+        <div><span class="lbl">Desktop</span>${r.desktop ? `${place(r.desktop.position)} ${move(r.desktop.position, r.desktop.before)}` : '–'}${spark(k.history, 'desktop')}</div>
+        ${(r.mobile ?? r.desktop)?.has_map ? `<div><span class="lbl">Map</span>${(r.mobile ?? r.desktop).map != null ? `<span class="pos top">#${(r.mobile ?? r.desktop).map}</span>` : '<span class="pos none">not in it</span>'}</div>` : ''}
+      </div>` : `<div class="ranks"><div><span class="lbl">Google</span><span class="muted">${data.ready ? 'after the first check' : 'once set up'}</span></div></div>`;
+    const g = k.gsc ? `<span class="gsc">Search Console: about #${k.gsc.position?.toFixed?.(1) ?? '–'}, shown ${k.gsc.impressions} times, ${k.gsc.clicks} clicks (week of ${day(k.gsc.week)})</span>` : '';
+    const fixes = k.fixes.filter((f: any) => !f.ok);
+    const done = k.fixes.filter((f: any) => f.ok);
+    const fixHtml = (f: any) => `<li class="fix ${f.ok ? 'ok' : 'todo'}"><span class="mark">${f.ok ? '✓' : '✗'}</span><div><strong>${esc(f.title)}</strong><p>${esc(f.detail)}</p>
+      ${f.contacts?.length ? `<p class="links">${f.contacts.map((c: any) => `<a href="/studio/contacts/contact?id=${c.id}">${esc(c.business)}</a>`).join(' · ')}</p>` : ''}
+      ${f.map?.length ? `<p class="links">In the map now: ${f.map.map((m: any) => `${esc(m.title)}${m.rating ? ` (${m.rating}★, ${m.votes ?? 0} reviews)` : ''}`).join(' · ')}</p>` : ''}
+      ${f.ok ? (f.task === 'closed' ? '<small class="up">Task closed: fixed</small>' : '') : f.task === 'open' ? '<small class="muted">In your tasks</small>' : `<button type="button" class="s-btn s-btn--quiet" data-task="${esc(f.key)}" data-kw="${esc(k.keyword)}">+ Add to my tasks</button>`}</div></li>`;
+    const top = k.top?.organic?.length ? `<details class="above"><summary>Who's on Google for this (${esc(day(r.run))}, ${r.mobile ? 'phone' : 'desktop'})</summary>
+      <ol>${k.top.organic.map((x: any) => `<li class="${(x.domain || '').endsWith('momentsinlight.co.nz') ? 'you' : ''}"><span class="n">${x.rank}</span><a href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.title || x.domain)}</a> <small>${esc(x.domain)}${/easyweddings|weddingwire|bridebook|facebook|instagram|pinterest|directory|nzweddings|theknot|hitched/.test(x.domain) ? ' · directory' : ''}</small></li>`).join('')}</ol>
+      <button type="button" class="s-btn s-btn--quiet" data-compare="${esc(k.keyword)}">Compare with the top 3</button>
+      ${k.compare ? `<table class="cmp"><thead><tr><th>Page</th><th>Words</th><th>Photos</th><th>Main heading</th></tr></thead><tbody>${k.compare.pages.map((p: any) => `<tr><td><a href="${esc(p.url)}" target="_blank" rel="noopener">#${p.rank} ${esc(p.domain)}</a></td><td>${p.words}</td><td>${p.imgs}</td><td>${esc(p.h1)}</td></tr>`).join('')}</tbody></table><small class="muted">Compared ${day(k.compare.at)}</small>` : ''}</details>` : '';
+    return `<article class="card kw${open.has(k.keyword) || (i === 0 && !open.size) ? ' open' : ''}" data-kw-card="${esc(k.keyword)}">
+      <button type="button" class="kw-head" data-toggle="${esc(k.keyword)}">
+        <span class="kw-name">${i < 3 && k.todo ? '<span class="first">Work on this</span>' : ''}${esc(k.keyword)}</span>
+        <span class="kw-sum">${r.run && r.mobile ? place(r.mobile.position) : ''} ${k.todo ? `<span class="todo-n">${k.todo} to fix</span>` : '<span class="up">All checks pass</span>'}</span>
+      </button>
+      <div class="kw-body">
+        ${rankHtml}${g}
+        <label class="target">The page for this search <select data-target="${esc(k.keyword)}"><option value="">${k.target_how === 'chosen' ? 'Choose automatically' : `Automatic: ${esc(k.target)}${k.target_how === 'google' ? ' (the one Google shows)' : ' (best match)'}`}</option>${data.pages.map((p: string) => `<option value="${esc(p)}"${k.target_how === 'chosen' && p === k.target ? ' selected' : ''}>${esc(p)}</option>`).join('')}</select>
+          <a href="https://www.momentsinlight.co.nz${esc(k.target)}" target="_blank" rel="noopener">Open ↗</a></label>
+        <ul class="fixes">${fixes.map(fixHtml).join('') || '<li class="muted">Nothing to fix on this page. Links from other sites and fresh blog posts are what move it now.</li>'}</ul>
+        ${done.length ? `<details class="passed"><summary>${done.length} checks pass</summary><ul class="fixes">${done.map(fixHtml).join('')}</ul></details>` : ''}
+        ${top}
+      </div></article>`;
+  }
+
+  async function load() {
+    const r = await fetch('/api/studio/crm/rankings');
+    data = await r.json().catch(() => null);
+    if (!r.ok || !data) { $('.rk-list').innerHTML = `<p class="note">${esc(data?.error || 'Couldn’t load.')}</p>`; return; }
+    $('.setup').hidden = data.ready;
+    $<HTMLButtonElement>('[data-check]').hidden = !data.ready;
+    const bits = [];
+    if (data.pending) bits.push(`Waiting for ${data.pending} results from Google…`);
+    if (data.error) bits.push(`<span class="down">Last check: ${esc(data.error)}</span>`);
+    if (data.spend) bits.push(`DataForSEO spend: US$${data.spend.cost.toFixed(3)} this month`);
+    $('.rk-status').innerHTML = bits.join(' · ');
+    $('.rk-list').innerHTML = data.keywords.map(card).join('') || '<p class="muted">No searches tracked yet. Add them on the SEO page (Searches you’re tracking).</p>';
+    if (data.pending) setTimeout(async () => { const { d } = await post({ action: 'collect' }); if (d.collected) load(); else setTimeout(load, 30000); }, 30000);
+  }
+
+  document.addEventListener('click', async (e) => {
+    const t = e.target as HTMLElement;
+    const tg = t.closest<HTMLButtonElement>('[data-toggle]');
+    if (tg) { const c = tg.closest('.kw')!; c.classList.toggle('open'); c.classList.contains('open') ? open.add(tg.dataset.toggle!) : open.delete(tg.dataset.toggle!); return; }
+    const tk = t.closest<HTMLButtonElement>('[data-task]');
+    if (tk) {
+      const k = data.keywords.find((x: any) => x.keyword === tk.dataset.kw); const f = k.fixes.find((x: any) => x.key === tk.dataset.task);
+      tk.disabled = true;
+      const { ok, d } = await post({ action: 'task', keyword: k.keyword, key: f.key, title: f.title.replace(/ \(.*\)$/, ''), detail: f.detail });
+      if (!ok) { toast(d.error || 'Couldn’t add it.', true); tk.disabled = false; return; }
+      open.add(k.keyword); toast('Added to your tasks. It closes itself when the check passes.'); load(); return;
+    }
+    const cm = t.closest<HTMLButtonElement>('[data-compare]');
+    if (cm) { cm.disabled = true; cm.textContent = 'Reading their pages…'; const { ok, d } = await post({ action: 'compare', keyword: cm.dataset.compare }); if (!ok) toast(d.error || 'Couldn’t compare.', true); open.add(cm.dataset.compare!); load(); return; }
+    if (t.closest('[data-check]')) {
+      const b = t.closest<HTMLButtonElement>('[data-check]')!; b.disabled = true;
+      const { ok, d } = await post({ action: 'check' }); b.disabled = false;
+      toast(d.message || d.error || 'Done.', !ok); load();
+    }
+  });
+  document.addEventListener('change', async (e) => {
+    const s = (e.target as HTMLElement).closest<HTMLSelectElement>('[data-target]');
+    if (!s) return;
+    open.add(s.dataset.target!);
+    await post({ action: 'target', keyword: s.dataset.target, page: s.value });
+    toast('Saved. The checks are now for that page.'); load();
+  });
+  load();
+</script>
+
+<style is:global>
+  .rk { max-width: 1000px; margin: 0 auto; padding: 24px clamp(14px, 3vw, 32px) 80px; }
+  .rk h1 { margin: 0 0 4px; font-weight: 300; font-size: 32px; color: var(--ink); }
+  .rk .intro { margin: 0 0 18px; color: #666; font-size: 15px; }
+  .rk .card { background: var(--white); border-radius: 24px 0; padding: 18px 22px; margin-bottom: 14px; animation: s-rise 0.6s var(--ease) both; }
+  .rk .card h2 { margin: 0 0 8px; font-weight: 300; font-size: 22px; color: var(--ink); }
+  .rk .setup ol { padding-left: 20px; font-size: 14px; line-height: 1.6; }
+  .rk .setup li { margin: 6px 0; }
+  .rk .setup code { display: block; margin: 6px 0; padding: 6px 10px; background: var(--champagne); border-radius: 8px 0; font-size: 14px; user-select: all; width: fit-content; }
+  .rk-status { font-size: 13px; color: #777; margin: 0 0 12px; }
+  .rk .muted { color: #999; } .rk .up { color: #5a7d2a; } .rk .down { color: #a8432a; }
+  .rk .note { padding: 12px 14px; background: #fff4d6; color: #5c4400; border-radius: 12px 0; }
+  .kw { padding: 0; overflow: hidden; }
+  .kw-head { width: 100%; display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; padding: 16px 22px; border: 0; background: none; font: inherit; text-align: left; cursor: pointer; }
+  .kw-name { font-size: 18px; color: var(--ink); display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .first { font-size: 10px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; background: var(--green); color: var(--white); padding: 3px 9px; border-radius: 999px; }
+  .kw-sum { display: flex; gap: 10px; align-items: center; font-size: 13px; }
+  .todo-n { background: #f6e3dc; color: #8a3a22; padding: 3px 9px; border-radius: 999px; font-weight: 600; font-size: 12px; }
+  .kw-body { display: none; padding: 0 22px 18px; }
+  .kw.open .kw-body { display: block; animation: s-fade 0.35s var(--ease) both; }
+  .ranks { display: flex; gap: 22px; flex-wrap: wrap; margin: 0 0 6px; }
+  .ranks > div { display: flex; align-items: center; gap: 8px; }
+  .lbl { font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--green); }
+  .pos { font-size: 20px; font-weight: 300; } .pos.top { color: #3e6b1f; } .pos.p1 { color: var(--green); } .pos.p2 { color: #b07d1a; } .pos.none { font-size: 13px; color: #999; }
+  .spark { width: 70px; height: 28px; } .spark polyline { fill: none; stroke: var(--green); stroke-width: 2; }
+  .gsc { display: block; font-size: 12px; color: #888; margin-bottom: 10px; }
+  .target { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 13px; color: #666; margin: 10px 0 6px; }
+  .target select { font: inherit; font-size: 13px; padding: 6px 8px; border: 1px solid #ddd3c4; border-radius: 8px 0; max-width: 100%; }
+  .target a { color: var(--green); }
+  .fixes { list-style: none; margin: 8px 0; padding: 0; }
+  .fix { display: flex; gap: 12px; padding: 10px 0; border-top: 1px solid #f1ebe1; font-size: 14px; }
+  .fix .mark { flex: 0 0 22px; height: 22px; display: grid; place-items: center; border-radius: 50%; font-size: 12px; font-weight: 700; }
+  .fix.todo .mark { background: #f6e3dc; color: #a8432a; } .fix.ok .mark { background: #e6ecd9; color: #3e6b1f; }
+  .fix p { margin: 3px 0 6px; color: #555; line-height: 1.5; }
+  .fix .links { font-size: 13px; } .fix .links a { color: var(--green); }
+  .passed summary, .above summary { cursor: pointer; font-size: 13px; color: var(--green); margin: 8px 0; }
+  .above ol { list-style: none; margin: 6px 0 10px; padding: 0; font-size: 14px; }
+  .above li { display: flex; gap: 8px; align-items: baseline; padding: 4px 6px; border-radius: 8px 0; flex-wrap: wrap; }
+  .above li.you { background: #e9eddf; font-weight: 600; }
+  .above .n { flex: 0 0 22px; color: #999; } .above a { color: var(--ink); } .above small { color: #999; }
+  .cmp { width: 100%; border-collapse: collapse; font-size: 13px; margin: 10px 0 4px; } .cmp th, .cmp td { text-align: left; padding: 5px 6px; border-bottom: 1px solid #f1ebe1; } .cmp a { color: var(--ink); }
+  @media (max-width: 600px) { .kw-head, .kw-body { padding-left: 14px; padding-right: 14px; } .rk .card { padding: 16px 14px; } .rk .kw { padding: 0; } }
+</style>

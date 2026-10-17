@@ -22,7 +22,8 @@
 //      pages link to the site (functions-lib/contacts.js).
 //  10. SEO (functions-lib/seo.js): Monday, the tracked searches' Google positions and a task for
 //      each wedding not yet blogged, and the competitors' new pages; from the 2nd of the month,
-//      the site health check.
+//      the site health check. Rankings (functions-lib/rankings.js): Monday's Google check, and
+//      collecting results as they finish.
 // Ready-to-send emails and to-dos need nothing here: they appear on Today when due.
 import { sendStep } from '../../../functions-lib/crm-send.js';
 import { thread, connection } from '../../../functions-lib/gmail.js';
@@ -34,6 +35,7 @@ import { publishScheduledPosts, weeklyStatsEmail } from '../../../functions-lib/
 import { monthlySpeed } from '../../../functions-lib/speed.js';
 import { contactsTimer } from '../../../functions-lib/contacts.js';
 import { weeklyPositions, contentTasks, siteHealth, competitorWatch } from '../../../functions-lib/seo.js';
+import { rankingsTimer } from '../../../functions-lib/rankings.js';
 
 const reply = (data, status = 200) => new Response(JSON.stringify(data), { status, headers: { 'content-type': 'application/json' } });
 const stops = (step, ev) => (',' + step.stop_on + ',').includes(`,${ev},`);
@@ -170,6 +172,7 @@ export async function onRequestPost({ request, env }) {
   log.content = await contentTasks(env).catch((e) => `error: ${e.message}`);
   log.health = await siteHealth(env).catch((e) => `error: ${e.message}`);
   log.competitors = await competitorWatch(env).catch((e) => `error: ${e.message}`);
+  log.rankings = await rankingsTimer(env).catch((e) => `error: ${e.message}`);
 
   return reply({ ok: true, ...log });
 }
