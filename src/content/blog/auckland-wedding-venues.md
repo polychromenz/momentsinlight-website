@@ -171,3 +171,5 @@ Further out, these venues trade the city for space — rural land, native bush, 
 Wherever your day takes place, the venue is really just the setting — what makes the photographs is the light, the people, and the moments that happen almost by accident.
 
 [Check now to see if your date is available](/contact)
+
+For those looking to marry in this picturesque region, you may also be interested in learning more about working with a [kumeu wedding photographer](/kumeu-valley-estate-wedding-photographer) to document your wedding in a thoughtful and understated way.

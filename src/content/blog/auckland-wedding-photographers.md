@@ -156,3 +156,5 @@ It's advisable to book your wedding photographer as soon as you've set your date
 A pre-wedding consultation is a chance to discuss your wedding day vision and photography preferences. You’ll talk about the timeline, locations, and specific shots you desire. The photographer will share their style, experience, and package details. It’s also an opportunity to build rapport, ensuring you’re comfortable with them on your big day. Don’t hesitate to ask questions and clarify any doubts during this session.
 
 [Check now to see if your date is available](/contact)
+
+As you consider how to tell your love story, you may also be looking for a [kumeu wedding photographer](/kumeu-valley-estate-wedding-photographer) to help you do so in a way that feels authentic and meaningful.

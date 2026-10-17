@@ -35,3 +35,5 @@ See their story here:\
  👉 [Chi & Foster’s Abel Estate Wedding](https://www.momentsinlight.co.nz/blog/chi-and-foster)
 
 I’ll continue adding more weddings from Abel Estate so you can see how different couples use the spaces and how we tailor photography to suit the light and season.
+
+For those looking for a photographer to document their wedding in this beautiful region, you may also be interested in learning more about working with a [kumeu wedding photographer](/kumeu-valley-estate-wedding-photographer) to tell your own story.
