@@ -39,6 +39,10 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
             <ul class="quotes contracts"></ul>
           </section>
           <section class="card">
+            <h2>Invoices</h2>
+            <ul class="quotes invoices"></ul>
+          </section>
+          <section class="card">
             <h2>Their enquiry</h2>
             <p class="message"></p>
           </section>
@@ -126,6 +130,8 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
     $('#lead-sources').replaceChildren(...s.lead_source.map((t: { value: string }) => new Option(t.value, t.value)));
     listsLoaded = true;
   }
+  type Invoice = { id: number; number: string; label: string; amount: number; due_date: string; send_at: string; status: string; sent_at: string | null; reminders: number; paid_at: string | null; paid_method: string | null; paid_note: string; token: string };
+  let invoices: Invoice[] = [];
   async function load() {
     await loadLists();
     const r = await fetch(`/api/studio/crm/job?id=${id}`);
@@ -168,6 +174,24 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
     $('.contracts').innerHTML = d.contracts.length ? d.contracts.map((c: { id: number; name: string; status: string; sent_at: string | null; viewed_at: string | null; signed_name: string | null; signed_at: string | null }) =>
       `<li><a href="/api/studio/crm/contract?id=${c.id}&pdf=1" target="_blank" rel="noopener"><strong>${esc(c.name)}</strong></a> <small>${cs[c.status] ?? c.status}${c.status === 'signed' ? ` by ${esc(c.signed_name)} · ${dateTime(c.signed_at!)}` : c.sent_at ? ` · sent ${dateTime(c.sent_at)}${c.viewed_at ? ' · opened' : ''}` : ''}</small></li>`).join('')
       : '<li class="empty">No contracts yet. One is sent automatically when they accept a quote.</li>';
+    const money = (c: number) => `${(c / 100).toLocaleString('en-NZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    const day = (x: string) => new Date(`${x.slice(0, 10)}T12:00:00Z`).toLocaleDateString('en-NZ', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' });
+    const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Pacific/Auckland' });
+    const signed = d.contracts.filter((c: { status: string }) => c.status === 'signed');
+    invoices = d.invoices;
+    $('.invoices').innerHTML = invoices.length ? invoices.map((i) => {
+      const late = i.status === 'sent' && i.due_date < today;
+      const how = i.paid_method === 'card' ? 'card' : i.paid_method === 'bank' ? 'bank transfer' : esc(i.paid_method || '');
+      const state = i.status === 'paid' ? `Paid ${day(i.paid_at!)} (${how})${i.paid_note ? ` · ${esc(i.paid_note)}` : ''}`
+        : i.status === 'sent' ? `${late ? '<b class="late">Overdue</b> · ' : ''}Sent ${day(i.sent_at!)} · due ${day(i.due_date)}${i.reminders ? ` · ${i.reminders} reminder${i.reminders > 1 ? 's' : ''} sent` : ''}`
+        : i.status === 'scheduled' ? `Sends ${day(i.send_at)} · due ${day(i.due_date)}` : 'Cancelled';
+      const open = i.status === 'sent' || i.status === 'scheduled';
+      return `<li class="inv inv--${i.status}"><span class="what"><a href="/api/studio/crm/invoice?id=${i.id}&pdf=1" target="_blank" rel="noopener"><strong>${esc(i.number)}</strong></a> ${esc(i.label)} · <strong>${money(i.amount)}</strong><br><small>${state}</small></span>
+        ${open ? `<button type="button" class="s-btn" data-inv="${i.id}" data-inv-act="paid">Mark paid</button><button type="button" class="s-btn s-btn--quiet" data-inv="${i.id}" data-inv-act="send">${i.status === 'sent' ? 'Send again' : 'Send now'}</button><button type="button" class="s-btn s-btn--quiet" data-inv="${i.id}" data-inv-act="edit">Change</button><button type="button" class="s-btn s-btn--quiet" data-inv="${i.id}" data-inv-act="void">Cancel</button>` : ''}
+        ${i.status !== 'scheduled' && i.status !== 'void' ? `<a class="pdf" href="/invoice?t=${i.token}" target="_blank" rel="noopener">Their page</a>` : ''}</li>`;
+    }).join('')
+      : signed.length ? `<li class="empty">No invoices. <button type="button" class="s-btn s-btn--quiet" data-make-invoices="${signed[0].id}">Make the invoices</button></li>`
+      : '<li class="empty">No invoices yet. They’re made when the contract is signed, and the deposit invoice goes straight away.</li>';
     const other = $('.other-jobs');
     other.hidden = !d.otherJobs.length;
     other.innerHTML = d.otherJobs.length ? `Also: ${d.otherJobs.map((o: { id: number; title: string; job_type: string }) => `<a href="/studio/crm/job?id=${o.id}">${esc(o.job_type)}</a>`).join(', ')}` : '';
@@ -263,6 +287,48 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
       location.href = `/studio/crm/quote?id=${d.id}`;
       return;
     }
+    const mk = t.closest<HTMLButtonElement>('[data-make-invoices]');
+    if (mk) {
+      mk.disabled = true;
+      const r = await fetch('/api/studio/crm/invoice', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'create', contract_id: Number(mk.dataset.makeInvoices) }) });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) { toast(d.error || 'Couldn’t make them.', true); mk.disabled = false; return; }
+      toast(`${d.made} invoices made. Each sends on its date; use Send now for one that’s due.`);
+      await load();
+      return;
+    }
+    const ib = t.closest<HTMLButtonElement>('[data-inv-act]');
+    if (ib) {
+      const inv = invoices.find((i) => i.id === Number(ib.dataset.inv))!;
+      const act = ib.dataset.invAct!;
+      const body: Record<string, unknown> = { id: inv.id, action: act };
+      if (act === 'paid') {
+        const how = prompt(`Mark ${inv.number} (${(inv.amount / 100).toFixed(2)}) as paid. They'll be emailed a receipt.\n\nHow was it paid? bank, card or other, then a note if you like (e.g. "bank paid 12 Nov").`, 'bank');
+        if (how === null) return;
+        const [m, ...note] = how.trim().split(/\s+/);
+        const known = ['bank', 'card', 'other'].includes((m || '').toLowerCase());
+        body.method = known ? m.toLowerCase() : 'other';
+        body.note = known ? note.join(' ') : how.trim();
+      } else if (act === 'send') {
+        if (!confirm(`Email ${inv.number} to them now?`)) return;
+      } else if (act === 'void') {
+        if (!confirm(`Cancel ${inv.number}? It won't be sent, reminded or payable after this.`)) return;
+      } else if (act === 'edit') {
+        const amt = prompt(`Amount for ${inv.number} (NZ$, including GST):`, (inv.amount / 100).toFixed(2));
+        if (amt === null) return;
+        const due = prompt('Due date (YYYY-MM-DD):', inv.due_date);
+        if (due === null) return;
+        body.amount = Math.round(Number(amt.replace(/[$,\s]/g, '')) * 100);
+        body.due_date = due.trim();
+      }
+      ib.disabled = true;
+      const r = await fetch('/api/studio/crm/invoice', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) { toast(d.error || 'Couldn’t do that.', true); ib.disabled = false; return; }
+      toast(act === 'paid' ? 'Marked paid. Receipt emailed.' : act === 'send' ? (d.redirected ? `Test mode: sent to ${d.to} (not ${d.intended}).` : `Sent to ${d.to}.`) : act === 'void' ? 'Cancelled.' : 'Changed.');
+      await load();
+      return;
+    }
     const rv = t.closest<HTMLButtonElement>('[data-review-step]');
     if (rv) { openReview(Number(rv.dataset.reviewStep)); return; }
     const b = t.closest<HTMLButtonElement>('[data-step]');
@@ -300,6 +366,10 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
   .job-page .quotes a { color: var(--ink); }
   .job-page .quotes small { color: #777; }
   .job-page .quotes .pdf { font-size: 12px; margin-left: 4px; }
+  .job-page .inv { display: flex; align-items: center; gap: 6px 8px; flex-wrap: wrap; }
+  .job-page .inv--paid .what small { color: var(--green); }
+  .job-page .inv--void .what { opacity: 0.5; }
+  .job-page .inv .late { color: #a8432a; }
   .job-page .card h2 { margin: 0 0 12px; font-weight: 300; font-size: 22px; color: var(--ink); }
   .job-page .steps, .job-page .messages { list-style: none; margin: 0; padding: 0; }
   .job-page .step, .job-page .messages li { display: flex; align-items: center; gap: 8px 12px; flex-wrap: wrap; padding: 10px 0; border-bottom: 1px solid #f1ebe1; }

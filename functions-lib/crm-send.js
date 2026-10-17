@@ -16,11 +16,18 @@ export const loadJob = (db, jobId) => db.prepare(
 ).bind(jobId).first();
 
 
+/** Links for a job's emails. Until the client portal is built, {{portal_link}} is their
+ *  accepted quote (it shows the booking details and payment plan). */
+export async function jobLinks(db, job) {
+  const q = await db.prepare(`SELECT token FROM quotes WHERE job_id = ?1 AND status = 'accepted' ORDER BY accepted_at DESC LIMIT 1`).bind(job.id).first();
+  return q ? { portal_link: `https://www.momentsinlight.co.nz/quote?t=${q.token}` } : {};
+}
+
 /** The email a step would send, filled in (for review, or before sending). */
 export async function draftFor(db, step, job) {
   const template = step.template_key && await db.prepare('SELECT * FROM templates WHERE key = ?1').bind(step.template_key).first();
   if (!template) throw new Error(`The template for “${step.title}” is missing.`);
-  return { template, ...renderTemplate(template, fields(job)) };
+  return { template, ...renderTemplate(template, fields(job, await jobLinks(db, job))) };
 }
 
 /**
@@ -33,7 +40,7 @@ export async function sendStep(env, step, edits = {}) {
   const job = await loadJob(db, step.job_id);
   if (!job) throw new Error('That job no longer exists.');
   const { template } = await draftFor(db, step, job);
-  const email = renderTemplate(template, fields(job), edits);
+  const email = renderTemplate(template, fields(job, await jobLinks(db, job)), edits);
   if (email.missing.length) throw new Error(`It needs: ${email.missing.join(', ')}. Fill those in before sending.`);
   const attachments = await attachmentsFor(db, edits.attachments ?? templateAttachments(template));
   // Keep the conversation together: reply in the thread of the last email for this job.

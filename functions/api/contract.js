@@ -5,8 +5,8 @@
 //   POST /api/contract  { t, name, agree, fingerprint }   sign it
 // Signing checks the wording is exactly what they were shown (fingerprint), records their typed
 // name, the time, their IP address and browser, makes the signed PDF (kept privately), emails it
-// to them (from Tony's Gmail, test-mode lock applies) and to Tony, and adds a "Send the deposit
-// invoice" to-do (until Stripe invoicing is set up).
+// to them (from Tony's Gmail, test-mode lock applies) and to Tony, then makes the invoices and
+// sends the deposit invoice.
 import { loadJob } from '../../functions-lib/crm-send.js';
 import { alertTony } from '../../functions-lib/crm.js';
 import { contractPdf, toBase64 } from '../../functions-lib/pdf.js';
@@ -14,6 +14,7 @@ import { fingerprintOf } from '../../functions-lib/contracts.js';
 import { storeNamed, loadNamed } from '../../functions-lib/documents.js';
 import { sendEmail } from '../../functions-lib/gmail.js';
 import { renderTemplate, fields } from '../../functions-lib/email-render.js';
+import { createInvoices, sendInvoice, money } from '../../functions-lib/invoices.js';
 
 const reply = (data, status = 200) => new Response(JSON.stringify(data), { status, headers: { 'content-type': 'application/json', 'cache-control': 'no-store' } });
 const find = (env, t) => (/^[a-f0-9]{48}$/.test(t || '') ? env.DB.prepare('SELECT * FROM contracts WHERE token = ?1').bind(t).first() : null);
@@ -56,8 +57,6 @@ export async function onRequestPost({ request, env }) {
   const fileName = `${signed.name} (signed).pdf`;
   await storeNamed(env.DB, `contract-${c.id}.pdf`, 'application/pdf', pdf);
   const job = await loadJob(env.DB, c.job_id);
-  await env.DB.prepare(`INSERT OR IGNORE INTO steps (job_id, step_key, kind, title, due_at, created_at) VALUES (?1, ?2, 'todo', 'Send the deposit invoice (contract signed)', ?3, ?3)`)
-    .bind(job.id, `deposit-invoice-${c.id}`, at).run();
 
   // Their copy, from Tony's Gmail.
   let theirs = 'Emailed them a signed copy.';
@@ -74,9 +73,23 @@ export async function onRequestPost({ request, env }) {
     console.error('contract signed: copy not sent', e);
     theirs = `Their signed copy couldn’t be emailed (${e.message}); download it from their page and send it.`;
   }
+  // The invoices (one per payment in the schedule); the deposit goes straight away, the rest on
+  // their send dates (the timer). If that fails, Tony gets a to-do instead.
+  let next;
+  try {
+    const made = await createInvoices(env, signed);
+    const deposit = made.find((i) => i.send_at <= new Date().toISOString());
+    if (deposit) { const s = await sendInvoice(env, deposit, 'invoice'); next = `Deposit invoice ${deposit.number} (${money(deposit.amount)}) sent${s.redirected ? ` (test mode: to ${s.to})` : ''}; ${made.length - 1} more scheduled.`; }
+    else next = `${made.length} invoices scheduled.`;
+  } catch (e) {
+    console.error('contract signed: invoices', e);
+    next = `The deposit invoice couldn’t be sent automatically (${e.message}). It’s on your Today list.`;
+    await env.DB.prepare(`INSERT OR IGNORE INTO steps (job_id, step_key, kind, title, due_at, note, created_at) VALUES (?1, ?2, 'todo', 'Send the deposit invoice (contract signed)', ?3, ?4, ?3)`)
+      .bind(job.id, `deposit-invoice-${c.id}`, at, String(e.message).slice(0, 300)).run();
+  }
   await alertTony(env, `Contract signed: ${job.title}`, [
     ['Contract', signed.name], ['Signed by', `${name}, ${new Date(at).toLocaleString('en-NZ', { timeZone: 'Pacific/Auckland' })}`],
-    ['Their copy', theirs], ['Next', 'Send the deposit invoice (on your Today list).'],
+    ['Their copy', theirs], ['Invoices', next],
   ], `https://www.momentsinlight.co.nz/studio/crm/job?id=${job.id}`, [{ name: fileName, base64: pdf }]);
   return reply({ ok: true });
 }

@@ -1,0 +1,136 @@
+---
+// A couple's invoice (/invoice?t=…, the link in their invoice email). Shows what it's for, the
+// amount and due date, and how to pay: by card (Stripe Checkout) or bank transfer. After a card
+// payment Stripe brings them back here with &paid=1. Hidden from Google; data from
+// functions/api/invoice.js.
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+<BaseLayout title="Your invoice | Moments In Light" description="Your invoice from Moments in Light." noindex>
+  <main class="invoice-page">
+    <p class="i-status" aria-live="polite">Loading your invoice…</p>
+    <div class="i" hidden>
+      <header class="i-head">
+        <p class="eyebrow i-eyebrow"></p>
+        <h1 class="display i-title"></h1>
+        <hr class="hairline" />
+      </header>
+
+      <div class="i-card i-thanks" hidden tabindex="-1">
+        <h2>Thank you!</h2>
+        <p class="i-thanks-text"></p>
+      </div>
+
+      <section class="i-card i-details">
+        <div><h2>From</h2><p>Moments in Light<br>Tony Gorham · 021 625 943<br>tony@momentsinlight.co.nz<span class="i-gst"></span></p></div>
+        <div><h2>To</h2><p class="i-to"></p></div>
+        <div class="i-for"><h2>For</h2><p class="i-desc"></p></div>
+        <table class="i-sum"><tbody></tbody></table>
+      </section>
+
+      <section class="i-card i-pay">
+        <h2>How to pay</h2>
+        <div class="i-card-pay" hidden>
+          <p>Pay securely by card (Visa, Mastercard, Apple Pay or Google Pay).</p>
+          <p class="i-msg" role="alert" hidden></p>
+          <button class="btn i-pay-btn" type="button">Pay by card</button>
+        </div>
+        <div class="i-bank" hidden>
+          <p class="i-or" hidden>Or pay by bank transfer:</p>
+          <dl class="i-bank-dl"></dl>
+          <p class="i-instructions"></p>
+        </div>
+        <p class="i-none" hidden>Please get in touch with Tony to arrange payment: tony@momentsinlight.co.nz or 021 625 943.</p>
+      </section>
+
+      <div class="i-buttons"><a class="btn btn--outline i-pdf" target="_blank" rel="noopener">Download PDF</a></div>
+    </div>
+  </main>
+</BaseLayout>
+
+<script>
+  const $ = <T extends HTMLElement = HTMLElement>(s: string) => document.querySelector<T>(s)!;
+  const esc = (s: unknown) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
+  const money = (c: number) => `$${(c / 100).toLocaleString('en-NZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const params = new URLSearchParams(location.search);
+  const token = params.get('t') || '';
+  const justPaid = params.has('paid');
+
+  async function load(tries = 0) {
+    const r = await fetch(`/api/invoice?t=${encodeURIComponent(token)}`);
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) { $('.i-status').textContent = d.error || 'This invoice isn’t available.'; return; }
+    // Back from Stripe: the payment confirmation can take a few seconds to arrive.
+    if (justPaid && d.status !== 'paid' && tries < 6) { $('.i-status').textContent = 'Confirming your payment…'; setTimeout(() => load(tries + 1), 2500); return; }
+    const paid = d.status === 'paid';
+    document.title = `Invoice ${d.number} | Moments In Light`;
+    $('.i-eyebrow').textContent = `Invoice ${d.number} · ${d.issued}`;
+    $('.i-title').textContent = paid ? 'Paid. Thank you!' : `${money(d.amount)} due ${d.due_long}`;
+    $('.i-gst').innerHTML = d.gst_number ? `<br>GST number: ${esc(d.gst_number)}` : '';
+    $('.i-to').innerHTML = [esc(d.client.name), esc(d.client.address).replace(/\n/g, '<br>'), esc(d.client.email)].filter(Boolean).join('<br>');
+    $('.i-desc').innerHTML = `<strong>${esc(d.label)}</strong>${d.description ? `<br>${esc(d.description)}` : ''}`;
+    const gst = Math.round(d.amount * 3 / 23);
+    $('.i-sum tbody').innerHTML = [
+      ['Amount (incl. GST)', money(d.amount)],
+      ...(d.gst_number ? [['Includes GST of', money(gst)]] : []),
+      paid ? ['Paid', `${new Date(d.paid_at).toLocaleDateString('en-NZ', { day: 'numeric', month: 'long', year: 'numeric' })}`] : ['Due', d.due_long],
+      [paid ? 'Balance' : 'Amount due', paid ? '$0.00' : money(d.amount)],
+    ].map(([k, v], i, a) => `<tr${i === a.length - 1 ? ' class="total"' : ''}><td>${k}</td><td>${v}</td></tr>`).join('');
+    $('.i-pay').hidden = paid;
+    $('.i-card-pay').hidden = !d.card;
+    $('.i-bank').hidden = !d.bank;
+    $('.i-or').hidden = !(d.card && d.bank);
+    $('.i-none').hidden = d.card || d.bank;
+    if (d.bank) {
+      $('.i-bank-dl').innerHTML = [['Account name', d.bank.account_name], ['Bank', d.bank.bank_name], ['Account number', d.bank.account_number], ['Reference', d.number]]
+        .filter(([, v]) => v).map(([k, v]) => `<dt>${k}</dt><dd>${esc(v)}</dd>`).join('');
+      $('.i-instructions').textContent = d.bank.instructions || '';
+    }
+    const thanks = $('.i-thanks');
+    thanks.hidden = !justPaid;
+    if (justPaid) $('.i-thanks-text').textContent = paid ? 'Your payment has gone through, and a receipt is on its way to your email.' : 'Your payment is being confirmed. You’ll get a receipt by email shortly.';
+    $<HTMLAnchorElement>('.i-pdf').href = `/api/invoice?t=${encodeURIComponent(token)}&pdf=1`;
+    $<HTMLAnchorElement>('.i-pdf').textContent = paid ? 'Download your receipt' : 'Download PDF';
+    $('.i').hidden = false;
+    $('.i-status').hidden = true;
+    if (justPaid) thanks.focus();
+  }
+
+  $('.i-pay-btn').addEventListener('click', async () => {
+    const btn = $<HTMLButtonElement>('.i-pay-btn');
+    const msg = $('.i-msg');
+    btn.disabled = true; btn.textContent = 'Opening secure payment…'; msg.hidden = true;
+    const r = await fetch('/api/invoice', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ t: token }) });
+    const d = await r.json().catch(() => ({}));
+    if (r.ok && d.url) { location.href = d.url; return; }
+    msg.textContent = d.error || 'Something went wrong. Please try again.'; msg.hidden = false;
+    btn.disabled = false; btn.textContent = 'Pay by card';
+  });
+  if (token) load(); else $('.i-status').textContent = 'This invoice link isn’t complete. Please use the link in your email.';
+</script>
+
+<style>
+  .invoice-page { background: var(--champagne); padding: 48px var(--pad) 90px; min-height: 60vh; }
+  .i-status { text-align: center; color: #666; }
+  .i { max-width: 760px; margin: 0 auto; display: flex; flex-direction: column; gap: 22px; }
+  .i-head { text-align: center; }
+  .i-title { font-size: clamp(30px, 2.4vw + 18px, 46px); margin: 0 0 20px; padding: 0; }
+  .i-card { background: var(--white); border-radius: 28px 0; padding: 24px 28px; }
+  .i-card h2 { margin: 0 0 10px; font-weight: 300; font-size: 22px; color: var(--ink); }
+  .i-details { display: grid; gap: 18px; font-size: 14px; line-height: 1.7; color: #444; }
+  .i-details h2 { font-size: 12px; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: var(--green); }
+  .i-details p { margin: 0; }
+  .i-sum { width: 100%; border-collapse: collapse; font-size: 15px; }
+  .i-sum :global(td) { padding: 7px 0; border-bottom: 1px solid #f3eee6; }
+  .i-sum :global(td:last-child) { text-align: right; }
+  .i-sum :global(tr.total td) { border-bottom: 0; font-weight: 600; color: var(--ink); font-size: 17px; }
+  .i-pay { display: flex; flex-direction: column; gap: 14px; font-size: 15px; line-height: 1.7; color: #444; }
+  .i-pay p { margin: 0 0 8px; }
+  .i-bank-dl { display: grid; grid-template-columns: auto 1fr; gap: 2px 16px; margin: 0 0 8px; }
+  .i-bank-dl :global(dt) { color: #777; }
+  .i-bank-dl :global(dd) { margin: 0; font-weight: 500; color: var(--ink); }
+  .i-msg { padding: 10px 14px; background: #fbeee8; color: #8a3b1e; border-radius: 12px 0; }
+  .i-thanks p { margin: 0; color: #444; }
+  .i-buttons { display: flex; justify-content: center; }
+  .i-pay[hidden], .i-thanks[hidden], .i-card-pay[hidden], .i-bank[hidden], .i-none[hidden], .i-or[hidden], .i-msg[hidden] { display: none; }
+  @media (min-width: 700px) { .i-details { grid-template-columns: 1fr 1fr; } .i-for, .i-sum { grid-column: 1 / -1; } }
+</style>

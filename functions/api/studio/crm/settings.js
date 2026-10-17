@@ -7,16 +7,18 @@
 import { json } from '../../../../functions-lib/studio.js';
 import { WORKFLOWS } from '../../../../functions-lib/crm.js';
 import { listDocuments } from '../../../../functions-lib/documents.js';
+import { paymentSettings, stripeReady } from '../../../../functions-lib/invoices.js';
 
 const LISTS = ['job_type', 'lead_source'];
 
 export async function onRequestGet({ env }) {
-  const [lists, templates, schedules, documents, contracts] = await Promise.all([
+  const [lists, templates, schedules, documents, contracts, payments] = await Promise.all([
     env.DB.prepare('SELECT kind, value, label, workflow, on_form, contract_key FROM lists ORDER BY kind, sort, id').all(),
     env.DB.prepare('SELECT key, name, subject, body, attachments, updated_at FROM templates ORDER BY key').all(),
     env.DB.prepare('SELECT key, name, parts FROM payment_schedules ORDER BY name').all(),
     listDocuments(env.DB),
     env.DB.prepare('SELECT key, name, note, body, updated_at FROM contract_templates ORDER BY name').all(),
+    paymentSettings(env.DB),
   ]);
   const by = (k) => lists.results.filter((r) => r.kind === k).map(({ kind, ...r }) => ({ ...r, on_form: !!r.on_form }));
   return json({
@@ -27,6 +29,7 @@ export async function onRequestGet({ env }) {
     schedules: schedules.results.map((s) => ({ ...s, parts: JSON.parse(s.parts) })),
     workflows: Object.keys(WORKFLOWS),
     contracts: contracts.results,
+    payments, stripe: stripeReady(env),
   });
 }
 
@@ -125,6 +128,14 @@ export async function onRequestPut({ request, env }) {
     const used = await env.DB.prepare('SELECT name FROM quote_templates WHERE schedule_key = ?1').bind(d.delete_schedule).all();
     if (used.results.length) return json({ error: `The ${used.results.map((r) => r.name).join(', ')} quote template uses it. Choose another schedule there first.` }, 409);
     await env.DB.prepare('DELETE FROM payment_schedules WHERE key = ?1').bind(d.delete_schedule).run();
+    return json({ ok: true });
+  }
+  // Payments: { payments: { bank_name, account_name, account_number, gst_number, instructions } }
+  if (d?.payments) {
+    const p = d.payments;
+    const value = { bank_name: text(p.bank_name, 80), account_name: text(p.account_name, 80), account_number: text(p.account_number, 40), gst_number: text(p.gst_number, 20), instructions: text(p.instructions, 400) };
+    if (value.account_number && !/^[0-9][0-9 -]{8,}[0-9]$/.test(value.account_number)) return json({ error: 'That account number doesn’t look right (e.g. 12-3456-0123456-00).' }, 400);
+    await env.DB.prepare(`INSERT INTO settings (key, value, updated_at) VALUES ('payments', ?1, ?2) ON CONFLICT (key) DO UPDATE SET value = ?1, updated_at = ?2`).bind(JSON.stringify(value), now).run();
     return json({ ok: true });
   }
   return json({ error: 'Nothing to save.' }, 400);

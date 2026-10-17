@@ -156,6 +156,37 @@ export async function quotePdf(q, job, number) {
   return d.pdf.save();
 }
 
+/** An invoice (or, once paid, its receipt). inv = invoice row; job = job + client; pay = Settings > Payments. */
+export async function invoicePdf(inv, job, pay) {
+  const d = await setup();
+  const paid = inv.status === 'paid';
+  d.write([{ text: paid ? 'Receipt' : pay?.gst_number ? 'Tax invoice' : 'Invoice', bold: true }], { size: 20, gap: 2 });
+  d.write([{ text: `Invoice ${inv.number}  ·  Issued ${longDate((inv.sent_at || inv.created_at).slice(0, 10))}${paid ? `  ·  Paid ${longDate(inv.paid_at.slice(0, 10))}` : `  ·  Due ${longDate(inv.due_date)}`}` }], { size: 9.5, color: GREY, gap: 10 });
+  d.label('From');
+  d.write([{ text: [...FROM, pay?.gst_number && `GST number: ${pay.gst_number}`].filter(Boolean).join('\n') }], { size: 10, gap: 4 });
+  d.label('To');
+  d.write([{ text: [`${job.first_name} ${job.last_name}`.trim(), job.email, job.address].filter(Boolean).join('\n') }], { size: 10, gap: 4 });
+  d.rule();
+  d.label('For');
+  d.write([{ text: inv.label, bold: true }], { size: 13, gap: 2 });
+  if (inv.description) d.write([{ text: inv.description }], { size: 10, color: GREY, gap: 6 });
+  d.rows([
+    [inv.label, money(inv.amount)],
+    ['GST (15%, included)', money(Math.round((inv.amount * 3) / 23))],
+    [paid ? 'Paid (incl. GST)' : 'Amount due (incl. GST)', money(inv.amount)],
+  ], { boldLast: true });
+  if (paid) {
+    d.write([{ text: `Paid ${inv.paid_method === 'card' ? 'by card' : inv.paid_method === 'bank' ? 'by bank transfer' : ''} on ${longDate(inv.paid_at.slice(0, 10))}. Thank you!` }], { size: 10.5 });
+  } else {
+    d.label('How to pay');
+    d.write([{ text: `By card: ${SITE.replace('https://', '')}/invoice (use the link in your email).` }], { size: 10, gap: 2 });
+    if (pay?.account_number) d.write([{ text: `By bank transfer: ${[pay.account_name, pay.bank_name].filter(Boolean).join(', ')} ${pay.account_number}. Please use reference ${inv.number}.` }], { size: 10, gap: 2 });
+    if (pay?.instructions) d.write([{ text: pay.instructions }], { size: 10, color: GREY });
+  }
+  d.footer(`Moments in Light  ·  Invoice ${inv.number}`);
+  return d.pdf.save();
+}
+
 /** The contract, with its event details and (once signed) the signature record. */
 export async function contractPdf(c) {
   const d = await setup();
