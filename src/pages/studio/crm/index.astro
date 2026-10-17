@@ -4,6 +4,7 @@
 import StudioLayout from '../../../layouts/StudioLayout.astro';
 ---
 <StudioLayout title="Clients" section="clients">
+  <button slot="bar" type="button" class="s-btn s-btn--solid" data-add-client>+ Add client</button>
 
 <div class="test-banner" hidden><strong>TEST MODE</strong>: client emails are redirected to you, nothing reaches a client. It switches to live only when you set CRM_SEND_MODE to “live” in Cloudflare.</div>
   <main class="crm">
@@ -35,6 +36,25 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
       </section>
     </div>
   </main>
+  <dialog class="add-client" aria-labelledby="add-title">
+    <form class="add-form" autocomplete="off" novalidate>
+      <h2 id="add-title">Add a client</h2>
+      <p class="hint">For an enquiry by phone, Facebook or in person. Nothing is sent unless you tick the workflow box.</p>
+      <div class="two"><label>First name *<input name="first_name" required /></label><label>Last name<input name="last_name" /></label></div>
+      <div class="two"><label>Email *<input name="email" type="email" required /></label><label>Phone<input name="phone" type="tel" /></label></div>
+      <label>Partner's name<input name="partner_name" placeholder="For a couple" /></label>
+      <div class="two"><label>Type<select name="job_type"></select></label><label>Heard about you via<input name="lead_source" list="add-sources" /><datalist id="add-sources"></datalist></label></div>
+      <div class="three"><label>Date<input name="event_date" type="date" /></label><label>Time<input name="event_time" type="time" title="Optional" /></label><label>Venue / location<input name="venue" /></label></div>
+      <label>Notes<textarea name="notes" rows="3" placeholder="What they told you"></textarea></label>
+      <fieldset class="add-stage"><legend>They are</legend>
+        <label><input type="radio" name="stage" value="lead" checked /> A lead (enquiring)</label>
+        <label><input type="radio" name="stage" value="booked" /> Booked</label>
+      </fieldset>
+      <label class="add-wf"><input type="checkbox" name="workflow" /> <span class="add-wf-text"></span></label>
+      <p class="add-msg" role="alert" hidden></p>
+      <div class="add-actions"><button type="button" class="s-btn s-btn--quiet" data-add-cancel>Cancel</button><button type="submit" class="s-btn s-btn--solid">Add client</button></div>
+    </form>
+  </dialog>
   <div class="s-toast" role="status"></div>
 </StudioLayout>
 
@@ -50,6 +70,59 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
     return days === 0 ? 'today' : days === 1 ? 'tomorrow' : days === -1 ? 'yesterday' : days < 0 ? `${-days} days ago` : `in ${days} days`;
   };
   const kindLabel: Record<string, string> = { auto_email: 'Automatic email', ready_email: 'Email to send', todo: 'To-do' };
+
+  // ---- Add a client by hand ----
+  const addDlg = $<HTMLDialogElement>('dialog.add-client');
+  const addForm = $<HTMLFormElement>('.add-form');
+  let addLists: { job_type: { value: string; workflow: string | null }[]; lead_source: { value: string }[]; workflows: { key: string; name: string }[] } | null = null;
+  const af = (n: string) => addForm.elements.namedItem(n) as HTMLInputElement;
+  function wfText() {
+    const t = addLists?.job_type.find((x) => x.value === af('job_type').value);
+    const wf = addLists?.workflows.find((w) => w.key === t?.workflow);
+    const booked = (addForm.querySelector('input[name="stage"]:checked') as HTMLInputElement).value === 'booked';
+    const box = af('workflow');
+    box.disabled = !wf;
+    if (!wf) box.checked = false;
+    $('.add-wf-text').textContent = !wf ? `${t?.value ?? 'This type'} has no workflow (Settings > Workflows), so nothing will be planned.`
+      : booked ? `Start the ${wf.name} workflow's booking and planning steps (emails and to-dos timed from their date).`
+      : `Start the ${wf.name} workflow's enquiry emails (the enquiry response and follow-ups). Leave unticked if you've already replied.`;
+  }
+  async function openAdd() {
+    if (!addLists) {
+      const r = await fetch('/api/studio/crm/settings');
+      if (!r.ok) { toast('Couldn’t load the job types.', true); return; }
+      addLists = await r.json();
+      (addForm.elements.namedItem('job_type') as HTMLSelectElement).replaceChildren(...addLists!.job_type.map((t) => new Option(t.value, t.value)));
+      $('#add-sources').replaceChildren(...addLists!.lead_source.map((t) => new Option(t.value, t.value)));
+    }
+    addForm.reset();
+    $('.add-msg').hidden = true;
+    wfText();
+    addDlg.showModal();
+    af('first_name').focus();
+  }
+  addForm.addEventListener('change', (e) => {
+    const n = (e.target as HTMLInputElement).name;
+    if (n === 'stage') af('workflow').checked = (e.target as HTMLInputElement).value === 'booked' && !af('workflow').disabled;
+    if (n === 'stage' || n === 'job_type') wfText();
+  });
+  addForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const body = { ...Object.fromEntries(new FormData(addForm)), workflow: af('workflow').checked };
+    const btn = addForm.querySelector<HTMLButtonElement>('button[type="submit"]')!;
+    btn.disabled = true;
+    const r = await fetch('/api/studio/crm/job', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
+    const d = await r.json().catch(() => ({}));
+    btn.disabled = false;
+    if (!r.ok) { const m = $('.add-msg'); m.textContent = d.error || 'Couldn’t add them.'; m.hidden = false; return; }
+    location.href = `/studio/crm/job?id=${d.id}`;
+  });
+  document.addEventListener('click', (e) => {
+    const t = e.target as HTMLElement;
+    if (t.closest('[data-add-client]')) openAdd();
+    if (t.closest('[data-add-cancel]')) addDlg.close();
+  });
+  if (new URLSearchParams(location.search).has('add')) openAdd();
   const toast = (text: string, error = false) => {
     const t = $('.s-toast'); t.textContent = text; t.classList.toggle('error', error); t.classList.add('show');
     setTimeout(() => t.classList.remove('show'), 4000);
@@ -131,6 +204,23 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
 </script>
 
 <style is:global>
+  .add-client { width: min(640px, calc(100vw - 24px)); max-height: calc(100dvh - 24px); border: 0; border-radius: 28px 0; padding: 0; box-shadow: 0 30px 60px -30px rgb(0 0 0 / 0.5); }
+  .add-client::backdrop { background: rgb(30 32 20 / 0.45); }
+  .add-form { display: flex; flex-direction: column; gap: 12px; padding: 22px 24px; }
+  .add-form h2 { margin: 0; font-weight: 300; font-size: 26px; color: var(--ink); }
+  .add-form .hint { margin: 0; font-size: 14px; color: #666; }
+  .add-form label { display: flex; flex-direction: column; gap: 5px; font-size: 13px; font-weight: 600; color: #555; min-width: 0; }
+  .add-form label small { font-weight: 400; color: #999; }
+  .add-form input:not([type=radio]):not([type=checkbox]), .add-form select, .add-form textarea { font: inherit; font-weight: 400; font-size: 15px; padding: 9px 11px; border: 1px solid #ddd3c4; border-radius: 10px 0; background: var(--white); color: var(--ink); min-width: 0; }
+  .add-form .two, .add-form .three { display: grid; gap: 10px; }
+  @media (min-width: 560px) { .add-form .two { grid-template-columns: 1fr 1fr; } .add-form .three { grid-template-columns: 1fr 0.7fr 1.3fr; } }
+  .add-stage { border: 0; padding: 0; margin: 0; display: flex; gap: 6px 20px; flex-wrap: wrap; align-items: center; font-size: 14px; }
+  .add-stage legend { font-size: 13px; font-weight: 600; color: #555; padding: 0; margin-bottom: 6px; }
+  .add-stage label, .add-form .add-wf { flex-direction: row !important; align-items: center; gap: 8px !important; font-weight: 400 !important; font-size: 14px !important; color: #333 !important; }
+  .add-form .add-wf { align-items: flex-start; }
+  .add-form .add-wf input { margin-top: 3px; }
+  .add-msg { margin: 0; padding: 10px 14px; background: #fbeee8; color: #8a3b1e; border-radius: 12px 0; font-size: 14px; }
+  .add-actions { display: flex; justify-content: flex-end; gap: 8px; }
   .test-banner { background: #fff4d6; color: #5c4400; border-bottom: 1px solid #e0c46c; padding: 10px clamp(14px, 3vw, 32px); font-size: 14px; line-height: 1.5; }
   .crm { max-width: 1100px; margin: 0 auto; padding: 28px clamp(14px, 3vw, 32px) 80px; }
   .crm .status { color: #666; }

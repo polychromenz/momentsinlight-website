@@ -1,11 +1,17 @@
 // One lead or job in the studio CRM.
 //   GET  /api/studio/crm/job?id=12      the job, its client, its planned steps and its emails
 //   PUT  /api/studio/crm/job            { id, ...fields } update the details Tony can edit
+//   POST /api/studio/crm/job            add a client by hand (a phone, Facebook or walk-in enquiry):
+//        { first_name, last_name, email, phone, partner_name, job_type, event_date, event_time, venue,
+//          lead_source, notes, stage: 'lead'|'booked', workflow: true|false } → { id, clashes }
+//        The same email as an existing client adds the job to them. workflow: start the job
+//        type's workflow (a lead: its enquiry emails; booked: its planning steps); without it,
+//        nothing is planned and nothing is sent.
 // Marking a lead booked or lost stops any steps waiting on that ('booked' in stop_on).
 import { json } from '../../../../functions-lib/studio.js';
 import { sendMode } from '../../../../functions-lib/crm.js';
 import { clashes, syncSoon, calendarReady } from '../../../../functions-lib/calendar.js';
-import { planBooking, replanDates } from '../../../../functions-lib/workflows.js';
+import { planBooking, replanDates, planSteps, loadWorkflow } from '../../../../functions-lib/workflows.js';
 
 const STAGES = ['lead', 'booked', 'completed', 'lost'];
 
@@ -90,4 +96,39 @@ export async function onRequestPut(context) {
   if (jobFields.event_date !== job.event_date) await replanDates(env.DB, id);
   syncSoon(context, id);
   return json({ ok: true });
+}
+
+export async function onRequestPost(context) {
+  const { request, env } = context;
+  const d = await request.json().catch(() => null);
+  const text = (v, max) => (v ?? '').toString().trim().slice(0, max);
+  const first = text(d?.first_name, 100);
+  const email = text(d?.email, 254).toLowerCase();
+  if (!first) return json({ error: 'Add their first name.' }, 400);
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return json({ error: 'Add their email address (it’s how the studio sends them anything).' }, 400);
+  const type = await env.DB.prepare(`SELECT value, workflow FROM lists WHERE kind = 'job_type' AND value = ?1`).bind(text(d.job_type, 60)).first();
+  if (!type) return json({ error: 'Choose a job type.' }, 400);
+  const date = /^\d{4}-\d{2}-\d{2}$/.test(d.event_date || '') ? d.event_date : null;
+  const time = /^([01]\d|2[0-3]):[0-5]\d$/.test(d.event_time || '') ? d.event_time : null;
+  const stage = d.stage === 'booked' ? 'booked' : 'lead';
+  const now = new Date();
+  const at = now.toISOString();
+  const last = text(d.last_name, 100);
+  const client = await env.DB.prepare(
+    `INSERT INTO clients (first_name, last_name, email, phone, created_at, updated_at) VALUES (?1, ?2, ?3, ?4, ?5, ?5)
+     ON CONFLICT (lower(email)) DO UPDATE SET phone = CASE WHEN excluded.phone <> '' THEN excluded.phone ELSE clients.phone END, updated_at = excluded.updated_at
+     RETURNING id, first_name, last_name`,
+  ).bind(first, last, email, text(d.phone, 40), at).first();
+  const workflow = (await loadWorkflow(env.DB, type.workflow)) ? type.workflow : null;
+  const job = await env.DB.prepare(
+    `INSERT INTO jobs (client_id, title, job_type, stage, partner_name, event_date, event_time, venue, lead_source, notes, workflow, booked_at, created_at, updated_at)
+     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?13) RETURNING *`,
+  ).bind(client.id, `${client.first_name} ${client.last_name}`.trim(), type.value, stage, text(d.partner_name, 200), date, time, text(d.venue, 200), text(d.lead_source, 60), text(d.notes, 20000), workflow, stage === 'booked' ? at : null, at).first();
+  if (d.workflow && workflow) {
+    if (stage === 'booked') await planBooking(env.DB, job);
+    else await planSteps(env.DB, job, ['enquiry'], { base: now });
+  }
+  const clash = await clashes(env.DB, date, job.id);
+  syncSoon(context, job.id);
+  return json({ ok: true, id: job.id, clashes: clash });
 }
