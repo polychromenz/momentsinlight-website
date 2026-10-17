@@ -1,7 +1,7 @@
 ---
 title: "Settlers Country Manor Wedding Photography"
 seoTitle: "Settlers Country Manor"
-description: "Real Settlers Country Manor wedding photography."
+description: "Settlers Country Manor wedding photography in Kumeu: stone buildings, mature gardens and a riverside lawn. Real weddings and the best photo spots."
 date: 2025-09-01
 updated: 2025-10-01
 author: "Tony Gorham"

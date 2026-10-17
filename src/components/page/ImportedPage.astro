@@ -17,7 +17,7 @@ const hasPhoto = (s: any) => s.bgImage?.src || (s.kind === 'gallery' && s.images
 const heroAt = sections.findIndex(hasPhoto);
 const hero = heroAt >= 0 && heroAt <= 2 ? heroAt : -1;
 ---
-<BaseLayout title={page.title} description={page.description} image={page.ogImage || undefined}>
+<BaseLayout title={page.title} description={page.description} image={page.ogImage || undefined} noindex={page.noindex}>
   {sections.map((s, i) => {
     const prev = sections[i - 1];
     const slant = prev?.divider;

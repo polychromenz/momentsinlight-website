@@ -1,7 +1,7 @@
 ---
 title: "Feby and Steven | The Waitākere Resort and Spa,"
 seoTitle: "Feby and Steven's Auckland Wedding"
-description: "Wedding at Waitakere Resort and Spa"
+description: "Feby and Steven’s wedding at The Waitākere Resort and Spa: rain all day, then the clouds parted for soft evening light and natural couple portraits."
 date: 2025-11-06
 updated: 2026-08-17
 author: "Tony Gorham"

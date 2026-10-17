@@ -1,7 +1,7 @@
 ---
 title: "Shannon & Connor’s Auckland Wedding."
 seoTitle: "Shannon and Connor's Auckland Wedding"
-description: "Auckland garden wedding"
+description: "Shannon and Connor’s Auckland wedding in her grandparents’ garden: relentless rain couldn’t stop a day the whole family will treasure."
 date: 2025-10-14
 updated: 2025-12-04
 author: "Tony Gorham"

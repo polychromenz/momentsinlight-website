@@ -1,7 +1,7 @@
 ---
 title: "Janine and Kyle"
 seoTitle: "Janine and Kyle's Auckland wedding"
-description: "A wonderful Wanui wedding"
+description: "Janine and Kyle’s relaxed garden wedding in Wainui: a laid-back bride, some very cool cars and speeches full of laughter, right next door to home."
 date: 2025-12-04
 updated: 2026-01-13
 author: "Tony Gorham"

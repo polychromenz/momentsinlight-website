@@ -169,7 +169,7 @@ const showcaseImages = (list: any[]) => list.map((i, k) => {
 let firstPhoto = true;
 const eager = () => { const e = firstPhoto; firstPhoto = false; return e; };
 ---
-<BaseLayout title={page.title} description={page.description} image={page.ogImage || undefined} jsonLd={jsonLd}>
+<BaseLayout title={page.title} description={page.description} image={page.ogImage || undefined} noindex={page.noindex} jsonLd={jsonLd}>
   {items.map((it, n) => {
     if (it.kind === 'intro' && it.photo) return (
       <>

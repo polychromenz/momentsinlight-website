@@ -2,6 +2,7 @@
  "path": "/thanks",
  "title": "Thanks | Moments In Light",
  "description": "",
+ "noindex": true,
  "ogImage": "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/share/Moments_in_Light_250x250/public",
  "type": {
   "d": {

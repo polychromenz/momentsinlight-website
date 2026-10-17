@@ -1,7 +1,7 @@
 ---
 title: "Anna - Street Portraits"
 seoTitle: "Portraits with a twist"
-description: "street portraits are a casual option"
+description: "Street portraits in Ponsonby, Auckland: Anna’s relaxed, stylish shoot with a jacket, sunglasses and café backdrops. A fun, casual portrait option."
 date: 2025-02-03
 updated: 2025-10-14
 author: "Tony Gorham"
