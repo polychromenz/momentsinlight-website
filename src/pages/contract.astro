@@ -1,0 +1,128 @@
+---
+// A couple's contract to sign (/contract?t=…, the link in their "Contract ready" email). Shows
+// the event details and the contract wording; they tick to agree, type their full name and sign.
+// Signing records their name, time, IP address and browser against a fingerprint of exactly this
+// wording, and emails them a signed PDF. Hidden from Google; data from functions/api/contract.js.
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+<BaseLayout title="Your contract | Moments In Light" description="Your wedding photography contract from Moments in Light." noindex>
+  <main class="contract-page">
+    <p class="c-status" aria-live="polite">Loading your contract…</p>
+    <div class="c" hidden>
+      <header class="c-head">
+        <p class="eyebrow c-eyebrow"></p>
+        <h1 class="display c-title"></h1>
+        <hr class="hairline" />
+      </header>
+
+      <section class="c-card c-details">
+        <div><h2>Between</h2><p class="d-parties"></p></div>
+        <div><h2>The Event</h2><dl class="d-event"></dl></div>
+        <div class="d-pay-wrap"><h2>Payment schedule</h2><table class="d-pay"><tbody></tbody></table></div>
+      </section>
+
+      <article class="c-card c-body"></article>
+
+      <form class="c-card c-sign" novalidate>
+        <h2>Sign your contract</h2>
+        <label class="c-agree"><input type="checkbox" name="agree" /> I have read and agree to this contract.</label>
+        <label class="c-name">Type your full name to sign<input name="name" autocomplete="name" required /></label>
+        <p class="c-legal">Typing your name and clicking Sign is your electronic signature. I'll record your name, the date and time, and your IP address with this exact version of the contract, and email you a signed copy.</p>
+        <p class="c-msg" role="alert" hidden></p>
+        <div class="c-buttons"><button class="btn" type="submit">Sign contract</button><a class="btn btn--outline c-pdf" target="_blank" rel="noopener">Download PDF</a></div>
+      </form>
+
+      <div class="c-card c-done" hidden tabindex="-1">
+        <h2>Signed. Thank you!</h2>
+        <p class="c-done-text"></p>
+        <div class="c-buttons"><a class="btn c-pdf" target="_blank" rel="noopener">Download your signed copy</a></div>
+      </div>
+    </div>
+  </main>
+</BaseLayout>
+
+<script>
+  const $ = <T extends HTMLElement = HTMLElement>(s: string) => document.querySelector<T>(s)!;
+  const esc = (s: unknown) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
+  const params = new URLSearchParams(location.search);
+  const token = params.get('t') || '';
+  const preview = params.has('preview');
+  let c: { name: string; status: string; details: any; body: string; fingerprint: string; signed_name: string | null; signed_at: string | null };
+
+  async function load() {
+    const r = await fetch(`/api/contract?t=${encodeURIComponent(token)}${preview ? '&preview=1' : ''}`);
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) { $('.c-status').textContent = d.error || 'This contract isn’t available.'; return; }
+    c = d;
+    const det = c.details;
+    document.title = `${c.name} | Moments In Light`;
+    $('.c-eyebrow').textContent = [det.event_date_long, det.venue].filter(Boolean).join(' · ');
+    $('.c-title').textContent = c.name;
+    $('.d-parties').innerHTML = `<strong>Moments in Light</strong> (Photographer)<br>Tony Gorham · 021 625 943 · tony@momentsinlight.co.nz<br><br>and <strong>${esc(det.client)}</strong> (Client)${det.address ? `<br>${esc(det.address).replace(/\n/g, ', ')}` : ''}${det.email ? `<br>${esc(det.email)}` : ''}`;
+    $('.d-event').innerHTML = [['Wedding date', det.event_date_long], ['Venue', det.venue], ['Package', det.package], ['Total (incl. GST)', det.total]].filter(([, v]) => v).map(([k, v]) => `<dt>${k}</dt><dd>${esc(v)}</dd>`).join('');
+    $('.d-pay tbody').innerHTML = (det.payments || []).map((p: { label: string; amount: string }) => `<tr><td>${esc(p.label)}</td><td>${esc(p.amount)}</td></tr>`).join('');
+    $('.d-pay-wrap').hidden = !(det.payments || []).length;
+    $('.c-body').innerHTML = c.body; // cleaned when the contract was made
+    document.querySelectorAll<HTMLAnchorElement>('.c-pdf').forEach((a) => (a.href = `/api/contract?t=${encodeURIComponent(token)}&pdf=1`));
+    if (c.status === 'signed') {
+      $('.c-sign').hidden = true;
+      $('.c-done').hidden = false;
+      $('.c-done-text').textContent = `Signed by ${c.signed_name} on ${new Date(c.signed_at!).toLocaleString('en-NZ', { dateStyle: 'long', timeStyle: 'short' })}. A signed copy has been emailed to you.`;
+    }
+    if (preview) { const b = $<HTMLButtonElement>('.c-sign button[type="submit"]'); b.disabled = true; b.textContent = 'Sign (preview only)'; }
+    $('.c').hidden = false;
+    $('.c-status').hidden = true;
+  }
+
+  $<HTMLFormElement>('.c-sign').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (preview) return;
+    const msg = $('.c-msg');
+    const agree = ($<HTMLInputElement>('.c-sign input[name="agree"]')).checked;
+    const name = ($<HTMLInputElement>('.c-sign input[name="name"]')).value.trim();
+    if (!agree) { msg.textContent = 'Please tick to confirm you’ve read and agree to the contract.'; msg.hidden = false; return; }
+    if (name.length < 2) { msg.textContent = 'Please type your full name.'; msg.hidden = false; return; }
+    const btn = $<HTMLButtonElement>('.c-sign button[type="submit"]');
+    btn.disabled = true; btn.textContent = 'Signing…'; msg.hidden = true;
+    const r = await fetch('/api/contract', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ t: token, name, agree, fingerprint: c.fingerprint }) });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) { msg.textContent = d.error || 'Something went wrong. Please try again.'; msg.hidden = false; btn.disabled = false; btn.textContent = 'Sign contract'; return; }
+    await load();
+    $('.c-done').focus();
+  });
+  if (token) load(); else $('.c-status').textContent = 'This contract link isn’t complete. Please use the link in your email.';
+</script>
+
+<style>
+  .contract-page { background: var(--champagne); padding: 48px var(--pad) 90px; min-height: 60vh; }
+  .c-status { text-align: center; color: #666; }
+  .c { max-width: 900px; margin: 0 auto; display: flex; flex-direction: column; gap: 22px; }
+  .c-head { text-align: center; }
+  .c-title { font-size: clamp(32px, 2.6vw + 18px, 50px); margin: 0 0 20px; padding: 0; }
+  .c-card { background: var(--white); border-radius: 28px 0; padding: 24px 28px; }
+  .c-card h2 { margin: 0 0 10px; font-weight: 300; font-size: 22px; color: var(--ink); }
+  .c-details { display: grid; gap: 18px; font-size: 14px; line-height: 1.7; color: #444; }
+  .c-details h2 { font-size: 12px; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: var(--green); }
+  .c-details p { margin: 0; }
+  .d-event { display: grid; grid-template-columns: auto 1fr; gap: 2px 14px; margin: 0; }
+  .d-event :global(dt) { color: #777; }
+  .d-event :global(dd) { margin: 0; }
+  .d-pay { width: 100%; border-collapse: collapse; }
+  .d-pay :global(td) { padding: 5px 0; border-bottom: 1px solid #f3eee6; }
+  .d-pay :global(td:last-child) { text-align: right; }
+  .c-body { font-size: 15px; line-height: 1.75; color: #333; }
+  .c-body :global(p) { margin: 0 0 14px; }
+  .c-body :global(strong) { color: var(--ink); }
+  .c-body :global(h2), .c-body :global(h3) { font-weight: 500; color: var(--ink); margin: 20px 0 8px; }
+  .c-sign, .c-done { display: flex; flex-direction: column; gap: 12px; }
+  .c-agree { display: flex; gap: 10px; align-items: center; font-size: 16px; }
+  .c-agree input { width: 20px; height: 20px; }
+  .c-name { display: flex; flex-direction: column; gap: 6px; font-size: 14px; font-weight: 500; max-width: 420px; }
+  .c-name input { font: inherit; font-size: 18px; padding: 12px 14px; border: 1px solid #ddd3c4; border-radius: 14px 0; }
+  .c-legal { margin: 0; font-size: 13px; color: #777; line-height: 1.6; }
+  .c-msg { margin: 0; padding: 10px 14px; background: #fbeee8; color: #8a3b1e; border-radius: 12px 0; }
+  .c-buttons { display: flex; gap: 10px; flex-wrap: wrap; }
+  .c-sign[hidden], .c-done[hidden], .d-pay-wrap[hidden] { display: none; }
+  .c-done p { margin: 0; color: #444; }
+  @media (min-width: 800px) { .c-details { grid-template-columns: 1.2fr 1fr; } .d-pay-wrap { grid-column: 1 / -1; } }
+</style>

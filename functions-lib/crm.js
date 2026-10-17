@@ -54,7 +54,7 @@ const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<
 
 /** An alert email to Tony through Resend (system messages; client emails go through Gmail).
  *  Never throws: an alert failing mustn't lose the enquiry. */
-export async function alertTony(env, subject, rows, link) {
+export async function alertTony(env, subject, rows, link, attachments = []) {
   if (!env.RESEND_API_KEY) { console.error('crm: RESEND_API_KEY not set; alert not sent:', subject); return false; }
   const html = `<div style="font-family:Raleway,Arial,sans-serif;color:#1a1a1a;max-width:560px">
 <p style="margin:0 0 6px;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#5a5e3b">Moments Studio</p>
@@ -67,7 +67,8 @@ ${link ? `<p style="margin:22px 0 0"><a href="${esc(link)}" style="display:inlin
     const r = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: { authorization: `Bearer ${env.RESEND_API_KEY}`, 'content-type': 'application/json' },
-      body: JSON.stringify({ from: 'Moments Studio <reports@momentsinlight.co.nz>', to: ['tony@momentsinlight.co.nz'], subject, html }),
+      body: JSON.stringify({ from: 'Moments Studio <reports@momentsinlight.co.nz>', to: ['tony@momentsinlight.co.nz'], subject, html,
+        ...(attachments.length ? { attachments: attachments.map((a) => ({ filename: a.name, content: a.base64 })) } : {}) }),
     });
     if (!r.ok) console.error('crm: alert failed', r.status, await r.text());
     return r.ok;

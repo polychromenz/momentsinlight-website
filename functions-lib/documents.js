@@ -53,3 +53,17 @@ export async function attachmentsFor(db, ids) {
 }
 
 export const deleteFile = (db, id) => db.prepare('DELETE FROM files WHERE name = ?1').bind(fileName(id)).run();
+
+/** Other private files kept by name (e.g. 'contract-5.pdf', a signed contract). */
+export async function storeNamed(db, name, type, base64) {
+  const now = new Date().toISOString();
+  const parts = [];
+  for (let i = 0; i < base64.length; i += PART) parts.push(base64.slice(i, i + PART));
+  const stmts = [db.prepare('DELETE FROM files WHERE name = ?1').bind(name),
+    ...parts.map((data, i) => db.prepare('INSERT INTO files (name, part, type, data, updated_at) VALUES (?1, ?2, ?3, ?4, ?5)').bind(name, i, type, data, now))];
+  for (let i = 0; i < stmts.length; i += 40) await db.batch(stmts.slice(i, i + 40));
+}
+export async function loadNamed(db, name) {
+  const parts = await db.prepare('SELECT type, data FROM files WHERE name = ?1 ORDER BY part').bind(name).all();
+  return parts.results.length ? { type: parts.results[0].type, base64: parts.results.map((p) => p.data).join('') } : null;
+}

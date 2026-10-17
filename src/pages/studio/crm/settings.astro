@@ -17,6 +17,8 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
       <button type="button" role="tab" data-tab="lead_source">Lead sources</button>
       <button type="button" role="tab" data-tab="documents">Documents</button>
       <button type="button" role="tab" data-tab="schedules">Payment schedules</button>
+      <button type="button" role="tab" data-tab="contracts">Contracts</button>
+      <button type="button" role="tab" data-tab="workflows">Workflows</button>
     </div>
     <p class="status" aria-live="polite">Loading…</p>
 
@@ -44,7 +46,7 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
 
     <section class="pane card" data-pane="job_type" hidden>
       <p class="hint">The services people can choose on the enquiry form, and which workflow each one follows.</p>
-      <table class="list-table"><thead><tr><th></th><th>Job type</th><th>Workflow</th><th>On the form</th><th></th></tr></thead><tbody></tbody></table>
+      <table class="list-table"><thead><tr><th></th><th>Job type</th><th>Workflow</th><th>Default contract</th><th>On the form</th><th></th></tr></thead><tbody></tbody></table>
       <div class="actions"><button type="button" class="s-btn s-btn--quiet" data-act="add">+ Add</button><button type="button" class="s-btn s-btn--solid" data-act="save-list">Save</button></div>
     </section>
 
@@ -67,6 +69,23 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
       </div>
     </section>
 
+    <section class="pane" data-pane="contracts" hidden>
+      <div class="tpl-layout">
+        <div class="card"><ul class="tpl-list con-list"></ul><button type="button" class="s-btn s-btn--quiet" data-act="new-contract">+ New contract</button></div>
+        <form class="card con-editor" autocomplete="off">
+          <label>Name<input name="con_name" required /></label>
+          <label>Wording<textarea name="con_body" rows="20"></textarea></label>
+          <p class="hint">The couple's names, address, wedding date, venue, package, total and payment schedule are shown above the wording automatically ("the Event specified above"). Contracts already sent keep the wording they were sent with. Choose each job type's default contract under Job types; each quote can choose another.</p>
+          <div class="actions"><button type="submit" class="s-btn s-btn--solid">Save contract</button></div>
+        </form>
+      </div>
+    </section>
+
+    <section class="pane card" data-pane="workflows" hidden>
+      <p class="hint">How a wedding moves through the studio, step by step. <span class="wf-key"><b class="st st--live">Live now</b> working today · <b class="st st--next">Coming next</b> · <b class="st st--later">Later</b></span></p>
+      <div class="wf"></div>
+    </section>
+
     <section class="pane card" data-pane="documents" hidden>
       <p class="hint">Files your emails can attach: the wedding guide, price lists, posing guides… Up to 10 MB each. Stored privately (never public on the website). Choose which ones a template attaches under its Attachments.</p>
       <table class="list-table docs-table"><thead><tr><th>Document</th><th>Size</th><th>Updated</th><th>Attached by</th><th></th></tr></thead><tbody></tbody></table>
@@ -83,7 +102,9 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
   import Sortable from 'sortablejs';
   import { attachPicker, type Doc } from '../../../studio/attach-picker';
   import { payments, money, longDate } from '../../../../functions-lib/quotes.js';
-  type Item = { value: string; label: string; workflow: string | null; on_form: boolean };
+  import { WEDDING, KIND, STATUS } from '../../../studio/workflow-view';
+  type Item = { value: string; label: string; workflow: string | null; on_form: boolean; contract_key?: string | null };
+  type ContractT = { key: string; name: string; body: string };
   type Template = { key: string; name: string; subject: string; body: string; attachments: number[] };
   type LibraryDoc = Doc & { type: string; updated_at: string; used_by: string[] };
   const $ = <T extends HTMLElement = HTMLElement>(s: string, root: ParentNode = document) => root.querySelector<T>(s)!;
@@ -96,7 +117,7 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
 
   type Part = { percent: number; label: string; when: string; days?: number; months?: number };
   type Schedule = { key: string; name: string; parts: Part[] };
-  let data: { job_type: Item[]; lead_source: Item[]; templates: Template[]; workflows: string[]; documents: LibraryDoc[]; schedules: Schedule[] };
+  let data: { job_type: Item[]; lead_source: Item[]; templates: Template[]; workflows: string[]; documents: LibraryDoc[]; schedules: Schedule[]; contracts: ContractT[] };
   let current: Template | null = null;
   let tab = 'templates';
   const editor = $<HTMLFormElement>('.tpl-editor');
@@ -145,7 +166,7 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
       <td class="drag" title="Drag to reorder" aria-hidden="true">⠿</td>
       <td><input data-k="value" value="${esc(it.value)}" /></td>
       ${kind === 'job_type'
-        ? `<td><select data-k="workflow"><option value="">None (a “reply” to-do)</option>${data.workflows.map((w) => `<option value="${w}"${it.workflow === w ? ' selected' : ''}>${w[0].toUpperCase() + w.slice(1)}</option>`).join('')}</select></td>`
+        ? `<td><select data-k="workflow"><option value="">None (a “reply” to-do)</option>${data.workflows.map((w) => `<option value="${w}"${it.workflow === w ? ' selected' : ''}>${w[0].toUpperCase() + w.slice(1)}</option>`).join('')}</select></td><td><select data-k="contract_key"><option value="">None</option>${data.contracts.map((c) => `<option value="${esc(c.key)}"${it.contract_key === c.key ? ' selected' : ''}>${esc(c.name)}</option>`).join('')}</select></td>`
         : `<td><input data-k="label" value="${esc(it.label)}" /></td>`}
       <td class="c"><input type="checkbox" data-k="on_form"${it.on_form ? ' checked' : ''} aria-label="Show on the form" /></td>
       <td class="row-btns"><button type="button" data-move="-1" aria-label="Move up">↑</button><button type="button" data-move="1" aria-label="Move down">↓</button><button type="button" data-remove aria-label="Remove">✕</button></td>
@@ -157,9 +178,42 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
   function readList(kind: 'job_type' | 'lead_source'): Item[] {
     return [...document.querySelectorAll<HTMLTableRowElement>(`[data-pane="${kind}"] tbody tr`)].map((tr) => {
       const v = (k: string) => tr.querySelector<HTMLInputElement>(`[data-k="${k}"]`);
-      return { value: v('value')!.value, label: kind === 'job_type' ? v('value')!.value : v('label')!.value, workflow: kind === 'job_type' ? v('workflow')!.value || null : null, on_form: v('on_form')!.checked };
+      return { value: v('value')!.value, label: kind === 'job_type' ? v('value')!.value : v('label')!.value, workflow: kind === 'job_type' ? v('workflow')!.value || null : null, on_form: v('on_form')!.checked, contract_key: kind === 'job_type' ? (tr.querySelector('[data-k="contract_key"]') as HTMLSelectElement).value || null : null };
     });
   }
+
+  // ---- Contracts ----
+  const con = $<HTMLFormElement>('.con-editor');
+  const conRich = attachRich(con.elements.namedItem('con_body') as HTMLTextAreaElement, { fields: [], minHeight: 480 });
+  let currentCon: ContractT | null = null;
+  function openContract(x: ContractT | null) {
+    currentCon = x;
+    (con.elements.namedItem('con_name') as HTMLInputElement).value = x?.name ?? '';
+    conRich.set(x?.body ?? '<p></p>');
+    document.querySelectorAll<HTMLElement>('.con-list li').forEach((li) => li.classList.toggle('on', li.dataset.key === x?.key));
+  }
+  function renderContracts() {
+    $('.con-list').innerHTML = data.contracts.map((x) => `<li data-key="${esc(x.key)}"><button type="button">${esc(x.name)}<small>Used by: ${esc(data.job_type.filter((t) => t.contract_key === x.key).map((t) => t.value).join(', ') || 'no job type')}</small></button></li>`).join('');
+  }
+  con.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const r = await fetch('/api/studio/crm/settings', { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ contract: { key: currentCon?.key, name: (con.elements.namedItem('con_name') as HTMLInputElement).value, body: conRich.get() } }) });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) { toast(d.error || 'Couldn’t save.', true); return; }
+    toast('Contract saved. New contracts use this wording; ones already sent keep theirs.');
+    await load(current?.key, undefined, d.key);
+  });
+  document.addEventListener('click', (e) => {
+    const t = e.target as HTMLElement;
+    const li = t.closest<HTMLElement>('.con-list li');
+    if (li) openContract(data.contracts.find((x) => x.key === li.dataset.key) ?? null);
+    if (t.closest('[data-act="new-contract"]')) { openContract(null); (con.elements.namedItem('con_name') as HTMLInputElement).focus(); }
+  });
+  // ---- Workflows (read only) ----
+  $('.wf').innerHTML = '<h2 class="wf-title">Wedding</h2>' + WEDDING.map((stage) => `<div class="wf-stage"><h3>${esc(stage.name)}</h3><ol>${stage.steps.map((st) => `<li class="wf-step wf-step--${st.status}">
+    <div class="wf-top"><strong>${esc(st.title)}</strong><b class="st st--${st.status}">${STATUS[st.status]}</b></div>
+    <div class="wf-meta"><span class="kind">${KIND[st.kind]}</span> ${esc(st.when)}${st.stops ? ` · stops if ${esc(st.stops)}` : ''}</div>
+    ${st.note ? `<div class="wf-note">${esc(st.note)}</div>` : ''}</li>`).join('')}</ol></div>`).join('');
 
   // ---- Payment schedules ----
   const sch = $<HTMLFormElement>('.sch-editor');
@@ -293,7 +347,7 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
     if (t.closest('[data-act="new-template"]')) { openTemplate(null); field('name').focus(); return; }
     const pane = t.closest<HTMLElement>('[data-pane]');
     const kind = pane?.dataset.pane as 'job_type' | 'lead_source';
-    if (!pane || ['templates', 'documents', 'schedules'].includes(kind as string)) return;
+    if (!pane || ['templates', 'documents', 'schedules', 'contracts', 'workflows'].includes(kind as string)) return;
     if (t.closest('[data-act="add"]')) {
       data[kind] = [...readList(kind), { value: '', label: '', workflow: null, on_form: true }];
       renderList(kind);
@@ -316,12 +370,13 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
     }
   });
 
-  async function load(openKey?: string, openSchedule_?: string) {
+  async function load(openKey?: string, openSchedule_?: string, openContract_?: string) {
     const r = await fetch('/api/studio/crm/settings');
     const d = await r.json();
     if (!r.ok) { $('.status').textContent = d.error || `Something went wrong (${r.status}).`; return; }
     data = d;
-    renderTemplates(); renderList('job_type'); renderList('lead_source'); renderDocs(); renderSchedules();
+    renderTemplates(); renderList('job_type'); renderList('lead_source'); renderDocs(); renderSchedules(); renderContracts();
+    openContract(data.contracts.find((x) => x.key === (openContract_ ?? currentCon?.key)) ?? data.contracts[0] ?? null);
     openSchedule(data.schedules.find((x) => x.key === (openSchedule_ ?? currentSch?.key)) ?? data.schedules[0] ?? null);
     openTemplate(data.templates.find((x) => x.key === openKey) ?? data.templates.find((x) => x.key.startsWith('wedding-01')) ?? data.templates[0] ?? null);
     $('.status').hidden = true;
@@ -360,6 +415,21 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
   .settings .list-table td { padding: 6px; border-bottom: 1px solid #f3eee6; vertical-align: middle; }
   .settings .list-table td.c { text-align: center; }
   .settings .row-btns { white-space: nowrap; }
+  .settings .con-editor { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+  .settings .wf-title { margin: 6px 0 8px; font-weight: 300; font-size: 24px; color: var(--ink); }
+  .settings .wf-stage h3 { margin: 18px 0 8px; font-size: 12px; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: var(--green); }
+  .settings .wf-stage ol { list-style: none; margin: 0; padding: 0 0 0 18px; border-left: 2px solid #e6dfd2; }
+  .settings .wf-step { position: relative; padding: 9px 0 9px 6px; }
+  .settings .wf-step::before { content: ''; position: absolute; left: -25px; top: 15px; width: 10px; height: 10px; border-radius: 50%; background: #cfc6b5; border: 2px solid var(--white); }
+  .settings .wf-step--live::before { background: var(--green); }
+  .settings .wf-step--next::before { background: #c7a24a; }
+  .settings .wf-step--later { opacity: 0.75; }
+  .settings .wf-top { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+  .settings .wf-meta { font-size: 13px; color: #666; margin-top: 2px; }
+  .settings .wf-meta .kind { font-size: 11px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; padding: 2px 8px; border-radius: 999px; background: #eef1e4; color: var(--olive); margin-right: 6px; }
+  .settings .wf-note { font-size: 13px; color: #888; margin-top: 2px; }
+  .settings .st { font-size: 11px; font-weight: 600; padding: 2px 9px; border-radius: 999px; }
+  .settings .st--live { background: #e6ecd9; color: #3e4229; } .settings .st--next { background: #f6ecd6; color: #7a5a14; } .settings .st--later { background: #eee; color: #777; }
   .settings .sch-editor { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
   .settings .sch-parts td.pct { width: 80px; }
   .settings .sch-parts td.due { display: flex; gap: 6px; flex-wrap: wrap; }

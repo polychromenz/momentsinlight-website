@@ -4,10 +4,14 @@
 //   POST /api/quote  { t, package, extras, name }   accept it
 // Accepting records their name, the time and their IP address, saves their postal address (and
 // phone, if given) to their client record, marks the lead booked (which
-// stops the enquiry follow-ups), adds a "Send the contract" to-do for Tony and alerts him.
+// stops the enquiry follow-ups), then automatically emails the contract to sign with a PDF of the
+// accepted quote (if that can't be sent, Tony gets a to-do instead), and alerts Tony.
 import { parseQuote, publicQuote, totalFor, payments, money, longDate } from '../../functions-lib/quotes.js';
 import { loadJob } from '../../functions-lib/crm-send.js';
 import { alertTony } from '../../functions-lib/crm.js';
+import { quotePdf } from '../../functions-lib/pdf.js';
+import { quoteNumber } from '../../functions-lib/quotes.js';
+import { makeContract, sendContract } from '../../functions-lib/contracts.js';
 
 const reply = (data, status = 200) => new Response(JSON.stringify(data), { status, headers: { 'content-type': 'application/json', 'cache-control': 'no-store' } });
 const find = async (env, t) => (/^[a-f0-9]{48}$/.test(t || '') ? parseQuote(await env.DB.prepare('SELECT * FROM quotes WHERE token = ?1').bind(t).first()) : null);
@@ -17,6 +21,9 @@ export async function onRequestGet({ request, env }) {
   const q = await find(env, url.searchParams.get('t'));
   if (!q || q.status === 'draft' && !url.searchParams.has('preview') || q.status === 'withdrawn') return reply({ error: 'This quote isn’t available. Please get in touch with Tony.' }, 404);
   const job = await loadJob(env.DB, q.job_id);
+  if (url.searchParams.has('pdf')) {
+    return new Response(await quotePdf(q, job, quoteNumber(q)), { headers: { 'content-type': 'application/pdf', 'content-disposition': `inline; filename="Moments in Light quote ${quoteNumber(q)}.pdf"`, 'cache-control': 'no-store' } });
+  }
   if (!url.searchParams.has('preview') && !q.viewed_at) {
     await env.DB.prepare('UPDATE quotes SET viewed_at = ?2 WHERE id = ?1 AND viewed_at IS NULL').bind(q.id, new Date().toISOString()).run();
   }
@@ -53,8 +60,20 @@ export async function onRequestPost({ request, env }) {
     env.DB.prepare(`UPDATE clients SET address = ?2, phone = CASE WHEN ?3 <> '' THEN ?3 ELSE phone END, updated_at = ?4 WHERE id = ?1`).bind(job.client_id, address, phone, at),
     env.DB.prepare(`UPDATE jobs SET stage = 'booked', booked_at = COALESCE(booked_at, ?2), updated_at = ?2 WHERE id = ?1 AND stage = 'lead'`).bind(job.id, at),
     env.DB.prepare(`UPDATE steps SET status = 'skipped', done_at = ?2, note = 'Stopped: booked' WHERE job_id = ?1 AND status IN ('scheduled', 'due') AND (',' || stop_on || ',') LIKE '%,booked,%'`).bind(job.id, at),
-    env.DB.prepare(`INSERT OR IGNORE INTO steps (job_id, step_key, kind, title, due_at, created_at) VALUES (?1, ?2, 'todo', 'Send the contract (quote accepted)', ?3, ?3)`).bind(job.id, `send-contract-${q.id}`, at),
   ]);
+  // The contract, sent automatically with the quote as a PDF.
+  let next = 'Contract sent to sign, with the quote attached as a PDF.';
+  try {
+    const fresh = await loadJob(env.DB, job.id);
+    const qRow = await env.DB.prepare('SELECT * FROM quotes WHERE id = ?1').bind(q.id).first();
+    const contract = await makeContract(env, qRow, fresh);
+    const sent = await sendContract(env, contract, qRow, fresh);
+    if (sent.redirected) next += ` (Test mode: it went to ${sent.to}.)`;
+  } catch (e) {
+    console.error('quote accept: contract not sent', e);
+    next = `The contract couldn’t be sent automatically (${e.message}). It’s on your Today list.`;
+    await env.DB.prepare(`INSERT OR IGNORE INTO steps (job_id, step_key, kind, title, due_at, note, created_at) VALUES (?1, ?2, 'todo', 'Send the contract (quote accepted)', ?3, ?4, ?3)`).bind(job.id, `send-contract-${q.id}`, at, String(e.message).slice(0, 300)).run();
+  }
   const chosen = q.packages[pkg];
   const plan = payments(q.schedule, total, job.event_date, at.slice(0, 10));
   await alertTony(env, `Quote accepted: ${view.names}`, [
@@ -65,7 +84,7 @@ export async function onRequestPost({ request, env }) {
     ['Accepted by', `${name}, ${now.toLocaleString('en-NZ', { timeZone: 'Pacific/Auckland' })}`],
     ['Address', address],
     ['Phone', phone],
-    ['Next', 'Send their contract (on your Today list).'],
+    ['Next', next],
   ], `https://www.momentsinlight.co.nz/studio/crm/job?id=${job.id}`);
   return reply({ ok: true });
 }

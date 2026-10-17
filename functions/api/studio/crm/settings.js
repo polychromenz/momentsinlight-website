@@ -11,11 +11,12 @@ import { listDocuments } from '../../../../functions-lib/documents.js';
 const LISTS = ['job_type', 'lead_source'];
 
 export async function onRequestGet({ env }) {
-  const [lists, templates, schedules, documents] = await Promise.all([
-    env.DB.prepare('SELECT kind, value, label, workflow, on_form FROM lists ORDER BY kind, sort, id').all(),
+  const [lists, templates, schedules, documents, contracts] = await Promise.all([
+    env.DB.prepare('SELECT kind, value, label, workflow, on_form, contract_key FROM lists ORDER BY kind, sort, id').all(),
     env.DB.prepare('SELECT key, name, subject, body, attachments, updated_at FROM templates ORDER BY key').all(),
     env.DB.prepare('SELECT key, name, parts FROM payment_schedules ORDER BY name').all(),
     listDocuments(env.DB),
+    env.DB.prepare('SELECT key, name, body, updated_at FROM contract_templates ORDER BY name').all(),
   ]);
   const by = (k) => lists.results.filter((r) => r.kind === k).map(({ kind, ...r }) => ({ ...r, on_form: !!r.on_form }));
   return json({
@@ -25,6 +26,7 @@ export async function onRequestGet({ env }) {
     documents: documents.map(({ id, name, size, type, updated_at, used_by }) => ({ id, name, size, type, updated_at, used_by })),
     schedules: schedules.results.map((s) => ({ ...s, parts: JSON.parse(s.parts) })),
     workflows: Object.keys(WORKFLOWS),
+    contracts: contracts.results,
   });
 }
 
@@ -44,13 +46,13 @@ export async function onRequestPut({ request, env }) {
       if (!value) continue;
       if (seen.has(value.toLowerCase())) return json({ error: `“${value}” is in the list twice.` }, 400);
       seen.add(value.toLowerCase());
-      items.push({ value, label: text(it.label, 120) || value, workflow: d.list === 'job_type' && WORKFLOWS[it.workflow] ? it.workflow : null, on_form: it.on_form ? 1 : 0 });
+      items.push({ value, label: text(it.label, 120) || value, workflow: d.list === 'job_type' && WORKFLOWS[it.workflow] ? it.workflow : null, on_form: it.on_form ? 1 : 0, contract_key: d.list === 'job_type' && it.contract_key ? text(it.contract_key, 80) : null });
     }
     if (!items.length) return json({ error: 'The list needs at least one item.' }, 400);
     await env.DB.batch([
       env.DB.prepare('DELETE FROM lists WHERE kind = ?1').bind(d.list),
-      ...items.map((it, i) => env.DB.prepare('INSERT INTO lists (kind, value, label, workflow, on_form, sort) VALUES (?1, ?2, ?3, ?4, ?5, ?6)')
-        .bind(d.list, it.value, it.label, it.workflow, it.on_form, i)),
+      ...items.map((it, i) => env.DB.prepare('INSERT INTO lists (kind, value, label, workflow, on_form, sort, contract_key) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)')
+        .bind(d.list, it.value, it.label, it.workflow, it.on_form, i, it.contract_key)),
     ]);
     return json({ ok: true });
   }
@@ -71,6 +73,22 @@ export async function onRequestPut({ request, env }) {
     let key = slug(name) || 'template';
     for (let n = 2; await env.DB.prepare('SELECT 1 FROM templates WHERE key = ?1').bind(key).first(); n++) key = `${slug(name)}-${n}`;
     await env.DB.prepare('INSERT INTO templates (key, name, subject, body, attachments, updated_at) VALUES (?1, ?2, ?3, ?4, ?6, ?5)').bind(key, name, subject, body, now, attachments).run();
+    return json({ ok: true, key });
+  }
+  // Contracts: { contract: { key?, name, body } }. Contracts already sent keep their own copy.
+  if (d?.contract) {
+    const name = text(d.contract.name, 120);
+    const body = (d.contract.body ?? '').toString().trim().slice(0, 200000);
+    if (!name || !body) return json({ error: 'A contract needs a name and its wording.' }, 400);
+    let key = d.contract.key;
+    if (key) {
+      const r = await env.DB.prepare('UPDATE contract_templates SET name = ?2, body = ?3, updated_at = ?4 WHERE key = ?1').bind(key, name, body, now).run();
+      if (!r.meta.changes) return json({ error: 'That contract no longer exists.' }, 404);
+    } else {
+      key = slug(name) || 'contract';
+      for (let n = 2; await env.DB.prepare('SELECT 1 FROM contract_templates WHERE key = ?1').bind(key).first(); n++) key = `${slug(name)}-${n}`;
+      await env.DB.prepare('INSERT INTO contract_templates (key, name, body, updated_at) VALUES (?1, ?2, ?3, ?4)').bind(key, name, body, now).run();
+    }
     return json({ ok: true, key });
   }
   // Payment schedules: { schedule: { key?, name, parts: [{ label, percent, when, days?, months? }] } }

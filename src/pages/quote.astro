@@ -53,7 +53,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       <div class="q-card q-done" hidden tabindex="-1">
         <h2>Thank you, it's accepted!</h2>
         <p class="q-done-text"></p>
-        <div class="q-buttons"><button class="btn btn--outline" type="button" data-print>Save as PDF / print</button></div>
+        <div class="q-buttons"><a class="btn btn--outline q-pdf" target="_blank" rel="noopener">Download the quote (PDF)</a></div>
       </div>
     </div>
   </main>
@@ -139,7 +139,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       chosen = q.chosen_package; (q.chosen_extras || []).forEach((i: number) => extras.add(i));
       $('.q-accept').hidden = true;
       $('.q-done').hidden = false;
-      $('.q-done-text').textContent = `Accepted by ${q.accepted_name} on ${new Date(q.accepted_at).toLocaleDateString('en-NZ', { day: 'numeric', month: 'long', year: 'numeric' })}. Thank you! I'll be in touch with your contract and deposit invoice.`;
+      $('.q-done-text').textContent = `Accepted by ${q.accepted_name} on ${new Date(q.accepted_at).toLocaleDateString('en-NZ', { day: 'numeric', month: 'long', year: 'numeric' })}. Thank you! Your contract is on its way to your inbox to sign, with a copy of this quote attached.`;
+      $<HTMLAnchorElement>('.q-pdf').href = `/api/quote?t=${encodeURIComponent(token)}&pdf=1`;
       document.querySelectorAll<HTMLInputElement>('[data-pkg], [data-extra]').forEach((b) => (b.disabled = true));
     } else if (q.status === 'expired') {
       $('.q-accept').innerHTML = '<h2>This quote has expired</h2><p>Please get in touch for an updated quote. I’d love to hear from you.</p><p><a class="btn" href="/contact">Get in touch</a></p>';

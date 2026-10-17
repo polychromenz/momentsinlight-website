@@ -35,6 +35,10 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
             <ul class="quotes"></ul>
           </section>
           <section class="card">
+            <h2>Contracts</h2>
+            <ul class="quotes contracts"></ul>
+          </section>
+          <section class="card">
             <h2>Their enquiry</h2>
             <p class="message"></p>
           </section>
@@ -158,8 +162,12 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
 
     const qs: Record<string, string> = { draft: 'Draft', sent: 'Sent', accepted: 'Accepted', withdrawn: 'Withdrawn', declined: 'Declined' };
     $('.quotes').innerHTML = d.quotes.length ? d.quotes.map((q: { id: number; status: string; total: number | null; sent_at: string | null; viewed_at: string | null; accepted_at: string | null; created_at: string }) =>
-      `<li><a href="/studio/crm/quote?id=${q.id}"><strong>${qs[q.status] ?? q.status}</strong></a> <small>${q.accepted_at ? `accepted ${dateTime(q.accepted_at)}${q.total ? ` · ${(q.total / 100).toLocaleString('en-NZ')}` : ''}` : q.sent_at ? `sent ${dateTime(q.sent_at)}${q.viewed_at ? ' · opened' : ' · not opened yet'}` : `made ${dateTime(q.created_at)}`}</small></li>`).join('')
+      `<li><a href="/studio/crm/quote?id=${q.id}"><strong>${qs[q.status] ?? q.status}</strong></a> <a class="pdf" href="/api/studio/crm/contract?quote=${q.id}&pdf=1" target="_blank" rel="noopener">PDF</a> <small>${q.accepted_at ? `accepted ${dateTime(q.accepted_at)}${q.total ? ` · ${(q.total / 100).toLocaleString('en-NZ')}` : ''}` : q.sent_at ? `sent ${dateTime(q.sent_at)}${q.viewed_at ? ' · opened' : ' · not opened yet'}` : `made ${dateTime(q.created_at)}`}</small></li>`).join('')
       : '<li class="empty">No quotes yet.</li>';
+    const cs: Record<string, string> = { sent: 'Sent, not signed yet', signed: 'Signed', void: 'Cancelled' };
+    $('.contracts').innerHTML = d.contracts.length ? d.contracts.map((c: { id: number; name: string; status: string; sent_at: string | null; viewed_at: string | null; signed_name: string | null; signed_at: string | null }) =>
+      `<li><a href="/api/studio/crm/contract?id=${c.id}&pdf=1" target="_blank" rel="noopener"><strong>${esc(c.name)}</strong></a> <small>${cs[c.status] ?? c.status}${c.status === 'signed' ? ` by ${esc(c.signed_name)} · ${dateTime(c.signed_at!)}` : c.sent_at ? ` · sent ${dateTime(c.sent_at)}${c.viewed_at ? ' · opened' : ''}` : ''}</small></li>`).join('')
+      : '<li class="empty">No contracts yet. One is sent automatically when they accept a quote.</li>';
     const other = $('.other-jobs');
     other.hidden = !d.otherJobs.length;
     other.innerHTML = d.otherJobs.length ? `Also: ${d.otherJobs.map((o: { id: number; title: string; job_type: string }) => `<a href="/studio/crm/job?id=${o.id}">${esc(o.job_type)}</a>`).join(', ')}` : '';
@@ -291,6 +299,7 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
   .job-page .quotes li:last-child { border-bottom: 0; }
   .job-page .quotes a { color: var(--ink); }
   .job-page .quotes small { color: #777; }
+  .job-page .quotes .pdf { font-size: 12px; margin-left: 4px; }
   .job-page .card h2 { margin: 0 0 12px; font-weight: 300; font-size: 22px; color: var(--ink); }
   .job-page .steps, .job-page .messages { list-style: none; margin: 0; padding: 0; }
   .job-page .step, .job-page .messages li { display: flex; align-items: center; gap: 8px 12px; flex-wrap: wrap; padding: 10px 0; border-bottom: 1px solid #f1ebe1; }

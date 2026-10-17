@@ -20,10 +20,11 @@ export async function onRequestPost({ request, env }) {
   if (!tpl) return json({ error: 'There’s no quote template yet.' }, 400);
   const sched = tpl.schedule_key && await env.DB.prepare('SELECT parts FROM payment_schedules WHERE key = ?1').bind(tpl.schedule_key).first();
   const now = new Date().toISOString();
+  const contractKey = (await env.DB.prepare(`SELECT contract_key FROM lists WHERE kind = 'job_type' AND value = ?1`).bind(job.job_type).first())?.contract_key ?? null;
   const r = await env.DB.prepare(
-    `INSERT INTO quotes (job_id, token, intro, packages, extras, schedule, notes, valid_until, created_at, updated_at)
-     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?9) RETURNING id`,
-  ).bind(job.id, token(), tpl.intro, tpl.packages, tpl.extras, sched?.parts ?? '[]', tpl.notes, addDays(nzToday(), tpl.valid_days || 30), now).first();
+    `INSERT INTO quotes (job_id, token, intro, packages, extras, schedule, notes, valid_until, contract_key, created_at, updated_at)
+     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?10, ?9, ?9) RETURNING id`,
+  ).bind(job.id, token(), tpl.intro, tpl.packages, tpl.extras, sched?.parts ?? '[]', tpl.notes, addDays(nzToday(), tpl.valid_days || 30), now, contractKey).first();
   return json({ ok: true, id: r.id });
 }
 
@@ -33,6 +34,8 @@ export async function onRequestGet({ request, env }) {
   if (!q) return json({ error: 'That quote doesn’t exist.' }, 404);
   const job = await loadJob(env.DB, q.job_id);
   const schedules = await env.DB.prepare('SELECT key, name, parts FROM payment_schedules ORDER BY name').all();
+  const contractTemplates = await env.DB.prepare('SELECT key, name FROM contract_templates ORDER BY name').all();
+  const contracts = await env.DB.prepare('SELECT id, name, status, sent_at, viewed_at, signed_name, signed_at FROM contracts WHERE quote_id = ?1 ORDER BY id DESC').bind(q.id).all();
   // An example of the payments, for the package marked recommended (or the first).
   const pick = Math.max(0, q.packages.findIndex((p) => p.recommended));
   const total = q.status === 'accepted' ? q.total : totalFor(q, pick, []);
@@ -42,6 +45,8 @@ export async function onRequestGet({ request, env }) {
     example: total === null ? null : { package: q.packages[pick]?.name, total, payments: payments(q.schedule, total, job.event_date, q.accepted_at?.slice(0, 10)) },
     schedules: schedules.results.map((s) => ({ ...s, parts: JSON.parse(s.parts) })),
     link: `https://www.momentsinlight.co.nz/quote?t=${q.token}`,
+    contractTemplates: contractTemplates.results,
+    contracts: contracts.results,
   });
 }
 
@@ -62,10 +67,10 @@ export async function onRequestPut({ request, env }) {
   }
   const validUntil = /^\d{4}-\d{2}-\d{2}$/.test(d.valid_until ?? '') ? d.valid_until : q.valid_until;
   await env.DB.prepare(
-    `UPDATE quotes SET intro = ?2, packages = ?3, extras = ?4, discount = ?5, discount_label = ?6, schedule = ?7, notes = ?8, valid_until = ?9, updated_at = ?10 WHERE id = ?1`,
+    `UPDATE quotes SET intro = ?2, packages = ?3, extras = ?4, discount = ?5, discount_label = ?6, schedule = ?7, notes = ?8, valid_until = ?9, updated_at = ?10, contract_key = ?11 WHERE id = ?1`,
   ).bind(q.id, d.intro !== undefined ? text(d.intro, 5000) : q.intro, JSON.stringify(packages), JSON.stringify(extras),
     d.discount !== undefined ? cents(d.discount) : q.discount, d.discount_label !== undefined ? text(d.discount_label, 120) : q.discount_label,
-    JSON.stringify(schedule), d.notes !== undefined ? text(d.notes, 5000) : q.notes, validUntil, new Date().toISOString()).run();
+    JSON.stringify(schedule), d.notes !== undefined ? text(d.notes, 5000) : q.notes, validUntil, new Date().toISOString(), d.contract_key !== undefined ? (d.contract_key || null) : q.contract_key).run();
   return json({ ok: true });
 }
 

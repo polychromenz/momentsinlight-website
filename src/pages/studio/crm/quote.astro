@@ -44,6 +44,12 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
         </div>
       </section>
       <section class="card">
+        <h2>Contract</h2>
+        <label>Contract sent when they accept<select name="contract_key"></select></label>
+        <ul class="contracts"></ul>
+        <div class="contract-actions" hidden><button type="button" class="s-btn" data-act="send-contract">Send the contract now</button></div>
+      </section>
+      <section class="card">
         <label>Notes (shown at the bottom of the quote; use the + Fill-in menu for the valid-until date)<textarea name="notes" rows="3"></textarea></label>
       </section>
       <p class="danger"><button type="button" class="s-btn s-btn--danger" data-act="withdraw">Withdraw quote</button></p>
@@ -130,9 +136,15 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
     $('.packages').innerHTML = q.packages.map(pkgRow).join('');
     attachPackages();
     $('.extras').innerHTML = q.extras.map(extraRow).join('');
+    const cs = f('contract_key') as unknown as HTMLSelectElement;
+    cs.innerHTML = '<option value="">The job type’s default</option>' + data.contractTemplates.map((c: { key: string; name: string }) => `<option value="${esc(c.key)}"${q.contract_key === c.key ? ' selected' : ''}>${esc(c.name)}</option>`).join('');
+    const cstate: Record<string, string> = { sent: 'Sent, not signed yet', signed: 'Signed', void: 'Cancelled' };
+    $('.contracts').innerHTML = data.contracts.map((c: { id: number; name: string; status: string; viewed_at: string | null; signed_name: string | null; signed_at: string | null }) => `<li><a href="/api/studio/crm/contract?id=${c.id}&pdf=1" target="_blank" rel="noopener">${esc(c.name)} (PDF)</a> <small>${cstate[c.status] ?? c.status}${c.status === 'signed' ? ` by ${esc(c.signed_name)}, ${new Date(c.signed_at!).toLocaleString('en-NZ')}` : c.viewed_at ? ' · opened' : ''}</small></li>`).join('') || (q.status === 'accepted' ? '<li class="muted">No contract sent yet.</li>' : '');
+    $('.contract-actions').hidden = q.status !== 'accepted' || data.contracts.some((c: { status: string }) => c.status === 'signed');
+    $<HTMLButtonElement>('[data-act="send-contract"]').textContent = data.contracts.some((c: { status: string }) => c.status === 'sent') ? 'Send the contract again' : 'Send the contract now';
     $('.example').innerHTML = data.example ? `<li class="ex-head">e.g. ${esc(data.example.package)}, ${money(data.example.total)}:</li>` + data.example.payments.map((p: any) => `<li>${esc(p.label)} ${money(p.amount)} · ${p.onAccept ? 'on acceptance' : `by ${long(p.due)}`}</li>`).join('') : '';
     const lock = !editable();
-    form.querySelectorAll<HTMLInputElement>('input, textarea, select, button').forEach((el) => (el.disabled = lock && !el.matches('[data-act="withdraw"]')));
+    form.querySelectorAll<HTMLInputElement>('input, textarea, select, button').forEach((el) => (el.disabled = lock && !el.matches('[data-act="withdraw"], [data-act="send-contract"]')));
     [richIntro, richNotes, ...pkgEditors].forEach((r) => r.editor.setEditable(!lock));
     $<HTMLButtonElement>('[data-act="save"]').hidden = lock; $<HTMLButtonElement>('[data-act="send"]').hidden = lock;
     $<HTMLButtonElement>('[data-act="send"]').textContent = q.status === 'sent' ? 'Send again…' : 'Send to client…';
@@ -142,7 +154,7 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
   }
 
   async function save(quiet = false) {
-    const body = { id, intro: f('intro').value, notes: f('notes').value, discount: Math.round(Number(f('discount').value || 0) * 100), discount_label: f('discount_label').value, valid_until: f('valid_until').value, schedule_key: (f('schedule_key') as unknown as HTMLSelectElement).value || undefined, packages: read('.packages .item'), extras: read('.extras .item').map(({ subtitle, recommended, ...x }) => x) };
+    const body = { id, intro: f('intro').value, notes: f('notes').value, discount: Math.round(Number(f('discount').value || 0) * 100), discount_label: f('discount_label').value, valid_until: f('valid_until').value, schedule_key: (f('schedule_key') as unknown as HTMLSelectElement).value || undefined, contract_key: (f('contract_key') as unknown as HTMLSelectElement).value, packages: read('.packages .item'), extras: read('.extras .item').map(({ subtitle, recommended, ...x }) => x) };
     const r = await fetch('/api/studio/crm/quote', { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
     const d = await r.json().catch(() => ({}));
     if (!r.ok) { toast(d.error || 'Couldn’t save.', true); return false; }
@@ -159,6 +171,13 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
     const add = t.closest<HTMLElement>('[data-add]');
     if (add) { const box = $(add.dataset.add === 'package' ? '.packages' : '.extras'); box.insertAdjacentHTML('beforeend', add.dataset.add === 'package' ? pkgRow({ name: '', subtitle: '', price: 0, description: '', recommended: false }) : extraRow({ name: '', price: 0, description: '' })); attachPackages(); dirty = true; return; }
     if (t.closest('[data-remove]')) { t.closest('.item')!.remove(); dirty = true; $('.save-state').textContent = 'Unsaved changes'; return; }
+    if (t.closest('[data-act="send-contract"]')) {
+      const r = await fetch('/api/studio/crm/contract', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ quote_id: id }) });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) { toast(d.error || 'Couldn’t send the contract.', true); return; }
+      toast(d.redirected ? `Contract sent (test mode: to ${d.to}, not ${d.intended}).` : `Contract sent to ${d.to}.`);
+      load(); return;
+    }
     if (t.closest('[data-act="withdraw"]')) {
       if (!confirm('Withdraw this quote? Its link will say it’s no longer available.')) return;
       const r = await fetch(`/api/studio/crm/quote?id=${id}`, { method: 'DELETE' });
@@ -222,6 +241,10 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
   .quote-ed .example { list-style: none; margin: 0; padding: 0; font-size: 13px; color: #666; }
   .quote-ed .example .ex-head { font-weight: 600; }
   .quote-ed .danger { margin: 0; }
+  .quote-ed .contracts { list-style: none; margin: 0; padding: 0; font-size: 14px; }
+  .quote-ed .contracts li { padding: 4px 0; }
+  .quote-ed .contracts a { color: var(--ink); font-weight: 600; }
+  .quote-ed .contracts small, .quote-ed .muted { color: #777; }
   .review { width: min(720px, calc(100vw - 24px)); border: 0; border-radius: 28px 0; padding: 0; box-shadow: 0 30px 60px -30px rgb(0 0 0 / 0.5); }
   .review::backdrop { background: rgb(30 32 20 / 0.45); }
   .review-form { display: flex; flex-direction: column; gap: 12px; padding: 22px 24px; }
