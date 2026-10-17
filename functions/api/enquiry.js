@@ -5,10 +5,9 @@
 //
 // Spam protection as on the guide signup: a hidden "website" field bots fill in, plus
 // Cloudflare Turnstile when TURNSTILE_SECRET_KEY is set.
-import { workflowFor, planEnquirySteps, alertTony } from '../../functions-lib/crm.js';
+import { planEnquirySteps, alertTony, WORKFLOWS } from '../../functions-lib/crm.js';
 
 const reply = (data, status = 200) => new Response(JSON.stringify(data), { status, headers: { 'content-type': 'application/json' } });
-const SERVICES = ['Wedding', 'Portraits', 'Family', 'Headshots', 'Lifestyle', 'Event', 'Commercial / Advertising'];
 
 export async function onRequestPost({ request, env }) {
   let form;
@@ -23,7 +22,7 @@ export async function onRequestPost({ request, env }) {
     last: clean('last_name', 100),
     email: clean('email', 254).toLowerCase(),
     phone: clean('phone', 40),
-    service: SERVICES.includes(clean('service', 60)) ? clean('service', 60) : 'Wedding',
+    service: clean('service', 80),
     date: /^\d{4}-\d{2}-\d{2}$/.test(clean('event_date', 10)) ? clean('event_date', 10) : '',
     venue: clean('venue', 200),
     message: clean('message', 5000),
@@ -52,9 +51,12 @@ export async function onRequestPost({ request, env }) {
     return reply({ error: 'Sorry, something went wrong. Please call me on 021 625 943.' }, 500);
   }
 
+  // The job type must be one from the studio's list (Settings); it decides the workflow.
+  const type = await env.DB.prepare(`SELECT value, workflow FROM lists WHERE kind = 'job_type' AND value = ?1`).bind(f.service).first().catch(() => null);
+  if (!type) return reply({ error: 'Please choose which service you’re interested in.' }, 400);
+  const workflow = WORKFLOWS[type.workflow] ? type.workflow : null;
   const now = new Date();
   const at = now.toISOString();
-  const workflow = workflowFor(f.service);
   let jobId;
   try {
     // One client per email address: a repeat enquiry updates their name and phone.

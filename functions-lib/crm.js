@@ -27,8 +27,9 @@ const DAY = 24 * HOUR;
 /** Workflows: the steps planned for a new enquiry, by job type. Times are from the enquiry.
  *  (Steps timed from the wedding date are added when a job is booked, in a later phase.) */
 export const WORKFLOWS = {
+  // Which job types use which workflow is set in the studio Settings (lists.workflow).
   wedding: {
-    jobTypes: ['Wedding'],
+    name: 'Wedding',
     enquiry: [
       { key: 'wedding-01-enquiry-response', kind: 'auto_email', title: '01 Enquiry response', template: 'wedding-01-enquiry-response', after: 1 * HOUR },
       { key: 'wedding-02-follow-up', kind: 'ready_email', title: '02 Follow-up', template: 'wedding-02-follow-up', after: 4 * DAY, stopOn: 'reply,booked' },
@@ -37,8 +38,6 @@ export const WORKFLOWS = {
   },
 };
 
-/** Which workflow a job type follows, or null (portraits, headshots etc. come later). */
-export const workflowFor = (jobType) => Object.entries(WORKFLOWS).find(([, w]) => w.jobTypes.includes(jobType))?.[0] ?? null;
 
 /** Plan a new enquiry's steps. Without a workflow, Tony gets a "reply to this enquiry" to-do. */
 export async function planEnquirySteps(db, jobId, workflow, now = new Date()) {

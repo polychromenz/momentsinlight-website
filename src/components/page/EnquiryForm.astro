@@ -74,6 +74,17 @@ const sources: [string, string][] = [
 <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 <script>
   const form = document.querySelector<HTMLFormElement>('form.enquiry')!;
+  // The choices come from the studio Settings; the built-in ones stay if that can't load.
+  fetch('/api/enquiry-options').then((r) => (r.ok ? r.json() : null)).then((d) => {
+    if (!d) return;
+    const fill = (name: string, items: { value: string; label: string }[], first?: string) => {
+      const sel = form.querySelector<HTMLSelectElement>(`select[name="${name}"]`);
+      if (!sel || !items?.length) return;
+      sel.replaceChildren(...(first ? [new Option(first, '')] : []), ...items.map((i) => new Option(i.label, i.value)));
+    };
+    fill('service', d.services);
+    fill('lead_source', d.sources, 'Choose an option');
+  }).catch(() => {});
   const msg = form.querySelector<HTMLElement>('.msg')!;
   const button = form.querySelector<HTMLButtonElement>('button[type="submit"]')!;
   const show = (text: string) => { msg.textContent = text; msg.hidden = false; };

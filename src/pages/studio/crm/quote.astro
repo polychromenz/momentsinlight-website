@@ -1,0 +1,213 @@
+---
+// Moments Studio CRM: edit and send one quote (/studio/crm/quote?id=3). Packages, extras,
+// discount, payment schedule, expiry and notes; preview it as the couple sees it; send it with
+// a reviewed "Quote ready" email. Data from functions/api/studio/crm/quote.js and quote-send.js.
+import StudioLayout from '../../../layouts/StudioLayout.astro';
+---
+<StudioLayout title="Quote">
+  <a slot="bar" class="s-btn s-btn--quiet back" href="/studio/crm">← Client</a>
+  <span slot="bar" class="save-state" aria-live="polite"></span>
+  <a slot="bar" class="s-btn s-btn--quiet preview-link" href="#" target="_blank" rel="noopener">Preview ↗</a>
+  <button slot="bar" type="button" class="s-btn" data-act="save">Save</button>
+  <button slot="bar" type="button" class="s-btn s-btn--solid" data-act="send">Send to client…</button>
+
+  <main class="quote-ed">
+    <p class="status" aria-live="polite">Loading…</p>
+    <form class="content" hidden autocomplete="off">
+      <header class="head">
+        <p class="eyebrow-line"></p>
+        <h1 class="title"></h1>
+        <p class="qstate"></p>
+      </header>
+      <section class="card">
+        <label>Introduction<textarea name="intro" rows="4"></textarea></label>
+      </section>
+      <section class="card">
+        <h2>Packages <small>(they choose one; prices include GST)</small></h2>
+        <div class="packages"></div>
+        <button type="button" class="s-btn s-btn--quiet" data-add="package">+ Add package</button>
+      </section>
+      <section class="card">
+        <h2>Extras <small>(optional add-ons they can tick)</small></h2>
+        <div class="extras"></div>
+        <button type="button" class="s-btn s-btn--quiet" data-add="extra">+ Add extra</button>
+      </section>
+      <section class="card two-col">
+        <div>
+          <h2>Discount</h2>
+          <div class="row"><label>Amount ($)<input name="discount" type="number" min="0" step="1" /></label><label>Shown as<input name="discount_label" placeholder="e.g. Friends discount" /></label></div>
+        </div>
+        <div>
+          <h2>Payments and expiry</h2>
+          <div class="row"><label>Payment schedule<select name="schedule_key"></select></label><label>Valid until<input name="valid_until" type="date" /></label></div>
+          <ul class="example"></ul>
+        </div>
+      </section>
+      <section class="card">
+        <label>Notes (shown at the bottom of the quote)<textarea name="notes" rows="3"></textarea></label>
+      </section>
+      <p class="danger"><button type="button" class="s-btn s-btn--danger" data-act="withdraw">Withdraw quote</button></p>
+    </form>
+  </main>
+
+  <dialog class="review" aria-label="Send quote">
+    <form method="dialog" class="review-form">
+      <h2>Send the quote</h2>
+      <p class="review-to"></p>
+      <label>Subject<input name="subject" /></label>
+      <label>Email<textarea name="body" rows="14"></textarea></label>
+      <div class="review-actions">
+        <button type="button" class="s-btn s-btn--quiet" data-review="cancel">Cancel</button>
+        <button type="button" class="s-btn s-btn--solid" data-review="send">Send</button>
+      </div>
+    </form>
+  </dialog>
+  <div class="s-toast" role="status"></div>
+</StudioLayout>
+
+<script>
+  type Pkg = { name: string; subtitle: string; price: number; description: string; recommended: boolean };
+  type Extra = { name: string; price: number; description: string };
+  const $ = <T extends HTMLElement = HTMLElement>(s: string, root: ParentNode = document) => root.querySelector<T>(s)!;
+  const esc = (s: unknown) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
+  const money = (c: number) => `$${(c / 100).toLocaleString('en-NZ', { minimumFractionDigits: c % 100 ? 2 : 0, maximumFractionDigits: 2 })}`;
+  const long = (d: string) => new Date(`${d}T12:00:00Z`).toLocaleDateString('en-NZ', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
+  const toast = (text: string, error = false) => { const t = $('.s-toast'); t.textContent = text; t.classList.toggle('error', error); t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 4500); };
+  const id = Number(new URLSearchParams(location.search).get('id'));
+  const form = $<HTMLFormElement>('form.content');
+  const f = (n: string) => form.elements.namedItem(n) as HTMLInputElement;
+  let data: any;
+  let dirty = false;
+  const editable = () => ['draft', 'sent'].includes(data?.quote.status);
+
+  const pkgRow = (p: Pkg) => `<div class="item pkg">
+    <div class="row"><label>Name<input data-k="name" value="${esc(p.name)}" /></label><label>Subtitle<input data-k="subtitle" value="${esc(p.subtitle)}" placeholder="e.g. 8+ hours" /></label><label class="price">Price ($)<input data-k="price" type="number" min="0" step="1" value="${p.price / 100}" /></label></div>
+    <label>What's included<textarea data-k="description" rows="8">${esc(p.description)}</textarea></label>
+    <div class="row-end"><label class="check"><input type="checkbox" data-k="recommended"${p.recommended ? ' checked' : ''} /> Recommended</label><button type="button" class="s-btn s-btn--quiet" data-remove>Remove</button></div>
+  </div>`;
+  const extraRow = (x: Extra) => `<div class="item extra">
+    <div class="row"><label>Name<input data-k="name" value="${esc(x.name)}" /></label><label class="price">Price ($)<input data-k="price" type="number" min="0" step="1" value="${x.price / 100}" /></label></div>
+    <label>Description<input data-k="description" value="${esc(x.description)}" /></label>
+    <div class="row-end"><button type="button" class="s-btn s-btn--quiet" data-remove>Remove</button></div>
+  </div>`;
+  const read = (sel: string) => [...document.querySelectorAll<HTMLElement>(sel)].map((el) => {
+    const v = (k: string) => el.querySelector<HTMLInputElement>(`[data-k="${k}"]`);
+    return { name: v('name')!.value, subtitle: v('subtitle')?.value ?? '', price: Math.round(Number(v('price')!.value || 0) * 100), description: v('description')!.value, recommended: !!v('recommended')?.checked };
+  });
+
+  async function load() {
+    const r = await fetch(`/api/studio/crm/quote?id=${id}`);
+    data = await r.json();
+    if (!r.ok) { $('.status').textContent = data.error || 'Couldn’t load the quote.'; return; }
+    const { quote: q, job } = data;
+    document.title = `Quote · ${job.title} · Moments Studio`;
+    $<HTMLAnchorElement>('.back').href = `/studio/crm/job?id=${job.id}`;
+    $<HTMLAnchorElement>('.preview-link').href = `${data.link.replace('https://www.momentsinlight.co.nz', '')}&preview=1`;
+    $('.eyebrow-line').textContent = [job.event_date && long(job.event_date), job.venue].filter(Boolean).join(' · ');
+    $('.title').textContent = `Quote for ${job.title}`;
+    const states: Record<string, string> = { draft: 'Draft: not sent yet.', sent: `Sent ${q.sent_at ? new Date(q.sent_at).toLocaleDateString('en-NZ') : ''}${q.viewed_at ? ` · opened ${new Date(q.viewed_at).toLocaleDateString('en-NZ')}` : ' · not opened yet'}.`, accepted: `Accepted by ${q.accepted_name} on ${new Date(q.accepted_at).toLocaleString('en-NZ')}: ${q.packages[q.chosen_package]?.name}, ${money(q.total)}.`, withdrawn: 'Withdrawn.', declined: 'Declined.' };
+    $('.qstate').textContent = states[q.status] ?? q.status;
+    f('intro').value = q.intro; f('notes').value = q.notes; f('discount').value = String(q.discount / 100); f('discount_label').value = q.discount_label; f('valid_until').value = q.valid_until ?? '';
+    const sel = f('schedule_key') as unknown as HTMLSelectElement;
+    const match = data.schedules.find((s: any) => JSON.stringify(s.parts) === JSON.stringify(q.schedule));
+    sel.innerHTML = (match ? '' : '<option value="">(this quote’s own)</option>') + data.schedules.map((s: any) => `<option value="${esc(s.key)}"${match?.key === s.key ? ' selected' : ''}>${esc(s.name)}</option>`).join('');
+    $('.packages').innerHTML = q.packages.map(pkgRow).join('');
+    $('.extras').innerHTML = q.extras.map(extraRow).join('');
+    $('.example').innerHTML = data.example ? `<li class="ex-head">e.g. ${esc(data.example.package)}, ${money(data.example.total)}:</li>` + data.example.payments.map((p: any) => `<li>${esc(p.label)} ${money(p.amount)} · ${p.onAccept ? 'on acceptance' : `by ${long(p.due)}`}</li>`).join('') : '';
+    const lock = !editable();
+    form.querySelectorAll<HTMLInputElement>('input, textarea, select, button').forEach((el) => (el.disabled = lock && !el.matches('[data-act="withdraw"]')));
+    $<HTMLButtonElement>('[data-act="save"]').hidden = lock; $<HTMLButtonElement>('[data-act="send"]').hidden = lock;
+    $<HTMLButtonElement>('[data-act="send"]').textContent = q.status === 'sent' ? 'Send again…' : 'Send to client…';
+    $('.danger').hidden = lock;
+    dirty = false; $('.save-state').textContent = '';
+    form.hidden = false; $('.status').hidden = true;
+  }
+
+  async function save(quiet = false) {
+    const body = { id, intro: f('intro').value, notes: f('notes').value, discount: Math.round(Number(f('discount').value || 0) * 100), discount_label: f('discount_label').value, valid_until: f('valid_until').value, schedule_key: (f('schedule_key') as unknown as HTMLSelectElement).value || undefined, packages: read('.packages .item'), extras: read('.extras .item').map(({ subtitle, recommended, ...x }) => x) };
+    const r = await fetch('/api/studio/crm/quote', { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) { toast(d.error || 'Couldn’t save.', true); return false; }
+    if (!quiet) toast('Saved.');
+    await load();
+    return true;
+  }
+
+  form.addEventListener('input', () => { dirty = true; $('.save-state').textContent = 'Unsaved changes'; });
+  addEventListener('beforeunload', (e) => { if (dirty) e.preventDefault(); });
+  document.addEventListener('click', async (e) => {
+    const t = e.target as HTMLElement;
+    if (t.closest('[data-act="save"]')) { save(); return; }
+    const add = t.closest<HTMLElement>('[data-add]');
+    if (add) { const box = $(add.dataset.add === 'package' ? '.packages' : '.extras'); box.insertAdjacentHTML('beforeend', add.dataset.add === 'package' ? pkgRow({ name: '', subtitle: '', price: 0, description: '', recommended: false }) : extraRow({ name: '', price: 0, description: '' })); dirty = true; return; }
+    if (t.closest('[data-remove]')) { t.closest('.item')!.remove(); dirty = true; $('.save-state').textContent = 'Unsaved changes'; return; }
+    if (t.closest('[data-act="withdraw"]')) {
+      if (!confirm('Withdraw this quote? Its link will say it’s no longer available.')) return;
+      const r = await fetch(`/api/studio/crm/quote?id=${id}`, { method: 'DELETE' });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) { toast(d.error || 'Couldn’t withdraw.', true); return; }
+      toast('Withdrawn.'); load(); return;
+    }
+    if (t.closest('[data-act="send"]')) {
+      if (dirty && !(await save(true))) return;
+      const r = await fetch(`/api/studio/crm/quote-send?id=${id}`);
+      const d = await r.json();
+      if (!r.ok) { toast(d.error || 'Couldn’t prepare the email.', true); return; }
+      if (!d.gmail) { toast('Connect Gmail first (on the Clients page).', true); return; }
+      const rf = $<HTMLFormElement>('.review-form');
+      $('.review-to').innerHTML = d.mode === 'live' ? `To: <strong>${esc(d.to)}</strong>` : `To: ${esc(d.to)} · <strong>test mode: it will go to ${esc(d.deliversTo)}</strong>`;
+      (rf.elements.namedItem('subject') as HTMLInputElement).value = d.subject;
+      (rf.elements.namedItem('body') as HTMLTextAreaElement).value = d.body;
+      $<HTMLDialogElement>('dialog.review').showModal();
+      return;
+    }
+    const rv = t.closest<HTMLButtonElement>('[data-review]');
+    if (rv) {
+      const dlg = $<HTMLDialogElement>('dialog.review');
+      if (rv.dataset.review === 'cancel') { dlg.close(); return; }
+      const rf = $<HTMLFormElement>('.review-form');
+      rv.disabled = true; rv.textContent = 'Sending…';
+      const r = await fetch('/api/studio/crm/quote-send', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ id, subject: (rf.elements.namedItem('subject') as HTMLInputElement).value, body: (rf.elements.namedItem('body') as HTMLTextAreaElement).value }) });
+      const d = await r.json().catch(() => ({}));
+      rv.disabled = false; rv.textContent = 'Send';
+      if (!r.ok) { toast(d.error || 'Couldn’t send.', true); return; }
+      dlg.close();
+      toast(d.redirected ? `Test mode: sent to ${d.to} (not ${d.intended}).` : `Quote sent to ${d.to}.`);
+      load();
+    }
+  });
+  if (id) load(); else $('.status').textContent = 'Which quote? Open one from the client’s page.';
+</script>
+
+<style is:global>
+  .studio-bar .save-state { font-size: 13px; color: #888; }
+  .quote-ed { max-width: 1000px; margin: 0 auto; padding: 28px clamp(14px, 3vw, 32px) 80px; }
+  .quote-ed .status { color: #666; }
+  .quote-ed .content { display: flex; flex-direction: column; gap: 16px; }
+  .quote-ed .eyebrow-line { margin: 0 0 6px; font-size: 12px; font-weight: 500; letter-spacing: 0.2em; text-transform: uppercase; color: var(--green); }
+  .quote-ed .title { margin: 0 0 6px; font-weight: 300; font-size: clamp(28px, 2vw + 18px, 40px); color: var(--ink); }
+  .quote-ed .qstate { margin: 0; color: #555; }
+  .quote-ed .card { background: var(--white); border-radius: 24px 0; padding: 18px 22px; display: flex; flex-direction: column; gap: 12px; }
+  .quote-ed .card h2 { margin: 0; font-weight: 300; font-size: 22px; color: var(--ink); }
+  .quote-ed .card h2 small { font-size: 13px; color: #888; }
+  .quote-ed label { display: flex; flex-direction: column; gap: 5px; font-size: 13px; font-weight: 600; color: #555; flex: 1; min-width: 0; }
+  .quote-ed input:not([type="checkbox"]), .quote-ed textarea, .quote-ed select, .review-form input, .review-form textarea { font: inherit; font-weight: 400; font-size: 15px; padding: 8px 10px; border: 1px solid #ddd3c4; border-radius: 10px 0; background: var(--white); color: var(--ink); width: 100%; box-sizing: border-box; }
+  .quote-ed textarea { font-size: 14px; line-height: 1.6; resize: vertical; }
+  .quote-ed .row { display: flex; gap: 10px; flex-wrap: wrap; }
+  .quote-ed .row .price { flex: 0 0 120px; }
+  .quote-ed .row-end { display: flex; justify-content: space-between; align-items: center; }
+  .quote-ed .check { flex-direction: row; align-items: center; gap: 8px; flex: 0; white-space: nowrap; }
+  .quote-ed .item { border: 1px solid #ece4d7; border-radius: 16px 0; padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+  .quote-ed .two-col { display: grid; gap: 18px; }
+  .quote-ed .example { list-style: none; margin: 0; padding: 0; font-size: 13px; color: #666; }
+  .quote-ed .example .ex-head { font-weight: 600; }
+  .quote-ed .danger { margin: 0; }
+  .review { width: min(720px, calc(100vw - 24px)); border: 0; border-radius: 28px 0; padding: 0; box-shadow: 0 30px 60px -30px rgb(0 0 0 / 0.5); }
+  .review::backdrop { background: rgb(30 32 20 / 0.45); }
+  .review-form { display: flex; flex-direction: column; gap: 12px; padding: 22px 24px; }
+  .review-form h2 { margin: 0; font-weight: 300; font-size: 24px; }
+  .review-form label { display: flex; flex-direction: column; gap: 5px; font-size: 13px; font-weight: 600; color: #555; }
+  .review-to { margin: 0; font-size: 14px; color: #555; }
+  .review-actions { display: flex; justify-content: flex-end; gap: 8px; }
+  @media (min-width: 800px) { .quote-ed .two-col { grid-template-columns: 1fr 1fr; } }
+</style>

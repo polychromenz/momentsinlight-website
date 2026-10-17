@@ -31,6 +31,10 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
             <ul class="steps"></ul>
           </section>
           <section class="card">
+            <div class="card-head"><h2>Quotes</h2><button type="button" class="s-btn" data-act="new-quote">+ New quote</button></div>
+            <ul class="quotes"></ul>
+          </section>
+          <section class="card">
             <h2>Their enquiry</h2>
             <p class="message"></p>
           </section>
@@ -58,7 +62,7 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
             <label>Date<input name="event_date" type="date" /></label>
           </div>
           <label>Venue<input name="venue" /></label>
-          <label>Heard about you via<input name="lead_source" /></label>
+          <label>Heard about you via<input name="lead_source" list="lead-sources" /><datalist id="lead-sources"></datalist></label>
           <label>Your notes<textarea name="notes" rows="6" placeholder="Anything to remember about them or their day"></textarea></label>
           <p class="other-jobs" hidden></p>
         </form>
@@ -106,7 +110,19 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
   let dirty = false;
   const markDirty = () => { dirty = true; saveBtn.disabled = false; $('.save-state').textContent = 'Unsaved changes'; };
 
+  let listsLoaded = false;
+  async function loadLists() {
+    if (listsLoaded) return;
+    const r = await fetch('/api/studio/crm/settings');
+    if (!r.ok) return;
+    const s = await r.json();
+    const sel = form.elements.namedItem('job_type') as HTMLSelectElement;
+    sel.replaceChildren(...s.job_type.map((t: { value: string }) => new Option(t.value, t.value)));
+    $('#lead-sources').replaceChildren(...s.lead_source.map((t: { value: string }) => new Option(t.value, t.value)));
+    listsLoaded = true;
+  }
   async function load() {
+    await loadLists();
     const r = await fetch(`/api/studio/crm/job?id=${id}`);
     const d = await r.json();
     if (!r.ok) { $('.status').textContent = d.error || `Something went wrong (${r.status}).`; return; }
@@ -117,6 +133,8 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
     $('.eyebrow-line').textContent = [j.job_type, j.event_date && new Date(`${j.event_date}T12:00:00Z`).toLocaleDateString('en-NZ', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }), j.venue].filter(Boolean).join(' · ');
     stage = j.stage;
     document.querySelectorAll<HTMLButtonElement>('.stage button').forEach((b) => b.classList.toggle('on', b.dataset.stage === stage));
+    const typeSel = form.elements.namedItem('job_type') as HTMLSelectElement;
+    if (j.job_type && ![...typeSel.options].some((o) => o.value === j.job_type)) typeSel.add(new Option(j.job_type, j.job_type));
     for (const el of Array.from(form.elements) as HTMLInputElement[]) if (el.name) el.value = j[el.name] ?? '';
     $('.message').textContent = j.message || 'No message.';
     const enquired = new Date(j.created_at).toLocaleDateString('en-NZ', { day: 'numeric', month: 'long', year: 'numeric' });
@@ -137,6 +155,10 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
       `<li><span class="dir">${m.direction === 'in' ? 'From them' : 'Sent'}</span> <strong>${esc(m.subject)}</strong> <small>${dateTime(m.sent_at)}</small></li>`).join('')
       : '<li class="empty">No emails yet. Once Gmail is connected, everything sent from the studio shows here.</li>';
 
+    const qs: Record<string, string> = { draft: 'Draft', sent: 'Sent', accepted: 'Accepted', withdrawn: 'Withdrawn', declined: 'Declined' };
+    $('.quotes').innerHTML = d.quotes.length ? d.quotes.map((q: { id: number; status: string; total: number | null; sent_at: string | null; viewed_at: string | null; accepted_at: string | null; created_at: string }) =>
+      `<li><a href="/studio/crm/quote?id=${q.id}"><strong>${qs[q.status] ?? q.status}</strong></a> <small>${q.accepted_at ? `accepted ${dateTime(q.accepted_at)}${q.total ? ` · ${(q.total / 100).toLocaleString('en-NZ')}` : ''}` : q.sent_at ? `sent ${dateTime(q.sent_at)}${q.viewed_at ? ' · opened' : ' · not opened yet'}` : `made ${dateTime(q.created_at)}`}</small></li>`).join('')
+      : '<li class="empty">No quotes yet.</li>';
     const other = $('.other-jobs');
     other.hidden = !d.otherJobs.length;
     other.innerHTML = d.otherJobs.length ? `Also: ${d.otherJobs.map((o: { id: number; title: string; job_type: string }) => `<a href="/studio/crm/job?id=${o.id}">${esc(o.job_type)}</a>`).join(', ')}` : '';
@@ -223,6 +245,13 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
       await save();
       return;
     }
+    if (t.closest('[data-act="new-quote"]')) {
+      const r = await fetch('/api/studio/crm/quote', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ job_id: id }) });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) { toast(d.error || 'Couldn’t make a quote.', true); return; }
+      location.href = `/studio/crm/quote?id=${d.id}`;
+      return;
+    }
     const rv = t.closest<HTMLButtonElement>('[data-review-step]');
     if (rv) { openReview(Number(rv.dataset.reviewStep)); return; }
     const b = t.closest<HTMLButtonElement>('[data-step]');
@@ -252,6 +281,13 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
   .job-page .stage button.on { background: var(--green); border-color: var(--green); color: var(--white); }
   .job-page .cols { display: grid; gap: 16px; }
   .job-page .card { background: var(--white); border-radius: 24px 0; padding: 20px 24px; margin-bottom: 16px; }
+  .job-page .card-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 8px; }
+  .job-page .card-head h2 { margin: 0 !important; }
+  .job-page .quotes { list-style: none; margin: 0; padding: 0; }
+  .job-page .quotes li { padding: 8px 0; border-bottom: 1px solid #f1ebe1; }
+  .job-page .quotes li:last-child { border-bottom: 0; }
+  .job-page .quotes a { color: var(--ink); }
+  .job-page .quotes small { color: #777; }
   .job-page .card h2 { margin: 0 0 12px; font-weight: 300; font-size: 22px; color: var(--ink); }
   .job-page .steps, .job-page .messages { list-style: none; margin: 0; padding: 0; }
   .job-page .step, .job-page .messages li { display: flex; align-items: center; gap: 8px 12px; flex-wrap: wrap; padding: 10px 0; border-bottom: 1px solid #f1ebe1; }
