@@ -1,0 +1,198 @@
+---
+// Moments Studio CRM: one lead or job (/studio/crm/job?id=12). Their details (editable), Tony's
+// notes, the planned steps (to-dos and emails) and the email history.
+// Data from functions/api/studio/crm/job.js and step.js.
+import StudioLayout from '../../../layouts/StudioLayout.astro';
+---
+<StudioLayout title="Client">
+  <a slot="bar" class="s-btn s-btn--quiet" href="/studio/crm">← Clients</a>
+  <span slot="bar" class="save-state" aria-live="polite"></span>
+  <button slot="bar" type="button" class="s-btn s-btn--solid" data-act="save" disabled>Save</button>
+
+  <main class="job-page">
+    <p class="status" aria-live="polite">Loading…</p>
+    <div class="content" hidden>
+      <header class="head">
+        <p class="eyebrow-line"></p>
+        <h1 class="title"></h1>
+        <div class="stage" role="group" aria-label="Stage">
+          <button type="button" data-stage="lead">Lead</button>
+          <button type="button" data-stage="booked">Booked</button>
+          <button type="button" data-stage="completed">Completed</button>
+          <button type="button" data-stage="lost">Lost</button>
+        </div>
+      </header>
+
+      <div class="cols">
+        <div>
+          <section class="card">
+            <h2>Steps</h2>
+            <ul class="steps"></ul>
+          </section>
+          <section class="card">
+            <h2>Their enquiry</h2>
+            <p class="message"></p>
+          </section>
+          <section class="card">
+            <h2>Emails</h2>
+            <ul class="messages"></ul>
+          </section>
+        </div>
+
+        <form class="card details" autocomplete="off">
+          <h2>Details</h2>
+          <div class="two">
+            <label>First name<input name="first_name" /></label>
+            <label>Last name<input name="last_name" /></label>
+          </div>
+          <label>Partner's name<input name="partner_name" /></label>
+          <label>Email<input name="email" type="email" /></label>
+          <label>Phone<input name="phone" type="tel" /></label>
+          <div class="two">
+            <label>Type
+              <select name="job_type">
+                <option>Wedding</option><option>Portraits</option><option>Family</option><option>Headshots</option><option>Lifestyle</option><option>Event</option><option>Commercial / Advertising</option>
+              </select>
+            </label>
+            <label>Date<input name="event_date" type="date" /></label>
+          </div>
+          <label>Venue<input name="venue" /></label>
+          <label>Heard about you via<input name="lead_source" /></label>
+          <label>Your notes<textarea name="notes" rows="6" placeholder="Anything to remember about them or their day"></textarea></label>
+          <p class="other-jobs" hidden></p>
+        </form>
+      </div>
+    </div>
+  </main>
+  <div class="s-toast" role="status"></div>
+</StudioLayout>
+
+<script>
+  type Step = { id: number; kind: string; title: string; due_at: string; status: string; note: string; done_at: string | null; stop_on: string };
+  const $ = <T extends HTMLElement = HTMLElement>(s: string) => document.querySelector<T>(s)!;
+  const esc = (s: unknown) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
+  const id = Number(new URLSearchParams(location.search).get('id'));
+  const form = $<HTMLFormElement>('form.details');
+  const saveBtn = $<HTMLButtonElement>('[data-act="save"]');
+  const kindLabel: Record<string, string> = { auto_email: 'Automatic email', ready_email: 'Email to send', todo: 'To-do' };
+  const statusLabel: Record<string, string> = { scheduled: 'Planned', due: 'Due', done: 'Done', skipped: 'Skipped', failed: 'Didn’t send' };
+  const dateTime = (iso: string) => new Date(iso).toLocaleString('en-NZ', { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' });
+  const toast = (text: string, error = false) => {
+    const t = $('.s-toast'); t.textContent = text; t.classList.toggle('error', error); t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 4000);
+  };
+  let stage = 'lead';
+  let dirty = false;
+  const markDirty = () => { dirty = true; saveBtn.disabled = false; $('.save-state').textContent = 'Unsaved changes'; };
+
+  async function load() {
+    const r = await fetch(`/api/studio/crm/job?id=${id}`);
+    const d = await r.json();
+    if (!r.ok) { $('.status').textContent = d.error || `Something went wrong (${r.status}).`; return; }
+    const j = d.job;
+    document.title = `${j.title} · Moments Studio`;
+    $('.title').textContent = j.title;
+    $('.eyebrow-line').textContent = [j.job_type, j.event_date && new Date(`${j.event_date}T12:00:00Z`).toLocaleDateString('en-NZ', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }), j.venue].filter(Boolean).join(' · ');
+    stage = j.stage;
+    document.querySelectorAll<HTMLButtonElement>('.stage button').forEach((b) => b.classList.toggle('on', b.dataset.stage === stage));
+    for (const el of Array.from(form.elements) as HTMLInputElement[]) if (el.name) el.value = j[el.name] ?? '';
+    $('.message').textContent = j.message || 'No message.';
+    const enquired = new Date(j.created_at).toLocaleDateString('en-NZ', { day: 'numeric', month: 'long', year: 'numeric' });
+    $('.message').dataset.when = `Enquired ${enquired}`;
+
+    $('.steps').innerHTML = d.steps.length ? d.steps.map((s: Step) => {
+      const open = s.status === 'scheduled' || s.status === 'due' || s.status === 'failed';
+      return `<li id="step-${s.id}" class="step step--${s.status}">
+        <span class="kind kind--${s.kind}">${kindLabel[s.kind] ?? s.kind}</span>
+        <span class="what"><strong>${esc(s.title)}</strong><br><small>${statusLabel[s.status] ?? s.status} · ${s.done_at ? dateTime(s.done_at) : dateTime(s.due_at)}${s.note ? ` · ${esc(s.note)}` : ''}${s.stop_on && open ? ' · stops if they reply or book' : ''}</small></span>
+        ${open && s.kind !== 'auto_email' ? `<button type="button" class="s-btn s-btn--quiet" data-step="${s.id}" data-action="done">✓ Done</button>` : ''}
+        ${open ? `<button type="button" class="s-btn s-btn--quiet" data-step="${s.id}" data-action="skip">Skip</button>` : `<button type="button" class="s-btn s-btn--quiet" data-step="${s.id}" data-action="reopen">Undo</button>`}
+      </li>`;
+    }).join('') : '<li class="empty">No steps planned.</li>';
+
+    $('.messages').innerHTML = d.messages.length ? d.messages.map((m: { direction: string; subject: string; sent_at: string }) =>
+      `<li><span class="dir">${m.direction === 'in' ? 'From them' : 'Sent'}</span> <strong>${esc(m.subject)}</strong> <small>${dateTime(m.sent_at)}</small></li>`).join('')
+      : '<li class="empty">No emails yet. Once Gmail is connected, everything sent from the studio shows here.</li>';
+
+    const other = $('.other-jobs');
+    other.hidden = !d.otherJobs.length;
+    other.innerHTML = d.otherJobs.length ? `Also: ${d.otherJobs.map((o: { id: number; title: string; job_type: string }) => `<a href="/studio/crm/job?id=${o.id}">${esc(o.job_type)}</a>`).join(', ')}` : '';
+
+    dirty = false; saveBtn.disabled = true; $('.save-state').textContent = '';
+    $('.content').hidden = false; $('.status').hidden = true;
+    if (location.hash) document.querySelector(location.hash)?.scrollIntoView({ block: 'center' });
+  }
+
+  async function save(extra: Record<string, unknown> = {}) {
+    const body: Record<string, unknown> = { id, stage, ...Object.fromEntries(new FormData(form)), ...extra };
+    saveBtn.disabled = true;
+    $('.save-state').textContent = 'Saving…';
+    const r = await fetch('/api/studio/crm/job', { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) { toast(d.error || 'Couldn’t save.', true); saveBtn.disabled = false; $('.save-state').textContent = 'Not saved'; return; }
+    toast('Saved.');
+    await load();
+  }
+
+  form.addEventListener('input', markDirty);
+  saveBtn.addEventListener('click', () => save());
+  addEventListener('beforeunload', (e) => { if (dirty) e.preventDefault(); });
+
+  document.addEventListener('click', async (e) => {
+    const t = e.target as HTMLElement;
+    const st = t.closest<HTMLButtonElement>('.stage button');
+    if (st && st.dataset.stage !== stage) {
+      const next = st.dataset.stage!;
+      if (next === 'lost' && !confirm('Mark as lost? Any follow-ups waiting will stop.')) return;
+      stage = next;
+      await save();
+      return;
+    }
+    const b = t.closest<HTMLButtonElement>('[data-step]');
+    if (b) {
+      b.disabled = true;
+      const r = await fetch('/api/studio/crm/step', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ id: Number(b.dataset.step), action: b.dataset.action }) });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) { toast(d.error || 'Couldn’t save that.', true); b.disabled = false; return; }
+      await load();
+    }
+  });
+
+  if (!id) $('.status').textContent = 'Which client? Open one from the Clients page.';
+  else load();
+</script>
+
+<style is:global>
+  .studio-bar .save-state { font-size: 13px; color: #888; }
+  .job-page { max-width: 1100px; margin: 0 auto; padding: 28px clamp(14px, 3vw, 32px) 80px; }
+  .job-page .status { color: #666; }
+  .job-page .head { margin-bottom: 18px; }
+  .job-page .eyebrow-line { margin: 0 0 6px; font-size: 12px; font-weight: 500; letter-spacing: 0.2em; text-transform: uppercase; color: var(--green); }
+  .job-page .title { margin: 0 0 14px; font-weight: 300; font-size: clamp(30px, 2vw + 20px, 44px); color: var(--ink); }
+  .job-page .stage { display: flex; gap: 6px; flex-wrap: wrap; }
+  .job-page .stage button { padding: 7px 14px; border: 1px solid #ddd3c4; border-radius: 999px; background: var(--white); font: inherit; font-size: 14px; cursor: pointer; }
+  .job-page .stage button.on { background: var(--green); border-color: var(--green); color: var(--white); }
+  .job-page .cols { display: grid; gap: 16px; }
+  .job-page .card { background: var(--white); border-radius: 24px 0; padding: 20px 24px; margin-bottom: 16px; }
+  .job-page .card h2 { margin: 0 0 12px; font-weight: 300; font-size: 22px; color: var(--ink); }
+  .job-page .steps, .job-page .messages { list-style: none; margin: 0; padding: 0; }
+  .job-page .step, .job-page .messages li { display: flex; align-items: center; gap: 8px 12px; flex-wrap: wrap; padding: 10px 0; border-bottom: 1px solid #f1ebe1; }
+  .job-page .step:last-child, .job-page .messages li:last-child { border-bottom: 0; }
+  .job-page .step--done .what, .job-page .step--skipped .what { opacity: 0.55; }
+  .job-page .step--failed { background: #fbeee8; padding-inline: 10px; border-radius: 10px 0; }
+  .job-page .what { flex: 1; min-width: 200px; }
+  .job-page .what small, .job-page .messages small { color: #777; font-size: 13px; }
+  .job-page .kind { font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; padding: 3px 9px; border-radius: 999px; background: #eef1e4; color: var(--olive); }
+  .job-page .kind--ready_email { background: #e3e7f6; color: #2f3f86; }
+  .job-page .kind--todo { background: #f6ecd6; color: #7a5a14; }
+  .job-page .dir { font-size: 12px; color: var(--green); font-weight: 600; }
+  .job-page .empty { color: #888; }
+  .job-page .message { margin: 0; white-space: pre-wrap; line-height: 1.7; color: #333; }
+  .job-page .message[data-when]::after { content: attr(data-when); display: block; margin-top: 10px; font-size: 13px; color: #888; }
+  .job-page .details { display: flex; flex-direction: column; gap: 12px; align-self: start; }
+  .job-page .details label { display: flex; flex-direction: column; gap: 5px; font-size: 13px; font-weight: 600; color: #555; }
+  .job-page .details input, .job-page .details select, .job-page .details textarea { min-width: 0; width: 100%; box-sizing: border-box; font: inherit; font-weight: 400; font-size: 15px; padding: 9px 11px; border: 1px solid #ddd3c4; border-radius: 10px 0; background: var(--white); color: var(--ink); }
+  .job-page .two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .job-page .other-jobs { margin: 0; font-size: 14px; color: #555; }
+  @media (min-width: 900px) { .job-page .cols { grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); } .job-page .details { position: sticky; top: 80px; } }
+</style>

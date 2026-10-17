@@ -59,6 +59,11 @@ export async function onRequestGet({ env }) {
     add('CF_ANALYTICS_TOKEN', r.ok && !err, r.ok && !err ? 'Working: can read your visitor numbers.' : `Cloudflare says: ${err ?? r.status}. The key needs Account > Account Analytics > Read.`);
   }
 
+  // Alerts to Tony (new enquiries etc.) through Resend. A sending-only key can't be tested without
+  // sending, so this checks it's there and shaped like a Resend key.
+  if (!env.RESEND_API_KEY) add('RESEND_API_KEY', false, 'Missing (needed for new-enquiry alerts).');
+  else add('RESEND_API_KEY', /^re_w{10,}$/.test(env.RESEND_API_KEY), /^re_w{10,}$/.test(env.RESEND_API_KEY) ? 'Set (looks like a Resend key).' : 'Doesn’t look like a Resend key (they start “re_”). Check for spaces or quote marks.');
+
   // Suggestions (Cloudflare Workers AI).
   add('Suggestions (AI)', !!env.AI, env.AI ? 'Switched on.' : 'Not switched on for this site yet.');
 
