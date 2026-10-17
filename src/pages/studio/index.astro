@@ -5,6 +5,7 @@
 import StudioLayout from '../../layouts/StudioLayout.astro';
 ---
 <StudioLayout title="Dashboard" section="dashboard">
+  <button slot="bar" type="button" class="s-btn s-btn--quiet" data-digest>✉ Email me today’s summary</button>
   <div class="test-banner" hidden><strong>TEST MODE</strong>: client emails are redirected to you, nothing reaches a client. It switches to live only when you set CRM_SEND_MODE to “live” in Cloudflare.</div>
   <main class="dash">
     <div class="dash-tools">
@@ -220,6 +221,14 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
     }
     const pb = t.closest<HTMLButtonElement>('[data-page]');
     if (pb) { const name = pb.closest<HTMLElement>('[data-list]')!.dataset.list!; pages[name] += Number(pb.dataset.page); renderList(name); }
+  });
+  document.querySelector('[data-digest]')?.addEventListener('click', async (e) => {
+    const b = e.currentTarget as HTMLButtonElement;
+    b.disabled = true; const label = b.textContent; b.textContent = 'Sending…';
+    const r = await fetch('/api/studio/crm/digest', { method: 'POST' });
+    const d = await r.json().catch(() => ({}));
+    b.textContent = r.ok ? 'Sent ✓ check your inbox' : (d.error || 'Didn’t send, try again');
+    setTimeout(() => { b.textContent = label; b.disabled = false; }, 5000);
   });
   $('.dash-type').addEventListener('change', (e) => { type = (e.target as HTMLSelectElement).value; load(); });
   document.querySelectorAll('.dash-custom input').forEach((i) => i.addEventListener('change', load));

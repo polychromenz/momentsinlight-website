@@ -82,3 +82,11 @@ export async function maybeSendDigest(env) {
     .bind(JSON.stringify({ last: today, items: d.count }), new Date().toISOString()).run();
   return d.count ? `sent (${d.count} items)` : 'nothing today';
 }
+
+/** Send it now (the dashboard's "Email me today's summary"), even on a quiet day. */
+export async function sendDigestNow(env) {
+  const d = await buildDigest(env.DB);
+  const html = d.count ? d.html : d.html.replace('<p style="margin:26px 0 0">', '<p style="margin:0 0 8px;font-size:15px;color:#555">Nothing needs you today. (This is what a quiet day looks like; on days like this the morning email isn’t sent.)</p><p style="margin:26px 0 0">');
+  if (!(await emailTony(env, d.count ? d.subject : 'Today: nothing on', html))) throw new Error('The email didn’t send (Resend). Try again in a minute.');
+  return d.count;
+}
