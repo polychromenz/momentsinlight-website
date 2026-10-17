@@ -59,7 +59,7 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
       <p class="sugg-label"><label><input type="checkbox" data-use checked> ${esc(labelOf(i))}</label> <small class="muted">${esc(i.path)}</small></p>
       ${i.type === 'photo' ? `<img src="${esc(i.src.replace(/\/(public|w=[^/]*)$/, '/w=360'))}" alt="" class="sugg-img">` : ''}
       <div class="sugg-cols"><div><span class="lbl">Now</span><div class="before">${esc(i.show ?? i.before) || '<span class="muted">(nothing)</span>'}</div></div>
-      <div><span class="lbl">Suggested</span><textarea data-after rows="${i.type === 'text' ? 6 : i.type === 'description' || i.type === 'append' ? 3 : 2}">${esc(i.after)}</textarea><span class="cnt">${counter(i.type, i.after)}</span></div></div></div>`).join('');
+      <div><span class="lbl">Suggested</span><textarea data-after rows="${i.type === 'text' ? 6 : i.type === 'description' || i.type === 'append' ? 3 : 2}">${esc(i.after)}</textarea><span class="cnt">${counter(i.type, i.after)}</span>${i.options?.length > 1 ? `<div class="opts"><span class="lbl">Or choose</span>${i.options.map((o: string, m: number) => `<button type="button" class="opt${o === i.after ? ' on' : ''}" data-opt="${m}">${esc(o)}</button>`).join('')}</div>` : ''}</div></div></div>`).join('');
   }
   async function openSuggest(keyword: string, key: string) {
     const k = data.keywords.find((x: any) => x.keyword === keyword);
@@ -149,6 +149,17 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
     const sb = t.closest<HTMLButtonElement>('[data-suggest]');
     if (sb) { open.add(sb.dataset.kw!); await openSuggest(sb.dataset.kw!, sb.dataset.suggest!); return; }
     if (t.closest('[data-sugg-close]')) { dlg().close(); return; }
+    const ob = t.closest<HTMLButtonElement>('[data-opt]');
+    if (ob && sugg) {
+      const item = ob.closest<HTMLElement>('.sugg-item')!;
+      const n = Number(item.dataset.n);
+      sugg.items[n].after = sugg.items[n].options[Number(ob.dataset.opt)];
+      const ta = item.querySelector<HTMLTextAreaElement>('[data-after]')!;
+      ta.value = sugg.items[n].after;
+      item.querySelector('.cnt')!.innerHTML = counter(sugg.items[n].type, ta.value);
+      item.querySelectorAll('.opt').forEach((x) => x.classList.toggle('on', x === ob));
+      return;
+    }
     if (t.closest('[data-sugg-again]') && sugg) { await openSuggest(sugg.keyword, sugg.key); return; }
     const ap = t.closest<HTMLButtonElement>('[data-sugg-apply]');
     if (ap && sugg) {
@@ -247,6 +258,10 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
   .sugg .before { padding: 9px 11px; background: #f6f2ea; border-radius: 8px 0; font-size: 14px; color: #555; white-space: pre-wrap; min-height: 2.4em; }
   .sugg textarea { width: 100%; box-sizing: border-box; font: inherit; font-size: 14px; padding: 9px 11px; border: 1px solid var(--green); border-radius: 8px 0; }
   .sugg .cnt small { font-size: 12px; }
+  .sugg .opts { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
+  .sugg .opt { text-align: left; border: 1px solid #e6dccb; background: var(--white); border-radius: 8px 0; padding: 7px 10px; font: inherit; font-size: 13px; color: #444; cursor: pointer; }
+  .sugg .opt:hover { border-color: var(--green); }
+  .sugg .opt.on { border-color: var(--green); background: #f1f3ea; }
   .sugg-actions { display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap; border-top: 1px solid #f1ebe1; padding-top: 12px; }
   @media (max-width: 600px) { .kw-head, .kw-body { padding-left: 14px; padding-right: 14px; } .rk .card { padding: 16px 14px; } .rk .kw { padding: 0; } }
 </style>
