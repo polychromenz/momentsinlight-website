@@ -1,8 +1,7 @@
 # Studio CRM: the new wedding workflow
 
-Drafted 17 Oct 2026 with Tony: Studio Ninja's Wedding Workflow (see
-[studio-crm-findings.md](studio-crm-findings.md)) reworked to how Tony works now. Open questions
-are at the end.
+Agreed 17 Oct 2026 with Tony: Studio Ninja's Wedding Workflow (see
+[studio-crm-findings.md](studio-crm-findings.md)) reworked to how Tony works now.
 
 ## How steps work
 
@@ -22,8 +21,8 @@ are at the end.
 
 1. Enquiry arrives from the website form → lead created, Tony alerted.
 2. **01 Enquiry response** (automatic, 1 hour after; attaches the wedding guide PDF).
-3. **02 Follow-up** (stops if they reply or book). *[timing and kind: open question 1]*
-4. **03 Final follow-up** (stops if they reply or book). *[open question 1]*
+3. **02 Follow-up**: ready-to-send, 4 days after 01 (stops if they reply or book).
+4. **03 Final follow-up**: ready-to-send, 10 days after 01 (stops if they reply or book).
 5. Discovery call, booked through Tony's Google calendar link.
 6. **Send quote** (one click from the template: Classic $2,995, Deluxe $3,995; valid 30 days).
 
@@ -31,19 +30,22 @@ are at the end.
 
 7. Couple accepts the quote and signs the contract online.
 8. **Contract signed → 10% deposit invoice sent automatically** (Stripe payment link plus bank
-   transfer details). *(Studio Ninja needed this sent by hand.)*
-9. **04 Thanks for booking.** *[when: open question 3]*
+   transfer details). *(Studio Ninja needed this sent by hand.)* Card and bank transfer both offered.
+9. **04 Thanks for booking**: automatic, once the deposit is paid (so it confirms the date is
+   locked in).
 
 ### Planning
 
 10. **About 6 weeks before:** **05 "Let's plan your day"** (automatic) and the wedding
-    questionnaire; planning meeting and practice shoot. *[open question 4]*
+    questionnaire; planning meeting and practice shoot (usually about 6 weeks before; can be
+    scheduled earlier for a particular couple).
 11. **Practice photos ready** (action button: paste the Pic-Time link → review and personalise
     **06** → send → task done).
-12. **07 RunOrder offer.** *[when: open question 5]*
+12. **07 RunOrder offer**: automatic, 4 weeks before.
 13. **1 week before:** **07.1 "1 week to go"** (automatic) and a chat about the plan for the day.
-14. **40% invoice** (due 2 months before) and **50% invoice** (due 1 month before), sent
-    automatically. *[how far ahead, reminders: open question 2]*
+14. **40% invoice** (due 2 months before) and **50% invoice** (due 1 month before), each sent
+    automatically 2 weeks before it's due; a gentle reminder on the due date, and another if 3
+    days late.
 
 ### The wedding and after
 
@@ -56,22 +58,10 @@ are at the end.
 20. **10 Review request** (automatic, 3 days after 09).
 21. Job complete.
 
-## Open questions (suggested answers in brackets)
-
-1. **Follow-ups 02 and 03:** how long after 01, and automatic or ready-to-send? *(02 after 4
-   days, 03 after 10 days; ready-to-send)*
-2. **40% and 50% invoices:** sent how long before each due date, and reminders? *(Sent 2 weeks
-   before; a gentle reminder on the due date and another if 3 days late. Studio Ninja's
-   reminders are all off.)*
-3. **04 Thanks for booking:** straight after the contract is signed, or once the deposit is
-   paid? *(Once the deposit is paid, so it confirms the booking is locked in.)*
-4. **Practice shoot:** always about 6 weeks before now? The package description says "done near
-   to booking". *(Usually 6 weeks before, with the option to schedule it earlier per couple.)*
-5. **07 RunOrder:** when? *(4 weeks before, automatic.)*
-6. **Bank transfer** as an option on invoices alongside card? *(Yes.)*
-
 ## Later
 
 - **Replace Pic-Time** with galleries hosted on the site (photos already live on Cloudflare
   Images; full-resolution downloads would need R2 storage). Pic-Time also runs the print store
-  and lab orders, so that part needs a plan before switching. Separate project, after the CRM.
+  and lab orders. Tony hasn't sold prints through it yet, so there's room to choose: partner
+  with Queensberry (NZ), or go direct to Seldex or Atkins in Australia. Separate project, after
+  the CRM.
