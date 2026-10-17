@@ -73,4 +73,24 @@ const { title } = Astro.props;
   .s-toast.show { opacity: 1; transform: translate(-50%, 0); pointer-events: auto; }
   .s-toast.error { background: #8c1d18; }
   .s-toast a { color: var(--champagne); }
+  /* The CRM's rich text editor (src/studio/rich-editor.ts). */
+  .rich { border: 1px solid #ddd3c4; border-radius: 10px 0; background: var(--white); font-weight: 400; color: var(--ink); }
+  .rich-bar { display: flex; flex-wrap: wrap; gap: 3px; align-items: center; padding: 6px; border-bottom: 1px solid #ece4d7; background: #faf7f2; border-radius: 10px 0 0 0; position: sticky; top: 61px; z-index: 5; }
+  .rich-bar button, .rich-bar select { font: inherit; font-size: 13px; padding: 5px 8px; border: 1px solid transparent; border-radius: 7px; background: transparent; cursor: pointer; color: #333; width: auto; }
+  .rich .rich-bar select { border: 1px solid #e2dacd; background: var(--white); width: auto !important; min-width: 0; padding: 5px 6px; border-radius: 7px; font-size: 13px; }
+  .rich .rich-pick input { padding: 0 !important; border: 0 !important; }
+  .rich-bar button:hover { background: var(--champagne); }
+  .rich-bar button.on { background: var(--green); color: var(--white); }
+  .rich-colours { display: inline-flex; align-items: center; gap: 3px; padding: 0 4px; }
+  .rich-colours [data-colour] { width: 18px; height: 18px; padding: 0; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1px #ccc; }
+  .rich-pick { position: relative; cursor: pointer; font-size: 14px; }
+  .rich-pick input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; }
+  .rich-area .ProseMirror { min-height: 220px; padding: 12px 14px; outline: none; font-size: 15px; line-height: 1.7; color: #333; }
+  .rich-area .ProseMirror p { margin: 0 0 12px; }
+  .rich-area .ProseMirror h2 { font-size: 21px; font-weight: 300; margin: 18px 0 8px; color: var(--ink); }
+  .rich-area .ProseMirror h3 { font-size: 11px; font-weight: 600; letter-spacing: 3px; text-transform: uppercase; color: var(--green); margin: 18px 0 4px; }
+  .rich-area .ProseMirror ul, .rich-area .ProseMirror ol { padding-left: 22px; margin: 0 0 12px; }
+  .rich-area .ProseMirror li p { margin: 0 0 4px; }
+  .rich-area .ProseMirror a { color: var(--green); }
+  .rich-area .ProseMirror a.button { display: inline-block; padding: 8px 16px; background: var(--green); color: var(--white); border-radius: 10px 0; text-decoration: none; }
 </style>

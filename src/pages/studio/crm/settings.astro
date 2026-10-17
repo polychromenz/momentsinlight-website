@@ -29,8 +29,7 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
           <div class="tpl-cols">
             <label>Email
               <textarea name="body" rows="20" required></textarea>
-              <small>Blank line = new paragraph · **bold** · [link text](https://…) · a line on its own in **CAPITALS** becomes a heading · lines starting “- ” make a list</small>
-              <small class="fields-help">{"Fill-ins: {{first_name}} {{last_name}} {{partner_name}} {{couple}} {{event_date}} {{venue}} {{quote_link}} {{quote_valid_until}} {{portal_link}} {{gallery_link}} {{contract_link}} {{payment_amount}} {{payment_due_date}}"}</small>
+              <small class="fields-help" hidden>{"Fill-ins: {{first_name}} {{last_name}} {{partner_name}} {{couple}} {{event_date}} {{venue}} {{quote_link}} {{quote_valid_until}} {{portal_link}} {{gallery_link}} {{contract_link}} {{payment_amount}} {{payment_due_date}}"}</small>
             </label>
             <div class="preview"><span>Preview (sample couple)</span><iframe title="Email preview"></iframe></div>
           </div>
@@ -42,13 +41,13 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
 
     <section class="pane card" data-pane="job_type" hidden>
       <p class="hint">The services people can choose on the enquiry form, and which workflow each one follows.</p>
-      <table class="list-table"><thead><tr><th>Job type</th><th>Workflow</th><th>On the form</th><th></th></tr></thead><tbody></tbody></table>
+      <table class="list-table"><thead><tr><th></th><th>Job type</th><th>Workflow</th><th>On the form</th><th></th></tr></thead><tbody></tbody></table>
       <div class="actions"><button type="button" class="s-btn s-btn--quiet" data-act="add">+ Add</button><button type="button" class="s-btn s-btn--solid" data-act="save-list">Save</button></div>
     </section>
 
     <section class="pane card" data-pane="lead_source" hidden>
       <p class="hint">“How did you hear about me?” on the enquiry form. The name is what's recorded (and matches Studio Ninja's); the wording is what visitors see.</p>
-      <table class="list-table"><thead><tr><th>Name</th><th>Wording on the form</th><th>On the form</th><th></th></tr></thead><tbody></tbody></table>
+      <table class="list-table"><thead><tr><th></th><th>Name</th><th>Wording on the form</th><th>On the form</th><th></th></tr></thead><tbody></tbody></table>
       <div class="actions"><button type="button" class="s-btn s-btn--quiet" data-act="add">+ Add</button><button type="button" class="s-btn s-btn--solid" data-act="save-list">Save</button></div>
     </section>
   </main>
@@ -56,7 +55,9 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
 </StudioLayout>
 
 <script>
-  import { emailHtml, merge } from '../../../../functions-lib/email-render.js';
+  import { renderTemplate } from '../../../../functions-lib/email-render.js';
+  import { attachRich } from '../../../studio/rich-editor';
+  import Sortable from 'sortablejs';
   type Item = { value: string; label: string; workflow: string | null; on_form: boolean };
   type Template = { key: string; name: string; subject: string; body: string; attachment: string | null };
   const $ = <T extends HTMLElement = HTMLElement>(s: string, root: ParentNode = document) => root.querySelector<T>(s)!;
@@ -80,15 +81,16 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
   }
 
   // ---- Templates ----
+  const samplePlan = '<table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;font-family:Arial,sans-serif;font-size:14px;"><tr><td style="padding:6px 0;border-bottom:1px solid #eee;">Deposit (10%)</td><td style="padding:6px 0;border-bottom:1px solid #eee;text-align:right;">$399.50 on acceptance</td></tr><tr><td style="padding:6px 0;">…</td><td></td></tr></table>';
+  let rich: ReturnType<typeof attachRich>;
   function preview() {
-    const body = merge(field('body').value, sample).text;
-    $<HTMLIFrameElement>('.preview iframe').srcdoc = emailHtml({ subject: field('subject').value, body });
+    $<HTMLIFrameElement>('.preview iframe').srcdoc = renderTemplate({ subject: field('subject').value, body: field('body').value }, { ...sample, payment_plan: samplePlan }).html;
   }
   function openTemplate(t: Template | null) {
     current = t;
     field('name').value = t?.name ?? '';
     field('subject').value = t?.subject ?? '';
-    field('body').value = t?.body ?? 'Hi {{first_name}},\n\n\n\nCheers,';
+    rich.set(t?.body ?? '<p>Hi {{first_name}},</p><p></p><p>Cheers,</p>');
     const att = $('.attach'); att.hidden = !t?.attachment; att.textContent = t?.attachment ? `📎 Attaches: ${t.attachment}` : '';
     document.querySelectorAll<HTMLElement>('.tpl-list li').forEach((li) => li.classList.toggle('on', li.dataset.key === t?.key));
     preview();
@@ -96,6 +98,7 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
   function renderTemplates() {
     $('.tpl-list').innerHTML = data.templates.map((t) => `<li data-key="${esc(t.key)}"><button type="button">${esc(t.name)}<small>${esc(t.subject)}</small></button></li>`).join('');
   }
+  rich = attachRich(field('body') as unknown as HTMLTextAreaElement, { minHeight: 420 });
   editor.addEventListener('input', preview);
   editor.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -110,6 +113,7 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
   function renderList(kind: 'job_type' | 'lead_source') {
     const tbody = $(`[data-pane="${kind}"] tbody`);
     tbody.innerHTML = data[kind].map((it, i) => `<tr data-i="${i}">
+      <td class="drag" title="Drag to reorder" aria-hidden="true">⠿</td>
       <td><input data-k="value" value="${esc(it.value)}" /></td>
       ${kind === 'job_type'
         ? `<td><select data-k="workflow"><option value="">None (a “reply” to-do)</option>${data.workflows.map((w) => `<option value="${w}"${it.workflow === w ? ' selected' : ''}>${w[0].toUpperCase() + w.slice(1)}</option>`).join('')}</select></td>`
@@ -117,6 +121,9 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
       <td class="c"><input type="checkbox" data-k="on_form"${it.on_form ? ' checked' : ''} aria-label="Show on the form" /></td>
       <td class="row-btns"><button type="button" data-move="-1" aria-label="Move up">↑</button><button type="button" data-move="1" aria-label="Move down">↓</button><button type="button" data-remove aria-label="Remove">✕</button></td>
     </tr>`).join('');
+  }
+  for (const kind of ['job_type', 'lead_source'] as const) {
+    Sortable.create(document.querySelector(`[data-pane="${kind}"] tbody`) as HTMLElement, { handle: '.drag', animation: 150, onEnd: () => { data[kind] = readList(kind); renderList(kind); } });
   }
   function readList(kind: 'job_type' | 'lead_source'): Item[] {
     return [...document.querySelectorAll<HTMLTableRowElement>(`[data-pane="${kind}"] tbody tr`)].map((tr) => {
@@ -188,7 +195,7 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
   .settings .tpl-editor { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
   .settings label { display: flex; flex-direction: column; gap: 5px; font-size: 13px; font-weight: 600; color: #555; }
   .settings input:not([type="checkbox"]), .settings select, .settings textarea { font: inherit; font-weight: 400; font-size: 15px; padding: 8px 10px; border: 1px solid #ddd3c4; border-radius: 10px 0; background: var(--white); color: var(--ink); min-width: 0; width: 100%; box-sizing: border-box; }
-  .settings textarea { font-size: 14px; line-height: 1.6; resize: vertical; min-height: 360px; }
+  .settings textarea { font-size: 14px; line-height: 1.6; resize: vertical; min-height: 120px; }
   .settings small { font-weight: 400; color: #888; font-size: 12px; }
   .settings .tpl-cols { display: grid; gap: 14px; }
   .settings .preview { display: flex; flex-direction: column; gap: 5px; font-size: 13px; font-weight: 600; color: #555; }
@@ -200,6 +207,8 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
   .settings .list-table td { padding: 6px; border-bottom: 1px solid #f3eee6; vertical-align: middle; }
   .settings .list-table td.c { text-align: center; }
   .settings .row-btns { white-space: nowrap; }
+  .settings .list-table td.drag { width: 22px; cursor: grab; color: #aaa; font-size: 18px; user-select: none; }
+  .settings .list-table tr.sortable-ghost { opacity: 0.4; }
   .settings .row-btns button { border: 0; background: none; cursor: pointer; font-size: 15px; padding: 4px 6px; color: #666; }
   .settings .row-btns button:hover { color: var(--ink); }
   @media (min-width: 900px) {

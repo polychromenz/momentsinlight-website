@@ -135,7 +135,7 @@ Tony can't risk the development system emailing real clients. So:
    guide signup; replaces the Studio Ninja embed on /contact only at the switch), creates a lead, sends the auto-reply, alerts Tony;
    leads list and email template library in `/studio`.
 2. **Quotes → contracts → click-to-sign.**
-3. **Stripe invoicing + client portal** (`/portal`). Studio Ninja can be cancelled once this is
+3. **Stripe invoicing + client portal** (`/portal`). The portal includes **files and notes on a job** (as in Studio Ninja): Tony and the client can both upload files and images and add notes; Tony can hide any of them from the client's portal. Files stored privately (R2). Studio Ninja can be cancelled once this is
    solid.
 4. **Workflows/automation** (can overlap with 2–3 once email works).
 5. **Move across:** import current clients and jobs from the Studio Ninja exports, run both side

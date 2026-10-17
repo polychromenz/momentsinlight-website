@@ -1,14 +1,11 @@
-// Turns an email template (simple Markdown with {{merge fields}}) into the chosen email design:
-// champagne background, logo on top, a white leaf-cornered card, green section labels and
-// buttons, and the photo signature. See docs/email-design/email.html (the approved sample).
+// Turns an email template into the chosen email design: champagne background, logo on top, a
+// white leaf-cornered card, green section labels and buttons, and the photo signature. See
+// docs/email-design/email.html (the approved sample).
 //
-// Template text rules (as Tony's templates are written):
-//   blank line            new paragraph
-//   **BEFORE YOUR WEDDING**   a paragraph that's all bold capitals → a green section label
-//   **bold**, [text](url) inline bold and links
-//   a paragraph that is only a link → a green button
-//   lines starting "- "   a bulleted list
-//   {{first_name}} etc.   merge fields (see fields()); unknown or empty ones are reported
+// Template text is HTML from the studio's rich editor (older templates in simple Markdown are
+// converted on the fly; see rich-html.js). {{first_name}} etc. are merge fields (see fields());
+// unknown or empty ones show as [first_name] and are reported, so nothing half-filled goes out.
+import { toHtml, emailify } from './rich-html.js';
 
 const SITE = 'https://www.momentsinlight.co.nz';
 const FONT = "Raleway,'Helvetica Neue',Arial,sans-serif";
@@ -28,40 +25,23 @@ export function fields(job, extra = {}) {
   };
 }
 
-/** Fill in {{fields}}. Returns the text and any fields that had no value. */
-export function merge(text, values) {
+/** Fields whose values are already HTML (e.g. the quote's payment plan table). */
+export const HTML_FIELDS = ['payment_plan'];
+
+/** Fill in {{fields}}. With html: true the values are escaped for HTML (except HTML_FIELDS).
+ *  Returns the text and any fields that had no value. */
+export function merge(text, values, { html = false } = {}) {
   const missing = new Set();
   const out = String(text ?? '').replace(/\{\{\s*(\w+)\s*\}\}/g, (m, k) => {
     const v = values[k];
     if (v === undefined || v === null || v === '') { missing.add(k); return `[${k}]`; }
-    return String(v);
+    return html && !HTML_FIELDS.includes(k) ? esc(v) : String(v);
   });
   return { text: out, missing: [...missing] };
 }
 
-const inline = (s) => esc(s)
-  .replace(/\*\*(.+?)\*\*/g, '<strong style="font-weight:600;color:#1a1a1a;">$1</strong>')
-  .replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+|mailto:[^)\s]+|tel:[^)\s]+)\)/g, '<a href="$2" style="color:#5a5e3b;text-decoration:underline;">$1</a>')
-  .replace(/(^|[\s(])(https?:\/\/[^\s<)]+)/g, '$1<a href="$2" style="color:#5a5e3b;text-decoration:underline;">$2</a>')
-  .replace(/\n/g, '<br>');
-
-const P = `margin:0 0 16px;font-family:${FONT};font-size:16px;line-height:1.75;color:#333333;`;
-
-/** Template body (Markdown) → the inner HTML of the card. */
-export function bodyHtml(md) {
-  return String(md).trim().split(/\n{2,}/).map((block) => {
-    const b = block.trim();
-    const label = b.match(/^\*\*([^*a-z]+)\*\*$/);
-    if (label) return `<p style="margin:28px 0 6px;font-family:${FONT};font-size:11px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:#5a5e3b;">${esc(label[1].trim())}</p>`;
-    const button = b.match(/^\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)$/);
-    if (button) return `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:4px 0 20px;"><tr><td style="background:#5a5e3b;border-radius:14px 0;"><a href="${esc(button[2])}" style="display:inline-block;padding:13px 24px;font-family:${FONT};font-size:14px;font-weight:500;color:#ffffff;text-decoration:none;">${esc(button[1])}</a></td></tr></table>`;
-    const lines = b.split('\n');
-    if (lines.every((l) => /^\s*[-*]\s+/.test(l) || !l.trim())) {
-      return `<ul style="margin:0 0 16px;padding-left:22px;font-family:${FONT};font-size:16px;line-height:1.7;color:#333333;">${lines.filter((l) => l.trim()).map((l) => `<li style="margin:0 0 6px;">${inline(l.replace(/^\s*[-*]\s+/, ''))}</li>`).join('')}</ul>`;
-    }
-    return `<p style="${P}">${inline(b)}</p>`;
-  }).join('\n');
-}
+/** Template body (rich HTML, or older Markdown) → the inner HTML of the card, email-safe. */
+export const bodyHtml = (text) => emailify(toHtml(text));
 
 /** The whole email, in the approved design, with the photo signature. */
 export function emailHtml({ subject, body, preheader = '' }) {
@@ -92,14 +72,23 @@ ${bodyHtml(body)}
 </table></td></tr></table></body></html>`;
 }
 
-/** Template + job → { subject, html, text, missing } ready for sendEmail(). */
+/** Template + values → { subject, body (HTML, filled in), html (whole email), missing }.
+ *  edits = Tony's reviewed { subject, body } (already filled in; any [gaps] still count). */
 export function renderTemplate(template, values, edits = {}) {
   const s = merge(edits.subject ?? template.subject, values);
-  const b = merge(edits.body ?? template.body, values);
+  // HTML fields (tables) would be stripped by the editor and the email cleaner, so they stay as
+  // {{payment_plan}} in the body Tony reviews and are put in only in the final email.
+  const keep = Object.fromEntries(HTML_FIELDS.filter((k) => values[k]).map((k) => [k, `{{${k}}}`]));
+  const b = merge(toHtml(edits.body ?? template.body), { ...values, ...keep }, { html: true });
+  let html = emailHtml({ subject: s.text, body: b.text });
+  for (const k of Object.keys(keep)) {
+    html = html.replace(new RegExp(`<p[^>]*>\\s*\\{\\{${k}\\}\\}\\s*</p>`, 'g'), values[k]).replaceAll(`{{${k}}}`, values[k]);
+  }
+  const gaps = (t) => [...String(t).matchAll(/\[(first_name|last_name|partner_name|couple|event_date|venue|portal_link|gallery_link|contract_link|payment_amount|payment_due_date|quote_link|quote_valid_until|payment_plan)\]/g)].map((m) => m[1]);
   return {
     subject: s.text,
     body: b.text,
-    html: emailHtml({ subject: s.text, body: b.text }),
-    missing: [...new Set([...s.missing, ...b.missing])],
+    html,
+    missing: [...new Set([...s.missing, ...b.missing, ...gaps(s.text), ...gaps(b.text)])],
   };
 }

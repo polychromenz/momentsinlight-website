@@ -1,7 +1,9 @@
 ---
-// A couple's private quote (/quote?t=…, the link in their "Quote ready" email). They choose a
-// package (and any extras), see the total and payment plan, type their name and accept.
-// Hidden from Google; the data comes from functions/api/quote.js.
+// A couple's private quote (/quote?t=…, the link in their "Quote ready" email), laid out like
+// Tony's Studio Ninja quotes: quote number and date, from and to, the packages to choose from,
+// extras, a summary (subtotal, GST, total), the payment schedule with dates, and notes. They
+// choose, type their name and accept; they can also save it as a PDF or print it.
+// Hidden from Google; the data comes from functions/api/quote.js (text already cleaned there).
 import BaseLayout from '../layouts/BaseLayout.astro';
 ---
 <BaseLayout title="Your quote | Moments In Light" description="Your wedding photography quote from Moments in Light." noindex>
@@ -12,30 +14,44 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         <p class="eyebrow q-eyebrow"></p>
         <h1 class="display q-title"></h1>
         <hr class="hairline" />
-        <p class="q-intro"></p>
+        <div class="q-intro"></div>
       </header>
 
-      <section class="q-packages" aria-label="Packages"></section>
-      <section class="q-extras" hidden><h2>Add extras</h2><div class="q-extras-list"></div></section>
-
-      <section class="q-summary">
-        <div class="q-total"><span>Total</span><strong class="q-total-n">–</strong><small class="q-gst"></small></div>
-        <div class="q-plan"><h2>Payments</h2><ul class="q-payments"></ul></div>
-        <p class="q-notes"></p>
+      <section class="q-card q-meta">
+        <div><h2>Quote</h2><dl><dt>Quote</dt><dd class="m-number"></dd><dt>Issued</dt><dd class="m-issued"></dd><dt>Valid until</dt><dd class="m-valid"></dd></dl></div>
+        <div><h2>From</h2><p class="m-from"></p></div>
+        <div><h2>For</h2><p class="m-client"></p></div>
       </section>
 
-      <form class="q-accept" novalidate>
+      <h2 class="q-section">Choose your package</h2>
+      <section class="q-packages" aria-label="Packages"></section>
+      <section class="q-card q-extras" hidden><h2>Add extras</h2><div class="q-extras-list"></div></section>
+
+      <section class="q-card q-summary">
+        <h2>Quote summary</h2>
+        <table class="q-lines"><tbody></tbody></table>
+        <table class="q-totals"><tbody></tbody></table>
+      </section>
+
+      <section class="q-card">
+        <h2>Payment schedule</h2>
+        <table class="q-plan"><thead><tr><th>Payment</th><th>Due</th><th>Amount</th></tr></thead><tbody></tbody></table>
+      </section>
+
+      <section class="q-card q-notes-card" hidden><h2>Notes</h2><div class="q-notes"></div></section>
+
+      <form class="q-card q-accept" novalidate>
         <h2>Ready to go ahead?</h2>
         <p>Type your full name and click Accept. Next, I'll send your contract to sign and your deposit invoice.</p>
         <label>Your full name<input name="name" autocomplete="name" required /></label>
         <p class="q-msg" role="alert" hidden></p>
-        <button class="btn" type="submit">Accept quote</button>
-        <p class="q-valid"></p>
+        <div class="q-buttons"><button class="btn" type="submit">Accept quote</button><button class="btn btn--outline" type="button" data-print>Save as PDF / print</button></div>
       </form>
 
-      <div class="q-done" hidden tabindex="-1">
+      <div class="q-card q-done" hidden tabindex="-1">
         <h2>Thank you, it's accepted!</h2>
         <p class="q-done-text"></p>
+        <div class="q-buttons"><button class="btn btn--outline" type="button" data-print>Save as PDF / print</button></div>
       </div>
     </div>
   </main>
@@ -47,14 +63,9 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   type Part = { percent: number; label: string; when: string; days?: number; months?: number };
   const $ = <T extends HTMLElement = HTMLElement>(s: string) => document.querySelector<T>(s)!;
   const esc = (s: unknown) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
-  const money = (c: number) => `$${(c / 100).toLocaleString('en-NZ', { minimumFractionDigits: c % 100 ? 2 : 0, maximumFractionDigits: 2 })}`;
+  const money = (c: number) => `$${(c / 100).toLocaleString('en-NZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const short = (c: number) => `$${(c / 100).toLocaleString('en-NZ', { minimumFractionDigits: c % 100 ? 2 : 0, maximumFractionDigits: 2 })}`;
   const long = (d: string) => new Date(`${d}T12:00:00Z`).toLocaleDateString('en-NZ', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
-  // Simple Markdown for package descriptions: paragraphs, "- " lists, **bold**, *italic*.
-  const md = (s: string) => s.trim().split(/\n{2,}/).map((b) => {
-    const inl = (t: string) => esc(t).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/\*(.+?)\*/g, '<em>$1</em>');
-    const lines = b.split('\n');
-    return lines.every((l) => /^\s*-\s+/.test(l)) ? `<ul>${lines.map((l) => `<li>${inl(l.replace(/^\s*-\s+/, ''))}</li>`).join('')}</ul>` : `<p>${inl(b).replace(/\n/g, '<br>')}</p>`;
-  }).join('');
   const params = new URLSearchParams(location.search);
   const token = params.get('t') || '';
   const preview = params.has('preview');
@@ -64,23 +75,35 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
   const addDays = (d: string, n: number) => { const x = new Date(`${d}T12:00:00Z`); x.setUTCDate(x.getUTCDate() + n); return x.toISOString().slice(0, 10); };
   const addMonths = (d: string, n: number) => { const x = new Date(`${d}T12:00:00Z`); x.setUTCMonth(x.getUTCMonth() + n); return x.toISOString().slice(0, 10); };
-  const total = () => chosen < 0 ? null : Math.max(0, q.packages[chosen].price + [...extras].reduce((a, i) => a + q.extras[i].price, 0) - (q.discount || 0));
+  const subtotal = () => (chosen < 0 ? null : q.packages[chosen].price + [...extras].reduce((a, i) => a + q.extras[i].price, 0));
+  const total = () => { const s = subtotal(); return s === null ? null : Math.max(0, s - (q.discount || 0)); };
 
   function update() {
-    document.querySelectorAll<HTMLElement>('.pkg').forEach((el, i) => { el.classList.toggle('on', i === chosen); el.querySelector('button')!.setAttribute('aria-pressed', String(i === chosen)); });
+    document.querySelectorAll<HTMLElement>('.pkg').forEach((el, i) => {
+      el.classList.toggle('on', i === chosen);
+      const b = el.querySelector<HTMLButtonElement>('button')!;
+      b.setAttribute('aria-pressed', String(i === chosen));
+      b.textContent = i === chosen ? '✓ Chosen' : 'Choose this package';
+    });
     const t = total();
-    $('.q-total-n').textContent = t === null ? 'Choose a package' : money(t);
-    $('.q-gst').textContent = t === null ? '' : `incl. GST of ${money(Math.round((t * 3) / 23))}${q.discount ? ` · after ${q.discount_label || 'discount'} of ${money(q.discount)}` : ''}`;
+    const lines = chosen < 0 ? [] : [[q.packages[chosen].name + (q.packages[chosen].subtitle ? ` (${q.packages[chosen].subtitle})` : ''), q.packages[chosen].price], ...[...extras].map((i) => [q.extras[i].name, q.extras[i].price])];
+    $('.q-lines tbody').innerHTML = lines.length ? lines.map(([n, p]) => `<tr><td>${esc(n)}</td><td>${money(p as number)}</td></tr>`).join('') : '<tr><td>Choose a package above.</td><td></td></tr>';
+    $('.q-totals tbody').innerHTML = t === null ? '' : [
+      ...(q.discount ? [[`${esc(q.discount_label || 'Discount')}`, `−${money(q.discount)}`]] : []),
+      ['GST (15%, included)', money(Math.round((t * 3) / 23))],
+      [`<strong>Total</strong>`, `<strong>${money(t)}</strong>`],
+    ].map(([a, b]) => `<tr><td>${a}</td><td>${b}</td></tr>`).join('');
     const from = q.accepted_at ? q.accepted_at.slice(0, 10) : q.today;
     let left = t ?? 0;
-    $('.q-payments').innerHTML = t === null ? '<li>Choose a package to see the payments.</li>' : q.schedule.map((p, i) => {
+    $('.q-plan tbody').innerHTML = t === null ? '<tr><td colspan="3">Choose a package to see your payments.</td></tr>' : q.schedule.map((p, i) => {
       const amount = i === q.schedule.length - 1 ? left : Math.round((t * p.percent) / 100);
       left -= amount;
       let due = from;
       if (p.when === 'accept') due = addDays(from, p.days || 0);
       else if (q.event_date) due = p.months ? addMonths(q.event_date, (p.when === 'before' ? -1 : 1) * p.months) : addDays(q.event_date, (p.when === 'before' ? -1 : 1) * (p.days || 0));
       if (due < from) due = from;
-      return `<li><span>${esc(p.label)} (${p.percent}%)</span><strong>${money(amount)}</strong><small>${due === from ? (q.status === 'accepted' ? 'on acceptance' : 'when you accept') : `by ${long(due)}`}</small></li>`;
+      const when = due === from ? (q.status === 'accepted' ? long(due) : 'When you accept') : long(due);
+      return `<tr><td>${esc(p.label)} (${p.percent}%)</td><td>${when}</td><td>${money(amount)}</td></tr>`;
     }).join('');
   }
 
@@ -89,40 +112,47 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     const d = await r.json().catch(() => ({}));
     if (!r.ok) { $('.q-status').textContent = d.error || 'This quote isn’t available.'; return; }
     q = d;
+    document.title = `Quote ${q.number} | Moments In Light`;
     $('.q-eyebrow').textContent = [q.event_date_long, q.venue].filter(Boolean).join(' · ');
     $('.q-title').textContent = `A quote for ${q.names}`;
-    $('.q-intro').textContent = q.intro;
+    $('.q-intro').innerHTML = q.intro; // cleaned on the server
+    $('.m-number').textContent = q.number;
+    $('.m-issued').textContent = q.issued;
+    $('.m-valid').textContent = q.valid_until_long || '–';
+    $('.m-from').innerHTML = [`<strong>${esc(q.from.name)}</strong>`, esc(q.from.person), esc(q.from.phone), `<a href="mailto:${esc(q.from.email)}">${esc(q.from.email)}</a>`, esc(q.from.address)].join('<br>');
+    $('.m-client').innerHTML = [`<strong>${esc(q.client.name)}</strong>`, esc(q.client.email), q.event_date_long && `Wedding: ${esc(q.event_date_long)}`, q.venue && esc(q.venue)].filter(Boolean).join('<br>');
     $('.q-packages').innerHTML = q.packages.map((p, i) => `<article class="pkg${p.recommended ? ' rec' : ''}">
-      ${p.recommended ? '<span class="pkg-badge">Recommended</span>' : ''}
-      <h2>${esc(p.name)}</h2>${p.subtitle ? `<p class="pkg-sub">${esc(p.subtitle)}</p>` : ''}
-      <p class="pkg-price">${money(p.price)}<small> incl. GST</small></p>
-      <div class="pkg-desc">${md(p.description)}</div>
+      ${p.recommended ? '<span class="pkg-badge">♥ Recommended</span>' : ''}
+      <h3>${esc(p.name)}</h3>${p.subtitle ? `<p class="pkg-sub">${esc(p.subtitle)}</p>` : ''}
+      <p class="pkg-price">${short(p.price)}<small> incl. GST</small></p>
+      <div class="pkg-desc">${p.description}</div>
       <button type="button" class="btn${p.recommended ? '' : ' btn--outline'}" data-pkg="${i}" aria-pressed="false">Choose this package</button>
     </article>`).join('');
-    const ex = $('.q-extras');
-    ex.hidden = !q.extras.length;
-    $('.q-extras-list').innerHTML = q.extras.map((x, i) => `<label class="extra"><input type="checkbox" data-extra="${i}" /> <span><strong>${esc(x.name)}</strong> ${money(x.price)}${x.description ? `<small>${esc(x.description)}</small>` : ''}</span></label>`).join('');
-    $('.q-notes').textContent = q.notes || '';
-    $('.q-valid').textContent = q.valid_until_long ? `This quote is valid until ${q.valid_until_long}.` : '';
+    $('.q-extras').hidden = !q.extras.length;
+    $('.q-extras-list').innerHTML = q.extras.map((x, i) => `<label class="extra"><input type="checkbox" data-extra="${i}" /> <span><strong>${esc(x.name)}</strong> ${short(x.price)}${x.description ? `<small>${esc(x.description)}</small>` : ''}</span></label>`).join('');
+    $('.q-notes').innerHTML = q.notes || '';
+    $('.q-notes-card').hidden = !q.notes;
     if (q.status === 'accepted') {
       chosen = q.chosen_package; (q.chosen_extras || []).forEach((i: number) => extras.add(i));
       $('.q-accept').hidden = true;
-      const done = $('.q-done'); done.hidden = false;
-      $('.q-done-text').textContent = `Accepted by ${q.accepted_name}. Thank you! I'll be in touch with your contract and deposit invoice.`;
-      document.querySelectorAll<HTMLButtonElement>('[data-pkg], [data-extra]').forEach((b) => (b.disabled = true));
+      $('.q-done').hidden = false;
+      $('.q-done-text').textContent = `Accepted by ${q.accepted_name} on ${new Date(q.accepted_at).toLocaleDateString('en-NZ', { day: 'numeric', month: 'long', year: 'numeric' })}. Thank you! I'll be in touch with your contract and deposit invoice.`;
+      document.querySelectorAll<HTMLInputElement>('[data-pkg], [data-extra]').forEach((b) => (b.disabled = true));
     } else if (q.status === 'expired') {
       $('.q-accept').innerHTML = '<h2>This quote has expired</h2><p>Please get in touch for an updated quote. I’d love to hear from you.</p><p><a class="btn" href="/contact">Get in touch</a></p>';
     } else {
       chosen = Math.max(0, q.packages.findIndex((p) => p.recommended));
     }
-    if (preview) { const b = $<HTMLButtonElement>('.q-accept button[type="submit"]'); b.disabled = true; b.textContent = 'Accept (preview only)'; }
+    if (preview) { const b = $<HTMLButtonElement>('.q-accept button[type="submit"]'); if (b) { b.disabled = true; b.textContent = 'Accept (preview only)'; } }
     update();
     $('.q').hidden = false;
     $('.q-status').hidden = true;
   }
 
   document.addEventListener('click', (e) => {
-    const b = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-pkg]');
+    const t = e.target as HTMLElement;
+    if (t.closest('[data-print]')) { print(); return; }
+    const b = t.closest<HTMLButtonElement>('[data-pkg]');
     if (b && q.status !== 'accepted') { chosen = Number(b.dataset.pkg); update(); }
   });
   document.addEventListener('change', (e) => {
@@ -150,49 +180,64 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 <style>
   .quote-page { background: var(--champagne); padding: 48px var(--pad) 90px; min-height: 60vh; }
   .q-status { text-align: center; color: #666; }
-  .q { max-width: 1100px; margin: 0 auto; }
-  .q-head { max-width: 760px; margin: 0 auto 36px; text-align: center; }
+  .q { max-width: 1100px; margin: 0 auto; display: flex; flex-direction: column; gap: 24px; }
+  .q-head { max-width: 760px; margin: 0 auto 8px; text-align: center; }
   .q-title { font-size: clamp(32px, 2.6vw + 18px, 54px); margin: 0 0 20px; padding: 0; }
-  .q-intro { color: #444; line-height: 1.8; margin: 20px 0 0; }
+  .q-intro { color: #444; line-height: 1.8; margin-top: 20px; }
+  .q-intro :global(p), .q-notes :global(p) { margin: 0 0 10px; }
+  .q-card { background: var(--white); border-radius: 28px 0; padding: 24px 26px; }
+  .q-card h2, .q-section { margin: 0 0 12px; font-weight: 300; font-size: 22px; color: var(--ink); }
+  .q-section { text-align: center; margin: 12px 0 0; font-size: 26px; }
+  .q-meta { display: grid; gap: 20px; font-size: 14px; color: #444; line-height: 1.7; }
+  .q-meta h2 { font-size: 12px; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: var(--green); margin-bottom: 6px; }
+  .q-meta p { margin: 0; }
+  .q-meta dl { display: grid; grid-template-columns: auto 1fr; gap: 2px 12px; margin: 0; }
+  .q-meta dt { color: #777; }
+  .q-meta dd { margin: 0; }
   .q-packages { display: grid; gap: 22px; }
   .q-packages :global(.pkg) { position: relative; display: flex; flex-direction: column; background: var(--white); border: 2px solid transparent; border-radius: 40px 0; padding: 34px 30px 30px; transition: border-color 0.4s var(--ease), border-radius 0.6s var(--ease), box-shadow 0.6s var(--ease); }
   .q-packages :global(.pkg.on) { border-color: var(--green); border-radius: 0 40px; box-shadow: 0 22px 40px -30px rgb(62 66 41 / 0.6); }
   .q-packages :global(.pkg-badge) { position: absolute; top: -12px; left: 30px; background: var(--green); color: var(--white); font-size: 11px; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; padding: 5px 12px; border-radius: 10px 0; }
-  .q-packages :global(h2) { margin: 0; font-weight: 300; font-size: 28px; color: var(--ink); }
+  .q-packages :global(h3) { margin: 0; font-weight: 300; font-size: 28px; color: var(--ink); }
   .q-packages :global(.pkg-sub) { margin: 4px 0 0; font-size: 12px; font-weight: 500; letter-spacing: 0.22em; text-transform: uppercase; color: var(--green); }
   .q-packages :global(.pkg-price) { margin: 16px 0 6px; font-size: 34px; font-weight: 300; color: var(--ink); }
   .q-packages :global(.pkg-price small) { font-size: 14px; color: #777; }
   .q-packages :global(.pkg-desc) { flex: 1; color: #444; font-size: 15px; line-height: 1.7; }
   .q-packages :global(.pkg-desc ul) { padding-left: 18px; }
   .q-packages :global(.pkg-desc li) { margin-bottom: 8px; }
+  .q-packages :global(.pkg-desc li p), .q-packages :global(.pkg-desc p) { margin: 0 0 8px; }
+  .q-packages :global(.pkg-desc h3) { font-size: 11px; font-weight: 600; letter-spacing: 3px; text-transform: uppercase; color: var(--green); margin: 14px 0 4px; }
   .q-packages :global(.pkg .btn) { align-self: flex-start; margin-top: 14px; }
-  .q-packages :global(.pkg.on .btn) { background: var(--green); color: var(--white); }
-  .q-extras { margin-top: 28px; background: var(--white); border-radius: 28px 0; padding: 22px 26px; }
-  .q-extras h2, .q-plan h2, .q-accept h2 { margin: 0 0 12px; font-weight: 300; font-size: 24px; color: var(--ink); }
+  .q-packages :global(.pkg.on .btn) { background: var(--green); color: var(--white); border-color: var(--green); }
   .q-extras :global(.extra) { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; }
   .q-extras :global(.extra small) { display: block; color: #777; }
-  .q-summary { margin-top: 28px; display: grid; gap: 18px; background: var(--white); border-radius: 28px 0; padding: 26px; }
-  .q-total { display: flex; flex-direction: column; gap: 2px; }
-  .q-total span { font-size: 12px; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: var(--green); }
-  .q-total strong { font-size: 40px; font-weight: 300; color: var(--ink); }
-  .q-total small { color: #777; font-size: 14px; }
-  .q-payments { list-style: none; margin: 0; padding: 0; }
-  .q-payments :global(li) { display: grid; grid-template-columns: 1fr auto; gap: 0 14px; padding: 9px 0; border-bottom: 1px solid #f1ebe1; }
-  .q-payments :global(li small) { grid-column: 1 / -1; color: #777; font-size: 13px; }
-  .q-notes { margin: 0; font-size: 14px; color: #666; font-style: italic; }
-  .q-accept, .q-done { margin-top: 28px; background: var(--white); border-radius: 28px 0; padding: 26px; display: flex; flex-direction: column; gap: 12px; }
+  .q table { width: 100%; border-collapse: collapse; font-size: 15px; }
+  .q th { text-align: left; font-size: 12px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: #777; padding: 8px 0; border-bottom: 1px solid #eee6d9; }
+  .q td { padding: 10px 0; border-bottom: 1px solid #f3eee6; color: #333; }
+  .q th:last-child, .q :global(td:last-child) { text-align: right; }
+  .q-plan th:nth-child(2), .q-plan :global(td:nth-child(2)) { color: #555; }
+  .q-totals { max-width: 360px; margin-left: auto; margin-top: 8px; }
+  .q-totals :global(td) { border-bottom: 0; padding: 4px 0; }
+  .q-totals :global(tr:last-child td) { font-size: 20px; border-top: 1px solid #eee6d9; padding-top: 10px; }
+  .q-notes { color: #555; font-size: 14px; line-height: 1.7; }
+  .q-accept, .q-done { display: flex; flex-direction: column; gap: 12px; }
   .q-accept p { margin: 0; color: #444; line-height: 1.7; }
   .q-accept label { display: flex; flex-direction: column; gap: 6px; font-size: 14px; font-weight: 500; max-width: 420px; }
   .q-accept input { font: inherit; font-size: 16px; padding: 12px 14px; border: 1px solid #ddd3c4; border-radius: 14px 0; }
-  .q-accept .btn { align-self: flex-start; }
+  .q-buttons { display: flex; gap: 10px; flex-wrap: wrap; }
   .q-msg { padding: 10px 14px; background: #fbeee8; color: #8a3b1e; border-radius: 12px 0; }
-  .q-valid { font-size: 13px; color: #888 !important; }
-  .q-accept[hidden], .q-done[hidden], .q-extras[hidden] { display: none; }
+  .q-accept[hidden], .q-done[hidden], .q-extras[hidden], .q-notes-card[hidden] { display: none; }
   .q-done h2 { margin: 0; font-weight: 300; font-size: 30px; color: var(--ink); }
   .q-done p { margin: 0; color: #444; }
   @media (min-width: 800px) {
     .q-packages { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
-    .q-summary { grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr); }
-    .q-notes { grid-column: 1 / -1; }
+    .q-meta { grid-template-columns: 1fr 1fr 1fr; }
+  }
+  /* Save as PDF / print: just the quote, on white. */
+  @media print {
+    :global(header), :global(footer), :global(nav), :global(.announcement), .q-buttons, .q-accept label, .q-accept > p:not(.q-valid), .pkg .btn { display: none !important; }
+    .quote-page { background: #fff; padding: 0; }
+    .q-card, .q-packages :global(.pkg) { box-shadow: none !important; border: 1px solid #ddd; break-inside: avoid; }
+    .q-packages :global(.pkg:not(.on)) { opacity: 0.6; }
   }
 </style>

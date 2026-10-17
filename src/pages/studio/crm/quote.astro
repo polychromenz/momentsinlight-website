@@ -44,7 +44,7 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
         </div>
       </section>
       <section class="card">
-        <label>Notes (shown at the bottom of the quote)<textarea name="notes" rows="3"></textarea></label>
+        <label>Notes (shown at the bottom of the quote; use the + Fill-in menu for the valid-until date)<textarea name="notes" rows="3"></textarea></label>
       </section>
       <p class="danger"><button type="button" class="s-btn s-btn--danger" data-act="withdraw">Withdraw quote</button></p>
     </form>
@@ -55,7 +55,7 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
       <h2>Send the quote</h2>
       <p class="review-to"></p>
       <label>Subject<input name="subject" /></label>
-      <label>Email<textarea name="body" rows="14"></textarea></label>
+      <label>Email <small>{"({{payment_plan}} becomes each package’s payments table when it’s sent)"}</small><textarea name="body" rows="14"></textarea></label>
       <div class="review-actions">
         <button type="button" class="s-btn s-btn--quiet" data-review="cancel">Cancel</button>
         <button type="button" class="s-btn s-btn--solid" data-review="send">Send</button>
@@ -66,6 +66,7 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
 </StudioLayout>
 
 <script>
+  import { attachRich } from '../../../studio/rich-editor';
   type Pkg = { name: string; subtitle: string; price: number; description: string; recommended: boolean };
   type Extra = { name: string; price: number; description: string };
   const $ = <T extends HTMLElement = HTMLElement>(s: string, root: ParentNode = document) => root.querySelector<T>(s)!;
@@ -77,6 +78,17 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
   const form = $<HTMLFormElement>('form.content');
   const f = (n: string) => form.elements.namedItem(n) as HTMLInputElement;
   let data: any;
+  const QUOTE_FIELDS = ['valid_until', 'couple', 'first_name', 'partner_name', 'event_date', 'venue'];
+  const richIntro = attachRich(form.elements.namedItem('intro') as HTMLTextAreaElement, { fields: QUOTE_FIELDS, minHeight: 120 });
+  const richNotes = attachRich(form.elements.namedItem('notes') as HTMLTextAreaElement, { fields: QUOTE_FIELDS, minHeight: 90 });
+  const reviewRich = attachRich(document.querySelector<HTMLFormElement>('.review-form')!.elements.namedItem('body') as HTMLTextAreaElement, { minHeight: 300 });
+  let pkgEditors: ReturnType<typeof attachRich>[] = [];
+  const attachPackages = () => {
+    document.querySelectorAll<HTMLTextAreaElement>('.packages textarea[data-k="description"]:not([data-rich])').forEach((t) => {
+      t.dataset.rich = '1';
+      pkgEditors.push(attachRich(t, { fields: [], minHeight: 160 }));
+    });
+  };
   let dirty = false;
   const editable = () => ['draft', 'sent'].includes(data?.quote.status);
 
@@ -107,15 +119,18 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
     $('.title').textContent = `Quote for ${job.title}`;
     const states: Record<string, string> = { draft: 'Draft: not sent yet.', sent: `Sent ${q.sent_at ? new Date(q.sent_at).toLocaleDateString('en-NZ') : ''}${q.viewed_at ? ` · opened ${new Date(q.viewed_at).toLocaleDateString('en-NZ')}` : ' · not opened yet'}.`, accepted: `Accepted by ${q.accepted_name} on ${new Date(q.accepted_at).toLocaleString('en-NZ')}: ${q.packages[q.chosen_package]?.name}, ${money(q.total)}.`, withdrawn: 'Withdrawn.', declined: 'Declined.' };
     $('.qstate').textContent = states[q.status] ?? q.status;
-    f('intro').value = q.intro; f('notes').value = q.notes; f('discount').value = String(q.discount / 100); f('discount_label').value = q.discount_label; f('valid_until').value = q.valid_until ?? '';
+    richIntro.set(q.intro); richNotes.set(q.notes); f('discount').value = String(q.discount / 100); f('discount_label').value = q.discount_label; f('valid_until').value = q.valid_until ?? '';
     const sel = f('schedule_key') as unknown as HTMLSelectElement;
     const match = data.schedules.find((s: any) => JSON.stringify(s.parts) === JSON.stringify(q.schedule));
     sel.innerHTML = (match ? '' : '<option value="">(this quote’s own)</option>') + data.schedules.map((s: any) => `<option value="${esc(s.key)}"${match?.key === s.key ? ' selected' : ''}>${esc(s.name)}</option>`).join('');
+    pkgEditors.forEach((r) => r.editor.destroy()); pkgEditors = [];
     $('.packages').innerHTML = q.packages.map(pkgRow).join('');
+    attachPackages();
     $('.extras').innerHTML = q.extras.map(extraRow).join('');
     $('.example').innerHTML = data.example ? `<li class="ex-head">e.g. ${esc(data.example.package)}, ${money(data.example.total)}:</li>` + data.example.payments.map((p: any) => `<li>${esc(p.label)} ${money(p.amount)} · ${p.onAccept ? 'on acceptance' : `by ${long(p.due)}`}</li>`).join('') : '';
     const lock = !editable();
     form.querySelectorAll<HTMLInputElement>('input, textarea, select, button').forEach((el) => (el.disabled = lock && !el.matches('[data-act="withdraw"]')));
+    [richIntro, richNotes, ...pkgEditors].forEach((r) => r.editor.setEditable(!lock));
     $<HTMLButtonElement>('[data-act="save"]').hidden = lock; $<HTMLButtonElement>('[data-act="send"]').hidden = lock;
     $<HTMLButtonElement>('[data-act="send"]').textContent = q.status === 'sent' ? 'Send again…' : 'Send to client…';
     $('.danger').hidden = lock;
@@ -139,7 +154,7 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
     const t = e.target as HTMLElement;
     if (t.closest('[data-act="save"]')) { save(); return; }
     const add = t.closest<HTMLElement>('[data-add]');
-    if (add) { const box = $(add.dataset.add === 'package' ? '.packages' : '.extras'); box.insertAdjacentHTML('beforeend', add.dataset.add === 'package' ? pkgRow({ name: '', subtitle: '', price: 0, description: '', recommended: false }) : extraRow({ name: '', price: 0, description: '' })); dirty = true; return; }
+    if (add) { const box = $(add.dataset.add === 'package' ? '.packages' : '.extras'); box.insertAdjacentHTML('beforeend', add.dataset.add === 'package' ? pkgRow({ name: '', subtitle: '', price: 0, description: '', recommended: false }) : extraRow({ name: '', price: 0, description: '' })); attachPackages(); dirty = true; return; }
     if (t.closest('[data-remove]')) { t.closest('.item')!.remove(); dirty = true; $('.save-state').textContent = 'Unsaved changes'; return; }
     if (t.closest('[data-act="withdraw"]')) {
       if (!confirm('Withdraw this quote? Its link will say it’s no longer available.')) return;
@@ -157,7 +172,7 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
       const rf = $<HTMLFormElement>('.review-form');
       $('.review-to').innerHTML = d.mode === 'live' ? `To: <strong>${esc(d.to)}</strong>` : `To: ${esc(d.to)} · <strong>test mode: it will go to ${esc(d.deliversTo)}</strong>`;
       (rf.elements.namedItem('subject') as HTMLInputElement).value = d.subject;
-      (rf.elements.namedItem('body') as HTMLTextAreaElement).value = d.body;
+      reviewRich.set(d.body);
       $<HTMLDialogElement>('dialog.review').showModal();
       return;
     }

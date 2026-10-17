@@ -76,9 +76,7 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
       <p class="review-missing" hidden></p>
       <label>Subject<input name="subject" /></label>
       <div class="review-cols">
-        <label>Email<textarea name="body" rows="18"></textarea>
-          <small>Blank line = new paragraph · **bold** · [link text](https://…) · a line on its own in **CAPITALS** becomes a heading</small>
-        </label>
+        <label>Email<textarea name="body" rows="18"></textarea></label>
         <div class="review-preview"><span>Preview</span><iframe title="Email preview"></iframe></div>
       </div>
       <p class="review-attach" hidden></p>
@@ -93,6 +91,7 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
 
 <script>
   import { emailHtml } from '../../../../functions-lib/email-render.js';
+  import { attachRich } from '../../../studio/rich-editor';
   type Step = { id: number; kind: string; title: string; due_at: string; status: string; note: string; done_at: string | null; stop_on: string };
   const $ = <T extends HTMLElement = HTMLElement>(s: string) => document.querySelector<T>(s)!;
   const esc = (s: unknown) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
@@ -189,6 +188,7 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
     const body = (rf.elements.namedItem('body') as HTMLTextAreaElement).value;
     preview.srcdoc = emailHtml({ subject, body });
   };
+  const reviewRich = attachRich(rf.elements.namedItem('body') as HTMLTextAreaElement, { minHeight: 380 });
   rf.addEventListener('input', showPreview);
   async function openReview(stepId: number) {
     const r = await fetch(`/api/studio/crm/send?step=${stepId}`);
@@ -207,7 +207,7 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
     att.hidden = !d.attachment;
     att.textContent = d.attachment ? `📎 Attached: ${d.attachment}` : '';
     (rf.elements.namedItem('subject') as HTMLInputElement).value = d.subject;
-    (rf.elements.namedItem('body') as HTMLTextAreaElement).value = d.body;
+    reviewRich.set(d.body);
     showPreview();
     dlg.showModal();
   }
@@ -317,7 +317,7 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
   .review-attach { margin: 0; font-size: 14px; color: #555; }
   .review-form label { display: flex; flex-direction: column; gap: 5px; font-size: 13px; font-weight: 600; color: #555; }
   .review-form input, .review-form textarea { font: inherit; font-weight: 400; font-size: 15px; padding: 9px 11px; border: 1px solid #ddd3c4; border-radius: 10px 0; }
-  .review-form textarea { font-size: 14px; line-height: 1.6; resize: vertical; min-height: 300px; }
+
   .review-form small { font-weight: 400; color: #888; font-size: 12px; }
   .review-cols { display: grid; gap: 14px; }
   .review-preview { display: flex; flex-direction: column; gap: 5px; font-size: 13px; font-weight: 600; color: #555; }
