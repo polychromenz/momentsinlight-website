@@ -12,7 +12,7 @@ export const templateAttachments = (t) => JSON.parse(t?.attachments || '[]');
 
 /** A job with its client's details, as the templates need them. */
 export const loadJob = (db, jobId) => db.prepare(
-  `SELECT j.*, c.first_name, c.last_name, c.email FROM jobs j JOIN clients c ON c.id = j.client_id WHERE j.id = ?1`,
+  `SELECT j.*, c.first_name, c.last_name, c.email, c.phone, c.address FROM jobs j JOIN clients c ON c.id = j.client_id WHERE j.id = ?1`,
 ).bind(jobId).first();
 
 

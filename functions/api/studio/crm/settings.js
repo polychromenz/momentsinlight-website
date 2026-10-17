@@ -73,5 +73,41 @@ export async function onRequestPut({ request, env }) {
     await env.DB.prepare('INSERT INTO templates (key, name, subject, body, attachments, updated_at) VALUES (?1, ?2, ?3, ?4, ?6, ?5)').bind(key, name, subject, body, now, attachments).run();
     return json({ ok: true, key });
   }
+  // Payment schedules: { schedule: { key?, name, parts: [{ label, percent, when, days?, months? }] } }
+  // or { delete_schedule: key } (not while a quote template uses it; sent quotes keep a copy).
+  if (d?.schedule) {
+    const sc = d.schedule;
+    const name = text(sc.name, 120);
+    if (!name) return json({ error: 'A payment schedule needs a name.' }, 400);
+    if (!Array.isArray(sc.parts) || !sc.parts.length) return json({ error: 'Add at least one payment.' }, 400);
+    const parts = [];
+    for (const p of sc.parts) {
+      const percent = Math.round(Number(p.percent) * 100) / 100;
+      if (!(percent > 0 && percent <= 100)) return json({ error: 'Each payment needs a percentage between 1 and 100.' }, 400);
+      const when = ['accept', 'before', 'after'].includes(p.when) ? p.when : 'accept';
+      const n = Math.max(0, Math.round(Number(p.amount) || 0));
+      const part = { percent, label: text(p.label, 60) || 'Payment', when };
+      if (n) part[p.unit === 'months' && when !== 'accept' ? 'months' : 'days'] = n;
+      parts.push(part);
+    }
+    const total = Math.round(parts.reduce((a, p) => a + p.percent, 0) * 100) / 100;
+    if (total !== 100) return json({ error: `The payments add up to ${total}%; they need to add up to 100%.` }, 400);
+    let key = sc.key;
+    if (key) {
+      const r = await env.DB.prepare('UPDATE payment_schedules SET name = ?2, parts = ?3, updated_at = ?4 WHERE key = ?1').bind(key, name, JSON.stringify(parts), now).run();
+      if (!r.meta.changes) return json({ error: 'That schedule no longer exists.' }, 404);
+    } else {
+      key = slug(name) || 'schedule';
+      for (let n = 2; await env.DB.prepare('SELECT 1 FROM payment_schedules WHERE key = ?1').bind(key).first(); n++) key = `${slug(name)}-${n}`;
+      await env.DB.prepare('INSERT INTO payment_schedules (key, name, parts, updated_at) VALUES (?1, ?2, ?3, ?4)').bind(key, name, JSON.stringify(parts), now).run();
+    }
+    return json({ ok: true, key });
+  }
+  if (d?.delete_schedule) {
+    const used = await env.DB.prepare('SELECT name FROM quote_templates WHERE schedule_key = ?1').bind(d.delete_schedule).all();
+    if (used.results.length) return json({ error: `The ${used.results.map((r) => r.name).join(', ')} quote template uses it. Choose another schedule there first.` }, 409);
+    await env.DB.prepare('DELETE FROM payment_schedules WHERE key = ?1').bind(d.delete_schedule).run();
+    return json({ ok: true });
+  }
   return json({ error: 'Nothing to save.' }, 400);
 }

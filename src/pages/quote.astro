@@ -42,8 +42,10 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
       <form class="q-card q-accept" novalidate>
         <h2>Ready to go ahead?</h2>
-        <p>Type your full name and click Accept. Next, I'll send your contract to sign and your deposit invoice.</p>
+        <p>Add your name and postal address, then click Accept. Next, I'll send your contract to sign and your deposit invoice.</p>
         <label>Your full name<input name="name" autocomplete="name" required /></label>
+        <label>Your postal address<textarea name="address" rows="3" autocomplete="street-address" required placeholder="Street, suburb, town and postcode"></textarea></label>
+        <label>Your phone number <span class="opt">(optional)</span><input name="phone" type="tel" autocomplete="tel" /></label>
         <p class="q-msg" role="alert" hidden></p>
         <div class="q-buttons"><button class="btn" type="submit">Accept quote</button><button class="btn btn--outline" type="button" data-print>Save as PDF / print</button></div>
       </form>
@@ -101,8 +103,9 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       let due = from;
       if (p.when === 'accept') due = addDays(from, p.days || 0);
       else if (q.event_date) due = p.months ? addMonths(q.event_date, (p.when === 'before' ? -1 : 1) * p.months) : addDays(q.event_date, (p.when === 'before' ? -1 : 1) * (p.days || 0));
-      if (due < from) due = from;
-      const when = due === from ? (q.status === 'accepted' ? long(due) : 'When you accept') : long(due);
+      const passed = due < from;
+      if (passed) due = from;
+      const when = due === from ? (q.status === 'accepted' ? long(due) : passed ? 'When you accept (the usual date has passed)' : 'When you accept') : long(due);
       return `<tr><td>${esc(p.label)} (${p.percent}%)</td><td>${when}</td><td>${money(amount)}</td></tr>`;
     }).join('');
   }
@@ -120,7 +123,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     $('.m-issued').textContent = q.issued;
     $('.m-valid').textContent = q.valid_until_long || '–';
     $('.m-from').innerHTML = [`<strong>${esc(q.from.name)}</strong>`, esc(q.from.person), esc(q.from.phone), `<a href="mailto:${esc(q.from.email)}">${esc(q.from.email)}</a>`, esc(q.from.address)].join('<br>');
-    $('.m-client').innerHTML = [`<strong>${esc(q.client.name)}</strong>`, esc(q.client.email), q.event_date_long && `Wedding: ${esc(q.event_date_long)}`, q.venue && esc(q.venue)].filter(Boolean).join('<br>');
+    $('.m-client').innerHTML = [`<strong>${esc(q.client.name)}</strong>`, esc(q.client.email), q.client.address && esc(q.client.address).replace(/\n/g, '<br>'), q.event_date_long && `Wedding: ${esc(q.event_date_long)}`, q.venue && esc(q.venue)].filter(Boolean).join('<br>');
     $('.q-packages').innerHTML = q.packages.map((p, i) => `<article class="pkg${p.recommended ? ' rec' : ''}">
       ${p.recommended ? '<span class="pkg-badge">♥ Recommended</span>' : ''}
       <h3>${esc(p.name)}</h3>${p.subtitle ? `<p class="pkg-sub">${esc(p.subtitle)}</p>` : ''}
@@ -166,9 +169,12 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     const name = ($<HTMLInputElement>('.q-accept input[name="name"]')).value.trim();
     if (chosen < 0) { msg.textContent = 'Please choose a package.'; msg.hidden = false; return; }
     if (name.length < 2) { msg.textContent = 'Please type your full name.'; msg.hidden = false; return; }
+    const address = ($<HTMLTextAreaElement>('.q-accept textarea[name="address"]')).value.trim();
+    const phone = ($<HTMLInputElement>('.q-accept input[name="phone"]')).value.trim();
+    if (address.length < 8) { msg.textContent = 'Please add your postal address.'; msg.hidden = false; return; }
     const btn = $<HTMLButtonElement>('.q-accept button[type="submit"]');
     btn.disabled = true; btn.textContent = 'Accepting…'; msg.hidden = true;
-    const r = await fetch('/api/quote', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ t: token, package: chosen, extras: [...extras], name }) });
+    const r = await fetch('/api/quote', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ t: token, package: chosen, extras: [...extras], name, address, phone }) });
     const d = await r.json().catch(() => ({}));
     if (!r.ok) { msg.textContent = d.error || 'Something went wrong. Please try again.'; msg.hidden = false; btn.disabled = false; btn.textContent = 'Accept quote'; return; }
     await load();
@@ -223,6 +229,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   .q-accept, .q-done { display: flex; flex-direction: column; gap: 12px; }
   .q-accept p { margin: 0; color: #444; line-height: 1.7; }
   .q-accept label { display: flex; flex-direction: column; gap: 6px; font-size: 14px; font-weight: 500; max-width: 420px; }
+  .q-accept .opt { font-weight: 400; color: #888; }
+  .q-accept textarea { font: inherit; font-size: 16px; padding: 12px 14px; border: 1px solid #ddd3c4; border-radius: 14px 0; resize: vertical; }
   .q-accept input { font: inherit; font-size: 16px; padding: 12px 14px; border: 1px solid #ddd3c4; border-radius: 14px 0; }
   .q-buttons { display: flex; gap: 10px; flex-wrap: wrap; }
   .q-msg { padding: 10px 14px; background: #fbeee8; color: #8a3b1e; border-radius: 12px 0; }

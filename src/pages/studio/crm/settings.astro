@@ -16,6 +16,7 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
       <button type="button" role="tab" data-tab="job_type">Job types</button>
       <button type="button" role="tab" data-tab="lead_source">Lead sources</button>
       <button type="button" role="tab" data-tab="documents">Documents</button>
+      <button type="button" role="tab" data-tab="schedules">Payment schedules</button>
     </div>
     <p class="status" aria-live="polite">Loading…</p>
 
@@ -52,6 +53,20 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
       <table class="list-table"><thead><tr><th></th><th>Name</th><th>Wording on the form</th><th>On the form</th><th></th></tr></thead><tbody></tbody></table>
       <div class="actions"><button type="button" class="s-btn s-btn--quiet" data-act="add">+ Add</button><button type="button" class="s-btn s-btn--solid" data-act="save-list">Save</button></div>
     </section>
+    <section class="pane" data-pane="schedules" hidden>
+      <div class="tpl-layout">
+        <div class="card"><ul class="tpl-list sch-list"></ul><button type="button" class="s-btn s-btn--quiet" data-act="new-schedule">+ New schedule</button></div>
+        <form class="card sch-editor" autocomplete="off">
+          <label>Name<input name="sch_name" required /></label>
+          <table class="list-table sch-parts"><thead><tr><th>Payment</th><th>%</th><th>Due</th><th></th></tr></thead><tbody></tbody></table>
+          <p class="sch-total"></p>
+          <div class="sch-example"></div>
+          <div class="actions"><button type="button" class="s-btn s-btn--quiet" data-act="add-part">+ Add payment</button><button type="button" class="s-btn s-btn--danger" data-act="delete-schedule">Delete</button><button type="submit" class="s-btn s-btn--solid">Save schedule</button></div>
+          <p class="hint">Sent quotes keep the schedule they were sent with; changes apply to new quotes.</p>
+        </form>
+      </div>
+    </section>
+
     <section class="pane card" data-pane="documents" hidden>
       <p class="hint">Files your emails can attach: the wedding guide, price lists, posing guides… Up to 10 MB each. Stored privately (never public on the website). Choose which ones a template attaches under its Attachments.</p>
       <table class="list-table docs-table"><thead><tr><th>Document</th><th>Size</th><th>Updated</th><th>Attached by</th><th></th></tr></thead><tbody></tbody></table>
@@ -67,6 +82,7 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
   import { attachRich } from '../../../studio/rich-editor';
   import Sortable from 'sortablejs';
   import { attachPicker, type Doc } from '../../../studio/attach-picker';
+  import { payments, money, longDate } from '../../../../functions-lib/quotes.js';
   type Item = { value: string; label: string; workflow: string | null; on_form: boolean };
   type Template = { key: string; name: string; subject: string; body: string; attachments: number[] };
   type LibraryDoc = Doc & { type: string; updated_at: string; used_by: string[] };
@@ -78,7 +94,9 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
   };
   const sample = { first_name: 'Emma', last_name: 'Smith', partner_name: 'Liam', couple: 'Emma & Liam', event_date: 'Saturday, 20 February 2027', venue: 'Tui Hills', quote_link: 'https://www.momentsinlight.co.nz/quote', quote_valid_until: '16 November 2026', portal_link: 'https://www.momentsinlight.co.nz/', gallery_link: 'https://www.momentsinlight.co.nz/', contract_link: 'https://www.momentsinlight.co.nz/', payment_amount: '$299.50', payment_due_date: '24 October 2026' };
 
-  let data: { job_type: Item[]; lead_source: Item[]; templates: Template[]; workflows: string[]; documents: LibraryDoc[] };
+  type Part = { percent: number; label: string; when: string; days?: number; months?: number };
+  type Schedule = { key: string; name: string; parts: Part[] };
+  let data: { job_type: Item[]; lead_source: Item[]; templates: Template[]; workflows: string[]; documents: LibraryDoc[]; schedules: Schedule[] };
   let current: Template | null = null;
   let tab = 'templates';
   const editor = $<HTMLFormElement>('.tpl-editor');
@@ -142,6 +160,70 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
       return { value: v('value')!.value, label: kind === 'job_type' ? v('value')!.value : v('label')!.value, workflow: kind === 'job_type' ? v('workflow')!.value || null : null, on_form: v('on_form')!.checked };
     });
   }
+
+  // ---- Payment schedules ----
+  const sch = $<HTMLFormElement>('.sch-editor');
+  let currentSch: Schedule | null = null;
+  const partRow = (p: Part) => `<tr>
+    <td><input data-p="label" value="${esc(p.label)}" /></td>
+    <td class="pct"><input data-p="percent" type="number" min="1" max="100" step="0.5" value="${p.percent}" /></td>
+    <td class="due"><select data-p="when"><option value="accept"${p.when === 'accept' ? ' selected' : ''}>On acceptance, plus</option><option value="before"${p.when === 'before' ? ' selected' : ''}>Before the wedding</option><option value="after"${p.when === 'after' ? ' selected' : ''}>After the wedding</option></select>
+      <input data-p="amount" type="number" min="0" step="1" value="${p.months ?? p.days ?? 0}" />
+      <select data-p="unit"><option value="days"${p.months ? '' : ' selected'}>days</option><option value="months"${p.months ? ' selected' : ''}>months</option></select></td>
+    <td class="row-btns"><button type="button" data-part-remove aria-label="Remove">✕</button></td>
+  </tr>`;
+  const readParts = () => [...sch.querySelectorAll<HTMLTableRowElement>('.sch-parts tbody tr')].map((tr) => {
+    const v = (k: string) => (tr.querySelector(`[data-p="${k}"]`) as HTMLInputElement).value;
+    return { label: v('label'), percent: Number(v('percent')), when: v('when'), amount: Number(v('amount')), unit: v('unit') };
+  });
+  function schExample() {
+    const parts = readParts();
+    const total = parts.reduce((a, p) => a + (p.percent || 0), 0);
+    const t = $('.sch-total'); t.textContent = `Total: ${Math.round(total * 100) / 100}%${total === 100 ? ' ✓' : ' (needs to be 100%)'}`; t.classList.toggle('bad', total !== 100);
+    // An example: a $3,995 wedding six months from today, accepted today.
+    const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Pacific/Auckland' });
+    const d = new Date(`${today}T12:00:00Z`); d.setUTCMonth(d.getUTCMonth() + 6);
+    const wedding = d.toISOString().slice(0, 10);
+    const asParts = parts.map((p) => ({ percent: p.percent, label: p.label, when: p.when, ...(p.amount ? { [p.unit === 'months' && p.when !== 'accept' ? 'months' : 'days']: p.amount } : {}) }));
+    const rows = total === 100 ? payments(asParts, 399500, wedding, today) : [];
+    $('.sch-example').innerHTML = rows.length ? `<p class="ex-head">Example: a $3,995 wedding on ${longDate(wedding)}, accepted today</p><ul>${rows.map((r: { label: string; amount: number; onAccept: boolean; due: string }) => `<li>${esc(r.label)}: ${money(r.amount)} ${r.onAccept ? 'on acceptance' : `by ${longDate(r.due)}`}</li>`).join('')}</ul>` : '';
+  }
+  function openSchedule(x: Schedule | null) {
+    currentSch = x;
+    (sch.elements.namedItem('sch_name') as HTMLInputElement).value = x?.name ?? '';
+    $('.sch-parts tbody').innerHTML = (x?.parts ?? [{ percent: 100, label: 'Payment', when: 'accept', days: 7 }]).map(partRow).join('');
+    document.querySelectorAll<HTMLElement>('.sch-list li').forEach((li) => li.classList.toggle('on', li.dataset.key === x?.key));
+    $<HTMLButtonElement>('[data-act="delete-schedule"]').hidden = !x;
+    schExample();
+  }
+  function renderSchedules() {
+    $('.sch-list').innerHTML = data.schedules.map((x) => `<li data-key="${esc(x.key)}"><button type="button">${esc(x.name)}<small>${x.parts.map((p) => p.percent + '%').join(' / ')}</small></button></li>`).join('');
+  }
+  sch.addEventListener('input', schExample);
+  sch.addEventListener('change', schExample);
+  sch.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const r = await fetch('/api/studio/crm/settings', { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ schedule: { key: currentSch?.key, name: (sch.elements.namedItem('sch_name') as HTMLInputElement).value, parts: readParts() } }) });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) { toast(d.error || 'Couldn’t save.', true); return; }
+    toast('Payment schedule saved.');
+    await load(current?.key, d.key);
+  });
+  document.addEventListener('click', async (e) => {
+    const t = e.target as HTMLElement;
+    const li = t.closest<HTMLElement>('.sch-list li');
+    if (li) { openSchedule(data.schedules.find((x) => x.key === li.dataset.key) ?? null); return; }
+    if (t.closest('[data-act="new-schedule"]')) { openSchedule(null); (sch.elements.namedItem('sch_name') as HTMLInputElement).focus(); return; }
+    if (t.closest('[data-act="add-part"]')) { $('.sch-parts tbody').insertAdjacentHTML('beforeend', partRow({ percent: 0, label: 'Payment', when: 'before', months: 1 })); schExample(); return; }
+    if (t.closest('[data-part-remove]')) { t.closest('tr')!.remove(); schExample(); return; }
+    if (t.closest('[data-act="delete-schedule"]') && currentSch) {
+      if (!confirm(`Delete “${currentSch.name}”?`)) return;
+      const r = await fetch('/api/studio/crm/settings', { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ delete_schedule: currentSch.key }) });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) { toast(d.error || 'Couldn’t delete.', true); return; }
+      toast('Deleted.'); currentSch = null; await load(current?.key);
+    }
+  });
 
   // ---- Documents ----
   const size = (b: number) => (b >= 1048576 ? `${(b / 1048576).toFixed(1)} MB` : `${Math.max(1, Math.round(b / 1024))} KB`);
@@ -211,7 +293,7 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
     if (t.closest('[data-act="new-template"]')) { openTemplate(null); field('name').focus(); return; }
     const pane = t.closest<HTMLElement>('[data-pane]');
     const kind = pane?.dataset.pane as 'job_type' | 'lead_source';
-    if (!pane || kind === ('templates' as string) || kind === ('documents' as string)) return;
+    if (!pane || ['templates', 'documents', 'schedules'].includes(kind as string)) return;
     if (t.closest('[data-act="add"]')) {
       data[kind] = [...readList(kind), { value: '', label: '', workflow: null, on_form: true }];
       renderList(kind);
@@ -234,12 +316,13 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
     }
   });
 
-  async function load(openKey?: string) {
+  async function load(openKey?: string, openSchedule_?: string) {
     const r = await fetch('/api/studio/crm/settings');
     const d = await r.json();
     if (!r.ok) { $('.status').textContent = d.error || `Something went wrong (${r.status}).`; return; }
     data = d;
-    renderTemplates(); renderList('job_type'); renderList('lead_source'); renderDocs();
+    renderTemplates(); renderList('job_type'); renderList('lead_source'); renderDocs(); renderSchedules();
+    openSchedule(data.schedules.find((x) => x.key === (openSchedule_ ?? currentSch?.key)) ?? data.schedules[0] ?? null);
     openTemplate(data.templates.find((x) => x.key === openKey) ?? data.templates.find((x) => x.key.startsWith('wedding-01')) ?? data.templates[0] ?? null);
     $('.status').hidden = true;
     showTab(tab);
@@ -277,6 +360,16 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
   .settings .list-table td { padding: 6px; border-bottom: 1px solid #f3eee6; vertical-align: middle; }
   .settings .list-table td.c { text-align: center; }
   .settings .row-btns { white-space: nowrap; }
+  .settings .sch-editor { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+  .settings .sch-parts td.pct { width: 80px; }
+  .settings .sch-parts td.due { display: flex; gap: 6px; flex-wrap: wrap; }
+  .settings .sch-parts td.due select { width: auto; }
+  .settings .sch-parts td.due input { width: 80px; }
+  .settings .sch-total { margin: 0; font-size: 14px; font-weight: 600; color: var(--green); }
+  .settings .sch-total.bad { color: #8c1d18; }
+  .settings .sch-example { font-size: 14px; color: #555; }
+  .settings .sch-example .ex-head { margin: 0 0 4px; font-weight: 600; }
+  .settings .sch-example ul { margin: 0; padding-left: 20px; }
   .settings .docs-table a { color: var(--ink); font-weight: 600; }
   .settings .docs-table .row-btns button { font-size: 13px; color: var(--green); }
   .settings .muted { color: #999; }

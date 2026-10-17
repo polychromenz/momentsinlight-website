@@ -37,8 +37,13 @@ Agreed 17 Oct 2026 with Tony: Studio Ninja's Wedding Workflow (see
 ### Planning
 
 10. **About 6 weeks before:** **05 "Let's plan your day"** (automatic) and the wedding
-    questionnaire; planning meeting and practice shoot (usually about 6 weeks before; can be
-    scheduled earlier for a particular couple).
+    questionnaire. Email 05 arranges the **planning meeting** and the **practice shoot**
+    (Studio Ninja's "Couple shoot"): Tony meets the couple and teaches them to pose, so they're
+    relaxed on the day. 05 links to the Wedding Photos Guide (a button to the PDF on the
+    website, not an attachment: it's 21 MB). Usually about 6 weeks before; can be scheduled
+    earlier for a particular couple.
+    - The **practice shoot** is a date on the job (like the wedding date), shown in the studio,
+      with a to-do to book it if it isn't set a couple of weeks after 05.
 11. **Practice photos ready** (action button: paste the Pic-Time link → review and personalise
     **06** → send → task done).
 12. **07 RunOrder offer**: automatic, 4 weeks before.

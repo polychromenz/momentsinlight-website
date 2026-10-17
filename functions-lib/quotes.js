@@ -37,8 +37,10 @@ export function payments(parts, total, eventDate, acceptDate = nzToday()) {
       const sign = p.when === 'before' ? -1 : 1;
       due = p.months ? addMonths(eventDate, sign * p.months) : addDays(eventDate, sign * (p.days || 0));
     }
-    if (due < acceptDate) due = acceptDate;
-    return { label: p.label, percent: p.percent, amount, due, onAccept: due === acceptDate };
+    // A date that has already passed (e.g. 2 months before a wedding that's 6 weeks away) is due on acceptance.
+    const passed = due < acceptDate;
+    if (passed) due = acceptDate;
+    return { label: p.label, percent: p.percent, amount, due, onAccept: due === acceptDate, passed };
   });
 }
 
@@ -72,7 +74,7 @@ export function planHtml(q, job) {
   return q.packages.map((p) => {
     const total = Math.max(0, p.price - (q.discount || 0));
     const rows = payments(q.schedule, total, job.event_date).map((x) =>
-      `<tr><td style="${td}">${esc(x.label)} (${x.percent}%)</td><td style="${td}text-align:right;">${money(x.amount)}</td><td style="${td}text-align:right;color:#777;padding-left:12px;">${x.onAccept ? 'on acceptance' : `by ${longDate(x.due)}`}</td></tr>`).join('');
+      `<tr><td style="${td}">${esc(x.label)} (${x.percent}%)</td><td style="${td}text-align:right;">${money(x.amount)}</td><td style="${td}text-align:right;color:#777;padding-left:12px;">${x.passed ? 'on acceptance (the usual date has passed)' : x.onAccept ? 'on acceptance' : `by ${longDate(x.due)}`}</td></tr>`).join('');
     return `<p style="margin:18px 0 6px;font-family:Arial,Helvetica,sans-serif;font-size:15px;color:#1a1a1a;"><strong style="font-weight:600;">${esc(p.name)}</strong>${p.subtitle ? ` (${esc(p.subtitle)})` : ''}: ${money(total)} incl. GST</p>
 <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;margin:0 0 8px;">${rows}</table>`;
   }).join('');
@@ -85,7 +87,7 @@ export function publicQuote(q, job) {
     status: expired ? 'expired' : q.status,
     number: quoteNumber(q), issued: longDate((q.sent_at || q.created_at).slice(0, 10)),
     from: { name: 'Moments in Light', person: 'Tony Gorham', phone: '021 625 943', email: 'tony@momentsinlight.co.nz', address: '985a Hibiscus Coast Highway, Waiwera, Auckland 0994' },
-    client: { name: `${job.first_name} ${job.last_name}`.trim(), email: job.email },
+    client: { name: `${job.first_name} ${job.last_name}`.trim(), email: job.email, address: q.status === 'accepted' ? job.address || '' : '' },
     names: job.partner_name ? `${job.first_name} & ${job.partner_name}` : job.first_name,
     event_date: job.event_date, event_date_long: longDate(job.event_date), venue: job.venue,
     intro: quoteText(q.intro, q, job), packages: q.packages.map((p) => ({ ...p, description: clean(toHtml(p.description)) })), extras: q.extras, discount: q.discount, discount_label: q.discount_label,

@@ -11,7 +11,7 @@ export async function onRequestGet({ request, env }) {
   const id = Number(new URL(request.url).searchParams.get('id'));
   if (!id) return json({ error: 'Which job?' }, 400);
   const job = await env.DB.prepare(
-    `SELECT j.*, c.first_name, c.last_name, c.email, c.phone, c.notes AS client_notes
+    `SELECT j.*, c.first_name, c.last_name, c.email, c.phone, c.address, c.notes AS client_notes
      FROM jobs j JOIN clients c ON c.id = j.client_id WHERE j.id = ?1`,
   ).bind(id).first();
   if (!job) return json({ error: 'That job doesn’t exist (it may have been deleted).' }, 404);
@@ -52,12 +52,12 @@ export async function onRequestPut({ request, env }) {
     ).bind(id, jobFields.title, jobFields.job_type, jobFields.stage, jobFields.partner_name, jobFields.event_date, jobFields.venue, jobFields.lead_source, jobFields.notes, now),
   ];
   // Client details (name, email, phone) live on the client.
-  if (d.first_name !== undefined || d.last_name !== undefined || d.email !== undefined || d.phone !== undefined) {
+  if (d.first_name !== undefined || d.last_name !== undefined || d.email !== undefined || d.phone !== undefined || d.address !== undefined) {
     const c = await env.DB.prepare('SELECT * FROM clients WHERE id = ?1').bind(job.client_id).first();
     const email = d.email !== undefined ? text(d.email, 254).toLowerCase() : c.email;
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return json({ error: 'That email address doesn’t look right.' }, 400);
-    stmts.push(env.DB.prepare('UPDATE clients SET first_name = ?2, last_name = ?3, email = ?4, phone = ?5, updated_at = ?6 WHERE id = ?1')
-      .bind(c.id, d.first_name !== undefined ? text(d.first_name, 100) || c.first_name : c.first_name, d.last_name !== undefined ? text(d.last_name, 100) : c.last_name, email, d.phone !== undefined ? text(d.phone, 40) : c.phone, now));
+    stmts.push(env.DB.prepare('UPDATE clients SET first_name = ?2, last_name = ?3, email = ?4, phone = ?5, address = ?7, updated_at = ?6 WHERE id = ?1')
+      .bind(c.id, d.first_name !== undefined ? text(d.first_name, 100) || c.first_name : c.first_name, d.last_name !== undefined ? text(d.last_name, 100) : c.last_name, email, d.phone !== undefined ? text(d.phone, 40) : c.phone, now, d.address !== undefined ? text(d.address, 300) : c.address));
   }
   // Booked or lost: steps waiting on a booking stop.
   if ((jobFields.stage === 'booked' || jobFields.stage === 'lost') && job.stage !== jobFields.stage) {
