@@ -1,6 +1,6 @@
 ---
 title: "Auckland Wedding Photographers: Capture Your Love Story"
-seoTitle: "Auckland Wedding Photographers: Capture Love Stories"
+seoTitle: "How to Choose Your Wedding Photographer"
 description: "How to choose an Auckland wedding photographer: styles, questions to ask and what to look for, from a local Auckland wedding photographer."
 date: 2026-08-14
 updated: 2026-08-26
