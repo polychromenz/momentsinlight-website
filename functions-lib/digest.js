@@ -10,7 +10,7 @@ const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<
 const nzDate = (d = new Date()) => d.toLocaleDateString('en-CA', { timeZone: 'Pacific/Auckland' });
 const nzHour = () => Number(new Date().toLocaleString('en-NZ', { timeZone: 'Pacific/Auckland', hour: 'numeric', hour12: false }));
 const addDays = (date, n) => new Date(Date.parse(`${date}T12:00:00Z`) + n * 86400_000).toISOString().slice(0, 10);
-const longDay = (date) => new Date(`${date}T12:00:00Z`).toLocaleDateString('en-NZ', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' });
+const longDay = (date) => new Date(`${date}T12:00:00Z`).toLocaleDateString('en-NZ', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
 const time = (t) => (t ? new Date(`2000-01-01T${t}:00`).toLocaleTimeString('en-NZ', { hour: 'numeric', minute: '2-digit' }) : 'All day');
 const money = (c) => `$${(c / 100).toLocaleString('en-NZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const jobLink = (id, text) => `<a href="${SITE}/studio/crm/job?id=${id}" style="color:#2b2d1f">${esc(text)}</a>`;
