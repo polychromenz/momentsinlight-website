@@ -16,10 +16,16 @@ export async function getStaticPaths() {
 const { category } = Astro.params;
 const { posts } = Astro.props;
 const names: Record<string, string> = { Wedding: 'Love stories', Portrait: 'Portrait sessions', Family: 'Family sessions', Info: 'Wedding planning' };
+const blurbs: Record<string, string> = {
+  Wedding: 'Real Auckland weddings photographed by Tony Gorham: vineyard, beach, garden and church weddings, told through relaxed, natural photos.',
+  Portrait: 'Portrait sessions by Auckland photographer Tony Gorham: studio, hotel, street and beach shoots, from pin-up and vintage to brand portraits.',
+  Family: 'Relaxed family photo sessions around Auckland by Tony Gorham, at the beach, the park or somewhere special to you.',
+  Info: 'Wedding planning advice for Auckland couples from photographer Tony Gorham: venues, suppliers, timelines, vows and more.',
+};
 ---
 <BaseLayout
-  title={`${category} — Blog — Moments In Light`}
-  description={`${category} posts from Moments In Light, Auckland wedding and portrait photographer.`}
+  title={`${names[category!] ?? category} | Moments In Light Blog`}
+  description={blurbs[category!] ?? `${category} posts from Moments In Light, Auckland wedding and portrait photographer Tony Gorham.`}
 >
   <BlogList posts={posts} heading={names[category!] ?? category} active={category} />
 </BaseLayout>

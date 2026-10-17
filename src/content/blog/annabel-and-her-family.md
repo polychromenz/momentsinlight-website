@@ -1,7 +1,7 @@
 ---
 title: "Annabel and her family"
-seoTitle: "Annabel and her family"
-description: "Casual family photoshoots are a great way to capture your family over time."
+seoTitle: "Family Photos at Cornwall Park, Auckland"
+description: "A casual family photo session at Cornwall Park, a place special to Annabel and her family, taken just before a big life event."
 date: 2024-10-17
 updated: 2025-10-14
 author: "Tony Gorham"

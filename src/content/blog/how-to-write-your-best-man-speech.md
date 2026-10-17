@@ -1,7 +1,7 @@
 ---
 title: "Tips on how to write your best man speech"
 seoTitle: "How To Write Your Best Man Speech"
-description: "Read stories, tips, and inspiration from real photo sessions and Auckland weddings on our photography blog."
+description: "Tips for writing a best man speech, from a memorable opening line to the stories, humour and heartfelt words that make it a great one."
 date: 2024-05-12
 updated: 2025-09-30
 author: "Tony Gorham"

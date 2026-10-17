@@ -1,7 +1,7 @@
 ---
 title: "Gel and James"
 seoTitle: "Gel & James’ Beautiful Wedding"
-description: "Gel & James' stunning wedding day. Explore a love story told through timeless photography"
+description: "Gel and James’ Auckland wedding: a wonderful day of joy, laughter, faith and family, from a calm bridal prep to a heartfelt celebration."
 date: 2025-02-02
 updated: 2026-04-01
 author: "Tony Gorham"

@@ -1,7 +1,7 @@
 ---
 title: "Finding a celebrant that suits you"
-seoTitle: "Finding A Celebrant In Auckland"
-description: "Read stories, tips, and inspiration from real photo sessions and Auckland weddings."
+seoTitle: "How to Find the Right Marriage Celebrant"
+description: "How to choose a marriage celebrant who suits you: what they do, what to ask and how they set the tone for your wedding ceremony."
 date: 2024-05-22
 updated: 2025-10-01
 author: "Tony Gorham"

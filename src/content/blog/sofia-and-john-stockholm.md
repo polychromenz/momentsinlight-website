@@ -1,7 +1,7 @@
 ---
 title: "Sofia and John | Stockholm"
-seoTitle: "Sofia & John | Stockholm Destination Wedding Photography | Waterfront Sweden"
-description: "A deeply personal destination wedding on the waterfront in Stockholm, Sweden — photographed by Auckland wedding photographer Tony, for his own son. Intimate, handcrafted, and utterly unforgettable."
+seoTitle: "Sofia & John’s Stockholm Waterfront Wedding"
+description: "A destination wedding on the waterfront in Stockholm, Sweden, photographed by Tony Gorham for his own son. Intimate, personal and unforgettable."
 date: 2026-07-12
 updated: 2026-08-17
 author: "Tony Gorham"

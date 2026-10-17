@@ -1,8 +1,7 @@
 ---
 title: Dianne and family
-seoTitle: Family photoshoot Auckland
-description: Looking for the perfect Auckland family photoshoot? We can help
-  with that. Take a look at our galleries.
+seoTitle: "Family Photoshoot in Auckland | Dianne"
+description: "A relaxed family photoshoot in Auckland with Dianne and her family: love, laughter and easy smiles in photos to keep for a lifetime."
 thumbnail: https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/colour/_W2A2621_SOCIAL-website/public
 date: 2024-05-16
 updated: 2024-10-17

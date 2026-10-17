@@ -1,7 +1,7 @@
 ---
 title: "Tay & Jesse – Country Vibes at The Barn Waimauku"
-seoTitle: "The Barn Waimauku Wedding | Tay & Jesse | Auckland Wedding Photographer"
-description: "A beautiful Waimauku wedding at The Barn with Tay & Jesse, featuring emotional speeches, country music touches, stunning sunset portraits and an epic celebration."
+seoTitle: "Tay & Jesse | The Barn Waimauku Wedding"
+description: "Tay and Jesse’s wedding at The Barn Waimauku: emotional speeches, country music touches, sunset portraits and an epic celebration."
 date: 2026-03-21
 updated: 2026-05-20
 author: "Tony Gorham"

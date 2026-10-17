@@ -1,7 +1,7 @@
 ---
 title: "Franklin sunflower fields"
-seoTitle: "Sunflower photoshoot"
-description: "Come to Franklin farm and get some gorgeous photos at sunset in the sunflowers"
+seoTitle: "Sunflower Field Portraits in Franklin"
+description: "Romantic sunset portraits in the Franklin sunflower fields south of Auckland, one of Tony’s favourite seasonal portrait locations."
 date: 2024-11-11
 updated: 2025-10-14
 author: "Tony Gorham"

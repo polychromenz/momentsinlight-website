@@ -1,7 +1,7 @@
 ---
 title: "Kayla & Scott | Devonport Wedding"
-seoTitle: "Kayla & Scott | Devonport Yacht Club Wedding | Auckland Wedding Photographer"
-description: "A classy Devonport wedding at Holy Trinity Church and Devonport Yacht Club. Captured naturally by an Auckland wedding photographer, featuring 80s classics and a lively celebration."
+seoTitle: "Kayla & Scott’s Devonport Yacht Club Wedding"
+description: "A classy Devonport wedding at Holy Trinity Church and the Devonport Yacht Club, under a cyclone warning that couldn’t dampen the party."
 date: 2026-04-11
 updated: 2026-06-17
 author: "Tony Gorham"

@@ -1,6 +1,6 @@
 ---
 title: "Planning your wedding makeup as a bride"
-description: "Thinking about the makeup for your special day? Here are some thing to be thinking about."
+description: "Planning your bridal makeup: choosing an experienced makeup artist, what to think about and New Zealand-specific tips for your wedding day."
 date: 2024-06-17
 updated: 2024-09-20
 author: "Tony Gorham"

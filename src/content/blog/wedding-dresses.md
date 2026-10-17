@@ -1,7 +1,7 @@
 ---
 title: "Auckland Wedding Dresses: A Photographer's Guide"
 seoTitle: "Auckland Wedding Dresses: A Photographer's Guide"
-description: "A curated guide to Auckland's best bridal boutiques, from designer gowns to budget-friendly and rental options — put together by wedding photographer Tony Gorham of Moments In Light."
+description: "A guide to Auckland’s best bridal boutiques, from designer gowns to budget-friendly and rental options, by wedding photographer Tony Gorham."
 date: 2024-05-08
 updated: 2026-09-09
 author: "Tony Gorham"

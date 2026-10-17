@@ -1,7 +1,7 @@
 ---
 title: "Confetti Options"
-seoTitle: "Confetti Options Pros and Cons"
-description: "Read stories, tips, and inspiration from real photo sessions and Auckland weddings."
+seoTitle: "Wedding Confetti Options: Pros and Cons"
+description: "Rice or paper confetti? The pros and cons of each for New Zealand weddings, your venue’s rules and the more eco-friendly choices."
 date: 2024-05-13
 updated: 2025-10-01
 author: "Tony Gorham"

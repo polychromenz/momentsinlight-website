@@ -1,7 +1,7 @@
 ---
 title: "Raewyn and Shane"
-seoTitle: "Raewyn & Shane's Wedding"
-description: "Experience the magic of Raewyn & Shane’s wedding in Auckland."
+seoTitle: "Raewyn & Shane’s Te Atatū Peninsula Wedding"
+description: "Raewyn and Shane’s waterside wedding on the Te Atatū Peninsula, on the hottest day of the year: minimal, classy styling and family close by."
 date: 2024-12-14
 updated: 2025-10-14
 author: "Tony Gorham"

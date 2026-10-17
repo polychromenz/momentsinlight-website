@@ -1,7 +1,7 @@
 ---
 title: "Practice wedding shoots"
-seoTitle: "Practice Wedding Photographs"
-description: "Discover why practice wedding photographs are essential for capturing perfect memories on your big day."
+seoTitle: "Practice Wedding Shoots: Why We Do Them"
+description: "Why Tony does a practice shoot with every couple: getting to know each other, simple posing tips and feeling relaxed in front of the camera."
 date: 2025-03-24
 updated: 2025-10-14
 author: "Tony Gorham"

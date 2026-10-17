@@ -1,7 +1,7 @@
 ---
 title: "Engagement Rings 101: Cuts, Settings & What to Ask Your Jeweller"
-seoTitle: "Engagement Rings 101"
-description: "Engagement Rings 101: Cuts, Settings & What to Ask Your Jeweller"
+seoTitle: "Engagement Rings 101: Cuts, Settings and Tips"
+description: "Engagement rings explained: diamond cuts, settings, carat, lab-grown or natural, and the questions to ask your jeweller before you buy."
 date: 2026-08-15
 updated: 2026-08-27
 author: "Tony Gorham"

@@ -1,7 +1,7 @@
 ---
 title: "Wedding Dance Auckland"
-seoTitle: "For the perfect wedding dance"
-description: "Your wedding dance is an exciting highlight of your special day but can often feel daunting for many couples!"
+seoTitle: "Wedding Dance Lessons in Auckland"
+description: "Make your first dance less daunting: how Wedding Dance Auckland helps couples prepare a first dance they’ll enjoy, whatever their experience."
 date: 2024-05-31
 updated: 2024-05-31
 author: "Tony Gorham"

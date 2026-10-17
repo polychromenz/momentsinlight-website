@@ -1,8 +1,7 @@
 ---
 title: Tracey and her boys
-seoTitle: Fun Family beach photoshoot
-description: Looking for family photos?  Don't let those precious moments pass
-  by because time flies when you're having fun!
+seoTitle: "Family Beach Photoshoot | Tracey and Her Boys"
+description: "A fun family beach photoshoot with Tracey and her boys in Auckland. Precious moments captured before they grow up too fast."
 thumbnail: https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/colour/092A9336_SOCIAL-website/public
 date: 2024-05-16
 updated: 2025-10-01

@@ -1,7 +1,7 @@
 ---
 title: "Chiedza & Foster – A Joyful Celebration at Abel Estate"
-seoTitle: "Chi and Foster's | Abel Estate"
-description: "Chi and Foster's stunning wedding shoot at Abel Estate. Set against the backdrop of this beautiful vineyard."
+seoTitle: "Chiedza & Foster’s Abel Estate Wedding"
+description: "Chiedza and Foster’s wedding at Abel Estate in Kumeu: a day bursting with love, laughter and joy among the vines, by Tony Gorham."
 date: 2025-06-21
 updated: 2026-04-02
 author: "Tony Gorham"

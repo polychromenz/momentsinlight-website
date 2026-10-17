@@ -1,7 +1,7 @@
 ---
 title: "Invites, place settings, signs and seating charts"
-seoTitle: "Invites Place Settings Signs and Seating Charts"
-description: "Read stories, tips, and inspiration from real photo sessions and Auckland weddings."
+seoTitle: "Wedding Invites, Signs and Seating Charts NZ"
+description: "New Zealand suppliers for wedding invitations, place settings, signs and seating charts, all in one list to save you the search."
 date: 2024-05-08
 updated: 2025-10-01
 author: "Tony Gorham"

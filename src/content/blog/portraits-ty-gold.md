@@ -1,7 +1,7 @@
 ---
 title: "Pure Gold - Portraits with Ty"
-seoTitle: "Creative studio portraits"
-description: "We went bold with a gold theme and did very well in lots of competitions"
+seoTitle: "Pure Gold: Gold Leaf Studio Portraits with Ty"
+description: "A bold gold-leaf portrait shoot with Ty in the studio. A long-planned creative idea that went on to do very well in photography competitions."
 date: 2024-10-18
 updated: 2025-10-14
 author: "Tony Gorham"

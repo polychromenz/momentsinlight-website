@@ -1,6 +1,6 @@
 ---
 title: "Ivanka Zonjic"
-seoTitle: "Classy studio portraits"
+seoTitle: "Studio Portraits of Ivanka Zonjic"
 description: "Classy studio portraits of NewsTalk ZB presenter Ivanka Zonjic, with full hair and makeup and designer outfits. A premium portrait session in Auckland."
 date: 2025-01-23
 updated: 2025-10-14

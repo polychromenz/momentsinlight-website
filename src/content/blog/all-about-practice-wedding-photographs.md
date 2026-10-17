@@ -1,7 +1,7 @@
 ---
 title: "All about practice wedding shoots"
 seoTitle: "All About Practice Wedding Photographs"
-description: "Learn how a pre-wedding photoshoot helps couples feel confident, capture stunning moments."
+description: "Why a practice wedding shoot helps: get to know your photographer, feel confident in front of the camera and get better photos on the day."
 date: 2025-03-24
 updated: 2025-10-14
 author: "Tony Gorham"

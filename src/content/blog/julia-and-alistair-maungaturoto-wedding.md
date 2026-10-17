@@ -1,7 +1,7 @@
 ---
 title: "Julia & Alistair - Maungaturoto Wedding"
-seoTitle: "Julia & Alistair | Maungaturoto Home Wedding | Auckland Wedding Photographer"
-description: "Celebrate a heartfelt Maungaturoto home wedding with Julia & Alistair. A beautiful day filled with family, Kiwi classics, and two decades of love. Captured by your Auckland wedding photographer."
+seoTitle: "Julia & Alistair’s Maungaturoto Home Wedding"
+description: "Julia and Alistair’s home wedding in Maungaturoto after nearly two decades together: family, Kiwi classics and a day full of love."
 date: 2026-04-04
 updated: 2026-05-21
 author: "Tony Gorham"

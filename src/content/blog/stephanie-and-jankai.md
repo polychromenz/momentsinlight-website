@@ -1,7 +1,7 @@
 ---
 title: "Stephanie and Jankai"
-seoTitle: "Stephanie and Jankai's - Romantic Wedding"
-description: "Stephanie and Jankai's romantic wedding at Settlers Country Manor in Kumeu Auckland."
+seoTitle: "Stephanie & Jankai | Settlers Country Manor"
+description: "Stephanie and Jankai’s romantic wedding at Settlers Country Manor in Kumeu, booked with just over a month to go while Tony was in London."
 date: 2025-05-24
 updated: 2026-08-17
 author: "Tony Gorham"

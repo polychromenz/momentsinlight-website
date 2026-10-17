@@ -1,7 +1,7 @@
 ---
 title: "Red, Regal & Really Yours: Arriving in Style on a London Bus this Wedding Season"
-seoTitle: "London Bus Wedding Transport"
-description: "Make your wedding unforgettable with a classic London Routemaster bus."
+seoTitle: "London Bus Wedding Transport in Auckland"
+description: "Arrive in style in a classic 1964 London Routemaster double-decker bus: fun, iconic wedding transport that makes great photos."
 date: 2025-09-15
 updated: 2025-10-14
 author: "Tony Gorham"

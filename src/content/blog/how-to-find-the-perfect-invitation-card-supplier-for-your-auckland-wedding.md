@@ -1,7 +1,7 @@
 ---
 title: "How to Find the Perfect Invitation Card Supplier"
-seoTitle: "Finding Invite card suppliers"
-description: "The perfect invite sets the tone for your wedding day. Makle an announcement with style."
+seoTitle: "Wedding Invitation Suppliers in Auckland"
+description: "How to find the perfect wedding invitation supplier in Auckland, from intimate gatherings to big celebrations, with steps and local ideas."
 date: 2024-05-13
 updated: 2025-09-30
 author: "Tony Gorham"

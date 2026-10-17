@@ -1,6 +1,6 @@
 ---
 title: "Kirstin and Justin"
-seoTitle: "Kirstin and Justin's wedding"
+seoTitle: "Kirstin & Justin’s Auckland Church Wedding"
 description: "Kirstin and Justin’s Auckland church wedding: an emotional day for a camera-shy couple, photographed with care so they could simply enjoy it."
 date: 2026-02-11
 updated: 2026-04-01

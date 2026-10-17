@@ -1,6 +1,6 @@
 ---
 title: "Anna - Street Portraits"
-seoTitle: "Portraits with a twist"
+seoTitle: "Street Portraits in Ponsonby, Auckland"
 description: "Street portraits in Ponsonby, Auckland: Anna’s relaxed, stylish shoot with a jacket, sunglasses and café backdrops. A fun, casual portrait option."
 date: 2025-02-03
 updated: 2025-10-14

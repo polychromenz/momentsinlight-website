@@ -22,8 +22,8 @@ const words = tag!.replace(/-/g, ' ');
 const heading = venue?.name ?? words[0].toUpperCase() + words.slice(1);
 ---
 <BaseLayout
-  title={`${tag} — Blog — Moments In Light`}
-  description={`Posts tagged ${tag} from Moments In Light, Auckland wedding and portrait photographer.`}
+  title={venue ? `${venue.name} Weddings | Moments In Light` : `${heading} | Moments In Light Blog`}
+  description={venue ? `Real weddings at ${venue.name} photographed by Auckland wedding photographer Tony Gorham, with the venue’s best spots and moments.` : `${heading}: stories and photos from Moments In Light, Auckland wedding and portrait photographer Tony Gorham.`}
 >
   <BlogList posts={posts} heading={heading} eyebrow={venue ? 'Love stories at' : 'Journal'} />
 </BaseLayout>

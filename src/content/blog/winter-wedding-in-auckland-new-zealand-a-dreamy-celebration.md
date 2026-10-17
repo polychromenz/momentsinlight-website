@@ -1,7 +1,7 @@
 ---
 title: "Winter Weddings in Auckland"
 seoTitle: "Winter weddings in Auckland New Zealand"
-description: "Just because it gets cold, the love doesn't stop. Find out about winter weddings in Auckland."
+description: "Winter weddings in Auckland can be wonderfully romantic: cosy venues, crisp air and stunning backdrops. Ideas and tips for a winter wedding."
 date: 2024-07-09
 updated: 2025-09-30
 author: "Tony Gorham"

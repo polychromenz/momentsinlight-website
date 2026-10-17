@@ -1,7 +1,7 @@
 ---
 title: "Rebecca and Michael"
 seoTitle: "Rebecca and Michael's Beautiful Wedding"
-description: "Rebecca & Michaels stunning wedding day. Explore a love story told through timeless photography"
+description: "Rebecca and Michael’s Auckland wedding: rain couldn’t dampen a day full of laughs and a party atmosphere, from bridal prep to the dance floor."
 date: 2025-04-08
 updated: 2025-10-14
 author: "Tony Gorham"
