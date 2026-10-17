@@ -89,14 +89,82 @@ Merge fields used: `%client_name%`, `%client_portal_link%`, `%galleries_link%`,
 `%contract_link%`, `%payment_amount%`, `%payment_due_date%`, `%business_name%`. The email signature
 is stored once, globally, in Studio Ninja.
 
+## Workflows
+
+Each workflow has three stages (Lead → Production → Post production). Steps are either **emails**
+(sent automatically, or "Send email" = Tony sends it when ready), **tasks** (to-dos for Tony, some
+with a due date), **appointments**, or **shoots**. "Job accepted" ticks itself when a quote is
+accepted, a contract signed or an invoice paid, and turns the lead into a job.
+
+### Wedding Workflow (job type Wedding)
+
+| Stage | Step | Kind | When |
+|---|---|---|---|
+| Lead | Lead created | – | – |
+| Lead | New lead response (email 01) | auto email | 1 hour after lead created |
+| Lead | New lead follow-up (email 02) | email, sent by Tony | – |
+| Lead | New lead FINAL follow-up (email 03) | email, sent by Tony | – |
+| Lead | Meeting to book couple | task | – |
+| Lead | Send quote | task | 1 hour after "Meeting to book couple" |
+| Production | Job accepted | automatic | quote accepted / contract signed / invoice paid |
+| Production | Thanks for booking (email 04) | auto email | 1 day after job accepted |
+| Production | Couple shoot | extra shoot | – |
+| Production | Organise wedding schedule (email 05) | auto email | 1 month before main shoot |
+| Production | Wedding questionnaire | auto questionnaire | 1 month before main shoot |
+| Production | Pre-wedding meeting | appointment | – |
+| Production | Pre-wedding (email 07.1, "1 week to go") | auto email | 7 days before main shoot |
+| Production | Main shoot | main shoot | the wedding |
+| Post production | Upload sneak peek to Facebook | task | 1 day after main shoot |
+| Post production | Post-wedding sneak peek (email 08) | email, sent by Tony | – |
+| Post production | Finish post-production and upload gallery | task | 21 days after main shoot |
+| Post production | Your wedding photos are ready (email 09) | email, sent by Tony | – |
+| Post production | Thanks and ask for a review (email 10) | auto email | 3 days after email 09 |
+| Post production | Job complete | – | – |
+
+Not in the workflow (sent by hand when needed): 06 practice photos ready, 07 RunOrder offer,
+contract email, invoice email.
+
+### Portrait Workflow (Portraits, Lifestyle) and Headshots Workflow (identical)
+
+| Stage | Step | Kind | When |
+|---|---|---|---|
+| Lead | Initial enquiry response / follow-up / FINAL follow-up | emails, sent by Tony | – |
+| Lead | Send the booking fee invoice & contract | task | – |
+| Production | Job accepted | automatic | as above |
+| Production | Thanks for booking | auto email | 1 day after job accepted |
+| Production | Pre-shoot reminder and details | auto email | 2 days before main shoot |
+| Production | Pre-shoot confirmation call | task | 1 day before main shoot |
+| Production | Main shoot | main shoot | – |
+| Production | Book IPS meeting straight after the shoot | task | – |
+| Post production | Post-shoot email | auto email | 1 day after main shoot |
+| Post production | Upload shoot and cull photos | task | 1 day after main shoot |
+| Post production | Prepare photos for IPS meeting | task | 7 days after main shoot |
+| Post production | IPS meeting (in-person sales) | appointment | – |
+| Post production | Invoice client for the sale | task | – |
+| Post production | Retouch products & send to production | task | 3 days after invoicing |
+| Post production | Receive products from supplier and check quality | task | 14 days after sending to production |
+| Post production | Call client that products are ready | task | 1 day after receiving products |
+| Post production | Job complete | – | – |
+
+### Family Workflow
+
+Same as the Portrait Workflow, without "Prepare photos for IPS meeting" and "IPS meeting".
+(Job types Family uses no workflow link in Job Types; the workflow exists as a template.)
+
+Commercial / Advertising and Event have no workflow.
+
+**What this means for the new system:** workflows need tasks (a to-do list for Tony with due
+dates, shown on the studio dashboard) as well as emails; emails can be "send automatically" or
+"remind me to send" (pre-filled, one click to send); steps can be timed from another step, not
+just from the shoot date.
+
 ## Still needed
 
-- **Workflow timings:** when each email is sent (e.g. "02: 5 days after 01 if no reply"), for the
-  Wedding Workflow and the Portrait Workflow.
+- **Portrait, family and headshot email templates** (initial enquiry response and follow-ups,
+  thanks for booking, pre-shoot reminder, post-shoot email), if they differ from the wedding ones.
 - **Email signature** text.
 - **Payment schedule 10/40/50:** when each part is due (e.g. 10% on booking, 40% at…, 50% before
   the wedding?).
-- **Portrait/family templates**, if the Portrait Workflow uses different emails.
 - **Products & Packages** list (if anything beyond the two wedding packages is used).
 - Which contract goes to which couples (standard vs "no ads" vs NZIPP).
 
