@@ -5,6 +5,7 @@
 import { json } from '../../../../functions-lib/studio.js';
 import { sendMode } from '../../../../functions-lib/crm.js';
 import { clashes, syncSoon, calendarReady } from '../../../../functions-lib/calendar.js';
+import { planBooking, replanDates } from '../../../../functions-lib/workflows.js';
 
 const STAGES = ['lead', 'booked', 'completed', 'lost'];
 
@@ -51,17 +52,18 @@ export async function onRequestPut(context) {
     stage: STAGES.includes(d.stage) ? d.stage : job.stage,
     partner_name: d.partner_name !== undefined ? text(d.partner_name, 200) : job.partner_name,
     event_date: d.event_date !== undefined ? (/^\d{4}-\d{2}-\d{2}$/.test(d.event_date) ? d.event_date : null) : job.event_date,
+    event_time: d.event_time !== undefined ? (/^([01]\d|2[0-3]):[0-5]\d$/.test(d.event_time) ? d.event_time : null) : job.event_time,
     venue: d.venue !== undefined ? text(d.venue, 200) : job.venue,
     lead_source: d.lead_source !== undefined ? text(d.lead_source, 60) : job.lead_source,
     notes: d.notes !== undefined ? text(d.notes, 20000) : job.notes,
   };
   const stmts = [
     env.DB.prepare(
-      `UPDATE jobs SET title = ?2, job_type = ?3, stage = ?4, partner_name = ?5, event_date = ?6, venue = ?7, lead_source = ?8, notes = ?9,
+      `UPDATE jobs SET title = ?2, job_type = ?3, stage = ?4, partner_name = ?5, event_date = ?6, venue = ?7, lead_source = ?8, notes = ?9, event_time = ?11,
          booked_at = CASE WHEN ?4 = 'booked' AND booked_at IS NULL THEN ?10 ELSE booked_at END,
          lost_at = CASE WHEN ?4 = 'lost' AND lost_at IS NULL THEN ?10 ELSE lost_at END,
          updated_at = ?10 WHERE id = ?1`,
-    ).bind(id, jobFields.title, jobFields.job_type, jobFields.stage, jobFields.partner_name, jobFields.event_date, jobFields.venue, jobFields.lead_source, jobFields.notes, now),
+    ).bind(id, jobFields.title, jobFields.job_type, jobFields.stage, jobFields.partner_name, jobFields.event_date, jobFields.venue, jobFields.lead_source, jobFields.notes, now, jobFields.event_time),
   ];
   // Client details (name, email, phone) live on the client.
   if (d.first_name !== undefined || d.last_name !== undefined || d.email !== undefined || d.phone !== undefined || d.address !== undefined) {
@@ -83,6 +85,9 @@ export async function onRequestPut(context) {
     if (String(e).includes('UNIQUE')) return json({ error: 'Another client already has that email address.' }, 409);
     throw e;
   }
+  // Workflow: a booking plans its steps; a new date moves the ones timed from it.
+  if (jobFields.stage === 'booked' && job.stage !== 'booked') await planBooking(env.DB, await env.DB.prepare('SELECT * FROM jobs WHERE id = ?1').bind(id).first());
+  if (jobFields.event_date !== job.event_date) await replanDates(env.DB, id);
   syncSoon(context, id);
   return json({ ok: true });
 }

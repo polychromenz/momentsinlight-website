@@ -5,7 +5,8 @@
 //
 // Spam protection as on the guide signup: a hidden "website" field bots fill in, plus
 // Cloudflare Turnstile when TURNSTILE_SECRET_KEY is set.
-import { planEnquirySteps, alertTony, WORKFLOWS } from '../../functions-lib/crm.js';
+import { planEnquirySteps, alertTony } from '../../functions-lib/crm.js';
+import { loadWorkflow } from '../../functions-lib/workflows.js';
 import { clashes, clashText, syncSoon } from '../../functions-lib/calendar.js';
 
 const reply = (data, status = 200) => new Response(JSON.stringify(data), { status, headers: { 'content-type': 'application/json' } });
@@ -56,7 +57,7 @@ export async function onRequestPost(context) {
   // The job type must be one from the studio's list (Settings); it decides the workflow.
   const type = await env.DB.prepare(`SELECT value, workflow FROM lists WHERE kind = 'job_type' AND value = ?1`).bind(f.service).first().catch(() => null);
   if (!type) return reply({ error: 'Please choose which service you’re interested in.' }, 400);
-  const workflow = WORKFLOWS[type.workflow] ? type.workflow : null;
+  const workflow = (await loadWorkflow(env.DB, type.workflow)) ? type.workflow : null;
   const now = new Date();
   const at = now.toISOString();
   let jobId;

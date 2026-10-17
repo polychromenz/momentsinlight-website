@@ -128,9 +128,19 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
       </div>
     </section>
 
-    <section class="pane card" data-pane="workflows" hidden>
-      <p class="hint">How a wedding moves through the studio, step by step. <span class="wf-key"><b class="st st--live">Live now</b> working today · <b class="st st--next">Coming next</b> · <b class="st st--later">Later</b></span></p>
-      <div class="wf"></div>
+    <section class="pane" data-pane="workflows" hidden>
+      <div class="tpl-layout">
+        <div class="card"><ul class="tpl-list wf-list"></ul><button type="button" class="s-btn s-btn--quiet" data-act="new-wf">+ New workflow</button></div>
+        <form class="card wf-editor" autocomplete="off">
+          <label>Name<input name="wf_name" required /></label>
+          <p class="hint">Built in for every booking: the quote, then the contract when they accept, then the invoices when they sign (Payment schedules), with reminders and receipts. The steps below are the emails and to-dos around those. Choose which job types use this workflow under Job types.</p>
+          <p class="qn-head">Steps <small>drag ⠿ to reorder</small></p>
+          <ol class="wf-steps"></ol>
+          <div class="qn-add"><button type="button" class="s-btn s-btn--quiet" data-act="wf-add">+ Add step</button></div>
+          <div class="actions"><button type="button" class="s-btn s-btn--danger" data-act="wf-delete">Delete</button><button type="submit" class="s-btn s-btn--solid">Save workflow</button></div>
+          <p class="hint">Changes apply to steps planned from now on; jobs already under way keep the steps they have. An email with a “[check: …]” note in it can’t be sent until it’s filled in.</p>
+        </form>
+      </div>
     </section>
 
     <section class="pane card" data-pane="documents" hidden>
@@ -150,10 +160,12 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
   import Sortable from 'sortablejs';
   import { attachPicker, type Doc } from '../../../studio/attach-picker';
   import { payments, money, longDate } from '../../../../functions-lib/quotes.js';
-  import { WEDDING, KIND, STATUS } from '../../../studio/workflow-view';
+  import { WHEN, KINDS } from '../../../../functions-lib/workflows.js';
   import { TYPES, FILLS, formHtml } from '../../../../functions-lib/questionnaire-form.js';
   type Item = { value: string; label: string; workflow: string | null; on_form: boolean; contract_key?: string | null; questionnaire_key?: string | null };
   type Question = { id: string; type: string; label: string; placeholder?: string; options?: string[]; required?: boolean; half?: boolean; fill?: string };
+  type WfStep = { id: string; title: string; kind: string; template?: string; when: string; days?: number; hours?: number; after_step?: string; stop_on?: string; questionnaire?: string; gallery?: boolean };
+  type Wf = { key: string; name: string; steps: WfStep[] };
   type Qn = { key: string; name: string; intro: string; questions: Question[] };
   type ContractT = { key: string; name: string; note: string; body: string };
   type Template = { key: string; name: string; subject: string; body: string; attachments: number[] };
@@ -168,7 +180,7 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
 
   type Part = { percent: number; label: string; when: string; days?: number; months?: number };
   type Schedule = { key: string; name: string; parts: Part[] };
-  let data: { job_type: Item[]; lead_source: Item[]; templates: Template[]; workflows: string[]; documents: LibraryDoc[]; schedules: Schedule[]; contracts: ContractT[]; payments: Record<string, string>; stripe: { ok: boolean; test?: boolean; why?: string }; questionnaires: Qn[]; portal: Record<string, string> };
+  let data: { job_type: Item[]; lead_source: Item[]; templates: Template[]; workflows: Wf[]; documents: LibraryDoc[]; schedules: Schedule[]; contracts: ContractT[]; payments: Record<string, string>; stripe: { ok: boolean; test?: boolean; why?: string }; questionnaires: Qn[]; portal: Record<string, string> };
   let current: Template | null = null;
   let tab = 'templates';
   const editor = $<HTMLFormElement>('.tpl-editor');
@@ -217,7 +229,7 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
       <td class="drag" title="Drag to reorder" aria-hidden="true">⠿</td>
       <td><input data-k="value" value="${esc(it.value)}" /></td>
       ${kind === 'job_type'
-        ? `<td><select data-k="workflow"><option value="">None (a “reply” to-do)</option>${data.workflows.map((w) => `<option value="${w}"${it.workflow === w ? ' selected' : ''}>${w[0].toUpperCase() + w.slice(1)}</option>`).join('')}</select></td><td><select data-k="contract_key"><option value="">None</option>${data.contracts.map((c) => `<option value="${esc(c.key)}"${it.contract_key === c.key ? ' selected' : ''}>${esc(c.name)}</option>`).join('')}</select></td><td><select data-k="questionnaire_key"><option value="">None</option>${data.questionnaires.map((c) => `<option value="${esc(c.key)}"${it.questionnaire_key === c.key ? ' selected' : ''}>${esc(c.name)}</option>`).join('')}</select></td>`
+        ? `<td><select data-k="workflow"><option value="">None (a “reply” to-do)</option>${data.workflows.map((w) => `<option value="${esc(w.key)}"${it.workflow === w.key ? ' selected' : ''}>${esc(w.name)}</option>`).join('')}</select></td><td><select data-k="contract_key"><option value="">None</option>${data.contracts.map((c) => `<option value="${esc(c.key)}"${it.contract_key === c.key ? ' selected' : ''}>${esc(c.name)}</option>`).join('')}</select></td><td><select data-k="questionnaire_key"><option value="">None</option>${data.questionnaires.map((c) => `<option value="${esc(c.key)}"${it.questionnaire_key === c.key ? ' selected' : ''}>${esc(c.name)}</option>`).join('')}</select></td>`
         : `<td><input data-k="label" value="${esc(it.label)}" /></td>`}
       <td class="c"><input type="checkbox" data-k="on_form"${it.on_form ? ' checked' : ''} aria-label="Show on the form" /></td>
       <td class="row-btns"><button type="button" data-move="-1" aria-label="Move up">↑</button><button type="button" data-move="1" aria-label="Move down">↓</button><button type="button" data-remove aria-label="Remove">✕</button></td>
@@ -349,11 +361,100 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
     }
   });
 
-  // ---- Workflows (read only) ----
-  $('.wf').innerHTML = '<h2 class="wf-title">Wedding</h2>' + WEDDING.map((stage) => `<div class="wf-stage"><h3>${esc(stage.name)}</h3><ol>${stage.steps.map((st) => `<li class="wf-step wf-step--${st.status}">
-    <div class="wf-top"><strong>${esc(st.title)}</strong><b class="st st--${st.status}">${STATUS[st.status]}</b></div>
-    <div class="wf-meta"><span class="kind">${KIND[st.kind]}</span> ${esc(st.when)}${st.stops ? ` · stops if ${esc(st.stops)}` : ''}</div>
-    ${st.note ? `<div class="wf-note">${esc(st.note)}</div>` : ''}</li>`).join('')}</ol></div>`).join('');
+  // ---- Workflows ----
+  const wf = $<HTMLFormElement>('.wf-editor');
+  let currentWf: Wf | null = null;
+  const opt = (pairs: [string, string][], v?: string) => pairs.map(([k, l]) => `<option value="${esc(k)}"${k === v ? ' selected' : ''}>${esc(l)}</option>`).join('');
+  const stepRow = (x: WfStep, all: WfStep[]) => {
+    const email = x.kind !== 'todo';
+    const days = x.when !== 'manual';
+    return `<li class="qn-q wf-step" data-id="${esc(x.id)}">
+      <span class="drag" title="Drag to reorder" aria-hidden="true">⠿</span>
+      <div class="qn-q-body">
+        <div class="qn-q-top"><input data-s="title" value="${esc(x.title)}" placeholder="Step name" aria-label="Step name" /><button type="button" class="qn-x" data-wf-remove aria-label="Remove this step">✕</button></div>
+        <div class="wf-row">
+          <select data-s="kind" aria-label="What it is">${opt(Object.entries(KINDS) as [string, string][], x.kind)}</select>
+          ${email ? `<select data-s="template" aria-label="Email template"><option value="">Choose the email…</option>${opt(data.templates.map((t) => [t.key, t.name]), x.template)}</select>` : ''}
+        </div>
+        <div class="wf-row">
+          <select data-s="when" aria-label="When">${opt(Object.entries(WHEN) as [string, string][], x.when)}</select>
+          ${days ? `<label class="wf-num"><input data-s="days" type="number" min="0" max="730" value="${x.days ?? 0}" /> days</label>` : ''}
+          ${x.when === 'enquiry' ? `<label class="wf-num"><input data-s="hours" type="number" min="0" max="72" value="${x.hours ?? 0}" /> hours</label>` : ''}
+          ${x.when === 'step' ? `<select data-s="after_step" aria-label="After which step">${opt(all.filter((o) => o.id !== x.id).map((o) => [o.id, o.title]), x.after_step)}</select>` : ''}
+        </div>
+        <div class="qn-flags">
+          <label><input type="checkbox" data-s="stop_reply"${String(x.stop_on || '').includes('reply') ? ' checked' : ''} /> Stop if they reply</label>
+          <label><input type="checkbox" data-s="stop_booked"${String(x.stop_on || '').includes('booked') ? ' checked' : ''} /> Stop if they book</label>
+          ${email ? `<label><input type="checkbox" data-s="gallery"${x.gallery ? ' checked' : ''} /> Asks for a gallery link</label>
+          <label>Sends questionnaire <select data-s="questionnaire"><option value="">None</option>${opt(data.questionnaires.map((q) => [q.key, q.name]), x.questionnaire)}</select></label>` : ''}
+        </div>
+      </div></li>`;
+  };
+  const readSteps = (): WfStep[] => [...wf.querySelectorAll<HTMLElement>('.wf-step')].map((li) => {
+    const g = (k: string) => li.querySelector<HTMLInputElement>(`[data-s="${k}"]`);
+    const x: WfStep = { id: li.dataset.id!, title: g('title')!.value, kind: g('kind')!.value, when: g('when')!.value };
+    if (g('template')) x.template = g('template')!.value;
+    if (g('days')) x.days = Number(g('days')!.value) || 0;
+    if (g('hours')) x.hours = Number(g('hours')!.value) || 0;
+    if (g('after_step')) x.after_step = g('after_step')!.value;
+    x.stop_on = [g('stop_reply')?.checked && 'reply', g('stop_booked')?.checked && 'booked'].filter(Boolean).join(',');
+    if (g('gallery')?.checked) x.gallery = true;
+    if (g('questionnaire')?.value) x.questionnaire = g('questionnaire')!.value;
+    return x;
+  });
+  const wfDraw = (steps: WfStep[]) => { $('.wf-steps').innerHTML = steps.map((x) => stepRow(x, steps)).join(''); };
+  function openWf(x: Wf | null) {
+    currentWf = x;
+    (wf.elements.namedItem('wf_name') as HTMLInputElement).value = x?.name ?? '';
+    wfDraw(x?.steps ?? []);
+    document.querySelectorAll<HTMLElement>('.wf-list li').forEach((li) => li.classList.toggle('on', li.dataset.key === x?.key));
+  }
+  function renderWfs() {
+    $('.wf-list').innerHTML = data.workflows.map((x) => `<li data-key="${esc(x.key)}"><button type="button">${esc(x.name)}<small>${x.steps.length} steps · Used by: ${esc(data.job_type.filter((t) => t.workflow === x.key).map((t) => t.value).join(', ') || 'no job type')}</small></button></li>`).join('');
+  }
+  Sortable.create($('.wf-steps'), { handle: '.drag', animation: 150 });
+  wf.addEventListener('change', (e) => {
+    // A different kind or timing changes which settings a step has: redraw, keeping what's set.
+    const k = (e.target as HTMLElement).dataset.s;
+    if (k === 'kind' || k === 'when') wfDraw(readSteps());
+  });
+  wf.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const r = await fetch('/api/studio/crm/settings', { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ workflow: { key: currentWf?.key, name: (wf.elements.namedItem('wf_name') as HTMLInputElement).value, steps: readSteps() } }) });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) { toast(d.error || 'Couldn’t save.', true); return; }
+    toast('Workflow saved. New steps are planned this way from now on.');
+    await load(current?.key, undefined, undefined, undefined, d.key);
+  });
+  document.addEventListener('click', async (e) => {
+    const t = e.target as HTMLElement;
+    const li = t.closest<HTMLElement>('.wf-list li');
+    if (li) { openWf(data.workflows.find((x) => x.key === li.dataset.key) ?? null); return; }
+    if (t.closest('[data-act="new-wf"]')) {
+      // Start from a copy of the one open (or empty), named for you to change.
+      const base = currentWf;
+      openWf(null);
+      if (base && confirm(`Start from a copy of “${base.name}”? (Cancel starts empty.)`)) wfDraw(base.steps.map((x) => ({ ...x })));
+      (wf.elements.namedItem('wf_name') as HTMLInputElement).focus();
+      return;
+    }
+    if (t.closest('[data-act="wf-add"]')) {
+      const steps = readSteps();
+      steps.push({ id: `s${Math.random().toString(36).slice(2, 7)}`, title: '', kind: 'ready_email', when: 'enquiry', days: 1 });
+      wfDraw(steps);
+      (wf.querySelector('.wf-step:last-child [data-s="title"]') as HTMLInputElement)?.focus();
+      return;
+    }
+    if (t.closest('[data-wf-remove]')) { t.closest('.wf-step')!.remove(); return; }
+    if (t.closest('[data-act="wf-delete"]')) {
+      if (!currentWf) { openWf(data.workflows[0] ?? null); return; }
+      if (!confirm(`Delete the “${currentWf.name}” workflow? Jobs already under way keep their steps.`)) return;
+      const r = await fetch('/api/studio/crm/settings', { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ delete_workflow: currentWf.key }) });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) { toast(d.error || 'Couldn’t delete it.', true); return; }
+      currentWf = null; toast('Deleted.'); await load(current?.key);
+    }
+  });
 
   // ---- Payment schedules ----
   const sch = $<HTMLFormElement>('.sch-editor');
@@ -543,12 +644,13 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
     await load(current?.key);
   });
 
-  async function load(openKey?: string, openSchedule_?: string, openContract_?: string, openQn_?: string) {
+  async function load(openKey?: string, openSchedule_?: string, openContract_?: string, openQn_?: string, openWf_?: string) {
     const r = await fetch('/api/studio/crm/settings');
     const d = await r.json();
     if (!r.ok) { $('.status').textContent = d.error || `Something went wrong (${r.status}).`; return; }
     data = d;
-    renderTemplates(); renderList('job_type'); renderList('lead_source'); renderDocs(); renderSchedules(); renderContracts(); renderPayments(); renderQns(); renderPortal();
+    renderTemplates(); renderList('job_type'); renderList('lead_source'); renderDocs(); renderSchedules(); renderContracts(); renderPayments(); renderQns(); renderPortal(); renderWfs();
+    openWf(data.workflows.find((x) => x.key === (openWf_ ?? currentWf?.key)) ?? data.workflows[0] ?? null);
     openQn(data.questionnaires.find((x) => x.key === (openQn_ ?? currentQn?.key)) ?? data.questionnaires[0] ?? null);
     openContract(data.contracts.find((x) => x.key === (openContract_ ?? currentCon?.key)) ?? data.contracts[0] ?? null);
     openSchedule(data.schedules.find((x) => x.key === (openSchedule_ ?? currentSch?.key)) ?? data.schedules[0] ?? null);
@@ -578,6 +680,17 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
   .settings .portal-banner-preview { display: block; max-width: 100%; max-height: 200px; width: auto; border-radius: 18px 0; background: var(--champagne); }
   @media (min-width: 700px) { .settings .pay-form .two { grid-template-columns: 1fr 1fr; } }
   .settings .tpl-layout { display: grid; gap: 16px; }
+  .settings .wf-editor { display: flex; flex-direction: column; gap: 12px; }
+  .settings .wf-editor > label { display: flex; flex-direction: column; gap: 5px; font-size: 13px; font-weight: 600; color: #555; }
+  .settings .wf-editor > label > input { font: inherit; font-weight: 400; font-size: 15px; padding: 9px 11px; border: 1px solid #ddd3c4; border-radius: 10px 0; max-width: 420px; }
+  .settings .wf-steps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+  .settings .wf-step .qn-q-top input { flex: 1; font-weight: 600 !important; }
+  .settings .wf-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .settings .wf-row select { width: auto !important; max-width: 100%; flex: 0 1 auto; }
+  .settings .wf-num input { width: 70px !important; }
+  .settings .wf-step .qn-flags select { width: auto !important; }
+  .settings .wf-num { display: inline-flex !important; flex-direction: row !important; align-items: center; gap: 6px !important; font-weight: 400 !important; font-size: 13px !important; }
+  .settings .wf-num input { width: 70px; }
   .settings .qn-editor { display: flex; flex-direction: column; gap: 14px; }
   .settings .qn-editor > label { display: flex; flex-direction: column; gap: 5px; font-size: 13px; font-weight: 600; color: #555; }
   .settings .qn-editor > label > input { font: inherit; font-weight: 400; font-size: 15px; padding: 9px 11px; border: 1px solid #ddd3c4; border-radius: 10px 0; }

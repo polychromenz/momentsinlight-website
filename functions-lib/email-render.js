@@ -21,6 +21,9 @@ export function fields(job, extra = {}) {
     couple: job.partner_name ? `${job.first_name} & ${job.partner_name}` : job.first_name,
     event_date: date ? date.toLocaleDateString('en-NZ', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }) : '',
     venue: job.venue,
+    shoot_date: date ? date.toLocaleDateString('en-NZ', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' }) : '',
+    shoot_time: job.event_time ? new Date(`2000-01-01T${job.event_time}:00`).toLocaleTimeString('en-NZ', { hour: 'numeric', minute: '2-digit' }) : '',
+    location: job.venue,
     ...extra,
   };
 }
@@ -84,7 +87,7 @@ export function renderTemplate(template, values, edits = {}) {
   for (const k of Object.keys(keep)) {
     html = html.replace(new RegExp(`<p[^>]*>\\s*\\{\\{${k}\\}\\}\\s*</p>`, 'g'), values[k]).replaceAll(`{{${k}}}`, values[k]);
   }
-  const gaps = (t) => [...String(t).matchAll(/\[(first_name|last_name|partner_name|couple|event_date|venue|portal_link|gallery_link|contract_link|payment_amount|payment_due_date|quote_link|quote_valid_until|payment_plan|invoice_number|invoice_label|invoice_link)\]/g)].map((m) => m[1]);
+  const gaps = (t) => [...String(t).matchAll(/\[(first_name|last_name|partner_name|couple|event_date|venue|portal_link|gallery_link|contract_link|payment_amount|payment_due_date|quote_link|quote_valid_until|payment_plan|invoice_number|invoice_label|invoice_link|questionnaire_link|shoot_date|shoot_time|location)\]/g)].map((m) => m[1]);
   return {
     subject: s.text,
     body: b.text,

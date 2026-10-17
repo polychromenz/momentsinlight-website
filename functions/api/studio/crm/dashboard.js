@@ -44,7 +44,7 @@ const T = (n) => `(?${n} = '' OR j.job_type = ?${n})`;
     db.prepare(
       `SELECT j.id, j.title, j.job_type, j.event_date, j.created_at, j.replied_at,
          (SELECT m.direction || '|' || m.subject || '|' || m.sent_at FROM messages m WHERE m.job_id = j.id ORDER BY m.sent_at DESC LIMIT 1) AS last_email,
-         (SELECT s.title || '|' || s.due_at || '|' || s.kind FROM steps s WHERE s.job_id = j.id AND s.status IN ('scheduled', 'due', 'failed') ORDER BY s.due_at LIMIT 1) AS next_step
+         (SELECT s.title || '|' || s.due_at || '|' || s.kind FROM steps s WHERE s.job_id = j.id AND s.status IN ('scheduled', 'due', 'failed') AND s.due_at < '9000' ORDER BY s.due_at LIMIT 1) AS next_step
        FROM jobs j WHERE j.stage = 'lead' AND ${T(1)} ORDER BY j.created_at DESC LIMIT 100`,
     ).bind(type).all(),
     db.prepare(
@@ -54,7 +54,7 @@ const T = (n) => `(?${n} = '' OR j.job_type = ?${n})`;
     db.prepare(
       `SELECT s.id, s.job_id, s.kind, s.title, s.due_at, s.status, j.title AS job_title
        FROM steps s JOIN jobs j ON j.id = s.job_id
-       WHERE ((s.status IN ('scheduled', 'due') AND s.kind IN ('ready_email', 'todo')) OR s.status = 'failed') AND ${T(1)}
+       WHERE ((s.status IN ('scheduled', 'due') AND s.kind IN ('ready_email', 'todo') AND s.due_at < '9000') OR s.status = 'failed') AND ${T(1)}
        ORDER BY s.due_at LIMIT 100`,
     ).bind(type).all(),
     db.prepare(`SELECT value FROM lists WHERE kind = 'job_type' ORDER BY sort, id`).all(),

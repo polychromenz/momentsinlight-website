@@ -5,17 +5,17 @@
 // Lists are saved whole, in the order given. Renaming an item doesn't change jobs that already
 // use the old name (they keep it as text).
 import { json } from '../../../../functions-lib/studio.js';
-import { WORKFLOWS } from '../../../../functions-lib/crm.js';
 import { listDocuments } from '../../../../functions-lib/documents.js';
 import { paymentSettings, stripeReady } from '../../../../functions-lib/invoices.js';
 import { cleanQuestions } from '../../../../functions-lib/questionnaires.js';
 import { clean } from '../../../../functions-lib/rich-html.js';
 import { portalSettings } from '../../../../functions-lib/portal.js';
+import { cleanSteps } from '../../../../functions-lib/workflows.js';
 
 const LISTS = ['job_type', 'lead_source'];
 
 export async function onRequestGet({ env }) {
-  const [lists, templates, schedules, documents, contracts, payments, questionnaires, portal] = await Promise.all([
+  const [lists, templates, schedules, documents, contracts, payments, questionnaires, portal, workflows] = await Promise.all([
     env.DB.prepare('SELECT kind, value, label, workflow, on_form, contract_key, questionnaire_key FROM lists ORDER BY kind, sort, id').all(),
     env.DB.prepare('SELECT key, name, subject, body, attachments, updated_at FROM templates ORDER BY key').all(),
     env.DB.prepare('SELECT key, name, parts FROM payment_schedules ORDER BY name').all(),
@@ -24,6 +24,7 @@ export async function onRequestGet({ env }) {
     paymentSettings(env.DB),
     env.DB.prepare('SELECT key, name, intro, questions, updated_at FROM questionnaire_templates ORDER BY name').all(),
     portalSettings(env.DB),
+    env.DB.prepare('SELECT key, name, steps, updated_at FROM workflows ORDER BY name').all(),
   ]);
   const by = (k) => lists.results.filter((r) => r.kind === k).map(({ kind, ...r }) => ({ ...r, on_form: !!r.on_form }));
   return json({
@@ -32,7 +33,7 @@ export async function onRequestGet({ env }) {
     templates: templates.results.map((t) => ({ ...t, attachments: JSON.parse(t.attachments || '[]') })),
     documents: documents.map(({ id, name, size, type, updated_at, used_by }) => ({ id, name, size, type, updated_at, used_by })),
     schedules: schedules.results.map((s) => ({ ...s, parts: JSON.parse(s.parts) })),
-    workflows: Object.keys(WORKFLOWS),
+    workflows: workflows.results.map((w) => ({ ...w, steps: JSON.parse(w.steps) })),
     contracts: contracts.results,
     payments, stripe: stripeReady(env), portal,
     questionnaires: questionnaires.results.map((q) => ({ ...q, questions: JSON.parse(q.questions) })),
@@ -47,6 +48,7 @@ export async function onRequestPut({ request, env }) {
   const text = (v, max) => (v ?? '').toString().trim().slice(0, max);
 
   if (d?.list) {
+    const wfKeys = new Set((await env.DB.prepare('SELECT key FROM workflows').all()).results.map((r) => r.key));
     if (!LISTS.includes(d.list) || !Array.isArray(d.items)) return json({ error: 'Which list?' }, 400);
     const seen = new Set();
     const items = [];
@@ -55,7 +57,7 @@ export async function onRequestPut({ request, env }) {
       if (!value) continue;
       if (seen.has(value.toLowerCase())) return json({ error: `“${value}” is in the list twice.` }, 400);
       seen.add(value.toLowerCase());
-      items.push({ value, label: text(it.label, 120) || value, workflow: d.list === 'job_type' && WORKFLOWS[it.workflow] ? it.workflow : null, on_form: it.on_form ? 1 : 0, contract_key: d.list === 'job_type' && it.contract_key ? text(it.contract_key, 80) : null, questionnaire_key: d.list === 'job_type' && it.questionnaire_key ? text(it.questionnaire_key, 80) : null });
+      items.push({ value, label: text(it.label, 120) || value, workflow: d.list === 'job_type' && wfKeys.has(it.workflow) ? it.workflow : null, on_form: it.on_form ? 1 : 0, contract_key: d.list === 'job_type' && it.contract_key ? text(it.contract_key, 80) : null, questionnaire_key: d.list === 'job_type' && it.questionnaire_key ? text(it.questionnaire_key, 80) : null });
     }
     if (!items.length) return json({ error: 'The list needs at least one item.' }, 400);
     await env.DB.batch([
@@ -134,6 +136,31 @@ export async function onRequestPut({ request, env }) {
     const used = await env.DB.prepare('SELECT name FROM quote_templates WHERE schedule_key = ?1').bind(d.delete_schedule).all();
     if (used.results.length) return json({ error: `The ${used.results.map((r) => r.name).join(', ')} quote template uses it. Choose another schedule there first.` }, 409);
     await env.DB.prepare('DELETE FROM payment_schedules WHERE key = ?1').bind(d.delete_schedule).run();
+    return json({ ok: true });
+  }
+  // Workflows: { workflow: { key?, name, steps } } or { delete_workflow: key }. Steps already
+  // planned for a job keep going as they were; changes apply to steps planned from now on.
+  if (d?.workflow) {
+    const name = text(d.workflow.name, 80);
+    if (!name) return json({ error: 'A workflow needs a name.' }, 400);
+    const [tpls, qns] = await Promise.all([env.DB.prepare('SELECT key FROM templates').all(), env.DB.prepare('SELECT key FROM questionnaire_templates').all()]);
+    let steps;
+    try { steps = cleanSteps(d.workflow.steps, tpls.results.map((r) => r.key), qns.results.map((r) => r.key)); } catch (e) { return json({ error: e.message }, 400); }
+    let key = d.workflow.key;
+    if (key) {
+      const r = await env.DB.prepare('UPDATE workflows SET name = ?2, steps = ?3, updated_at = ?4 WHERE key = ?1').bind(key, name, JSON.stringify(steps), now).run();
+      if (!r.meta.changes) return json({ error: 'That workflow no longer exists.' }, 404);
+    } else {
+      key = slug(name) || 'workflow';
+      for (let n = 2; await env.DB.prepare('SELECT 1 FROM workflows WHERE key = ?1').bind(key).first(); n++) key = `${slug(name)}-${n}`;
+      await env.DB.prepare('INSERT INTO workflows (key, name, steps, updated_at) VALUES (?1, ?2, ?3, ?4)').bind(key, name, JSON.stringify(steps), now).run();
+    }
+    return json({ ok: true, key });
+  }
+  if (d?.delete_workflow) {
+    const used = await env.DB.prepare(`SELECT value FROM lists WHERE kind = 'job_type' AND workflow = ?1`).bind(d.delete_workflow).all();
+    if (used.results.length) return json({ error: `${used.results.map((r) => r.value).join(', ')} use${used.results.length === 1 ? 's' : ''} it. Choose another workflow under Job types first.` }, 409);
+    await env.DB.prepare('DELETE FROM workflows WHERE key = ?1').bind(d.delete_workflow).run();
     return json({ ok: true });
   }
   // Questionnaires: { questionnaire: { key?, name, intro, questions } } or { delete_questionnaire: key }.

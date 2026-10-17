@@ -3,6 +3,7 @@
 // Sending an email step (with review and personalising first) is send.js, once Gmail is
 // connected; 'done' here is for a to-do, or an email Tony sent some other way.
 import { json } from '../../../../functions-lib/studio.js';
+import { planAfter } from '../../../../functions-lib/workflows.js';
 
 export async function onRequestPost({ request, env }) {
   const d = await request.json().catch(() => null);
@@ -15,5 +16,9 @@ export async function onRequestPost({ request, env }) {
     : await env.DB.prepare(`UPDATE steps SET status = ?2, done_at = ?3, note = ?4 WHERE id = ?1 AND status IN ('scheduled', 'due', 'failed')`)
       .bind(id, action === 'done' ? 'done' : 'skipped', now, action === 'done' ? 'Marked done' : 'Skipped').run();
   if (!r.meta.changes) return json({ error: 'That step has already changed. Reload to see it.' }, 409);
+  if (action === 'done') {
+    const st = await env.DB.prepare('SELECT job_id, step_key FROM steps WHERE id = ?1').bind(id).first();
+    await planAfter(env.DB, st.job_id, st.step_key);
+  }
   return json({ ok: true });
 }

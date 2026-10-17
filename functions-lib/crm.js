@@ -1,6 +1,7 @@
 // Shared bits for the studio CRM (the Studio Ninja replacement): workflows, planning a job's
 // steps, and alert emails to Tony. Data lives in the site's D1 database (bound as DB); see
-// migrations/0002_crm.sql and docs/studio-crm-wedding-workflow.md.
+// migrations/0002_crm.sql and docs/studio-crm-wedding-workflow.md. Workflows: functions-lib/workflows.js.
+import { planSteps } from './workflows.js';
 
 // ---- Test mode: the safety lock on client emails ----
 // Until Tony switches the CRM on for real (Cloudflare setting CRM_SEND_MODE = "live", set by
@@ -21,33 +22,14 @@ export function outgoing(env, { to, subject, html }) {
   return { to: SAFE_RECIPIENTS[0], subject: `[TEST → ${intended}] ${subject}`, html: html.includes('<body') ? html.replace(/<body([^>]*)>/, `<body$1>${note}`) : note + html, redirected: true, intended };
 }
 
-const HOUR = 3600_000;
-const DAY = 24 * HOUR;
 
-/** Workflows: the steps planned for a new enquiry, by job type. Times are from the enquiry.
- *  (Steps timed from the wedding date are added when a job is booked, in a later phase.) */
-export const WORKFLOWS = {
-  // Which job types use which workflow is set in the studio Settings (lists.workflow).
-  wedding: {
-    name: 'Wedding',
-    enquiry: [
-      { key: 'wedding-01-enquiry-response', kind: 'auto_email', title: '01 Enquiry response', template: 'wedding-01-enquiry-response', after: 1 * HOUR },
-      { key: 'wedding-02-follow-up', kind: 'ready_email', title: '02 Follow-up', template: 'wedding-02-follow-up', after: 4 * DAY, stopOn: 'reply,booked' },
-      { key: 'wedding-03-final-follow-up', kind: 'ready_email', title: '03 Final follow-up', template: 'wedding-03-final-follow-up', after: 10 * DAY, stopOn: 'reply,booked' },
-    ],
-  },
-};
-
-
-/** Plan a new enquiry's steps. Without a workflow, Tony gets a "reply to this enquiry" to-do. */
+/** Plan a new enquiry's steps from its workflow (Settings > Workflows; functions-lib/workflows.js).
+ *  Without a workflow, Tony gets a "reply to this enquiry" to-do. */
 export async function planEnquirySteps(db, jobId, workflow, now = new Date()) {
-  const steps = workflow ? WORKFLOWS[workflow].enquiry
-    : [{ key: 'reply-to-enquiry', kind: 'todo', title: 'Reply to this enquiry', after: 0 }];
-  const created = now.toISOString();
-  await db.batch(steps.map((s) => db.prepare(
-    `INSERT OR IGNORE INTO steps (job_id, step_key, kind, title, template_key, due_at, stop_on, created_at)
-     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)`,
-  ).bind(jobId, s.key, s.kind, s.title, s.template ?? null, new Date(now.valueOf() + s.after).toISOString(), s.stopOn ?? '', created)));
+  const job = await db.prepare('SELECT * FROM jobs WHERE id = ?1').bind(jobId).first();
+  if (workflow && await planSteps(db, job, ['enquiry'], { base: now })) return;
+  await db.prepare(`INSERT OR IGNORE INTO steps (job_id, step_key, kind, title, due_at, created_at) VALUES (?1, 'reply-to-enquiry', 'todo', 'Reply to this enquiry', ?2, ?2)`)
+    .bind(jobId, now.toISOString()).run();
 }
 
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);

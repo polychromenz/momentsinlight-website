@@ -12,6 +12,7 @@ import { loadJob } from './crm-send.js';
 import { sendMode, alertTony } from './crm.js';
 import { parseQuote, payments, longDate } from './quotes.js';
 import { invoicePdf, toBase64 } from './pdf.js';
+import { planSteps } from './workflows.js';
 
 export const SITE = 'https://www.momentsinlight.co.nz';
 export const money = (c) => `$${(c / 100).toLocaleString('en-NZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -117,15 +118,14 @@ export async function markPaid(env, inv, { method, note = '', stripeSession = nu
   try { const s = await sendInvoice(env, paid, 'payment-receipt'); if (s.redirected) receipt += ` (Test mode: to ${s.to}.)`; } catch (e) { receipt = `Receipt not sent (${e.message}).`; }
   // The first payment confirms the booking: "Thanks for booking" goes out (wedding workflow).
   const first = await db.prepare(`SELECT count(*) n FROM invoices WHERE job_id = ?1 AND status = 'paid'`).bind(job.id).first();
-  if (first.n === 1 && job.workflow === 'wedding') {
-    await db.batch([
-      db.prepare(`INSERT OR IGNORE INTO steps (job_id, step_key, kind, title, template_key, due_at, created_at) VALUES (?1, 'wedding-04-thanks-for-booking', 'auto_email', '04 Thanks for booking', 'wedding-04-thanks-for-booking', ?2, ?2)`).bind(job.id, now),
-      db.prepare(`UPDATE steps SET status = 'done', done_at = ?2, note = 'Deposit paid' WHERE job_id = ?1 AND step_key LIKE 'deposit-invoice-%' AND status IN ('scheduled', 'due')`).bind(job.id, now),
-    ]);
+  let planned = 0;
+  if (first.n === 1) {
+    planned = await planSteps(db, await db.prepare('SELECT * FROM jobs WHERE id = ?1').bind(job.id).first(), ['deposit']);
+    await db.prepare(`UPDATE steps SET status = 'done', done_at = ?2, note = 'Deposit paid' WHERE job_id = ?1 AND step_key LIKE 'deposit-invoice-%' AND status IN ('scheduled', 'due')`).bind(job.id, now).run();
   }
   await alertTony(env, `Payment received: ${job.title}`, [
     ['Invoice', `${paid.number}: ${paid.label}`], ['Amount', money(paid.amount)], ['How', method === 'card' ? 'Card (Stripe)' : method === 'bank' ? 'Bank transfer' : method], ['Note', note], ['Receipt', receipt],
-    ...(first.n === 1 && job.workflow === 'wedding' ? [['Next', '“Thanks for booking” goes out automatically within 15 minutes.']] : []),
+    ...(planned ? [['Next', 'The workflow’s “after the first payment” steps are planned (e.g. Thanks for booking, within 15 minutes).']] : []),
   ], `${SITE}/studio/crm/job?id=${job.id}`);
   return true;
 }
