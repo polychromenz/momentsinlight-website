@@ -63,6 +63,9 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
       ($<HTMLFormElement>('.ct-form').elements.namedItem('type') as HTMLSelectElement).replaceChildren(...data.types.map((x: string) => new Option(x, x)));
     }
     draw();
+    // From the SEO page: "Add a competitor" opens the form with the type chosen.
+    const add = new URLSearchParams(location.search).get('add');
+    if (add && data.types.includes(add) && !dlg.open) { form.reset(); (form.elements.namedItem('type') as HTMLSelectElement).value = add; $('.ct-msg').hidden = true; dlg.showModal(); }
   }
   document.querySelectorAll('.ct-tools input, .ct-tools select').forEach((el) => el.addEventListener('input', draw));
 

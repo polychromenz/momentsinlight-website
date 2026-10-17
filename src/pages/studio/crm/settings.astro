@@ -770,10 +770,14 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
   .settings { max-width: 1240px; margin: 0 auto; padding: 28px clamp(14px, 3vw, 32px) 80px; }
   .settings h1 { margin: 0 0 14px; font-weight: 300; font-size: 32px; color: var(--ink); }
   /* Sections: a grouped side menu on a computer, a drop-down on a phone. */
-  .settings .tabs { display: none; }
-  .settings .tabs-select { width: 100%; margin-bottom: 16px; font: inherit; font-size: 15px; padding: 10px 12px; border: 1px solid #ddd3c4; border-radius: 12px 0; background: var(--white); }
+  .settings .tabs { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 16px; background: var(--white); border-radius: 22px 0; padding: 12px; }
+  .settings .tabs-select { display: none; }
   .settings .tab-group { margin: 14px 0 4px; padding-left: 12px; font-size: 11px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: var(--green); }
   .settings .tab-group:first-child { margin-top: 0; }
+  @media (max-width: 899px) {
+    .settings .tab-group { flex-basis: 100%; margin: 8px 0 2px; padding-left: 4px; }
+    .settings nav.tabs button { display: inline-block; width: auto; padding: 6px 11px; border: 1px solid #e6dccb; }
+  }
   .settings .tabs button { display: block; width: 100%; text-align: left; padding: 8px 12px; border: 0; border-radius: 10px 0; background: none; font: inherit; font-size: 14px; color: #444; cursor: pointer; transition: background-color 0.3s var(--ease), border-radius 0.4s var(--ease); }
   .settings .tabs button:hover { background: rgb(90 94 59 / 0.08); border-radius: 0 10px; }
   .settings .tabs button.on { background: var(--green); color: var(--white); }
@@ -781,7 +785,6 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
     .settings { display: grid; grid-template-columns: 200px minmax(0, 1fr); column-gap: 24px; align-items: start; }
     .settings > h1 { grid-column: 1 / -1; }
     .settings > .tabs { display: block; grid-column: 1; grid-row: 2 / span 40; position: sticky; top: 84px; background: var(--white); border-radius: 22px 0; padding: 14px 8px; }
-    .settings > .tabs-select { display: none; }
     .settings > :not(h1):not(.tabs):not(.tabs-select) { grid-column: 2; }
   }
   .settings .status { color: #666; }

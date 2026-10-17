@@ -1,11 +1,12 @@
 // The SEO page (/studio/seo).
-//   GET  /api/studio/crm/seo?part=search|tracked|venues|content|health|settings
+//   GET  /api/studio/crm/seo?part=search|tracked|venues|content|health|competitors|settings
 //   POST /api/studio/crm/seo  { action: 'settings', keywords?, posts_goal? }
 //                         { action: 'ideas', seeds: [...] }      Google's suggestions for those
 //                         { action: 'health' }                   run the site check now (one batch;
 //                                                                 the page keeps calling until it's done)
+//                         { action: 'competitor', id }          read that competitor's sitemap now
 import { json } from '../../../../functions-lib/studio.js';
-import { gscReady, searchReport, trackedKeywords, keywordIdeas, venueIdeas, contentStatus, siteHealth, seoSettings, saveSeoSettings } from '../../../../functions-lib/seo.js';
+import { gscReady, searchReport, trackedKeywords, keywordIdeas, venueIdeas, contentStatus, siteHealth, seoSettings, saveSeoSettings, competitorReport, checkCompetitor } from '../../../../functions-lib/seo.js';
 import { connection } from '../../../../functions-lib/gmail.js';
 
 export async function onRequestGet({ request, env }) {
@@ -19,6 +20,7 @@ export async function onRequestGet({ request, env }) {
     if (part === 'tracked') return json({ keywords: await trackedKeywords(env.DB) });
     if (part === 'venues') return json({ venues: await venueIdeas(env) });
     if (part === 'content') return json(await contentStatus(env));
+    if (part === 'competitors') return json(await competitorReport(env));
     if (part === 'health') { const r = await env.DB.prepare(`SELECT value FROM settings WHERE key = 'site_health'`).first(); return json(r ? JSON.parse(r.value) : { none: true }); }
     return json(await seoSettings(env.DB));
   } catch (e) {
@@ -37,6 +39,12 @@ export async function onRequestPost({ request, env }) {
       return json({ ok: true });
     }
     if (d.action === 'ideas') return json({ ideas: await keywordIdeas(env, (Array.isArray(d.seeds) ? d.seeds : []).map((x) => String(x).slice(0, 80))) });
+    if (d.action === 'competitor') {
+      const c = await env.DB.prepare(`SELECT id, website FROM contacts WHERE id = ?1 AND type = 'Competitor'`).bind(Number(d.id)).first();
+      if (!c?.website) return json({ error: 'Add their website on the contact first.' }, 400);
+      const r = await checkCompetitor(env, c);
+      return r.error ? json({ error: r.error }, 400) : json(r);
+    }
     if (d.action === 'health') return json({ result: await siteHealth(env, { now: !!d.start }) });
     return json({ error: 'What should happen?' }, 400);
   } catch (e) {

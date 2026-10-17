@@ -112,7 +112,7 @@ export async function keywordIdeas(env, seeds) {
 
 // ---- Venue page ideas from enquiries ----
 const norm = (s) => String(s || '').toLowerCase().replace(/\b(the|estate|vineyard|winery|venue|weddings?|and|events?|lodge|ltd|nz|auckland|new zealand)\b/g, ' ').replace(/[^a-z]+/g, ' ').trim();
-export async function venueIdeas(env) {
+async function venueCounts(env) {
   const { venues } = await builtPosts(env).catch(() => ({ venues: [] }));
   let sn = { results: [] };
   try { sn = await env.DB.prepare(`SELECT json_extract(data, '$.venue') v, received_at at FROM sn_gmail WHERE kind = 'lead'`).all(); } catch { /* not imported */ }
@@ -127,8 +127,10 @@ export async function venueIdeas(env) {
     cur.count++; if (r.at > cur.last) cur.last = r.at;
     counts.set(key, cur);
   }
-  return [...counts].map(([key, v]) => ({ ...v, hasPage: have.some((h) => h && (h.includes(key) || key.includes(h))) }))
-    .filter((v) => v.count >= 2).sort((a, b) => Number(a.hasPage) - Number(b.hasPage) || b.count - a.count).slice(0, 25);
+  return [...counts].map(([key, v]) => ({ ...v, key, hasPage: have.some((h) => h && (h.includes(key) || key.includes(h))) }));
+}
+export async function venueIdeas(env) {
+  return (await venueCounts(env)).filter((v) => v.count >= 2).sort((a, b) => Number(a.hasPage) - Number(b.hasPage) || b.count - a.count).slice(0, 25);
 }
 
 // ---- Content ----
@@ -213,4 +215,98 @@ export async function siteHealth(env, { now = false } = {}) {
   }
   await save(st);
   return st.finished ? 'finished' : `checked ${st.done} of ${st.pages.length}`;
+}
+
+// ---- Competitor watch ----
+// A competitor is a contact of type Competitor with a website. Each week (and on "Check now") the
+// studio reads their sitemap, the list of pages a site gives Google, and remembers every page, so
+// new blog posts and venue pages show up. Nothing on their site is copied; only page addresses.
+const UA = { 'user-agent': 'Mozilla/5.0 (compatible; MomentsStudio/1.0; +https://www.momentsinlight.co.nz)' };
+const locs = (xml) => [...xml.matchAll(/<loc>\s*(?:<!\[CDATA\[)?([^<\]]+?)(?:\]\]>)?\s*<\/loc>(?:[\s\S]{0,200}?<lastmod>([^<]+)<\/lastmod>)?/g)].map((m) => ({ url: m[1].trim(), lastmod: m[2]?.slice(0, 10) ?? null }));
+async function getText(url) {
+  const r = await fetch(url, { headers: UA, redirect: 'follow' });
+  if (!r.ok) throw new Error(`${new URL(url).pathname} ${r.status}`);
+  return r.text();
+}
+/** Every page in a site's sitemap (following a sitemap index one level, at most 8 sitemaps). */
+export async function sitemapPages(website) {
+  const base = new URL(/^https?:/.test(website) ? website : `https://${website}`).origin;
+  let xml = '';
+  try { xml = await getText(`${base}/sitemap.xml`); } catch {
+    const robots = await getText(`${base}/robots.txt`).catch(() => '');
+    const listed = robots.match(/^sitemap:\s*(\S+)/im)?.[1];
+    if (!listed) throw new Error('No sitemap found on their site.');
+    xml = await getText(listed);
+  }
+  if (/<sitemapindex/i.test(xml)) {
+    const subs = locs(xml).map((x) => x.url).filter((u) => !/image|video|author|tag|categor/i.test(u)).slice(0, 8);
+    const all = [];
+    for (const u of subs) { try { all.push(...locs(await getText(u))); } catch { /* skip that one */ } }
+    xml = ''; return dedupe(all);
+  }
+  return dedupe(locs(xml));
+}
+const dedupe = (list) => [...new Map(list.filter((x) => /^https?:/.test(x.url)).map((x) => [x.url.replace(/\/$/, ''), { ...x, url: x.url.replace(/\/$/, '') }])).values()].slice(0, 2000);
+
+/** Read one competitor's sitemap and remember any new pages. */
+export async function checkCompetitor(env, c) {
+  const db = env.DB;
+  const now = new Date().toISOString();
+  try {
+    const pages = await sitemapPages(c.website);
+    const had = (await db.prepare('SELECT count(*) n FROM competitor_pages WHERE contact_id = ?1').bind(c.id).first()).n;
+    const stmts = [];
+    for (let i = 0; i < pages.length; i += 20) {
+      const chunk = pages.slice(i, i + 20);
+      stmts.push(db.prepare(`INSERT OR IGNORE INTO competitor_pages (contact_id, url, lastmod, first_seen, baseline) VALUES ${chunk.map(() => '(?, ?, ?, ?, ?)').join(', ')}`)
+        .bind(...chunk.flatMap((p) => [c.id, p.url, p.lastmod, now, had ? 0 : 1])));
+    }
+    stmts.push(db.prepare('UPDATE contacts SET watch_checked_at = ?2, watch_error = NULL WHERE id = ?1').bind(c.id, now));
+    await db.batch(stmts);
+    return { pages: pages.length, first: !had };
+  } catch (e) {
+    await db.prepare('UPDATE contacts SET watch_checked_at = ?2, watch_error = ?3 WHERE id = ?1').bind(c.id, now, e.message).run();
+    return { error: e.message };
+  }
+}
+
+/** Timer: Mondays from 8am, one competitor per run (a sitemap can take ~10 requests). */
+export async function competitorWatch(env) {
+  const nz = nzNow();
+  if (nz.weekday !== 'Mon' || nz.hour < 8) return 'not Monday';
+  const c = await env.DB.prepare(`SELECT id, website FROM contacts WHERE type = 'Competitor' AND website <> ''
+    AND (watch_checked_at IS NULL OR watch_checked_at < ?1) ORDER BY watch_checked_at IS NOT NULL, watch_checked_at LIMIT 1`).bind(new Date(Date.now() - 5 * DAY).toISOString()).first();
+  if (!c) return 'all checked';
+  const r = await checkCompetitor(env, c);
+  return r.error ? `${c.id}: ${r.error}` : `${c.id}: ${r.pages} pages`;
+}
+
+const slugWords = (url) => { try { return norm(decodeURIComponent(new URL(url).pathname).replace(/[-_/]+/g, ' ')); } catch { return ''; } };
+const pageName = (url) => { try { const p = decodeURIComponent(new URL(url).pathname).split('/').filter(Boolean); return p.length ? p.at(-1).replace(/\.\w+$/, '').replace(/[-_]+/g, ' ') : 'Home page'; } catch { return url; } };
+/** Each competitor: pages, new pages (last 90 days), and venues they have pages about that you don't. */
+export async function competitorReport(env) {
+  const db = env.DB;
+  const list = (await db.prepare(`SELECT id, business, website, watch_checked_at, watch_error, (SELECT count(*) FROM competitor_pages p WHERE p.contact_id = c.id) pages
+    FROM contacts c WHERE type = 'Competitor' ORDER BY business`).all()).results;
+  if (!list.length) return { competitors: [] };
+  const since = new Date(Date.now() - 90 * DAY).toISOString();
+  const fresh = (await db.prepare(`SELECT contact_id, url, first_seen FROM competitor_pages WHERE baseline = 0 AND first_seen >= ?1 ORDER BY first_seen DESC`).bind(since).all()).results;
+  const all = (await db.prepare('SELECT contact_id, url FROM competitor_pages').all()).results;
+  // Venues: the ones couples ask about, plus the ones with your own pages.
+  const venues = await venueCounts(env).catch(() => []);
+  const { venues: yours = [] } = await builtPosts(env).catch(() => ({}));
+  const known = [...venues, ...yours.filter((v) => !venues.some((x) => x.hasPage && norm(v.name).includes(x.key))).map((v) => ({ name: v.name, key: norm(v.name).split(' ').slice(0, 3).join(' '), hasPage: true, count: 0 }))];
+  const gaps = new Map();
+  for (const p of all) {
+    const w = ` ${slugWords(p.url)} `;
+    for (const v of known) if (!v.hasPage && v.key.length >= 4 && w.includes(` ${v.key} `)) {
+      const g = gaps.get(v.key) ?? { name: v.name, enquiries: v.count, pages: [] };
+      if (g.pages.length < 6) g.pages.push({ contact_id: p.contact_id, url: p.url });
+      gaps.set(v.key, g);
+    }
+  }
+  return {
+    competitors: list.map((c) => ({ ...c, new_pages: fresh.filter((p) => p.contact_id === c.id).slice(0, 15).map((p) => ({ url: p.url, name: pageName(p.url), first_seen: p.first_seen })) })),
+    venue_gaps: [...gaps.values()].sort((a, b) => b.enquiries - a.enquiries || b.pages.length - a.pages.length).slice(0, 20),
+  };
 }

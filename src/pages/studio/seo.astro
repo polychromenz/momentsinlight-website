@@ -39,6 +39,12 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
       </section>
     </div>
 
+    <section class="card" id="competitors">
+      <div class="card-head"><h2>Competitors</h2><a class="s-btn s-btn--quiet" href="/studio/contacts?add=Competitor">+ Add a competitor</a></div>
+      <p class="hint">Other photographers you want to keep an eye on. Every Monday the studio reads the list of pages their site gives Google, and shows what's new: blog posts, venue pages, new services.</p>
+      <div class="comp-body"><p class="muted">Loading…</p></div>
+    </section>
+
     <section class="card" id="health">
       <div class="card-head"><h2>Site health check</h2><button type="button" class="s-btn s-btn--quiet" data-health>Run it now</button></div>
       <p class="hint">Every page checked for Google titles and descriptions, photos without descriptions, headings and broken links. Runs by itself on the 2nd of each month.</p>
@@ -131,8 +137,29 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
       ${sec('Pages without exactly one main heading', s.h1.map((x: any) => `${link(x.path)} <small>${x.h1} headings</small>`), 'All good.')}`;
   }
 
+  async function loadCompetitors() {
+    const { d } = await api('competitors');
+    const b = $('.comp-body');
+    const list = d.competitors ?? [];
+    if (!list.length) { b.innerHTML = '<p class="muted">None yet. Add a competitor as a contact (type Competitor) with their website.</p>'; return; }
+    const names = Object.fromEntries(list.map((c: any) => [c.id, c.business]));
+    const short = (u: string) => { try { return decodeURIComponent(new URL(u).pathname); } catch { return u; } };
+    const gaps = d.venue_gaps ?? [];
+    b.innerHTML = `${gaps.length ? `<h3>Venues they have pages about and you don't</h3><ul class="list">${gaps.map((g: any) => `<li><span class="what"><strong>${esc(g.name)}</strong>${g.enquiries ? ` <small>· ${g.enquiries} of your enquiries</small>` : ''}<br><small>${g.pages.map((p: any) => `<a href="${esc(p.url)}" target="_blank" rel="noopener">${esc(names[p.contact_id])}</a>`).join(', ')}</small></span><span class="chip idea">Page idea</span></li>`).join('')}</ul>` : ''}
+      ${list.map((c: any) => `<details class="comp"${c.new_pages.length ? ' open' : ''}><summary><strong>${esc(c.business)}</strong> <small>${c.watch_error ? `<span class="down">${esc(c.watch_error)}</span>` : c.watch_checked_at ? `${num(c.pages)} pages · ${c.new_pages.length ? `<b class="down">${c.new_pages.length} new</b> in 3 months` : 'nothing new'} · checked ${new Date(c.watch_checked_at).toLocaleDateString('en-NZ', { day: 'numeric', month: 'short' })}` : 'not checked yet'}</small>
+        <button type="button" class="s-btn s-btn--quiet" data-comp="${c.id}">Check now</button></summary>
+        ${c.new_pages.length ? `<ul>${c.new_pages.map((p: any) => `<li><a href="${esc(p.url)}" target="_blank" rel="noopener">${esc(p.name)}</a> <small>${esc(short(p.url))} · found ${new Date(p.first_seen).toLocaleDateString('en-NZ', { day: 'numeric', month: 'short' })}</small></li>`).join('')}</ul>` : `<p class="muted">${c.website ? (c.watch_checked_at ? 'No new pages lately. (The first check just notes what is there.)' : 'Click Check now for the first look.') : `<a href="/studio/contacts/contact?id=${c.id}">Add their website</a> first.`}</p>`}</details>`).join('')}`;
+  }
+
   document.addEventListener('click', async (e) => {
     const t = e.target as HTMLElement;
+    const cb = t.closest<HTMLButtonElement>('[data-comp]');
+    if (cb) {
+      e.preventDefault(); cb.disabled = true; cb.textContent = 'Checking…';
+      const { ok, d } = await post({ action: 'competitor', id: Number(cb.dataset.comp) });
+      toast(ok ? (d.first ? `Found ${d.pages} pages. From now on, new ones show here.` : `Checked ${d.pages} pages.`) : d.error || 'Couldn’t check it.', !ok);
+      await loadCompetitors(); return;
+    }
     const tr = t.closest<HTMLButtonElement>('[data-track]');
     if (tr) { await saveKeywords([...tracked, tr.dataset.track!]); toast('Tracking it from Monday.'); return; }
     const un = t.closest<HTMLButtonElement>('[data-untrack]');
@@ -156,14 +183,17 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
     $('.ideas').innerHTML = (d.ideas ?? []).map((i: any) => `<li>${esc(i.idea)} ${tracked.has(i.idea) ? '<small class="up">tracking</small>' : `<button type="button" class="add" data-track="${esc(i.idea)}" title="Track this search">+</button>`}</li>`).join('') || '<li class="muted">No ideas came back.</li>';
   });
   loadTracked().then(loadSearch);
-  loadVenues(); loadContent(); loadHealth();
+  loadVenues(); loadContent(); loadHealth(); loadCompetitors();
 </script>
 
 <style is:global>
   .seo { max-width: 1150px; margin: 0 auto; padding: 24px clamp(14px, 3vw, 32px) 80px; }
   .seo h1 { margin: 0 0 4px; font-weight: 300; font-size: 32px; color: var(--ink); }
   .seo .intro { margin: 0 0 18px; color: #666; font-size: 15px; }
-  .seo .card { background: var(--white); border-radius: 24px 0; padding: 20px 24px; margin-bottom: 16px; min-width: 0; }
+  .seo .card { background: var(--white); border-radius: 24px 0; padding: 20px 24px; margin-bottom: 16px; min-width: 0; overflow-x: auto; }
+  @media (max-width: 600px) { .seo .card { padding: 16px 14px; } .seo .tbl { font-size: 13px; } .seo .tbl th, .seo .tbl td { padding: 6px 5px; } }
+  .seo details.comp summary { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .seo details.comp summary small { flex: 1; color: #888; }
   .seo .card h2 { margin: 0 0 8px; font-weight: 300; font-size: 22px; color: var(--ink); }
   .seo .card h3 { margin: 22px 0 6px; font-size: 12px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--green); }
   .seo .card-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }

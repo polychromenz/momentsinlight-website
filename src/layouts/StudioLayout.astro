@@ -104,7 +104,7 @@ const inWebsite = website.some(([k]) => k === section);
   .studio-nav a[aria-current='page'] { background: var(--green); color: var(--white); }
   .studio-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-left: auto; }
   .studio-actions:empty { display: none; }
-  @media (max-width: 760px) { .studio-nav { order: 3; flex-basis: 100%; margin: 0 -6px; } .nav-menu { left: auto; right: 0; } }
+  @media (max-width: 760px) { .studio-nav { order: 3; flex-basis: 100%; margin: 0 -6px; } .studio-nav { position: relative; } .nav-group { position: static; } .nav-menu { left: 6px; right: 6px; top: calc(100% + 4px); flex-direction: row; flex-wrap: wrap; } }
   .studio-brand span { font-weight: 600; color: var(--green); }
   .s-btn {
     display: inline-flex; align-items: center; gap: 8px;

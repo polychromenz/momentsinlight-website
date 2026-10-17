@@ -5,7 +5,7 @@ import { thread } from './gmail.js';
 import { studioLinks } from './email-render.js';
 
 export const SITE = 'https://www.momentsinlight.co.nz';
-export const TYPES = ['Venue', 'Planner', 'Celebrant', 'Florist', 'Hair & makeup', 'Videographer', 'Photographer', 'Directory', 'Other'];
+export const TYPES = ['Venue', 'Planner', 'Celebrant', 'Florist', 'Hair & makeup', 'Videographer', 'Photographer', 'Competitor', 'Directory', 'Other'];
 export const OUTREACH = { none: 'Not contacted', emailed: 'Emailed', replied: 'Replied', live: 'Link live', declined: 'Declined' };
 const DAY = 86400_000;
 
