@@ -110,8 +110,14 @@ export async function unsyncAppointment(env, a) {
   await put(env, await calendarId(env), a.gcal_event_id, null);
 }
 
+/** The last Google Calendar problem (shown on the Calendar page), or clear it after a good sync. */
+export async function noteSync(db, error = null) {
+  if (error) await db.prepare(`INSERT INTO settings (key, value, updated_at) VALUES ('gcal_error', ?1, ?2) ON CONFLICT (key) DO UPDATE SET value = ?1, updated_at = ?2`).bind(JSON.stringify({ message: String(error).slice(0, 400) }), new Date().toISOString()).run();
+  else await db.prepare(`DELETE FROM settings WHERE key = 'gcal_error'`).run();
+}
+
 /** Sync without making the caller wait or fail (Google trouble is retried by the timer). */
 export function syncSoon(context, jobId) {
-  const p = syncJob(context.env, jobId).catch((e) => console.error('calendar sync', jobId, e.message));
+  const p = syncJob(context.env, jobId).then((ok) => ok && noteSync(context.env.DB)).catch((e) => { console.error('calendar sync', jobId, e.message); return noteSync(context.env.DB, e.message); });
   if (context.waitUntil) context.waitUntil(p); else return p;
 }

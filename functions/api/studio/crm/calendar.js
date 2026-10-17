@@ -11,13 +11,14 @@ export async function onRequestGet({ request, env }) {
   const p = new URL(request.url).searchParams;
   const from = DATE.test(p.get('from') || '') ? p.get('from') : new Date().toISOString().slice(0, 8) + '01';
   const to = DATE.test(p.get('to') || '') ? p.get('to') : from.slice(0, 8) + '31';
-  const [jobs, apps, ready, gmail] = await Promise.all([
+  const [jobs, apps, ready, gmail, gerr] = await Promise.all([
     env.DB.prepare(`SELECT j.id, j.title, j.partner_name, j.job_type, j.stage, j.event_date, j.venue FROM jobs j
       WHERE j.event_date BETWEEN ?1 AND ?2 AND j.stage IN ('lead', 'booked', 'completed') ORDER BY j.event_date, j.stage = 'lead'`).bind(from, to).all(),
     env.DB.prepare(`SELECT a.id, a.job_id, a.title, a.date, a.start_time, a.end_time, a.location, j.title AS job_title, j.partner_name, j.stage, j.job_type FROM appointments a JOIN jobs j ON j.id = a.job_id
       WHERE a.date BETWEEN ?1 AND ?2 AND j.stage <> 'lost' ORDER BY a.date, a.start_time`).bind(from, to).all(),
     calendarReady(env.DB),
     connection(env.DB),
+    env.DB.prepare(`SELECT value, updated_at FROM settings WHERE key = 'gcal_error'`).first(),
   ]);
   // Same date, more than one open lead or booking: a clash.
   const count = {};
@@ -27,5 +28,6 @@ export async function onRequestGet({ request, env }) {
     jobs: jobs.results.map((j) => ({ ...j, clash: count[j.event_date] > 1 })),
     appointments: apps.results,
     google: ready ? 'on' : gmail ? 'reconnect' : 'off',
+    google_error: gerr ? { ...JSON.parse(gerr.value), at: gerr.updated_at } : null,
   });
 }

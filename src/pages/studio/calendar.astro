@@ -82,8 +82,8 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
     data = await r.json().catch(() => null);
     if (!r.ok || !data) { $('.cal-grid').textContent = data?.error || 'Couldn’t load the calendar.'; return; }
     const g = $('.cal-google');
-    g.hidden = data.google === 'on';
-    g.innerHTML = data.google === 'reconnect'
+    g.hidden = data.google === 'on' && !data.google_error;
+    g.innerHTML = data.google === 'on' ? `Google Calendar didn’t update (${new Date(data.google_error?.at).toLocaleString('en-NZ', { dateStyle: 'medium', timeStyle: 'short' })}): ${esc(data.google_error?.message)}. It tries again every 15 minutes.` : data.google === 'reconnect'
       ? 'Google Calendar isn’t connected yet. <a href="/api/studio/crm/gmail-connect">Reconnect Google</a> and tick the calendar permission (it only gets a calendar of its own, “Moments in Light”).'
       : 'Connect Gmail on the Clients page first; the calendar connects at the same time.';
     draw();

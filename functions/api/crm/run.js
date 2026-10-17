@@ -16,7 +16,7 @@ import { sendStep } from '../../../functions-lib/crm-send.js';
 import { thread, connection } from '../../../functions-lib/gmail.js';
 import { alertTony } from '../../../functions-lib/crm.js';
 import { sendInvoice } from '../../../functions-lib/invoices.js';
-import { calendarReady, syncJob } from '../../../functions-lib/calendar.js';
+import { calendarReady, syncJob, noteSync } from '../../../functions-lib/calendar.js';
 
 const reply = (data, status = 200) => new Response(JSON.stringify(data), { status, headers: { 'content-type': 'application/json' } });
 const stops = (step, ev) => (',' + step.stop_on + ',').includes(`,${ev},`);
@@ -129,7 +129,7 @@ export async function onRequestPost({ request, env }) {
   if (await calendarReady(db)) {
     const stale = await db.prepare('SELECT id FROM jobs WHERE gcal_synced_at IS NULL OR gcal_synced_at < updated_at ORDER BY updated_at DESC LIMIT 15').all();
     for (const { id } of stale.results) {
-      try { await syncJob(env, id); log.calendar++; } catch (e) { console.error('crm run: calendar', id, e.message); break; }
+      try { await syncJob(env, id); log.calendar++; await noteSync(db); } catch (e) { console.error('crm run: calendar', id, e.message); log.calendar_error = e.message; await noteSync(db, e.message); break; }
     }
   }
 
