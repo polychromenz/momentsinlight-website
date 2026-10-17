@@ -162,10 +162,24 @@ just from the shoot date.
 
 - **Portrait, family and headshot email templates** (initial enquiry response and follow-ups,
   thanks for booking, pre-shoot reminder, post-shoot email), if they differ from the wedding ones.
-- **Payment schedule 10/40/50:** when each part is due (e.g. 10% on booking, 40% at…, 50% before
-  the wedding?).
 - **Products & Packages** list (if anything beyond the two wedding packages is used).
 - Which contract goes to which couples (standard vs "no ads" vs NZIPP).
+
+## Payment schedules
+
+| Schedule | Payments |
+|---|---|
+| **Moments In Light Wedding payment schedule 10/40/50** (on the wedding quote) | 10% deposit when the quote is accepted; 40% 2 months before the wedding; 50% 1 month before |
+| **50/50** | 50% 3 days before the shoot; 50% 3 days after |
+| **Due in 7 Days** | 100% 7 days after the quote is accepted or the invoice is created |
+
+On a $2,995 Classic wedding that's $299.50, $1,198 and $1,497.50; on a $3,995 Deluxe, $399.50,
+$1,598 and $1,997.50.
+
+- **Receipts:** sent automatically after card payments ("Thank you for your payment", receipt
+  attached, link to the updated invoice).
+- **Reminders:** all **off** (none before, on or after the due date). A template exists: "Invoice
+  Reminder" with the amount and due date.
 
 ## Signature
 
