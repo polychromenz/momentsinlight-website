@@ -179,7 +179,32 @@ function refreshPreview() {
     c.textContent = `${n}/${max}`;
     c.classList.toggle('over', n > max);
   }
+  seoChecklist();
   refreshStatus();
+}
+
+// The SEO checklist under the Google preview: what helps this post be found, and what's missing.
+function seoChecklist() {
+  const title = field<HTMLInputElement>('seoTitle').value.trim() || titleEl.value.trim();
+  const desc = field<HTMLTextAreaElement>('description').value.trim();
+  const venue = venueName();
+  const words = (document.querySelector('.ProseMirror')?.textContent ?? '').trim().split(/\s+/).filter(Boolean).length;
+  let photos: Tile[] = [];
+  try { photos = tiles.filter((t) => t.src); } catch { /* the photos aren't set up yet (first run on page load) */ }
+  const noAlt = photos.filter((t) => !t.alt?.trim()).length;
+  const slug = field<HTMLInputElement>('slug').value;
+  const checks: [boolean, string][] = [
+    [title.length >= 30 && title.length <= 60, title.length < 30 ? `Google title is short (${title.length} characters); 30–60 works best` : title.length > 60 ? `Google title is long (${title.length}); Google cuts it after about 60` : 'Google title is a good length'],
+    [desc.length >= 70 && desc.length <= 155, !desc ? 'Add a Google description (70–155 characters)' : desc.length < 70 ? 'Google description is short; aim for 70–155 characters' : desc.length > 155 ? 'Google description is long; Google cuts it after about 155' : 'Google description is a good length'],
+    [kind() !== 'Wedding' || !!venue, kind() === 'Wedding' && !venue ? 'Choose the venue: it puts the post on the venue’s page, and venue names are what couples search for' : 'Venue chosen'],
+    [!venue || (title + ' ' + desc).toLowerCase().includes(venue.toLowerCase().split(' ')[0]), venue ? `Mention ${venue} in the Google title or description` : 'Search words are in the title'],
+    [!photos.length || noAlt === 0, noAlt ? `${noAlt} photo${noAlt === 1 ? '' : 's'} without a description (use ✨ Suggest descriptions)` : photos.length ? 'Every photo has a description' : 'No photos yet'],
+    [words >= 150, words < 150 ? `The story is short (${words} words); 150+ words helps Google understand the post` : `The story has ${words} words`],
+    [slug.length > 0 && slug.length <= 60 && !/\d{4}/.test(slug), !slug ? 'Add a web address' : slug.length > 60 ? 'The web address is long; shorter is better' : /\d{4}/.test(slug) ? 'Leave dates out of the web address so it doesn’t look old' : 'Web address is short and clear'],
+  ];
+  const ok = checks.filter(([v]) => v).length;
+  $('.seo-check').innerHTML = checks.map(([v, t]) => `<li class="${v ? '' : 'todo'}">${esc(t)}</li>`).join('');
+  $('.seo-score').textContent = `${ok} of ${checks.length} done`;
 }
 
 // ---------- Settings panel ----------
@@ -315,7 +340,7 @@ Sortable.create(grid, {
     syncGallery(); renderCover(); markDirty();
   },
 });
-const syncGallery = () => { data.gallery = tiles.filter((t) => t.src).map(({ src, alt, width, height }) => ({ src, alt: alt ?? '', width, height })); };
+const syncGallery = () => { data.gallery = tiles.filter((t) => t.src).map(({ src, alt, width, height }) => ({ src, alt: alt ?? '', width, height })); seoChecklist(); };
 
 const names = () => titleEl.value.split(/\s[|–—-]\s/)[0].replace(/&/g, 'and');
 const kindKey = () => ({ Wedding: 'wedding', Portrait: 'portrait', Family: 'family' } as Record<string, string>)[kind()] ?? 'article';

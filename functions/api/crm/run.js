@@ -20,6 +20,8 @@
 //      the monthly speed email (from 8am on the 1st, a few pages a run): functions-lib/speed.js.
 //   9. Contacts (venues, suppliers): new emails in their conversations, and checking whether their
 //      pages link to the site (functions-lib/contacts.js).
+//  10. SEO (functions-lib/seo.js): Monday, the tracked searches' Google positions and a task for
+//      each wedding not yet blogged; from the 2nd of the month, the site health check.
 // Ready-to-send emails and to-dos need nothing here: they appear on Today when due.
 import { sendStep } from '../../../functions-lib/crm-send.js';
 import { thread, connection } from '../../../functions-lib/gmail.js';
@@ -30,6 +32,7 @@ import { maybeSendDigest } from '../../../functions-lib/digest.js';
 import { publishScheduledPosts, weeklyStatsEmail } from '../../../functions-lib/schedules.js';
 import { monthlySpeed } from '../../../functions-lib/speed.js';
 import { contactsTimer } from '../../../functions-lib/contacts.js';
+import { weeklyPositions, contentTasks, siteHealth } from '../../../functions-lib/seo.js';
 
 const reply = (data, status = 200) => new Response(JSON.stringify(data), { status, headers: { 'content-type': 'application/json' } });
 const stops = (step, ev) => (',' + step.stop_on + ',').includes(`,${ev},`);
@@ -161,6 +164,10 @@ export async function onRequestPost({ request, env }) {
   log.speed = await monthlySpeed(env).catch((e) => `error: ${e.message}`);
   // 9. Contacts.
   log.contacts = await contactsTimer(env, gmail).catch((e) => `error: ${e.message}`);
+  // 10. SEO.
+  log.positions = await weeklyPositions(env).catch((e) => `error: ${e.message}`);
+  log.content = await contentTasks(env).catch((e) => `error: ${e.message}`);
+  log.health = await siteHealth(env).catch((e) => `error: ${e.message}`);
 
   return reply({ ok: true, ...log });
 }

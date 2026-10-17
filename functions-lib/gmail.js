@@ -13,7 +13,8 @@ import { outgoing } from './crm.js';
 
 // gmail.send/readonly: send as Tony and see replies. calendar.app.created: the studio's own
 // "Moments in Light" calendar only (functions-lib/calendar.js); it can't see his other calendars.
-export const SCOPES = ['https://www.googleapis.com/auth/gmail.send', 'https://www.googleapis.com/auth/gmail.readonly', 'https://www.googleapis.com/auth/calendar.app.created', 'openid', 'email'];
+// webmasters.readonly: Search Console numbers for the SEO page (read only).
+export const SCOPES = ['https://www.googleapis.com/auth/gmail.send', 'https://www.googleapis.com/auth/gmail.readonly', 'https://www.googleapis.com/auth/calendar.app.created', 'https://www.googleapis.com/auth/webmasters.readonly', 'openid', 'email'];
 export const REDIRECT = 'https://www.momentsinlight.co.nz/api/studio/crm/gmail-callback';
 
 // ---- Encrypting the refresh token (AES-GCM, key from the client secret via HKDF) ----

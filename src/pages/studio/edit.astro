@@ -123,6 +123,8 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
         </label>
         <button type="button" class="s-btn s-btn--quiet" data-act="seo">✨ Suggest from the post</button>
         <div class="serp" aria-hidden="true"><p class="serp-title"></p><p class="serp-url"></p><p class="serp-desc"></p></div>
+        <p class="seo-check-head">SEO checklist <small class="seo-score"></small></p>
+        <ul class="seo-check"></ul>
       </fieldset>
 
       <details>
@@ -235,6 +237,13 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
   .slug-row input { flex: 1; min-width: 0; }
   .serp { padding: 10px 12px; border-radius: 10px 0; background: #fafafa; font-family: Arial, sans-serif; }
   .serp p { margin: 0; }
+  .seo-check-head { margin: 12px 0 4px; font-size: 13px; font-weight: 600; color: #555; }
+  .seo-check-head small { font-weight: 400; color: #888; }
+  .seo-check { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; font-size: 13px; line-height: 1.45; }
+  .seo-check li { display: flex; gap: 7px; color: #555; }
+  .seo-check li::before { content: '✓'; flex: 0 0 14px; color: var(--green); font-weight: 700; }
+  .seo-check li.todo::before { content: '!'; color: #b07d1a; }
+  .seo-check li.todo { color: #333; }
   .serp-title { color: #1a0dab; font-size: 17px; line-height: 1.3; }
   .serp-url { color: #006621; font-size: 13px; }
   .serp-desc { color: #545454; font-size: 13px; line-height: 1.45; }

@@ -1,0 +1,208 @@
+---
+// Moments Studio > Website > SEO: Google searches and rankings (Search Console), tracked
+// searches over time, keyword ideas, venue page ideas from enquiries, content (posts this month,
+// weddings not yet blogged) and the monthly site health check. Data from functions/api/studio/crm/seo.js.
+import StudioLayout from '../../layouts/StudioLayout.astro';
+---
+<StudioLayout title="SEO" section="seo">
+  <main class="seo">
+    <h1>SEO</h1>
+    <p class="intro">How people find you on Google, and what to do next. Free: your own Google data, Google's suggestions and your studio's enquiries.</p>
+
+    <section class="card" id="search">
+      <div class="card-head"><h2>Google searches</h2><small class="range"></small></div>
+      <div class="search-body"><p class="muted">Loading…</p></div>
+    </section>
+
+    <section class="card" id="tracked">
+      <div class="card-head"><h2>Searches you're tracking</h2><button type="button" class="s-btn s-btn--quiet" data-track-add>+ Track a search</button></div>
+      <p class="hint">Your average position on Google each week (1 = top of page 1; 11+ = page 2). Saved every Monday.</p>
+      <table class="tbl tracked-table"><thead><tr><th>Search</th><th>Now</th><th>4 weeks ago</th><th>Trend</th><th>Clicks (week)</th><th></th></tr></thead><tbody></tbody></table>
+    </section>
+
+    <section class="card" id="ideas">
+      <h2>Keyword ideas</h2>
+      <p class="hint">What people type into Google, from Google's own suggestions. Add the ones that fit to your tracked searches, and use them in titles and blog posts.</p>
+      <form class="ideas-form"><input name="seeds" value="wedding photographer west auckland, kumeu wedding, auckland wedding venues, elopement auckland" aria-label="Start from" /><button type="submit" class="s-btn">Get ideas</button></form>
+      <ul class="ideas"></ul>
+    </section>
+
+    <div class="two-col">
+      <section class="card" id="venues">
+        <h2>Venue page ideas</h2>
+        <p class="hint">Venues couples mention in enquiries. The ones without a page on your site are your best new pages.</p>
+        <ul class="list venues"><li class="muted">Loading…</li></ul>
+      </section>
+      <section class="card" id="content">
+        <div class="card-head"><h2>Blog</h2><button type="button" class="s-btn s-btn--quiet" data-goal>Change goal</button></div>
+        <div class="content-body"><p class="muted">Loading…</p></div>
+      </section>
+    </div>
+
+    <section class="card" id="health">
+      <div class="card-head"><h2>Site health check</h2><button type="button" class="s-btn s-btn--quiet" data-health>Run it now</button></div>
+      <p class="hint">Every page checked for Google titles and descriptions, photos without descriptions, headings and broken links. Runs by itself on the 2nd of each month.</p>
+      <div class="health-body"><p class="muted">Loading…</p></div>
+    </section>
+  </main>
+  <div class="s-toast" role="status"></div>
+</StudioLayout>
+
+<script>
+  const $ = <T extends HTMLElement = HTMLElement>(s: string) => document.querySelector<T>(s)!;
+  const esc = (s: unknown) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
+  const num = (n: number) => Number(n).toLocaleString('en-NZ');
+  const toast = (text: string, error = false) => { const t = $('.s-toast'); t.textContent = text; t.classList.toggle('error', error); t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 4000); };
+  const api = async (part: string) => { const r = await fetch(`/api/studio/crm/seo?part=${part}`); return { ok: r.ok, d: await r.json().catch(() => ({})) }; };
+  const post = async (body: any) => { const r = await fetch('/api/studio/crm/seo', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) }); return { ok: r.ok, d: await r.json().catch(() => ({})) }; };
+  let settings: any = { keywords: [] };
+  let tracked: Set<string> = new Set();
+  const pos = (p: number | null) => (p == null ? '<span class="muted">not ranking</span>' : `<b class="${p <= 3 ? 'top' : p <= 10 ? 'p1' : 'p2'}">${p.toFixed(1)}</b>`);
+  const change = (now: number | null, before: number | null) => (now == null || before == null || Math.abs(now - before) < 0.5 ? '' : now < before ? `<span class="up">▲ ${(before - now).toFixed(1)}</span>` : `<span class="down">▼ ${(now - before).toFixed(1)}</span>`);
+
+  async function loadSearch() {
+    const { ok, d } = await api('search');
+    const body = $('.search-body');
+    if (d.connect === 'gmail') { body.innerHTML = '<p>Connect Gmail on the Clients page first; Search Console connects at the same time.</p>'; return; }
+    if (d.connect === 'reconnect') { body.innerHTML = '<p class="note">To see your Google searches, the studio needs read-only access to Google Search Console. <a href="/api/studio/crm/gmail-connect">Reconnect Google</a> and allow it (you may also need to switch on the “Google Search Console API” in your Google Cloud project, like the Calendar one).</p>'; return; }
+    if (!ok) { body.innerHTML = `<p class="note">${esc(d.error)}</p>`; return; }
+    $('.range').textContent = `${d.range.start} to ${d.range.end}, compared with the 4 weeks before`;
+    const tile = (label: string, now: number, before: number, fmt = num, lowerBetter = false) => {
+      const diff = before ? Math.round(((now - before) / before) * 100) : 0;
+      const good = lowerBetter ? diff < 0 : diff > 0;
+      return `<div class="tile"><span>${label}</span><strong>${fmt(now)}</strong>${before ? `<small class="${good ? 'up' : diff ? 'down' : ''}">${diff > 0 ? '▲' : diff < 0 ? '▼' : '='} ${Math.abs(diff)}%</small>` : ''}</div>`;
+    };
+    const row = (q: any) => `<tr><td>${esc(q.query)} ${tracked.has(q.query) ? '' : `<button type="button" class="add" data-track="${esc(q.query)}" title="Track this search">+</button>`}</td><td>${num(q.clicks)}</td><td>${num(q.impressions)}</td><td>${pos(q.position)} ${change(q.position, q.before)}</td></tr>`;
+    body.innerHTML = `<div class="tiles">${tile('Clicks from Google', d.totals.clicks, d.before.clicks)}${tile('Times shown', d.totals.impressions, d.before.impressions)}${tile('Average position', +d.totals.position.toFixed(1), +d.before.position.toFixed(1), (n) => n.toFixed(1), true)}</div>
+      <h3>Almost on page 1</h3><p class="hint">Searches where you show on page 2 (positions 8–20) and people are looking. A little work on the page that ranks (its title, a blog post, a link from a venue) can move these onto page 1.</p>
+      <table class="tbl"><thead><tr><th>Search</th><th>Clicks</th><th>Shown</th><th>Position</th></tr></thead><tbody>${d.opportunities.map(row).join('') || '<tr><td colspan="4" class="muted">None right now.</td></tr>'}</tbody></table>
+      <h3>Top searches</h3>
+      <table class="tbl"><thead><tr><th>Search</th><th>Clicks</th><th>Shown</th><th>Position</th></tr></thead><tbody>${d.queries.slice(0, 25).map(row).join('')}</tbody></table>
+      <h3>Top pages</h3>
+      <table class="tbl"><thead><tr><th>Page</th><th>Clicks</th><th>Shown</th><th>Position</th></tr></thead><tbody>${d.pages.slice(0, 15).map((p: any) => `<tr><td><a href="https://www.momentsinlight.co.nz${esc(p.page)}" target="_blank" rel="noopener">${esc(p.page)}</a></td><td>${num(p.clicks)}</td><td>${num(p.impressions)}</td><td>${pos(p.position)}</td></tr>`).join('')}</tbody></table>`;
+  }
+
+  async function loadTracked() {
+    const { d } = await api('tracked');
+    tracked = new Set(d.keywords.map((k: any) => k.keyword));
+    $('.tracked-table tbody').innerHTML = d.keywords.map((k: any) => {
+      const h = k.history; const now = h.at(-1); const ago = h.length > 4 ? h[h.length - 5] : h[0];
+      const pts = h.filter((x: any) => x.position != null);
+      const max = Math.max(20, ...pts.map((x: any) => x.position));
+      const spark = pts.length > 1 ? `<svg viewBox="0 0 100 24" class="spark"><polyline points="${pts.map((x: any, i: number) => `${(i / (pts.length - 1)) * 100},${(x.position / max) * 22 + 1}`).join(' ')}"/></svg>` : '<span class="muted">from Monday</span>';
+      return `<tr><td>${esc(k.keyword)}</td><td>${now ? pos(now.position) : '<span class="muted">–</span>'}</td><td>${ago && h.length > 1 ? pos(ago.position) : '–'}</td><td>${spark}</td><td>${now ? num(now.clicks) : '–'}</td><td><button type="button" class="rm" data-untrack="${esc(k.keyword)}" title="Stop tracking">✕</button></td></tr>`;
+    }).join('') || '<tr><td colspan="6" class="muted">None yet.</td></tr>';
+  }
+
+  async function saveKeywords(keywords: string[]) {
+    const { ok, d } = await post({ action: 'settings', keywords });
+    if (!ok) { toast(d.error || 'Couldn’t save.', true); return; }
+    settings.keywords = keywords; await loadTracked(); loadSearch();
+  }
+
+  async function loadVenues() {
+    const { d } = await api('venues');
+    $('.venues').innerHTML = (d.venues ?? []).map((v: any) => `<li><span class="what"><strong>${esc(v.name)}</strong><br><small>${v.count} enquiries · last ${new Date(v.last).toLocaleDateString('en-NZ', { month: 'short', year: 'numeric' })}</small></span>${v.hasPage ? '<span class="chip ok">Has a page</span>' : '<span class="chip idea">Page idea</span>'}</li>`).join('') || '<li class="muted">Not enough enquiries yet.</li>';
+  }
+
+  async function loadContent() {
+    const { d } = await api('content');
+    settings.posts_goal = d.posts_goal;
+    const pct = d.posts_goal ? Math.min(100, Math.round((d.this_month / d.posts_goal) * 100)) : 100;
+    $('.content-body').innerHTML = `<p class="goal"><strong>${d.this_month}</strong> of ${d.posts_goal} posts this month</p><div class="bar"><span style="width:${pct}%"></span></div>
+      <h3>Weddings not on the blog yet</h3>
+      <ul class="list">${(d.not_blogged ?? []).map((j: any) => `<li><span class="what"><a href="/studio/crm/job?id=${j.id}">${esc(j.couple)}</a><br><small>Wedding ${new Date(`${j.event_date}T12:00:00Z`).toLocaleDateString('en-NZ', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' })}</small></span><a class="s-btn s-btn--quiet" href="/studio/edit?new=1">Write it</a></li>`).join('') || '<li class="muted">All caught up.</li>'}</ul>`;
+  }
+
+  async function loadHealth() {
+    const { d } = await api('health');
+    const b = $('.health-body');
+    if (d.none) { b.innerHTML = '<p class="muted">Not run yet. Click “Run it now”.</p>'; return; }
+    if (!d.finished) { b.innerHTML = `<p>Checking… ${d.done} of ${d.pages.length} pages.</p>`; return; }
+    const s = d.summary;
+    const sec = (title: string, items: string[], good: string) => `<details${items.length ? ' open' : ''}><summary>${items.length ? `<b class="down">${items.length}</b>` : '<b class="up">✓</b>'} ${title}</summary>${items.length ? `<ul>${items.slice(0, 40).map((i) => `<li>${i}</li>`).join('')}</ul>` : `<p class="muted">${good}</p>`}</details>`;
+    const link = (p: string) => `<a href="https://www.momentsinlight.co.nz${esc(p)}" target="_blank" rel="noopener">${esc(p)}</a>`;
+    b.innerHTML = `<p class="hint">${s.pages} pages checked, ${new Date(d.started).toLocaleDateString('en-NZ', { day: 'numeric', month: 'long' })}.</p>
+      ${sec('Broken links', s.broken.map((x: any) => `${esc(x.link)} <small>(on ${x.from.map(link).join(', ')})</small>`), 'No broken links.')}
+      ${sec('Pages without a good Google description', s.noDesc.map(link), 'Every page has one.')}
+      ${sec('Google titles too short or too long', s.shortTitles.map((x: any) => `${link(x.path)} <small>“${esc(x.title)}” (${x.title.length})</small>`), 'All good.')}
+      ${sec('Same title on more than one page', s.dupTitles.map((x: any) => `“${esc(x.title)}” <small>${x.pages.map(link).join(', ')}</small>`), 'All different.')}
+      ${sec('Photos without a description', s.noAlt.map((x: any) => `${link(x.path)} <small>${x.count} of ${x.of}</small>`), 'Every photo has one.')}
+      ${sec('Pages without exactly one main heading', s.h1.map((x: any) => `${link(x.path)} <small>${x.h1} headings</small>`), 'All good.')}`;
+  }
+
+  document.addEventListener('click', async (e) => {
+    const t = e.target as HTMLElement;
+    const tr = t.closest<HTMLButtonElement>('[data-track]');
+    if (tr) { await saveKeywords([...tracked, tr.dataset.track!]); toast('Tracking it from Monday.'); return; }
+    const un = t.closest<HTMLButtonElement>('[data-untrack]');
+    if (un) { if (confirm(`Stop tracking “${un.dataset.untrack}”?`)) await saveKeywords([...tracked].filter((k) => k !== un.dataset.untrack)); return; }
+    if (t.closest('[data-track-add]')) { const k = prompt('The search to track, as people type it (e.g. kumeu wedding photographer):'); if (k) await saveKeywords([...tracked, k]); return; }
+    if (t.closest('[data-goal]')) { const g = prompt('How many blog posts a month?', String(settings.posts_goal ?? 2)); if (g !== null) { await post({ action: 'settings', posts_goal: Number(g) }); loadContent(); } return; }
+    const hb = t.closest<HTMLButtonElement>('[data-health]');
+    if (hb) {
+      hb.disabled = true;
+      let { d } = await post({ action: 'health', start: true });
+      while (d.result && !/finished|error/.test(d.result)) { hb.textContent = d.result.replace('checked', 'Checked'); ({ d } = await post({ action: 'health' })); }
+      hb.disabled = false; hb.textContent = 'Run it now';
+      await loadHealth();
+    }
+  });
+  $<HTMLFormElement>('.ideas-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const seeds = (($<HTMLFormElement>('.ideas-form').elements.namedItem('seeds') as HTMLInputElement).value).split(',').map((s) => s.trim()).filter(Boolean);
+    $('.ideas').innerHTML = '<li class="muted">Asking Google…</li>';
+    const { d } = await post({ action: 'ideas', seeds });
+    $('.ideas').innerHTML = (d.ideas ?? []).map((i: any) => `<li>${esc(i.idea)} ${tracked.has(i.idea) ? '<small class="up">tracking</small>' : `<button type="button" class="add" data-track="${esc(i.idea)}" title="Track this search">+</button>`}</li>`).join('') || '<li class="muted">No ideas came back.</li>';
+  });
+  loadTracked().then(loadSearch);
+  loadVenues(); loadContent(); loadHealth();
+</script>
+
+<style is:global>
+  .seo { max-width: 1150px; margin: 0 auto; padding: 24px clamp(14px, 3vw, 32px) 80px; }
+  .seo h1 { margin: 0 0 4px; font-weight: 300; font-size: 32px; color: var(--ink); }
+  .seo .intro { margin: 0 0 18px; color: #666; font-size: 15px; }
+  .seo .card { background: var(--white); border-radius: 24px 0; padding: 20px 24px; margin-bottom: 16px; min-width: 0; }
+  .seo .card h2 { margin: 0 0 8px; font-weight: 300; font-size: 22px; color: var(--ink); }
+  .seo .card h3 { margin: 22px 0 6px; font-size: 12px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--green); }
+  .seo .card-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .seo .card-head small { color: #888; }
+  .seo .hint { margin: 0 0 10px; font-size: 13px; color: #777; }
+  .seo .muted { color: #999; }
+  .seo .note { padding: 12px 14px; background: #fff4d6; color: #5c4400; border-radius: 12px 0; font-size: 14px; }
+  .seo .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-top: 8px; }
+  .seo .tile { background: var(--champagne); border-radius: 18px 0; padding: 14px 16px; display: flex; flex-direction: column; gap: 2px; }
+  .seo .tile span { font-size: 11px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--green); }
+  .seo .tile strong { font-size: 28px; font-weight: 300; color: var(--ink); }
+  .seo .tile small { font-size: 13px; }
+  .seo .up { color: #5a7d2a; } .seo .down { color: #a8432a; }
+  .seo .tbl { width: 100%; border-collapse: collapse; font-size: 14px; }
+  .seo .tbl th { text-align: right; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: #888; font-weight: 600; padding: 6px 8px; border-bottom: 1px solid #ece4d7; }
+  .seo .tbl td { text-align: right; padding: 7px 8px; border-bottom: 1px solid #f3eee6; }
+  .seo .tbl th:first-child, .seo .tbl td:first-child { text-align: left; }
+  .seo .tbl a { color: var(--ink); }
+  .seo b.top { color: #3e6b1f; } .seo b.p1 { color: var(--green); } .seo b.p2 { color: #b07d1a; }
+  .seo .add, .seo .rm { border: 1px solid #ddd3c4; background: var(--white); border-radius: 50%; width: 22px; height: 22px; font-size: 13px; line-height: 1; cursor: pointer; color: var(--green); }
+  .seo .rm { color: #a8432a; }
+  .seo .spark { width: 100px; height: 24px; } .seo .spark polyline { fill: none; stroke: var(--green); stroke-width: 2; }
+  .seo .ideas-form { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+  .seo .ideas-form input { flex: 1 1 320px; font: inherit; font-size: 14px; padding: 9px 11px; border: 1px solid #ddd3c4; border-radius: 10px 0; }
+  .seo .ideas { list-style: none; margin: 0; padding: 0; columns: 2 260px; font-size: 14px; }
+  .seo .ideas li { padding: 4px 0; break-inside: avoid; }
+  .seo .two-col { display: grid; gap: 16px; }
+  @media (min-width: 900px) { .seo .two-col { grid-template-columns: 1fr 1fr; } .seo .two-col .card { margin-bottom: 0; } .seo .two-col { margin-bottom: 16px; } }
+  .seo .list { list-style: none; margin: 0; padding: 0; }
+  .seo .list li { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px solid #f1ebe1; font-size: 14px; }
+  .seo .list li:last-child { border-bottom: 0; }
+  .seo .what { flex: 1; } .seo .what small { color: #888; }
+  .seo .chip { font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: 999px; }
+  .seo .chip.ok { background: #e6ecd9; color: #3e4229; } .seo .chip.idea { background: #f6ecd6; color: #7a5a14; }
+  .seo .goal { margin: 4px 0 6px; font-size: 15px; } .seo .goal strong { font-size: 26px; font-weight: 300; }
+  .seo .bar { height: 10px; background: #f3eee6; border-radius: 6px 0; overflow: hidden; }
+  .seo .bar span { display: block; height: 100%; background: var(--green); }
+  .seo details { border-top: 1px solid #f1ebe1; padding: 8px 0; font-size: 14px; }
+  .seo details summary { cursor: pointer; }
+  .seo details ul { margin: 6px 0; padding-left: 20px; }
+  .seo details li { margin: 3px 0; } .seo details small { color: #888; }
+</style>

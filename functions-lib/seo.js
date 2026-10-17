@@ -1,0 +1,216 @@
+// SEO for the studio (/studio/seo), using free sources instead of a paid SEO tool:
+//   Google Search Console  what people searched to find the site, its average position, clicks
+//                          (needs the webmasters.readonly permission on the Google connection)
+//   Google's suggestions   keyword ideas: what people type ("wedding photographer kumeu …")
+//   The studio's own data  venues couples mention in enquiries that have no page on the site,
+//                          weddings not yet on the blog, posts this month
+//   The site itself        a monthly health check of every page (titles, descriptions, photo
+//                          descriptions, broken links), a few pages per timer run
+import { googleToken, connection } from './gmail.js';
+import { nzNow, builtPosts } from './schedules.js';
+
+export const GSC_SCOPE = 'https://www.googleapis.com/auth/webmasters.readonly';
+const SITE = 'https://www.momentsinlight.co.nz';
+const DAY = 86400_000;
+const iso = (d) => d.toISOString().slice(0, 10);
+
+export async function seoSettings(db) {
+  const row = await db.prepare(`SELECT value FROM settings WHERE key = 'seo'`).first();
+  return { property: '', keywords: ['wedding photographer auckland', 'west auckland wedding photographer', 'kumeu wedding photographer', 'auckland wedding photography'], posts_goal: 2, ...(row ? JSON.parse(row.value) : {}) };
+}
+export async function saveSeoSettings(db, value) {
+  await db.prepare(`INSERT INTO settings (key, value, updated_at) VALUES ('seo', ?1, ?2) ON CONFLICT (key) DO UPDATE SET value = ?1, updated_at = ?2`).bind(JSON.stringify(value), new Date().toISOString()).run();
+}
+
+// ---- Google Search Console ----
+export const gscReady = async (db) => String((await connection(db))?.scopes || '').includes('webmasters');
+async function gsc(env, path, body) {
+  const r = await fetch(`https://searchconsole.googleapis.com/webmasters/v3/${path}`, {
+    method: body ? 'POST' : 'GET', headers: { authorization: `Bearer ${await googleToken(env)}`, 'content-type': 'application/json' }, body: body ? JSON.stringify(body) : undefined,
+  });
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(r.status === 403 && /has not been used|disabled/i.test(d.error?.message ?? '') ? 'The Search Console API isn’t switched on in your Google Cloud project yet.' : `Search Console ${r.status}: ${d.error?.message ?? ''}`);
+  return d;
+}
+/** The site's Search Console property (found once and saved). */
+export async function property(env) {
+  const s = await seoSettings(env.DB);
+  if (s.property) return s.property;
+  const sites = (await gsc(env, 'sites')).siteEntry ?? [];
+  const p = sites.find((x) => x.siteUrl === 'sc-domain:momentsinlight.co.nz') ?? sites.find((x) => /momentsinlight/.test(x.siteUrl));
+  if (!p) throw new Error('Your Google account doesn’t have momentsinlight.co.nz in Search Console yet.');
+  await saveSeoSettings(env.DB, { ...s, property: p.siteUrl });
+  return p.siteUrl;
+}
+const query = async (env, prop, body) => (await gsc(env, `sites/${encodeURIComponent(prop)}/searchAnalytics/query`, body)).rows ?? [];
+
+/** The last 28 days (Search Console runs ~2 days behind) compared with the 28 before. */
+export async function searchReport(env) {
+  const prop = await property(env);
+  const end = new Date(Date.now() - 2 * DAY);
+  const r = { start: iso(new Date(end - 27 * DAY)), end: iso(end) };
+  const p = { start: iso(new Date(end - 55 * DAY)), end: iso(new Date(end - 28 * DAY)) };
+  const range = (x) => ({ startDate: x.start, endDate: x.end });
+  const [totals, before, queries, queriesBefore, pages] = await Promise.all([
+    query(env, prop, { ...range(r) }), query(env, prop, { ...range(p) }),
+    query(env, prop, { ...range(r), dimensions: ['query'], rowLimit: 250 }),
+    query(env, prop, { ...range(p), dimensions: ['query'], rowLimit: 500 }),
+    query(env, prop, { ...range(r), dimensions: ['page'], rowLimit: 25 }),
+  ]);
+  const prev = Object.fromEntries(queriesBefore.map((q) => [q.keys[0], q]));
+  const row = (q) => ({ query: q.keys[0], clicks: q.clicks, impressions: q.impressions, position: +q.position.toFixed(1), before: prev[q.keys[0]] ? +prev[q.keys[0]].position.toFixed(1) : null });
+  const all = queries.map(row);
+  return {
+    range: r, totals: totals[0] ?? { clicks: 0, impressions: 0, position: 0 }, before: before[0] ?? { clicks: 0, impressions: 0, position: 0 },
+    queries: all.slice(0, 50),
+    // Almost on page 1: searches where the site shows on page 2 (positions 8–20) with real interest.
+    opportunities: all.filter((q) => q.position >= 8 && q.position <= 20 && q.impressions >= 10).sort((a, b) => b.impressions - a.impressions).slice(0, 15),
+    pages: pages.map((x) => ({ page: x.keys[0].replace(SITE, '') || '/', clicks: x.clicks, impressions: x.impressions, position: +x.position.toFixed(1) })),
+  };
+}
+
+const escapeRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+/** Each week (from Monday 6am): where the site ranks for the tracked searches. */
+export async function weeklyPositions(env) {
+  const nz = nzNow();
+  if (nz.weekday !== 'Mon' || nz.hour < 6) return 'not Monday';
+  if (!(await gscReady(env.DB))) return 'Search Console not connected';
+  const s = await seoSettings(env.DB);
+  if (!s.keywords.length) return 'no searches tracked';
+  const week = nz.date;
+  const have = await env.DB.prepare('SELECT count(*) n FROM seo_positions WHERE week = ?1').bind(week).first();
+  if (have.n) return 'saved this week';
+  const prop = await property(env);
+  const end = new Date(Date.now() - 2 * DAY);
+  const rows = await query(env, prop, { startDate: iso(new Date(end - 6 * DAY)), endDate: iso(end), dimensions: ['query'], rowLimit: 100,
+    dimensionFilterGroups: [{ filters: [{ dimension: 'query', operator: 'includingRegex', expression: `^(${s.keywords.map(escapeRe).join('|')})$` }] }] });
+  const by = Object.fromEntries(rows.map((r) => [r.keys[0], r]));
+  await env.DB.batch(s.keywords.map((k) => env.DB.prepare('INSERT OR IGNORE INTO seo_positions (week, keyword, position, clicks, impressions) VALUES (?1, ?2, ?3, ?4, ?5)')
+    .bind(week, k, by[k] ? +by[k].position.toFixed(1) : null, by[k]?.clicks ?? 0, by[k]?.impressions ?? 0)));
+  return `saved ${s.keywords.length}`;
+}
+
+/** The tracked searches: this week's position and the trend (last 12 weeks). */
+export async function trackedKeywords(db) {
+  const s = await seoSettings(db);
+  const rows = (await db.prepare('SELECT * FROM seo_positions WHERE week >= ?1 ORDER BY week').bind(iso(new Date(Date.now() - 90 * DAY))).all()).results;
+  return s.keywords.map((k) => ({ keyword: k, history: rows.filter((r) => r.keyword === k).map(({ week, position, clicks, impressions }) => ({ week, position, clicks, impressions })) }));
+}
+
+// ---- Keyword ideas: Google's suggestions ----
+export async function keywordIdeas(env, seeds) {
+  const out = new Map();
+  for (const seed of seeds.slice(0, 8)) {
+    try {
+      const r = await fetch(`https://suggestqueries.google.com/complete/search?client=firefox&hl=en-NZ&gl=nz&q=${encodeURIComponent(seed)}`, { headers: { 'user-agent': 'Mozilla/5.0' } });
+      const d = await r.json();
+      for (const s of d[1] ?? []) if (s !== seed) out.set(s, seed);
+    } catch { /* skip that seed */ }
+  }
+  return [...out].map(([idea, seed]) => ({ idea, seed }));
+}
+
+// ---- Venue page ideas from enquiries ----
+const norm = (s) => String(s || '').toLowerCase().replace(/\b(the|estate|vineyard|winery|venue|weddings?|and|events?|lodge|ltd|nz|auckland|new zealand)\b/g, ' ').replace(/[^a-z]+/g, ' ').trim();
+export async function venueIdeas(env) {
+  const { venues } = await builtPosts(env).catch(() => ({ venues: [] }));
+  let sn = { results: [] };
+  try { sn = await env.DB.prepare(`SELECT json_extract(data, '$.venue') v, received_at at FROM sn_gmail WHERE kind = 'lead'`).all(); } catch { /* not imported */ }
+  const jobs = await env.DB.prepare(`SELECT venue v, created_at at FROM jobs WHERE venue <> ''`).all();
+  const have = (venues ?? []).map((v) => norm(v.name)).filter(Boolean);
+  const counts = new Map();
+  for (const r of [...sn.results, ...jobs.results]) {
+    const raw = String(r.v || '').split(/[,\n]/)[0].trim();
+    const key = norm(raw).split(' ').slice(0, 3).join(' ');
+    if (!key || key.length < 3) continue;
+    const cur = counts.get(key) ?? { name: raw, count: 0, last: '' };
+    cur.count++; if (r.at > cur.last) cur.last = r.at;
+    counts.set(key, cur);
+  }
+  return [...counts].map(([key, v]) => ({ ...v, hasPage: have.some((h) => h && (h.includes(key) || key.includes(h))) }))
+    .filter((v) => v.count >= 2).sort((a, b) => Number(a.hasPage) - Number(b.hasPage) || b.count - a.count).slice(0, 25);
+}
+
+// ---- Content ----
+export async function contentStatus(env) {
+  const nz = nzNow();
+  const { posts } = await builtPosts(env).catch(() => ({ posts: [] }));
+  const s = await seoSettings(env.DB);
+  const thisMonth = posts.filter((p) => !p.draft && p.date.slice(0, 7) === nz.date.slice(0, 7)).length;
+  // Weddings 2 weeks to 6 months ago with no post that mentions the couple's names.
+  const jobs = (await env.DB.prepare(`SELECT j.id, j.title, j.partner_name, j.event_date, c.first_name FROM jobs j JOIN clients c ON c.id = j.client_id
+    WHERE j.job_type = 'Wedding' AND j.stage IN ('booked', 'completed') AND j.event_date BETWEEN ?1 AND ?2 ORDER BY j.event_date`)
+    .bind(iso(new Date(Date.now() - 180 * DAY)), iso(new Date(Date.now() - 14 * DAY))).all()).results;
+  const titles = posts.map((p) => p.title.toLowerCase());
+  const notBlogged = jobs.filter((j) => !titles.some((t) => t.includes(j.first_name.toLowerCase()) && (!j.partner_name || t.includes(j.partner_name.toLowerCase().split(' ')[0]))));
+  return { posts_goal: s.posts_goal, this_month: thisMonth, not_blogged: notBlogged.map((j) => ({ id: j.id, couple: j.partner_name ? `${j.first_name} & ${j.partner_name}` : j.title, event_date: j.event_date })) };
+}
+
+/** Weekly: a task for each wedding that's been 2+ weeks without a blog post (once each). */
+export async function contentTasks(env) {
+  const nz = nzNow();
+  if (nz.weekday !== 'Mon' || nz.hour < 7) return 'not Monday';
+  const c = await contentStatus(env);
+  const now = new Date().toISOString();
+  if (c.not_blogged.length) await env.DB.batch(c.not_blogged.map((j) => env.DB.prepare(
+    `INSERT INTO tasks (title, notes, due_date, kind, created_at) SELECT ?1, ?2, ?3, 'content', ?4 WHERE NOT EXISTS (SELECT 1 FROM tasks WHERE title = ?1)`,
+  ).bind(`Blog ${j.couple}’s wedding`, `Their wedding was ${j.event_date}; it isn’t on the blog yet.`, nz.date, now)));
+  return `${c.not_blogged.length} weddings to blog`;
+}
+
+// ---- The monthly site health check ----
+const PER_RUN = 20;
+const decode = (t) => t.replace(/&#39;/g, "'").replace(/&quot;/g, '"').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>');
+export async function siteHealth(env, { now = false } = {}) {
+  const db = env.DB;
+  const nz = nzNow();
+  const month = nz.date.slice(0, 7);
+  const row = await db.prepare(`SELECT value FROM settings WHERE key = 'site_health'`).first();
+  let st = row ? JSON.parse(row.value) : null;
+  const save = (v) => db.prepare(`INSERT INTO settings (key, value, updated_at) VALUES ('site_health', ?1, ?2) ON CONFLICT (key) DO UPDATE SET value = ?1, updated_at = ?2`).bind(JSON.stringify(v), new Date().toISOString()).run();
+  // Starts by itself from 9am on the 2nd (the speed email is the 1st); "Run now" starts it any time.
+  if (now || ((!st || st.month !== month) && nz.date.slice(8) >= '02' && nz.hour >= 9)) {
+    const map = await (await env.ASSETS.fetch(new Request(`${SITE}/sitemap-0.xml`))).text();
+    const pages = [...map.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => new URL(m[1]).pathname);
+    st = { month, started: new Date().toISOString(), pages, done: 0, results: [], finished: false };
+    await save(st);
+  }
+  if (!st) return 'not started';
+  if (st.finished) return 'finished';
+  const batch = st.pages.slice(st.done, st.done + PER_RUN);
+  for (const path of batch) {
+    try {
+      const html = await (await env.ASSETS.fetch(new Request(`${SITE}${path}`))).text();
+      const title = decode(html.match(/<title>([^<]*)<\/title>/i)?.[1]?.trim() ?? '');
+      const desc = decode(html.match(/<meta name="description" content="([^"]*)"/i)?.[1] ?? '');
+      const h1 = (html.match(/<h1[\s>]/gi) || []).length;
+      const imgs = [...html.matchAll(/<img\b[^>]*>/gi)].map((m) => m[0]).filter((t) => !/display:\s*none|width="1"/i.test(t));
+      const noAlt = imgs.filter((t) => !/\balt="[^"]+"/i.test(t) && !/aria-hidden="true"|role="presentation"/i.test(t)).length;
+      const links = [...new Set([...html.matchAll(/href="(\/[^"#?]*)"/g)].map((m) => m[1].replace(/\/$/, '') || '/'))].filter((l) => !/[{$]/.test(l) && !/\.(css|js|png|jpe?g|webp|svg|ico|xml|pdf|ttf|woff2?)$/i.test(l) && !l.startsWith('/_') && !l.startsWith('/api'));
+      st.results.push({ path, title, desc, h1, imgs: imgs.length, noAlt, links });
+    } catch (e) { st.results.push({ path, error: e.message }); }
+  }
+  st.done += batch.length;
+  if (st.done >= st.pages.length) {
+    const known = new Set(st.pages.map((p) => p.replace(/\/$/, '') || '/'));
+    const titles = {}; const descs = {};
+    for (const r of st.results) { if (r.title) (titles[r.title] ||= []).push(r.path); if (r.desc) (descs[r.desc] ||= []).push(r.path); }
+    const broken = {};
+    for (const r of st.results) for (const l of r.links ?? []) if (!known.has(l) && !/^\/(studio|newcontact|portal|quote|contract|invoice|questionnaire)/.test(l)) (broken[l] ||= []).push(r.path);
+    st.summary = {
+      pages: st.results.length,
+      shortTitles: st.results.filter((r) => r.title && (r.title.length < 25 || r.title.length > 65)).map((r) => ({ path: r.path, title: r.title })),
+      noDesc: st.results.filter((r) => !r.error && (!r.desc || r.desc.length < 50)).map((r) => r.path),
+      longDesc: st.results.filter((r) => (r.desc ?? '').length > 165).map((r) => r.path),
+      dupTitles: Object.entries(titles).filter(([, v]) => v.length > 1).map(([t, v]) => ({ title: t, pages: v })),
+      dupDescs: Object.entries(descs).filter(([, v]) => v.length > 1).map(([d, v]) => ({ desc: d.slice(0, 80), pages: v })),
+      h1: st.results.filter((r) => !r.error && r.h1 !== 1).map((r) => ({ path: r.path, h1: r.h1 })),
+      noAlt: st.results.filter((r) => r.noAlt).map((r) => ({ path: r.path, count: r.noAlt, of: r.imgs })),
+      broken: Object.entries(broken).map(([link, from]) => ({ link, from: from.slice(0, 5) })),
+    };
+    st.finished = true;
+    st.results = st.results.map(({ links, ...r }) => r); // the summary has what's needed
+  }
+  await save(st);
+  return st.finished ? 'finished' : `checked ${st.done} of ${st.pages.length}`;
+}
