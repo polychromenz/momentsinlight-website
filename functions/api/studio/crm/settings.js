@@ -16,7 +16,7 @@ export async function onRequestGet({ env }) {
     env.DB.prepare('SELECT key, name, subject, body, attachments, updated_at FROM templates ORDER BY key').all(),
     env.DB.prepare('SELECT key, name, parts FROM payment_schedules ORDER BY name').all(),
     listDocuments(env.DB),
-    env.DB.prepare('SELECT key, name, body, updated_at FROM contract_templates ORDER BY name').all(),
+    env.DB.prepare('SELECT key, name, note, body, updated_at FROM contract_templates ORDER BY name').all(),
   ]);
   const by = (k) => lists.results.filter((r) => r.kind === k).map(({ kind, ...r }) => ({ ...r, on_form: !!r.on_form }));
   return json({
@@ -82,12 +82,12 @@ export async function onRequestPut({ request, env }) {
     if (!name || !body) return json({ error: 'A contract needs a name and its wording.' }, 400);
     let key = d.contract.key;
     if (key) {
-      const r = await env.DB.prepare('UPDATE contract_templates SET name = ?2, body = ?3, updated_at = ?4 WHERE key = ?1').bind(key, name, body, now).run();
+      const r = await env.DB.prepare('UPDATE contract_templates SET name = ?2, body = ?3, updated_at = ?4, note = ?5 WHERE key = ?1').bind(key, name, body, now, text(d.contract.note, 300)).run();
       if (!r.meta.changes) return json({ error: 'That contract no longer exists.' }, 404);
     } else {
       key = slug(name) || 'contract';
       for (let n = 2; await env.DB.prepare('SELECT 1 FROM contract_templates WHERE key = ?1').bind(key).first(); n++) key = `${slug(name)}-${n}`;
-      await env.DB.prepare('INSERT INTO contract_templates (key, name, body, updated_at) VALUES (?1, ?2, ?3, ?4)').bind(key, name, body, now).run();
+      await env.DB.prepare('INSERT INTO contract_templates (key, name, body, updated_at, note) VALUES (?1, ?2, ?3, ?4, ?5)').bind(key, name, body, now, text(d.contract.note, 300)).run();
     }
     return json({ ok: true, key });
   }

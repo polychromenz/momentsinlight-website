@@ -12,6 +12,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       <header class="c-head">
         <p class="eyebrow c-eyebrow"></p>
         <h1 class="display c-title"></h1>
+        <p class="c-note" hidden></p>
         <hr class="hairline" />
       </header>
 
@@ -58,6 +59,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     document.title = `${c.name} | Moments In Light`;
     $('.c-eyebrow').textContent = [det.event_date_long, det.venue].filter(Boolean).join(' · ');
     $('.c-title').textContent = c.name;
+    const note = $('.c-note'); note.textContent = det.note || ''; note.hidden = !det.note;
     $('.d-parties').innerHTML = `<strong>Moments in Light</strong> (Photographer)<br>Tony Gorham · 021 625 943 · tony@momentsinlight.co.nz<br><br>and <strong>${esc(det.client)}</strong> (Client)${det.address ? `<br>${esc(det.address).replace(/\n/g, ', ')}` : ''}${det.email ? `<br>${esc(det.email)}` : ''}`;
     $('.d-event').innerHTML = [['Wedding date', det.event_date_long], ['Venue', det.venue], ['Package', det.package], ['Total (incl. GST)', det.total]].filter(([, v]) => v).map(([k, v]) => `<dt>${k}</dt><dd>${esc(v)}</dd>`).join('');
     $('.d-pay tbody').innerHTML = (det.payments || []).map((p: { label: string; amount: string }) => `<tr><td>${esc(p.label)}</td><td>${esc(p.amount)}</td></tr>`).join('');
@@ -99,6 +101,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   .c { max-width: 900px; margin: 0 auto; display: flex; flex-direction: column; gap: 22px; }
   .c-head { text-align: center; }
   .c-title { font-size: clamp(32px, 2.6vw + 18px, 50px); margin: 0 0 20px; padding: 0; }
+  .c-note { margin: -8px auto 20px; max-width: 60ch; color: #666; font-size: 15px; }
+  .c-note[hidden] { display: none; }
   .c-card { background: var(--white); border-radius: 28px 0; padding: 24px 28px; }
   .c-card h2 { margin: 0 0 10px; font-weight: 300; font-size: 22px; color: var(--ink); }
   .c-details { display: grid; gap: 18px; font-size: 14px; line-height: 1.7; color: #444; }

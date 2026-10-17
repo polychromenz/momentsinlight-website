@@ -40,6 +40,7 @@ export async function makeContract(env, quoteRow, job) {
   const extras = (q.chosen_extras || []).map((i) => q.extras[i]).filter(Boolean);
   const total = q.total ?? 0;
   const details = JSON.stringify({
+    note: tpl.note || '',
     client: `${job.first_name} ${job.last_name}`.trim(),
     partner: job.partner_name || '',
     email: job.email, address: job.address || '',

@@ -74,6 +74,7 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
         <div class="card"><ul class="tpl-list con-list"></ul><button type="button" class="s-btn s-btn--quiet" data-act="new-contract">+ New contract</button></div>
         <form class="card con-editor" autocomplete="off">
           <label>Name<input name="con_name" required /></label>
+          <label>Note under the title (optional)<input name="con_note" placeholder="e.g. Based on the NZIPP Standard Photographic Terms &amp; Conditions of Engagement" /></label>
           <label>Wording<textarea name="con_body" rows="20"></textarea></label>
           <p class="hint">The couple's names, address, wedding date, venue, package, total and payment schedule are shown above the wording automatically ("the Event specified above"). Contracts already sent keep the wording they were sent with. Choose each job type's default contract under Job types; each quote can choose another.</p>
           <div class="actions"><button type="submit" class="s-btn s-btn--solid">Save contract</button></div>
@@ -104,7 +105,7 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
   import { payments, money, longDate } from '../../../../functions-lib/quotes.js';
   import { WEDDING, KIND, STATUS } from '../../../studio/workflow-view';
   type Item = { value: string; label: string; workflow: string | null; on_form: boolean; contract_key?: string | null };
-  type ContractT = { key: string; name: string; body: string };
+  type ContractT = { key: string; name: string; note: string; body: string };
   type Template = { key: string; name: string; subject: string; body: string; attachments: number[] };
   type LibraryDoc = Doc & { type: string; updated_at: string; used_by: string[] };
   const $ = <T extends HTMLElement = HTMLElement>(s: string, root: ParentNode = document) => root.querySelector<T>(s)!;
@@ -189,6 +190,7 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
   function openContract(x: ContractT | null) {
     currentCon = x;
     (con.elements.namedItem('con_name') as HTMLInputElement).value = x?.name ?? '';
+    (con.elements.namedItem('con_note') as HTMLInputElement).value = x?.note ?? '';
     conRich.set(x?.body ?? '<p></p>');
     document.querySelectorAll<HTMLElement>('.con-list li').forEach((li) => li.classList.toggle('on', li.dataset.key === x?.key));
   }
@@ -197,7 +199,7 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
   }
   con.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const r = await fetch('/api/studio/crm/settings', { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ contract: { key: currentCon?.key, name: (con.elements.namedItem('con_name') as HTMLInputElement).value, body: conRich.get() } }) });
+    const r = await fetch('/api/studio/crm/settings', { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ contract: { key: currentCon?.key, name: (con.elements.namedItem('con_name') as HTMLInputElement).value, note: (con.elements.namedItem('con_note') as HTMLInputElement).value, body: conRich.get() } }) });
     const d = await r.json().catch(() => ({}));
     if (!r.ok) { toast(d.error || 'Couldn’t save.', true); return; }
     toast('Contract saved. New contracts use this wording; ones already sent keep theirs.');

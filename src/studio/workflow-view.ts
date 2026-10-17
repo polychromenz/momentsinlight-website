@@ -15,7 +15,7 @@ export const WEDDING: Stage[] = [
   ] },
   { name: 'Booking', steps: [
     { title: 'Quote accepted', kind: 'auto', when: 'When they accept online', status: 'live', note: 'They’re booked, follow-ups stop, their address is saved, you get an alert.' },
-    { title: 'Contract sent to sign, with the quote PDF', kind: 'auto', when: 'Straight after accepting', status: 'live', note: 'Uses the quote’s contract (default: the job type’s).' },
+    { title: 'Contract sent to sign, with the quote PDF', kind: 'auto', when: 'Straight after accepting', status: 'live', note: 'Your Moments in Light contract (based on the NZIPP standard terms), or the one chosen on the quote.' },
     { title: 'Contract signed', kind: 'auto', when: 'When they sign online', status: 'live', note: 'Signed PDF emailed to them and to you.' },
     { title: '10% deposit invoice', kind: 'auto', when: 'Straight after signing', status: 'next', note: 'Needs Stripe; until then a “Send the deposit invoice” to-do.' },
     { title: '04 Thanks for booking', kind: 'auto', when: 'Once the deposit is paid', status: 'next' },

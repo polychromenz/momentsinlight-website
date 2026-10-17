@@ -160,7 +160,8 @@ export async function quotePdf(q, job, number) {
 export async function contractPdf(c) {
   const d = await setup();
   const det = JSON.parse(c.details || '{}');
-  d.write([{ text: c.name, bold: true }], { size: 20, gap: 10 });
+  d.write([{ text: c.name, bold: true }], { size: 20, gap: det.note ? 2 : 10 });
+  if (det.note) d.write([{ text: det.note }], { size: 10, color: GREY, gap: 10 });
   d.label('Between');
   d.write([{ text: `${FROM[0]} (Photographer), ${FROM.slice(2).join(', ')}` }], { size: 10, gap: 2 });
   d.write([{ text: `and ${det.client || ''} (Client)${det.address ? `, ${det.address.replace(/\n/g, ', ')}` : ''}${det.email ? `, ${det.email}` : ''}` }], { size: 10, gap: 4 });
