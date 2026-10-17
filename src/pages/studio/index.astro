@@ -25,7 +25,9 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
     <div class="content" hidden>
       <div class="tiles">
         <a class="tile" href="/studio/crm"><span class="tile-label">New leads</span><strong class="t-leads"></strong><small class="c-leads"></small></a>
-        <a class="tile" href="/studio/crm"><span class="tile-label">Booked</span><strong class="t-booked"></strong><small class="c-booked"></small></a>
+        <a class="tile" href="/studio/crm"><span class="tile-label">Won (booked)</span><strong class="t-booked"></strong><small class="c-booked"></small></a>
+        <div class="tile"><span class="tile-label">Lost</span><strong class="t-lost"></strong><small class="c-lost"></small></div>
+        <div class="tile"><span class="tile-label">Conversion</span><strong class="t-conv"></strong><small class="c-conv"></small></div>
         <div class="tile"><span class="tile-label">Payments received</span><strong class="t-payments"></strong><small class="c-payments"></small></div>
         <div class="tile"><span class="tile-label">Value booked</span><strong class="t-value"></strong><small class="c-value"></small></div>
       </div>
@@ -40,6 +42,16 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
           <h2>Where leads came from</h2>
           <div class="pie-wrap"><div class="pie"></div><ul class="pie-legend"></ul></div>
         </section>
+      </div>
+
+      <section class="card perf">
+        <h2>Month by month</h2>
+        <p class="hint">By the month they enquired: how many enquiries came in, and what became of them. The last 12 months.</p>
+        <div class="perf-wrap"><table class="perf-table"><thead><tr><th>Month</th><th>Enquiries</th><th>Won</th><th>Lost</th><th>Still deciding</th><th>Conversion</th></tr></thead><tbody></tbody><tfoot></tfoot></table></div>
+      </section>
+      <div class="charts">
+        <section class="card"><h2>How soon they book</h2><p class="hint">Time from enquiry to booking, last 12 months.</p><div class="bars speed"></div></section>
+        <section class="card"><h2>How far ahead they book</h2><p class="hint">Time from booking to their date, last 12 months.</p><div class="bars ahead"></div></section>
       </div>
 
       <div class="lists">
@@ -142,6 +154,26 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
     const t = d.totals, b = d.before;
     $('.t-leads').textContent = t.leads; $('.c-leads').textContent = compare(t.leads, b.leads);
     $('.t-booked').textContent = t.booked; $('.c-booked').textContent = compare(t.booked, b.booked);
+    $('.t-lost').textContent = t.lost; $('.c-lost').textContent = compare(t.lost, b.lost);
+    // Conversion: of the enquiries in this period, how many booked.
+    const conv = (x: any) => (x.leads ? Math.round((x.cohort_won / x.leads) * 100) : null);
+    const cNow = conv(t), cBefore = conv(b);
+    $('.t-conv').textContent = cNow === null ? '–' : `${cNow}%`;
+    $('.c-conv').textContent = t.leads ? `${t.cohort_won} of ${t.leads} enquiries booked${t.cohort_open ? ` · ${t.cohort_open} still deciding` : ''}${cBefore !== null ? ` · a year ago ${cBefore}%` : ''}` : 'No enquiries in this period';
+
+    // Month by month.
+    const pct = (won: number, n: number) => (n ? `${Math.round((won / n) * 100)}%` : '–');
+    const mrows = d.monthly.slice().reverse();
+    $('.perf-table tbody').innerHTML = mrows.map((r: any) => `<tr><td>${new Date(`${r.month}-15T12:00:00Z`).toLocaleDateString('en-NZ', { month: 'long', year: 'numeric', timeZone: 'UTC' })}</td><td>${r.enquiries || '–'}</td><td>${r.won || '–'}</td><td>${r.lost || '–'}</td><td>${r.open || '–'}</td><td><span class="conv-bar" style="--w:${r.enquiries ? Math.round((r.won / r.enquiries) * 100) : 0}%"></span>${pct(r.won, r.enquiries)}</td></tr>`).join('');
+    const sum = (k: string) => d.monthly.reduce((a: number, r: any) => a + r[k], 0);
+    $('.perf-table tfoot').innerHTML = `<tr><td>12 months</td><td>${sum('enquiries')}</td><td>${sum('won')}</td><td>${sum('lost')}</td><td>${sum('open')}</td><td>${pct(sum('won'), sum('enquiries'))}</td></tr>`;
+    const bars = (el: string, data: Record<string, number>, labels: [string, string][]) => {
+      const total = labels.reduce((a, [k]) => a + (data[k] || 0), 0);
+      const max = Math.max(1, ...labels.map(([k]) => data[k] || 0));
+      $(el).innerHTML = total ? labels.map(([k, label]) => `<div class="bar"><span class="bar-l">${label}</span><span class="bar-t"><span class="bar-f" style="--w:${((data[k] || 0) / max) * 100}%"></span></span><span class="bar-n">${data[k] || 0}<small> ${Math.round(((data[k] || 0) / total) * 100)}%</small></span></div>`).join('') : '<p class="empty">No bookings in the last 12 months yet.</p>';
+    };
+    bars('.speed', d.speed, [['week', 'Within a week'], ['month', 'Within a month'], ['quarter', '1–3 months'], ['longer', 'Longer']]);
+    bars('.ahead', d.ahead, [['u3', 'Under 3 months'], ['u6', '3–6 months'], ['u12', '6–12 months'], ['u18', '12–18 months'], ['o18', 'Over 18 months']]);
     $('.t-payments').textContent = money(t.payments); $('.c-payments').textContent = compare(t.payments, b.payments, money);
     $('.t-value').textContent = money(t.booked_value); $('.c-value').textContent = compare(t.booked_value, b.booked_value, money);
 
@@ -205,7 +237,7 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
   .dash-ranges button.on { background: var(--green); border-color: var(--green); color: var(--white); }
   .dash-custom { display: flex; gap: 8px; align-items: center; font-size: 14px; color: #555; }
   .dash-custom input { font: inherit; font-size: 14px; padding: 6px 8px; border: 1px solid #ddd3c4; border-radius: 8px 0; }
-  .dash .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px; margin-bottom: 16px; }
+  .dash .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 14px; margin-bottom: 16px; }
   .dash .tile { display: flex; flex-direction: column; gap: 4px; background: var(--white); border-radius: 24px 0; padding: 18px 22px; color: inherit; text-decoration: none; }
   .dash a.tile:hover { opacity: 1; box-shadow: 0 10px 24px -18px rgb(0 0 0 / 0.5); }
   .dash .tile-label { font-size: 12px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: var(--green); }
@@ -253,5 +285,22 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
   .dash .pager button { font: inherit; font-size: 16px; width: 30px; height: 30px; border: 1px solid #ddd3c4; border-radius: 8px 0; background: var(--white); cursor: pointer; }
   .dash .pager button:disabled { opacity: 0.4; cursor: default; }
   .dash .note { font-size: 13px; color: #888; margin: 0; }
+  .dash .hint { margin: -4px 0 12px; font-size: 13px; color: #888; }
+  .dash .perf { margin-bottom: 16px; }
+  .dash .perf-wrap { overflow-x: auto; }
+  .dash .perf-table { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 520px; }
+  .dash .perf-table th { text-align: right; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--green); font-weight: 600; padding: 6px 8px; border-bottom: 1px solid #ece4d7; }
+  .dash .perf-table td { text-align: right; padding: 8px; border-bottom: 1px solid #f3eee6; color: #444; }
+  .dash .perf-table th:first-child, .dash .perf-table td:first-child { text-align: left; }
+  .dash .perf-table tfoot td { font-weight: 600; color: var(--ink); border-bottom: 0; border-top: 1px solid #ece4d7; }
+  .dash .conv-bar { display: inline-block; width: 60px; height: 6px; margin-right: 8px; border-radius: 3px; background: linear-gradient(to right, var(--green) var(--w), #eee8dd var(--w)); vertical-align: middle; }
+  .dash .bars { display: flex; flex-direction: column; gap: 10px; }
+  .dash .bar { display: grid; grid-template-columns: 120px 1fr 64px; gap: 10px; align-items: center; font-size: 14px; }
+  .dash .bar-l { color: #555; }
+  .dash .bar-t { height: 12px; background: #f3eee6; border-radius: 6px 0; overflow: hidden; }
+  .dash .bar-f { display: block; height: 100%; width: var(--w); background: var(--green); border-radius: 6px 0; transform-origin: left; animation: bar-grow 1.1s var(--ease) 0.2s both; }
+  @keyframes bar-grow { from { transform: scaleX(0); } }
+  .dash .bar-n { text-align: right; font-weight: 600; color: var(--ink); }
+  .dash .bar-n small { font-weight: 400; color: #999; font-size: 12px; }
   @media (min-width: 900px) { .dash .charts { grid-template-columns: 1.6fr 1fr; } .dash .lists { grid-template-columns: 1fr 1fr; align-items: start; } }
 </style>

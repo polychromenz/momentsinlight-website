@@ -25,6 +25,11 @@ const T = (n) => `(?${n} = '' OR j.job_type = ?${n})`;
     `SELECT
        (SELECT count(*) FROM jobs j WHERE j.created_at >= ?1 AND j.created_at < ?2 AND ${T(3)}) AS leads,
        (SELECT count(*) FROM jobs j WHERE j.booked_at >= ?1 AND j.booked_at < ?2 AND ${T(3)}) AS booked,
+       (SELECT count(*) FROM jobs j WHERE j.lost_at >= ?1 AND j.lost_at < ?2 AND ${T(3)}) AS lost,
+       -- Of the enquiries in the period: how many have booked, been lost, or are still deciding.
+       (SELECT count(*) FROM jobs j WHERE j.created_at >= ?1 AND j.created_at < ?2 AND j.booked_at IS NOT NULL AND ${T(3)}) AS cohort_won,
+       (SELECT count(*) FROM jobs j WHERE j.created_at >= ?1 AND j.created_at < ?2 AND j.stage = 'lost' AND ${T(3)}) AS cohort_lost,
+       (SELECT count(*) FROM jobs j WHERE j.created_at >= ?1 AND j.created_at < ?2 AND j.stage = 'lead' AND ${T(3)}) AS cohort_open,
        (SELECT coalesce(sum(i.amount), 0) FROM invoices i JOIN jobs j ON j.id = i.job_id WHERE i.status = 'paid' AND i.paid_at >= ?1 AND i.paid_at < ?2 AND ${T(3)}) AS payments,
        (SELECT coalesce(sum(q.total), 0) FROM quotes q JOIN jobs j ON j.id = q.job_id WHERE q.status = 'accepted' AND q.accepted_at >= ?1 AND q.accepted_at < ?2 AND ${T(3)}) AS booked_value`,
   ).bind(a, b, type).first();
@@ -34,7 +39,7 @@ const T = (n) => `(?${n} = '' OR j.job_type = ?${n})`;
   const months = Array.from({ length: 12 }, (_, i) => new Date(Date.UTC(end.getUTCFullYear(), end.getUTCMonth() - 11 + i, 1)).toISOString().slice(0, 7));
   const chartFrom = `${months[0]}-01T00:00:00.000Z`;
 
-  const [now_, before, leadsBy, bookedBy, sources, shoots, leads, payments, tasks, types] = await Promise.all([
+  const [now_, before, leadsBy, bookedBy, sources, shoots, leads, payments, tasks, types, cohorts, speed, ahead] = await Promise.all([
     totals(from, to),
     totals(yearBefore(from), yearBefore(to)),
     db.prepare(`SELECT substr(j.created_at, 1, 7) m, count(*) n FROM jobs j WHERE j.created_at >= ?1 AND ${T(2)} GROUP BY m`).bind(chartFrom, type).all(),
@@ -58,6 +63,15 @@ const T = (n) => `(?${n} = '' OR j.job_type = ?${n})`;
        ORDER BY s.due_at LIMIT 100`,
     ).bind(type).all(),
     db.prepare(`SELECT value FROM lists WHERE kind = 'job_type' ORDER BY sort, id`).all(),
+    // Month by month (by the month they enquired): what became of those enquiries.
+    db.prepare(`SELECT substr(j.created_at, 1, 7) m, count(*) enquiries, sum(j.booked_at IS NOT NULL) won, sum(j.stage = 'lost') lost, sum(j.stage = 'lead') open
+      FROM jobs j WHERE j.created_at >= ?1 AND j.created_at < ?3 AND ${T(2)} GROUP BY m`).bind(chartFrom, type, to).all(),
+    // How long after enquiring they booked (bookings in the 12 months).
+    db.prepare(`SELECT CASE WHEN d < 7 THEN 'week' WHEN d < 31 THEN 'month' WHEN d < 92 THEN 'quarter' ELSE 'longer' END b, count(*) n
+      FROM (SELECT julianday(j.booked_at) - julianday(j.created_at) d FROM jobs j WHERE j.booked_at >= ?1 AND j.booked_at < ?3 AND ${T(2)}) GROUP BY b`).bind(chartFrom, type, to).all(),
+    // How far ahead of the date they booked.
+    db.prepare(`SELECT CASE WHEN d < 91 THEN 'u3' WHEN d < 183 THEN 'u6' WHEN d < 365 THEN 'u12' WHEN d < 548 THEN 'u18' ELSE 'o18' END b, count(*) n
+      FROM (SELECT julianday(j.event_date) - julianday(substr(j.booked_at, 1, 10)) d FROM jobs j WHERE j.booked_at >= ?1 AND j.booked_at < ?3 AND j.event_date IS NOT NULL AND ${T(2)}) GROUP BY b`).bind(chartFrom, type, to).all(),
   ]);
   const count = (rows) => Object.fromEntries(rows.results.map((r) => [r.m, r.n]));
   const l = count(leadsBy), b = count(bookedBy);
@@ -66,6 +80,9 @@ const T = (n) => `(?${n} = '' OR j.job_type = ?${n})`;
     totals: now_, before,
     chart: months.map((m) => ({ month: m, leads: l[m] || 0, booked: b[m] || 0 })),
     sources: sources.results,
+    monthly: months.map((m) => { const r = cohorts.results.find((x) => x.m === m) || {}; return { month: m, enquiries: r.enquiries || 0, won: r.won || 0, lost: r.lost || 0, open: r.open || 0 }; }),
+    speed: Object.fromEntries(speed.results.map((r) => [r.b, r.n])),
+    ahead: Object.fromEntries(ahead.results.map((r) => [r.b, r.n])),
     shoots: shoots.results, leads: leads.results, payments: payments.results, tasks: tasks.results,
     types: types.results.map((r) => r.value),
   });
