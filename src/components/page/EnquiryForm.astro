@@ -112,11 +112,11 @@ const sources: [string, string][] = [
       thanks.focus();
     } catch (err) {
       show((err as Error).message);
-      // A used Turnstile token can't be reused.
-      (window as unknown as { turnstile?: { reset: () => void } }).turnstile?.reset();
-    } finally {
+      // Only a failed send can be tried again.
       button.disabled = false;
       button.textContent = 'Send enquiry';
+      // A used Turnstile token can't be reused.
+      (window as unknown as { turnstile?: { reset: () => void } }).turnstile?.reset();
     }
   });
 </script>
@@ -134,6 +134,8 @@ const sources: [string, string][] = [
   }
   .enquiry input:focus, .enquiry select:focus, .enquiry textarea:focus { outline: none; border-color: var(--green); border-radius: 0 14px; }
   .enquiry textarea { resize: vertical; }
+  /* Hidden means hidden: once sent, the form goes and only the thank-you shows. */
+  .enquiry[hidden], .enquiry-thanks[hidden], .msg[hidden] { display: none; }
   .hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
   .msg { margin: 0; padding: 12px 14px; background: #fbeee8; color: #8a3b1e; border-radius: 12px 0; font-size: 15px; }
   .enquiry .btn { align-self: flex-start; }
