@@ -143,9 +143,11 @@ export async function readBatch(env, kind) {
     const subject = header(m, 'subject');
     const f = kind === 'lead' ? fieldsOf(textOf(m)) : {};
     const data = kind === 'lead'
-      ? { first_name: f['First Name'] ?? '', last_name: f['Last Name'] ?? '', email: (f.Email ?? '').toLowerCase(), phone: f['Phone (optional)'] ?? f.Phone ?? '',
-        service: f['Which services are you interested in?'] ?? '', venue: f.Venue ?? '', event_date: f['Event Date'] ?? '',
-        source: f['How did you hear about us?'] ?? f['How did you hear about me?'] ?? '', message: f['Tell me a little about your wedding plans'] ?? '', other: Object.keys(f) }
+      // Studio Ninja's form changed over time: older enquiries say Location / Job Location,
+      // Shoot Date, Message and Phone. Every field is kept too (fields).
+      ? { first_name: f['First Name'] ?? '', last_name: f['Last Name'] ?? '', email: (f.Email ?? '').toLowerCase(), phone: f['Phone (optional)'] || f.Phone || '',
+        service: f['Which services are you interested in?'] ?? '', venue: f.Venue || f.Location || f['Job Location'] || '', event_date: f['Event Date'] || f['Shoot Date'] || '',
+        source: f['How did you hear about us?'] ?? f['How did you hear about me?'] ?? '', message: f['Tell me a little about your wedding plans'] || f.Message || '', fields: f }
       : { job: subjectName(subject), accepted: /accepted/i.test(textOf(m)) };
     stmts.push(env.DB.prepare('INSERT OR IGNORE INTO sn_gmail (message_id, kind, received_at, subject, data, created_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6)')
       .bind(m.id, kind, new Date(Number(m.internalDate)).toISOString(), subject, JSON.stringify(data), now));
