@@ -149,7 +149,7 @@ contract email, invoice email.
 ### Family Workflow
 
 Same as the Portrait Workflow, without "Prepare photos for IPS meeting" and "IPS meeting".
-(Job types Family uses no workflow link in Job Types; the workflow exists as a template.)
+(The Family job type isn't linked to it in Job Types, so it's only used when chosen by hand.)
 
 Commercial / Advertising and Event have no workflow.
 
