@@ -27,7 +27,7 @@ async function claim(db, key, today) {
 const release = (db, key) => db.prepare(`UPDATE settings SET value = '{}' WHERE key = ?1`).bind(key).run();
 
 /** The site's post list as built (dates, drafts, categories), and when it was built. */
-async function builtPosts(env) {
+export async function builtPosts(env) {
   const r = await env.ASSETS.fetch(new Request(`${SITE}/studio/posts.json`));
   if (!r.ok) throw new Error(`posts.json: ${r.status}`);
   return r.json();

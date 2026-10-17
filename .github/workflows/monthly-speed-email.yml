@@ -1,15 +1,12 @@
-# The monthly speed email (scripts/monthly-speed-email.mjs): the 1st of each month at 8am NZ
-# time. Saves the results in docs/speed-tests so next month can compare.
+# A speed test and email on request (Actions > Run workflow), saving the results in docs/speed-tests.
+# The monthly email on the 1st now comes from the website's own Cloudflare timer
+# (functions-lib/speed.js, results kept in the studio database); GitHub's schedules ran late or not at all.
 # Needs the PAGESPEED_API_KEY and RESEND_API_KEY secrets
 # (GitHub > the repository > Settings > Secrets and variables > Actions).
 # "Run workflow" on the Actions tab tests and sends one straight away.
 name: Monthly speed email
 
 on:
-  schedule:
-    # 19:00 and 20:00 UTC on the 28th–31st: one of them is 8am on the 1st in NZ; the script
-    # only runs the tests from that one.
-    - cron: '0 19,20 28-31 * *'
   workflow_dispatch: {}
 
 permissions:
