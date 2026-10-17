@@ -103,7 +103,8 @@ is stored once, globally, in Studio Ninja.
 ## Things noticed (to confirm with Tony)
 
 - **Prices differ:** the quote template has Classic **$3,495** and Deluxe **$4,995**; the website
-  and enquiry email 01 say **$2,995** and **$3,995**.
+  and enquiry email 01 say **$2,995** and **$3,995**. **Confirmed by Tony (17 Oct 2026): $2,995
+  and $3,995 are right.** Use these in the new quotes.
 - **Contract clause 2** refers to "Section 11" for force majeure, which is clause **10** in both
   wedding contracts.
 - The contract email cites NZIPP standard terms sections 14 and 15, but the standard wedding
