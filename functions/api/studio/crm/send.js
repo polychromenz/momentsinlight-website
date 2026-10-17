@@ -4,7 +4,8 @@
 // Works for ready-to-send emails, and for automatic ones that didn't send (or that he wants to
 // send early). The test-mode lock applies as always.
 import { json } from '../../../../functions-lib/studio.js';
-import { sendStep, draftFor, loadJob } from '../../../../functions-lib/crm-send.js';
+import { sendStep, draftFor, loadJob, templateAttachments } from '../../../../functions-lib/crm-send.js';
+import { listDocuments } from '../../../../functions-lib/documents.js';
 import { outgoing, sendMode } from '../../../../functions-lib/crm.js';
 import { connection } from '../../../../functions-lib/gmail.js';
 
@@ -23,7 +24,8 @@ export async function onRequestGet({ request, env }) {
       step: { id: step.id, title: step.title, status: step.status },
       // The template text with {{fields}} filled in where known; gaps show as [field].
       subject: d.subject, body: d.body, missing: d.missing,
-      attachment: d.template.attachment,
+      attachments: templateAttachments(d.template),
+      documents: (await listDocuments(env.DB)).map(({ id, name, size }) => ({ id, name, size })),
       to: job.email, deliversTo: lock.to, mode: sendMode(env),
       gmail: !!(await connection(env.DB)),
     });
@@ -47,7 +49,7 @@ export async function onRequestPost({ request, env }) {
   const claim = await env.DB.prepare(`UPDATE steps SET status = 'sending', done_at = ?2 WHERE id = ?1 AND status IN ('scheduled', 'due', 'failed')`).bind(id, now).run();
   if (!claim.meta.changes) return json({ error: 'That email is already being sent.' }, 409);
   try {
-    const sent = await sendStep(env, step, { subject, body });
+    const sent = await sendStep(env, step, { subject, body, attachments: Array.isArray(d.attachments) ? d.attachments : undefined });
     return json({ ok: true, to: sent.to, redirected: sent.redirected, intended: sent.intended });
   } catch (e) {
     await env.DB.prepare(`UPDATE steps SET status = ?2, done_at = NULL, note = ?3 WHERE id = ?1`).bind(id, step.status, String(e.message).slice(0, 300)).run();

@@ -56,6 +56,7 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
       <p class="review-to"></p>
       <label>Subject<input name="subject" /></label>
       <label>Email <small>{"({{payment_plan}} becomes each package’s payments table when it’s sent)"}</small><textarea name="body" rows="14"></textarea></label>
+      <div class="review-attach"></div>
       <div class="review-actions">
         <button type="button" class="s-btn s-btn--quiet" data-review="cancel">Cancel</button>
         <button type="button" class="s-btn s-btn--solid" data-review="send">Send</button>
@@ -67,6 +68,7 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
 
 <script>
   import { attachRich } from '../../../studio/rich-editor';
+  import { attachPicker } from '../../../studio/attach-picker';
   type Pkg = { name: string; subtitle: string; price: number; description: string; recommended: boolean };
   type Extra = { name: string; price: number; description: string };
   const $ = <T extends HTMLElement = HTMLElement>(s: string, root: ParentNode = document) => root.querySelector<T>(s)!;
@@ -83,6 +85,7 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
   const richNotes = attachRich(form.elements.namedItem('notes') as HTMLTextAreaElement, { fields: QUOTE_FIELDS, minHeight: 90 });
   const reviewRich = attachRich(document.querySelector<HTMLFormElement>('.review-form')!.elements.namedItem('body') as HTMLTextAreaElement, { minHeight: 300 });
   let pkgEditors: ReturnType<typeof attachRich>[] = [];
+  const sendDocs = attachPicker(document.querySelector<HTMLElement>('.review-attach')!);
   const attachPackages = () => {
     document.querySelectorAll<HTMLTextAreaElement>('.packages textarea[data-k="description"]:not([data-rich])').forEach((t) => {
       t.dataset.rich = '1';
@@ -173,6 +176,7 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
       $('.review-to').innerHTML = d.mode === 'live' ? `To: <strong>${esc(d.to)}</strong>` : `To: ${esc(d.to)} · <strong>test mode: it will go to ${esc(d.deliversTo)}</strong>`;
       (rf.elements.namedItem('subject') as HTMLInputElement).value = d.subject;
       reviewRich.set(d.body);
+      sendDocs.set(d.documents, d.attachments);
       $<HTMLDialogElement>('dialog.review').showModal();
       return;
     }
@@ -181,8 +185,9 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
       const dlg = $<HTMLDialogElement>('dialog.review');
       if (rv.dataset.review === 'cancel') { dlg.close(); return; }
       const rf = $<HTMLFormElement>('.review-form');
+      if (sendDocs.over()) { toast('The attachments are over Gmail’s 25 MB limit. Untick one.', true); return; }
       rv.disabled = true; rv.textContent = 'Sending…';
-      const r = await fetch('/api/studio/crm/quote-send', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ id, subject: (rf.elements.namedItem('subject') as HTMLInputElement).value, body: (rf.elements.namedItem('body') as HTMLTextAreaElement).value }) });
+      const r = await fetch('/api/studio/crm/quote-send', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ id, attachments: sendDocs.get(), subject: (rf.elements.namedItem('subject') as HTMLInputElement).value, body: (rf.elements.namedItem('body') as HTMLTextAreaElement).value }) });
       const d = await r.json().catch(() => ({}));
       rv.disabled = false; rv.textContent = 'Send';
       if (!r.ok) { toast(d.error || 'Couldn’t send.', true); return; }

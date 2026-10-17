@@ -6,20 +6,23 @@
 // use the old name (they keep it as text).
 import { json } from '../../../../functions-lib/studio.js';
 import { WORKFLOWS } from '../../../../functions-lib/crm.js';
+import { listDocuments } from '../../../../functions-lib/documents.js';
 
 const LISTS = ['job_type', 'lead_source'];
 
 export async function onRequestGet({ env }) {
-  const [lists, templates, schedules] = await Promise.all([
+  const [lists, templates, schedules, documents] = await Promise.all([
     env.DB.prepare('SELECT kind, value, label, workflow, on_form FROM lists ORDER BY kind, sort, id').all(),
-    env.DB.prepare('SELECT key, name, subject, body, attachment, updated_at FROM templates ORDER BY key').all(),
+    env.DB.prepare('SELECT key, name, subject, body, attachments, updated_at FROM templates ORDER BY key').all(),
     env.DB.prepare('SELECT key, name, parts FROM payment_schedules ORDER BY name').all(),
+    listDocuments(env.DB),
   ]);
   const by = (k) => lists.results.filter((r) => r.kind === k).map(({ kind, ...r }) => ({ ...r, on_form: !!r.on_form }));
   return json({
     job_type: by('job_type'),
     lead_source: by('lead_source'),
-    templates: templates.results,
+    templates: templates.results.map((t) => ({ ...t, attachments: JSON.parse(t.attachments || '[]') })),
+    documents: documents.map(({ id, name, size, type, updated_at, used_by }) => ({ id, name, size, type, updated_at, used_by })),
     schedules: schedules.results.map((s) => ({ ...s, parts: JSON.parse(s.parts) })),
     workflows: Object.keys(WORKFLOWS),
   });
@@ -58,14 +61,16 @@ export async function onRequestPut({ request, env }) {
     const subject = text(t.subject, 300);
     const body = (t.body ?? '').toString().replace(/\r\n/g, '\n').trim().slice(0, 50000);
     if (!name || !subject || !body) return json({ error: 'A template needs a name, a subject and some text.' }, 400);
+    const docIds = new Set((await env.DB.prepare('SELECT id FROM documents').all()).results.map((r) => r.id));
+    const attachments = JSON.stringify([...new Set((Array.isArray(t.attachments) ? t.attachments : []).map(Number))].filter((id) => docIds.has(id)));
     if (t.key) {
-      const r = await env.DB.prepare('UPDATE templates SET name = ?2, subject = ?3, body = ?4, updated_at = ?5 WHERE key = ?1').bind(t.key, name, subject, body, now).run();
+      const r = await env.DB.prepare('UPDATE templates SET name = ?2, subject = ?3, body = ?4, attachments = ?6, updated_at = ?5 WHERE key = ?1').bind(t.key, name, subject, body, now, attachments).run();
       if (!r.meta.changes) return json({ error: 'That template no longer exists.' }, 404);
       return json({ ok: true, key: t.key });
     }
     let key = slug(name) || 'template';
     for (let n = 2; await env.DB.prepare('SELECT 1 FROM templates WHERE key = ?1').bind(key).first(); n++) key = `${slug(name)}-${n}`;
-    await env.DB.prepare('INSERT INTO templates (key, name, subject, body, updated_at) VALUES (?1, ?2, ?3, ?4, ?5)').bind(key, name, subject, body, now).run();
+    await env.DB.prepare('INSERT INTO templates (key, name, subject, body, attachments, updated_at) VALUES (?1, ?2, ?3, ?4, ?6, ?5)').bind(key, name, subject, body, now, attachments).run();
     return json({ ok: true, key });
   }
   return json({ error: 'Nothing to save.' }, 400);

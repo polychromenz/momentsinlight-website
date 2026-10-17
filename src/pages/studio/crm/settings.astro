@@ -1,6 +1,7 @@
 ---
 // Moments Studio CRM settings: email templates (edit with a live preview, add new), job types
-// and lead sources (add, rename, reorder, remove, choose which show on the enquiry form).
+// and lead sources (add, rename, reorder, remove, choose which show on the enquiry form), and the
+// documents library that templates attach (upload, download, rename, replace, delete).
 // Data from functions/api/studio/crm/settings.js.
 import StudioLayout from '../../../layouts/StudioLayout.astro';
 ---
@@ -14,6 +15,7 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
       <button type="button" role="tab" data-tab="templates" class="on">Email templates</button>
       <button type="button" role="tab" data-tab="job_type">Job types</button>
       <button type="button" role="tab" data-tab="lead_source">Lead sources</button>
+      <button type="button" role="tab" data-tab="documents">Documents</button>
     </div>
     <p class="status" aria-live="polite">Loading…</p>
 
@@ -33,7 +35,7 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
             </label>
             <div class="preview"><span>Preview (sample couple)</span><iframe title="Email preview"></iframe></div>
           </div>
-          <p class="attach" hidden></p>
+          <div class="attach"></div>
           <div class="actions"><button type="submit" class="s-btn s-btn--solid">Save template</button></div>
         </form>
       </div>
@@ -50,6 +52,12 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
       <table class="list-table"><thead><tr><th></th><th>Name</th><th>Wording on the form</th><th>On the form</th><th></th></tr></thead><tbody></tbody></table>
       <div class="actions"><button type="button" class="s-btn s-btn--quiet" data-act="add">+ Add</button><button type="button" class="s-btn s-btn--solid" data-act="save-list">Save</button></div>
     </section>
+    <section class="pane card" data-pane="documents" hidden>
+      <p class="hint">Files your emails can attach: the wedding guide, price lists, posing guides… Up to 10 MB each. Stored privately (never public on the website). Choose which ones a template attaches under its Attachments.</p>
+      <table class="list-table docs-table"><thead><tr><th>Document</th><th>Size</th><th>Updated</th><th>Attached by</th><th></th></tr></thead><tbody></tbody></table>
+      <div class="actions"><label class="s-btn s-btn--solid upload">+ Upload documents<input type="file" multiple hidden data-upload /></label></div>
+      <input type="file" hidden data-replace />
+    </section>
   </main>
   <div class="s-toast" role="status"></div>
 </StudioLayout>
@@ -58,8 +66,10 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
   import { renderTemplate } from '../../../../functions-lib/email-render.js';
   import { attachRich } from '../../../studio/rich-editor';
   import Sortable from 'sortablejs';
+  import { attachPicker, type Doc } from '../../../studio/attach-picker';
   type Item = { value: string; label: string; workflow: string | null; on_form: boolean };
-  type Template = { key: string; name: string; subject: string; body: string; attachment: string | null };
+  type Template = { key: string; name: string; subject: string; body: string; attachments: number[] };
+  type LibraryDoc = Doc & { type: string; updated_at: string; used_by: string[] };
   const $ = <T extends HTMLElement = HTMLElement>(s: string, root: ParentNode = document) => root.querySelector<T>(s)!;
   const esc = (s: unknown) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
   const toast = (text: string, error = false) => {
@@ -68,7 +78,7 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
   };
   const sample = { first_name: 'Emma', last_name: 'Smith', partner_name: 'Liam', couple: 'Emma & Liam', event_date: 'Saturday, 20 February 2027', venue: 'Tui Hills', quote_link: 'https://www.momentsinlight.co.nz/quote', quote_valid_until: '16 November 2026', portal_link: 'https://www.momentsinlight.co.nz/', gallery_link: 'https://www.momentsinlight.co.nz/', contract_link: 'https://www.momentsinlight.co.nz/', payment_amount: '$299.50', payment_due_date: '24 October 2026' };
 
-  let data: { job_type: Item[]; lead_source: Item[]; templates: Template[]; workflows: string[] };
+  let data: { job_type: Item[]; lead_source: Item[]; templates: Template[]; workflows: string[]; documents: LibraryDoc[] };
   let current: Template | null = null;
   let tab = 'templates';
   const editor = $<HTMLFormElement>('.tpl-editor');
@@ -91,7 +101,7 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
     field('name').value = t?.name ?? '';
     field('subject').value = t?.subject ?? '';
     rich.set(t?.body ?? '<p>Hi {{first_name}},</p><p></p><p>Cheers,</p>');
-    const att = $('.attach'); att.hidden = !t?.attachment; att.textContent = t?.attachment ? `📎 Attaches: ${t.attachment}` : '';
+    picker.set(data.documents, t?.attachments ?? []);
     document.querySelectorAll<HTMLElement>('.tpl-list li').forEach((li) => li.classList.toggle('on', li.dataset.key === t?.key));
     preview();
   }
@@ -99,10 +109,11 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
     $('.tpl-list').innerHTML = data.templates.map((t) => `<li data-key="${esc(t.key)}"><button type="button">${esc(t.name)}<small>${esc(t.subject)}</small></button></li>`).join('');
   }
   rich = attachRich(field('body') as unknown as HTMLTextAreaElement, { minHeight: 420 });
+  const picker = attachPicker($('.attach'));
   editor.addEventListener('input', preview);
   editor.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const r = await fetch('/api/studio/crm/settings', { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ template: { key: current?.key, name: field('name').value, subject: field('subject').value, body: field('body').value } }) });
+    const r = await fetch('/api/studio/crm/settings', { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ template: { key: current?.key, name: field('name').value, subject: field('subject').value, body: field('body').value, attachments: picker.get() } }) });
     const d = await r.json().catch(() => ({}));
     if (!r.ok) { toast(d.error || 'Couldn’t save.', true); return; }
     toast('Template saved.');
@@ -132,6 +143,65 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
     });
   }
 
+  // ---- Documents ----
+  const size = (b: number) => (b >= 1048576 ? `${(b / 1048576).toFixed(1)} MB` : `${Math.max(1, Math.round(b / 1024))} KB`);
+  function renderDocs() {
+    $('.docs-table tbody').innerHTML = data.documents.length ? data.documents.map((d) => `<tr data-doc-id="${d.id}">
+      <td><a href="/api/studio/crm/documents?id=${d.id}" target="_blank" rel="noopener">${esc(d.name)}</a></td>
+      <td>${size(d.size)}</td><td>${new Date(d.updated_at).toLocaleDateString('en-NZ')}</td>
+      <td>${d.used_by.length ? esc(d.used_by.join(', ')) : '<span class="muted">–</span>'}</td>
+      <td class="row-btns"><button type="button" data-doc-act="rename">Rename</button><button type="button" data-doc-act="replace">Replace</button><button type="button" data-doc-act="delete">Delete</button></td>
+    </tr>`).join('') : '<tr><td colspan="5" class="muted">No documents yet. Upload one below.</td></tr>';
+  }
+  const readFile = (file: File) => new Promise<string>((ok, fail) => { const r = new FileReader(); r.onload = () => ok(String(r.result).split(',')[1] ?? ''); r.onerror = () => fail(r.error); r.readAsDataURL(file); });
+  const docApi = async (method: string, body?: unknown, q = '') => {
+    const r = await fetch(`/api/studio/crm/documents${q}`, { method, headers: { 'content-type': 'application/json' }, body: body ? JSON.stringify(body) : undefined });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(d.error || 'Something went wrong.');
+    return d;
+  };
+  $('[data-upload]').addEventListener('change', async (e) => {
+    const input = e.target as HTMLInputElement;
+    for (const file of Array.from(input.files ?? [])) {
+      if (file.size > 10 * 1048576) { toast(`${file.name} is over 10 MB.`, true); continue; }
+      toast(`Uploading ${file.name}…`);
+      try { await docApi('POST', { name: file.name, type: file.type || 'application/octet-stream', base64: await readFile(file) }); toast(`${file.name} uploaded.`); }
+      catch (err) { toast((err as Error).message, true); }
+    }
+    input.value = '';
+    await load(current?.key);
+  });
+  let replacing = 0;
+  $('[data-replace]').addEventListener('change', async (e) => {
+    const input = e.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file || !replacing) return;
+    if (file.size > 10 * 1048576) { toast('That file is over 10 MB.', true); return; }
+    try { await docApi('PUT', { id: replacing, type: file.type || 'application/octet-stream', base64: await readFile(file) }); toast('Replaced. Templates attaching it now send the new file.'); }
+    catch (err) { toast((err as Error).message, true); }
+    input.value = ''; replacing = 0;
+    await load(current?.key);
+  });
+  document.addEventListener('click', async (e) => {
+    const b = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-doc-act]');
+    if (!b) return;
+    const id = Number(b.closest<HTMLElement>('[data-doc-id]')!.dataset.docId);
+    const doc = data.documents.find((d) => d.id === id)!;
+    try {
+      if (b.dataset.docAct === 'rename') {
+        const name = prompt('New name (this is the file name clients see):', doc.name);
+        if (!name || name === doc.name) return;
+        await docApi('PUT', { id, name }); toast('Renamed.');
+      } else if (b.dataset.docAct === 'replace') {
+        replacing = id; ($('[data-replace]') as HTMLInputElement).click(); return;
+      } else if (b.dataset.docAct === 'delete') {
+        if (!confirm(`Delete “${doc.name}”? This can’t be undone.`)) return;
+        await docApi('DELETE', undefined, `?id=${id}`); toast('Deleted.');
+      }
+      await load(current?.key);
+    } catch (err) { toast((err as Error).message, true); }
+  });
+
   document.addEventListener('click', async (e) => {
     const t = e.target as HTMLElement;
     const tb = t.closest<HTMLButtonElement>('.tabs button');
@@ -141,7 +211,7 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
     if (t.closest('[data-act="new-template"]')) { openTemplate(null); field('name').focus(); return; }
     const pane = t.closest<HTMLElement>('[data-pane]');
     const kind = pane?.dataset.pane as 'job_type' | 'lead_source';
-    if (!pane || kind === ('templates' as string)) return;
+    if (!pane || kind === ('templates' as string) || kind === ('documents' as string)) return;
     if (t.closest('[data-act="add"]')) {
       data[kind] = [...readList(kind), { value: '', label: '', workflow: null, on_form: true }];
       renderList(kind);
@@ -169,7 +239,7 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
     const d = await r.json();
     if (!r.ok) { $('.status').textContent = d.error || `Something went wrong (${r.status}).`; return; }
     data = d;
-    renderTemplates(); renderList('job_type'); renderList('lead_source');
+    renderTemplates(); renderList('job_type'); renderList('lead_source'); renderDocs();
     openTemplate(data.templates.find((x) => x.key === openKey) ?? data.templates.find((x) => x.key.startsWith('wedding-01')) ?? data.templates[0] ?? null);
     $('.status').hidden = true;
     showTab(tab);
@@ -207,6 +277,11 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
   .settings .list-table td { padding: 6px; border-bottom: 1px solid #f3eee6; vertical-align: middle; }
   .settings .list-table td.c { text-align: center; }
   .settings .row-btns { white-space: nowrap; }
+  .settings .docs-table a { color: var(--ink); font-weight: 600; }
+  .settings .docs-table .row-btns button { font-size: 13px; color: var(--green); }
+  .settings .muted { color: #999; }
+  .settings label.upload { cursor: pointer; flex-direction: row; color: var(--white); font-size: 14px; font-weight: 600; }
+  .settings .attach { margin-top: 4px; }
   .settings .list-table td.drag { width: 22px; cursor: grab; color: #aaa; font-size: 18px; user-select: none; }
   .settings .list-table tr.sortable-ghost { opacity: 0.4; }
   .settings .row-btns button { border: 0; background: none; cursor: pointer; font-size: 15px; padding: 4px 6px; color: #666; }

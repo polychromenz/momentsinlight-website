@@ -5,18 +5,16 @@
 // Every send goes through sendEmail(), so the test-mode lock always applies.
 import { sendEmail } from './gmail.js';
 import { renderTemplate, fields } from './email-render.js';
+import { attachmentsFor } from './documents.js';
+
+/** A template's attached document ids. */
+export const templateAttachments = (t) => JSON.parse(t?.attachments || '[]');
 
 /** A job with its client's details, as the templates need them. */
 export const loadJob = (db, jobId) => db.prepare(
   `SELECT j.*, c.first_name, c.last_name, c.email FROM jobs j JOIN clients c ON c.id = j.client_id WHERE j.id = ?1`,
 ).bind(jobId).first();
 
-/** A stored private file (see migrations/0004_crm_files.sql) as an email attachment. */
-export async function loadFile(db, name) {
-  const parts = await db.prepare('SELECT type, data FROM files WHERE name = ?1 ORDER BY part').bind(name).all();
-  if (!parts.results.length) return null;
-  return { name, type: parts.results[0].type, base64: parts.results.map((p) => p.data).join('') };
-}
 
 /** The email a step would send, filled in (for review, or before sending). */
 export async function draftFor(db, step, job) {
@@ -26,7 +24,8 @@ export async function draftFor(db, step, job) {
 }
 
 /**
- * Send a step's email. edits = { subject, body } from Tony's review (optional).
+ * Send a step's email. edits = { subject, body, attachments (document ids) } from Tony's review
+ * (optional; without them, the template's own text and documents are used).
  * Throws with a plain-English message if it can't (missing details, Gmail problem).
  */
 export async function sendStep(env, step, edits = {}) {
@@ -36,12 +35,7 @@ export async function sendStep(env, step, edits = {}) {
   const { template } = await draftFor(db, step, job);
   const email = renderTemplate(template, fields(job), edits);
   if (email.missing.length) throw new Error(`It needs: ${email.missing.join(', ')}. Fill those in before sending.`);
-  const attachments = [];
-  if (template.attachment) {
-    const file = await loadFile(db, template.attachment);
-    if (!file) throw new Error(`The attachment “${template.attachment}” isn’t stored yet.`);
-    attachments.push(file);
-  }
+  const attachments = await attachmentsFor(db, edits.attachments ?? templateAttachments(template));
   // Keep the conversation together: reply in the thread of the last email for this job.
   const last = await db.prepare('SELECT gmail_thread_id FROM messages WHERE job_id = ?1 AND gmail_thread_id IS NOT NULL ORDER BY sent_at DESC LIMIT 1').bind(job.id).first();
   const sent = await sendEmail(env, { to: job.email, subject: email.subject, html: email.html, attachments, threadId: last?.gmail_thread_id });
