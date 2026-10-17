@@ -100,8 +100,8 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
     const labels = data.map((d, i) => `<text x="${x(i)}" y="${H - 6}" text-anchor="middle">${new Date(`${d.month}-15T12:00:00Z`).toLocaleDateString('en-NZ', { month: 'short', timeZone: 'UTC' })}</text>`).join('');
     const dots = (k: 'leads' | 'booked') => data.map((d, i) => `<circle cx="${x(i)}" cy="${y(d[k])}" r="3" class="d-${k}"><title>${d.month}: ${d[k]} ${k}</title></circle>`).join('');
     return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Leads and bookings by month">${grid}${labels}
-      <path d="${area('leads')}" class="a-leads"/><path d="${path('leads')}" class="l-leads"/>
-      <path d="${area('booked')}" class="a-booked"/><path d="${path('booked')}" class="l-booked"/>${dots('leads')}${dots('booked')}</svg>`;
+      <path d="${area('leads')}" class="a-leads"/><path d="${path('leads')}" class="l-leads" pathLength="1"/>
+      <path d="${area('booked')}" class="a-booked"/><path d="${path('booked')}" class="l-booked" pathLength="1"/>${dots('leads')}${dots('booked')}</svg>`;
   }
 
   const COLOURS = ['#5a5e3b', '#b9a27a', '#8c9a6b', '#d7c3a1', '#3e4229', '#a8432a', '#7d8ca8', '#c9b8d8'];
@@ -224,6 +224,10 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
   .dash .line-chart .g { stroke: #f0eae0; }
   .dash .l-leads, .dash .l-booked { fill: none; stroke-width: 2.5; }
   .dash .l-leads { stroke: #b9a27a; } .dash .l-booked { stroke: #5a5e3b; }
+  @keyframes dash-draw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+  .dash .l-leads, .dash .l-booked { stroke-dasharray: 1; animation: dash-draw 1.6s var(--ease) 0.2s both; }
+  .dash .a-leads, .dash .a-booked, .dash .line-chart circle { animation: s-fade 1s var(--ease) 0.9s both; }
+  .dash .pie svg { animation: s-pop 0.9s var(--ease) 0.2s both; }
   .dash .a-leads { fill: rgb(185 162 122 / 0.18); } .dash .a-booked { fill: rgb(90 94 59 / 0.2); }
   .dash .d-leads { fill: #b9a27a; } .dash .d-booked { fill: #5a5e3b; }
   .dash .pie-wrap { display: flex; flex-wrap: wrap; gap: 18px; align-items: center; }

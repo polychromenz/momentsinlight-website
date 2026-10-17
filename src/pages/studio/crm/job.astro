@@ -222,6 +222,7 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
     $('.questionnaires').innerHTML = (d.questionnaires.length ? d.questionnaires.map((q: any) =>
       `<li class="inv"><span class="what"><strong>${esc(q.name)}</strong><br><small>${qStatus(q)}</small></span>
         <button type="button" class="s-btn" data-q="${q.id}" data-q-act="view">See answers</button>
+        <a class="s-btn s-btn--quiet" href="/api/studio/crm/questionnaire?id=${q.id}&pdf=1" target="_blank" rel="noopener">PDF</a>
         <button type="button" class="s-btn s-btn--quiet" data-q-link="/questionnaire?t=${q.token}">Copy link</button>
         <a class="s-btn s-btn--quiet" href="/questionnaire?t=${q.token}" target="_blank" rel="noopener">Their page ↗</a>
         <button type="button" class="s-btn s-btn--quiet" data-q="${q.id}" data-q-act="delete">Remove</button></li>`).join('') : '')

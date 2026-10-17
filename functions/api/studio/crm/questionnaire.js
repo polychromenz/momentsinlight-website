@@ -1,12 +1,15 @@
 // A couple's questionnaires in the studio.
 //   GET    /api/studio/crm/questionnaire?id=3             their questions, answers and uploads
 //   GET    /api/studio/crm/questionnaire?id=3&file=12     one of their uploads
+//   GET    /api/studio/crm/questionnaire?id=3&pdf=1       their answers as a PDF
 //   POST   /api/studio/crm/questionnaire  { job_id, key }        make one for them (key = which questionnaire)
 //                                         { id, action: 'reopen' }  let them send it in again
 //   DELETE /api/studio/crm/questionnaire?id=3             remove it, with their answers and uploads
 import { json } from '../../../../functions-lib/studio.js';
 import { makeQuestionnaire, uploadsFor, questionnaireLink } from '../../../../functions-lib/questionnaires.js';
 import { loadNamed } from '../../../../functions-lib/documents.js';
+import { loadJob } from '../../../../functions-lib/crm-send.js';
+import { questionnairePdf } from '../../../../functions-lib/pdf.js';
 
 const find = (env, id) => env.DB.prepare('SELECT * FROM questionnaires WHERE id = ?1').bind(Number(id)).first();
 
@@ -15,6 +18,9 @@ export async function onRequestGet({ request, env }) {
   const q = await find(env, url.searchParams.get('id'));
   if (!q) return json({ error: 'That questionnaire doesn’t exist.' }, 404);
   const uploads = await uploadsFor(env.DB, q.id);
+  if (url.searchParams.has('pdf')) {
+    return new Response(await questionnairePdf(q, await loadJob(env.DB, q.job_id), uploads), { headers: { 'content-type': 'application/pdf', 'content-disposition': `inline; filename="${q.name.replace(/"/g, '')}.pdf"`, 'cache-control': 'no-store' } });
+  }
   if (url.searchParams.has('file')) {
     const u = uploads.find((x) => x.id === Number(url.searchParams.get('file')));
     const f = u && await loadNamed(env.DB, `upload-${u.id}`);
