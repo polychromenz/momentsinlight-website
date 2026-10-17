@@ -1,14 +1,12 @@
-# The weekly stats email (scripts/weekly-stats-email.mjs): every Friday at 8am NZ time.
+# The weekly stats email, on request (Actions > Run workflow sends one now). The Friday 8am email
+# itself now comes from the website's own Cloudflare timer (functions-lib/schedules.js); GitHub's
+# schedules ran late or not at all.
 # Needs the CF_ANALYTICS_TOKEN and RESEND_API_KEY secrets
 # (GitHub > the repository > Settings > Secrets and variables > Actions).
 # "Run workflow" on the Actions tab sends one straight away.
 name: Weekly stats email
 
 on:
-  schedule:
-    # Thursday 19:00 and 20:00 UTC: one of them is Friday 8am in NZ (daylight saving or not);
-    # the script only sends from that one.
-    - cron: '0 19,20 * * 4'
   workflow_dispatch: {}
 
 jobs:

@@ -1,13 +1,11 @@
-# Rebuild the site every morning, so posts scheduled in Moments Studio (dated in the future)
-# appear on their day. It asks Cloudflare Pages to rebuild through a deploy hook; the hook's
+# Rebuild the site on request (Actions > Run workflow). The morning check for posts scheduled in
+# Moments Studio now runs on the website's own Cloudflare timer (functions-lib/schedules.js), which
+# rebuilds only when a post is due; GitHub's schedules ran late or not at all. It asks Cloudflare Pages to rebuild through a deploy hook; the hook's
 # address is kept in this repository's secrets as CF_DEPLOY_HOOK
 # (GitHub > the repository > Settings > Secrets and variables > Actions).
 name: Daily rebuild for scheduled posts
 
 on:
-  schedule:
-    # 6:05am in New Zealand (17:05 UTC the day before, during NZDT; 18:05 NZST in winter).
-    - cron: '5 17 * * *'
   workflow_dispatch: {}
 
 jobs:
