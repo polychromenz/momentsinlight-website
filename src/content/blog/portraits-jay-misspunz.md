@@ -1,7 +1,7 @@
 ---
 title: "Jay - Miss Pin up New Zealand entry and more"
-seoTitle: "Creative Portrait Photography in Auckland"
-description: "Express yourself with creative portrait photography in Auckland. Stylish, natural, and uniquely tailored to you."
+seoTitle: "Jay: Miss Pin Up New Zealand Portraits"
+description: "Portraits of Jay for her Miss Pin Up New Zealand entry and the shoots that followed, from a handmade outfit spotted at a vintage day out."
 date: 2024-11-11
 updated: 2025-10-14
 author: "Tony Gorham"

@@ -1,7 +1,7 @@
 ---
 title: "Sandy at Willowbrook"
-seoTitle: "Creative Portrait Photography in Auckland"
-description: "Express yourself with creative portrait photography in Auckland. Stylish, natural, and uniquely tailored to you."
+seoTitle: "Sandy at Willowbrook | Styled Portrait Day"
+description: "A full day of outfits, lighting and fun with Sandy at the Willowbrook venue, and her confidence growing with every shot."
 date: 2024-10-24
 updated: 2025-10-14
 author: "Tony Gorham"

@@ -1,7 +1,7 @@
 ---
 title: "Viv’s ballet portrait session"
-seoTitle: "Creative Portrait Photography in Auckland"
-description: "Express yourself with creative portrait photography in Auckland. Stylish, natural, and uniquely tailored to you."
+seoTitle: "Ballet Portraits with Viv | Auckland"
+description: "Ballet portraits of Viv, hairdresser, pin-up model and ballet dancer, at a striking Auckland venue after a last-minute change of plan."
 date: 2024-10-17
 updated: 2025-10-14
 author: "Tony Gorham"

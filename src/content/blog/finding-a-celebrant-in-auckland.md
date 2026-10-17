@@ -1,7 +1,7 @@
 ---
 title: "Finding a Celebrant in Auckland"
-seoTitle: "Auckland Wedding Photography Services"
-description: "Capture your love story with stunning Auckland wedding photography. Elegant, natural, and heartfelt images youâ€™ll treasure forever."
+seoTitle: "Finding a Wedding Celebrant in Auckland"
+description: "How to choose a wedding celebrant in Auckland, with a list of experienced local celebrants for traditional, modern and unique ceremonies."
 date: 2024-05-13
 updated: 2025-10-01
 author: "Tony Gorham"

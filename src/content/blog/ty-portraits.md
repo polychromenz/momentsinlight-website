@@ -1,7 +1,7 @@
 ---
 title: "Ty shoot 2"
-seoTitle: "Creative Portrait Photography in Auckland"
-description: "Express yourself with creative portrait photography in Auckland. Stylish, natural, and uniquely tailored to you."
+seoTitle: "Creative Studio Lighting Portraits with Ty"
+description: "A second studio session with Ty, playing with creative lighting for bold, striking portraits in Auckland by Tony Gorham."
 date: 2024-12-03
 updated: 2025-10-14
 author: "Tony Gorham"

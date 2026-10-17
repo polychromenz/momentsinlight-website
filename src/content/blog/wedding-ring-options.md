@@ -1,7 +1,7 @@
 ---
 title: "Wedding Ring options"
-seoTitle: "Auckland Wedding Photography Services"
-description: "Capture your love story with stunning Auckland wedding photography. Elegant, natural, and heartfelt images you'll treasure forever."
+seoTitle: "Wedding Rings in Auckland: Where to Look"
+description: "Wedding ring options in Auckland: classic, custom and contemporary jewellers for every style and budget, from Herne Bay to the city."
 date: 2024-05-13
 updated: 2025-09-30
 author: "Tony Gorham"

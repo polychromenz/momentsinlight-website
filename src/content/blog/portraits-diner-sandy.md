@@ -1,7 +1,7 @@
 ---
 title: "Miss Sandy Dee at her American Diner"
-seoTitle: "Creative Portrait Photography in Auckland"
-description: "Express yourself with creative portrait photography in Auckland. Stylish, natural, and uniquely tailored to you."
+seoTitle: "Pin-up Portraits at an American Diner"
+description: "Miss Sandy Dee at her own American diner: jukebox, Coke machine and fifties style make the perfect set for a fun pin-up portrait shoot."
 date: 2024-10-24
 updated: 2025-09-30
 author: "Tony Gorham"

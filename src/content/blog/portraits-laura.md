@@ -1,7 +1,7 @@
 ---
 title: "Laura at the Fable"
-seoTitle: "Creative Portrait Photography in Auckland"
-description: "Express yourself with creative portrait photography in Auckland. Stylish, natural, and uniquely tailored to you."
+seoTitle: "Laura at the Fable Hotel | Vintage Portraits"
+description: "Vintage-styled portraits of Laura at the Fable hotel, Auckland. A long-time friend, stylist and favourite subject of Tony Gorham."
 date: 2024-10-24
 updated: 2025-10-14
 author: "Tony Gorham"

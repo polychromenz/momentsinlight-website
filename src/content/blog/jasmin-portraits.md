@@ -1,7 +1,7 @@
 ---
 title: "Jasmine"
-seoTitle: "Creative Portrait Photography in Auckland"
-description: "Express yourself with creative portrait photography in Auckland. Stylish, natural, and uniquely tailored to you."
+seoTitle: "Jasmine: Miss Pin-up New Zealand Portraits"
+description: "Pin-up portraits of Jasmine, shot in Auckland for her Miss Pin-up New Zealand entry. Vintage styling, glamour and creative lighting."
 date: 2024-11-13
 updated: 2025-10-14
 author: "Tony Gorham"

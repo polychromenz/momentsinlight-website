@@ -1,6 +1,6 @@
 ---
 title: "Crafting your own personal vows"
-seoTitle: "How to crate you own wedding vows"
+seoTitle: "How to Craft Your Own Wedding Vows"
 description: "Writing personal vows is often one of the most meaningful aspects of wedding planning."
 date: 2024-08-19
 updated: 2026-01-13

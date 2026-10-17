@@ -1,7 +1,7 @@
 ---
 title: "Viv at the Fable"
-seoTitle: "Creative Portrait Photography in Auckland"
-description: "Express yourself with creative portrait photography in Auckland. Stylish, natural, and uniquely tailored to you."
+seoTitle: "Viv at the Fable Hotel | Auckland Portraits"
+description: "Portraits of Viv at the Fable hotel in Auckland. A beautifully styled hotel makes the perfect backdrop for elegant, creative portraits."
 date: 2024-10-25
 updated: 2025-10-14
 author: "Tony Gorham"

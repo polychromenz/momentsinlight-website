@@ -1,7 +1,7 @@
 ---
 title: "Muriwai beach portraits"
-seoTitle: "Creative Portrait Photography in Auckland"
-description: "Express yourself with creative portrait photography in Auckland. Stylish, natural, and uniquely tailored to you."
+seoTitle: "Muriwai Beach Portraits | Creative Photoshoot"
+description: "Casual, creative portraits at Muriwai Beach in West Auckland with Emma and Laura: good light, silly ideas and plenty of fun."
 date: 2024-10-24
 updated: 2025-10-14
 author: "Tony Gorham"

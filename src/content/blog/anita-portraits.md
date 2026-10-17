@@ -1,7 +1,7 @@
 ---
 title: "Anita"
-seoTitle: "Creative Portrait Photography in Auckland"
-description: "Express yourself with creative portrait photography in Auckland. Stylish, natural, and uniquely tailored to you."
+seoTitle: "Anita: Portraits Over the Years | Auckland"
+description: "Portraits of Anita made over several years of creative shoots together in Auckland, by portrait photographer Tony Gorham."
 date: 2024-11-11
 updated: 2025-10-14
 author: "Tony Gorham"

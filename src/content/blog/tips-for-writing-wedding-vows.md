@@ -1,7 +1,7 @@
 ---
 title: "Tips for writing your Wedding Vows"
-seoTitle: "Auckland Wedding Photography Services"
-description: "Read stories, tips, and inspiration from real photo sessions and Auckland weddings."
+seoTitle: "Tips for Writing Your Wedding Vows"
+description: "Writing your own wedding vows? A simple template and tips for heartfelt, personal vows that make your ceremony your own, from Tony Gorham."
 date: 2024-05-13
 updated: 2026-09-21
 author: "Tony Gorham"

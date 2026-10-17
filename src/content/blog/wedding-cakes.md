@@ -1,7 +1,7 @@
 ---
 title: "Auckland Wedding Cakes: A Photographer's Guide"
 seoTitle: "Auckland Wedding Cakes: A Photographer's Guide"
-description: "Auckland wedding cakes rewrite · MD\nAuckland Wedding Cakes — Rewrite\n\nThis one needed the most work of the three: the meta description didn't mention cakes at all, and the only CTA in the post sent readers to book a consultation with Sweet Bites — nothing pointed back to you anywhere on the page. Fixed both below. Only five vendors, so no grouping needed, and just the one closing button per our last conversation.\n\nSEO Title\n\nAuckland Wedding Cakes: A Photographer's Guide\n\nMeta Description\n\nA guide to Auckland's best wedding cake bakers, from bespoke designers to dietary-friendly options — curated by wedding photographer Tony Gorham of Moments In Light."
+description: "A guide to Auckland’s best wedding cake bakers, from bespoke designers to dietary-friendly options, by wedding photographer Tony Gorham."
 date: 2024-05-08
 updated: 2026-09-09
 author: "Tony Gorham"

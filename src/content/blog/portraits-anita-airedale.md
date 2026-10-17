@@ -1,7 +1,7 @@
 ---
 title: "Anita at the Airedale"
-seoTitle: "Creative Portrait Photography in Auckland"
-description: "Express yourself with creative portrait photography in Auckland. Stylish, natural, and uniquely tailored to you."
+seoTitle: "Anita at the Airedale Hotel | Auckland Portraits"
+description: "A styled hotel portrait shoot with Anita at the Airedale near the top of Queen Street, Auckland, all in beautiful natural light."
 date: 2024-10-17
 updated: 2025-10-14
 author: "Tony Gorham"

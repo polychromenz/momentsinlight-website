@@ -1,7 +1,7 @@
 ---
 title: "Anita at the Fable"
-seoTitle: "Creative Portrait Photography in Auckland"
-description: "Express yourself with creative portrait photography in Auckland. Stylish, natural, and uniquely tailored to you."
+seoTitle: "Anita at the Fable Hotel | Auckland Portraits"
+description: "A styled portrait shoot with Anita at the Fable hotel in Auckland. Why a hotel room makes a ready-made set for creative portraits."
 date: 2024-10-17
 updated: 2025-10-14
 author: "Tony Gorham"
