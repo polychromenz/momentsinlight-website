@@ -45,6 +45,12 @@ export async function alertTony(env, subject, rows, link, attachments = []) {
     `<tr><td style="padding:4px 16px 4px 0;color:#777;vertical-align:top;white-space:nowrap">${esc(k)}</td><td style="padding:4px 0;white-space:pre-wrap">${esc(v)}</td></tr>`).join('')}</table>
 ${link ? `<p style="margin:22px 0 0"><a href="${esc(link)}" style="display:inline-block;padding:11px 20px;background:#5a5e3b;color:#fff;text-decoration:none;border-radius:12px 0;font-size:14px">Open in the studio</a></p>` : ''}
 </div>`;
+  return emailTony(env, subject, html, attachments);
+}
+
+/** An email to Tony from the studio (alerts, the morning email) through Resend. Never throws. */
+export async function emailTony(env, subject, html, attachments = []) {
+  if (!env.RESEND_API_KEY) { console.error('crm: RESEND_API_KEY not set; email to Tony not sent:', subject); return false; }
   try {
     const r = await fetch('https://api.resend.com/emails', {
       method: 'POST',
@@ -52,10 +58,10 @@ ${link ? `<p style="margin:22px 0 0"><a href="${esc(link)}" style="display:inlin
       body: JSON.stringify({ from: 'Moments Studio <reports@momentsinlight.co.nz>', to: ['tony@momentsinlight.co.nz'], subject, html,
         ...(attachments.length ? { attachments: attachments.map((a) => ({ filename: a.name, content: a.base64 })) } : {}) }),
     });
-    if (!r.ok) console.error('crm: alert failed', r.status, await r.text());
+    if (!r.ok) console.error('crm: email to Tony failed', r.status, await r.text());
     return r.ok;
   } catch (e) {
-    console.error('crm: alert failed', e);
+    console.error('crm: email to Tony failed', e);
     return false;
   }
 }

@@ -11,12 +11,14 @@
 //   3. Tidies steps stuck mid-send (e.g. a crash) into "Didn't send" after 30 minutes.
 //   4. Sends invoices on their send dates; 5. reminders on the due date and 3 days late.
 //   6. Google Calendar: copies over any job that changed and didn't sync straight away.
+//   7. Tony's morning email (once a day from 7am NZ, only if there's something in it).
 // Ready-to-send emails and to-dos need nothing here: they appear on Today when due.
 import { sendStep } from '../../../functions-lib/crm-send.js';
 import { thread, connection } from '../../../functions-lib/gmail.js';
 import { alertTony } from '../../../functions-lib/crm.js';
 import { sendInvoice } from '../../../functions-lib/invoices.js';
 import { calendarReady, syncJob, noteSync } from '../../../functions-lib/calendar.js';
+import { maybeSendDigest } from '../../../functions-lib/digest.js';
 
 const reply = (data, status = 200) => new Response(JSON.stringify(data), { status, headers: { 'content-type': 'application/json' } });
 const stops = (step, ev) => (',' + step.stop_on + ',').includes(`,${ev},`);
@@ -132,6 +134,9 @@ export async function onRequestPost({ request, env }) {
       try { await syncJob(env, id); log.calendar++; await noteSync(db); } catch (e) { console.error('crm run: calendar', id, e.message); log.calendar_error = e.message; await noteSync(db, e.message); break; }
     }
   }
+
+  // 7. The morning email.
+  log.digest = await maybeSendDigest(env).catch((e) => `error: ${e.message}`);
 
   return reply({ ok: true, ...log });
 }
