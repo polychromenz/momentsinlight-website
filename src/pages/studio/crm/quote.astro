@@ -48,6 +48,7 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
         <label>Contract sent when they accept<select name="contract_key"></select></label>
         <ul class="contracts"></ul>
         <div class="contract-actions" hidden><button type="button" class="s-btn" data-act="send-contract">Send the contract now</button></div>
+        <p class="contract-result" role="status" hidden></p>
       </section>
       <section class="card">
         <label>Notes (shown at the bottom of the quote; use the + Fill-in menu for the valid-until date)<textarea name="notes" rows="3"></textarea></label>
@@ -171,12 +172,26 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
     const add = t.closest<HTMLElement>('[data-add]');
     if (add) { const box = $(add.dataset.add === 'package' ? '.packages' : '.extras'); box.insertAdjacentHTML('beforeend', add.dataset.add === 'package' ? pkgRow({ name: '', subtitle: '', price: 0, description: '', recommended: false }) : extraRow({ name: '', price: 0, description: '' })); attachPackages(); dirty = true; return; }
     if (t.closest('[data-remove]')) { t.closest('.item')!.remove(); dirty = true; $('.save-state').textContent = 'Unsaved changes'; return; }
-    if (t.closest('[data-act="send-contract"]')) {
+    const sc = t.closest<HTMLButtonElement>('[data-act="send-contract"]');
+    if (sc) {
+      // Building the quote PDF and sending takes a few seconds: show it's working, then leave a
+      // clear result under the button.
+      const result = $('.contract-result');
+      const label = sc.textContent;
+      sc.disabled = true; sc.textContent = 'Sending…';
+      result.hidden = true;
       const r = await fetch('/api/studio/crm/contract', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ quote_id: id }) });
       const d = await r.json().catch(() => ({}));
-      if (!r.ok) { toast(d.error || 'Couldn’t send the contract.', true); return; }
-      toast(d.redirected ? `Contract sent (test mode: to ${d.to}, not ${d.intended}).` : `Contract sent to ${d.to}.`);
-      load(); return;
+      sc.disabled = false; sc.textContent = label;
+      const time = new Date().toLocaleTimeString('en-NZ', { hour: 'numeric', minute: '2-digit' });
+      const text = !r.ok ? `✕ Not sent: ${d.error || 'something went wrong.'}`
+        : d.redirected ? `✓ Contract sent ${time} to ${d.to} (test mode; it was for ${d.intended}), with the quote PDF attached.`
+        : `✓ Contract sent ${time} to ${d.to}, with the quote PDF attached.`;
+      toast(text, !r.ok);
+      if (r.ok) await load();
+      const res = $('.contract-result');
+      res.textContent = text; res.classList.toggle('bad', !r.ok); res.hidden = false;
+      return;
     }
     if (t.closest('[data-act="withdraw"]')) {
       if (!confirm('Withdraw this quote? Its link will say it’s no longer available.')) return;
@@ -241,6 +256,9 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
   .quote-ed .example { list-style: none; margin: 0; padding: 0; font-size: 13px; color: #666; }
   .quote-ed .example .ex-head { font-weight: 600; }
   .quote-ed .danger { margin: 0; }
+  .quote-ed .contract-result { margin: 0; padding: 10px 14px; border-radius: 10px 0; background: #e6ecd9; color: #3e4229; font-size: 14px; }
+  .quote-ed .contract-result.bad { background: #fbeee8; color: #8a3b1e; }
+  .quote-ed .contract-result[hidden] { display: none; }
   .quote-ed .contracts { list-style: none; margin: 0; padding: 0; font-size: 14px; }
   .quote-ed .contracts li { padding: 4px 0; }
   .quote-ed .contracts a { color: var(--ink); font-weight: 600; }
