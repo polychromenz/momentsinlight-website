@@ -11,7 +11,9 @@ export async function chat(env, messages, maxTokens = 200) {
   for (const model of TEXT) {
     try {
       const out = await env.AI.run(model, { messages, max_tokens: maxTokens });
-      const text = String(out?.response ?? out?.result?.response ?? out?.choices?.[0]?.message?.content ?? '').trim();
+      // Some models hand back a JSON reply already parsed into an object.
+      const raw = out?.response ?? out?.result?.response ?? out?.choices?.[0]?.message?.content ?? '';
+      const text = (raw && typeof raw === 'object' ? JSON.stringify(raw) : String(raw)).trim();
       if (text) return text;
     } catch (e) { last = e; console.error('ai: chat', model, e.message); }
   }
