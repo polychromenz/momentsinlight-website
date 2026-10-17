@@ -1,0 +1,140 @@
+---
+// /newcontact: a hidden copy of the Contact page for testing the new studio CRM's enquiry form
+// (src/components/page/EnquiryForm.astro) before it replaces the Studio Ninja form. Kept out of
+// Google and the sitemap and not linked from the menu. Remove (redirect to /contact) at the
+// switch; see docs/studio-crm-plan.md.
+import BaseLayout from '../layouts/BaseLayout.astro';
+import EnquiryForm from '../components/page/EnquiryForm.astro';
+import page from '../data/pages/contact.json';
+import { site } from '../data/site';
+
+const blocks = page.sections.map((s: any) => s.blocks ?? []);
+const textOf = (i: number) => blocks[i].find((b: any) => b.type === 'text')?.html ?? '';
+const embedOf = (i: number) => blocks[i].find((b: any) => b.type === 'embed')?.html ?? '';
+const clean = (h: string) => h.replace(/\s*style="text-align:\s*[a-z]+;?"/g, '');
+
+const intro = clean(textOf(0));
+const heading = intro.match(/<h1[^>]*>([\s\S]*?)<\/h1>/)?.[1].replace(/<[^>]+>/g, '').trim() ?? 'Let’s talk';
+const introBody = intro.replace(/<h1[^>]*>[\s\S]*?<\/h1>/, '');
+const reassurance = clean(textOf(2));
+const mapSrc = embedOf(3).match(/src="([^"]+)"/)?.[1] ?? '';
+const tel = site.phone.replace(/\s/g, '');
+const directions = 'https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(`Moments in Light, ${site.address}`);
+---
+<BaseLayout title={page.title} description={page.description} image={page.ogImage || undefined} noindex>
+  <section class="intro wrap">
+    <p class="eyebrow rise">Get in touch</p>
+    <h1 class="display rise">{heading}</h1>
+    <hr class="hairline rise" />
+    <div class="rise intro-body" set:html={introBody} />
+  </section>
+
+  <section class="form-band">
+    <div class="wrap form-grid">
+      <!-- A CSS rise rather than data-reveal: on phones this is the biggest thing on the first
+           screen, and the reveal waited on scripts (the map's, when busy) for up to 8s. -->
+      <aside class="aside rise">
+        <div set:html={reassurance} />
+        <a class="phone" href={`tel:${tel}`}>
+          <span class="phone-label">Call or text</span>
+          <span class="phone-number">{site.phone}</span>
+        </a>
+      </aside>
+      <div class="form-card">
+        <EnquiryForm />
+      </div>
+    </div>
+  </section>
+
+  {mapSrc && (
+    <section class="map-band">
+      <div class="wrap map-wrap" data-reveal>
+        <div class="map">
+          <iframe src={mapSrc} title="Map showing Moments in Light in Waiwera" loading="lazy" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+        </div>
+        <div class="map-card">
+          <p class="map-name">Moments in Light</p>
+          <p class="map-address">{site.address}</p>
+          <a class="btn" href={directions} target="_blank" rel="noopener">Get directions</a>
+        </div>
+      </div>
+    </section>
+  )}
+</BaseLayout>
+
+<style>
+  .intro { max-width: calc(820px + 2 * var(--pad)); margin: 0 auto; padding-block: 64px 48px; text-align: center; }
+  .intro h1 { font-size: clamp(36px, 3vw + 20px, 64px); margin: 0 0 24px; padding: 0; }
+  .intro .hairline { margin-bottom: 28px; }
+  .intro-body :global(h2) { font-weight: 300; color: var(--ink); font-size: clamp(24px, 1.2vw + 18px, 34px); margin: 0 0 16px; }
+  .intro-body :global(p) { color: #444; line-height: 1.85; }
+  .rise { animation: rise 1.3s var(--ease) both; }
+  .rise:nth-child(2) { animation-delay: 0.1s; }
+  .rise:nth-child(3) { animation-delay: 0.2s; }
+  .rise:nth-child(4) { animation-delay: 0.3s; }
+  .aside.rise { animation-delay: 0.4s; }
+  hr.rise { animation-name: draw; }
+  @keyframes rise { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
+  @keyframes draw { from { transform: scaleX(0); } to { transform: none; } }
+
+  .form-band { background: var(--champagne); padding-block: 56px; }
+  .form-grid { display: grid; gap: 32px; max-width: calc(1180px + 2 * var(--pad)); margin: 0 auto; align-items: start; }
+  .aside :global(p) { color: #444; line-height: 1.8; }
+  .phone {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-top: 24px;
+    padding: 22px 26px;
+    background: var(--white);
+    border-radius: 24px 0;
+    text-decoration: none;
+    color: var(--ink);
+    transition: border-radius 0.6s var(--ease), transform 0.6s var(--ease), box-shadow 0.6s var(--ease);
+  }
+  .phone:hover { opacity: 1; border-radius: 0 24px; transform: translateY(-2px); box-shadow: 0 14px 26px -20px rgb(0 0 0 / 0.45); }
+  .phone-label { font-size: 12px; font-weight: 500; letter-spacing: 0.26em; text-transform: uppercase; color: var(--green); }
+  .phone-number { font-size: 26px; font-weight: 300; }
+
+  .form-card { position: relative; background: var(--white); border-radius: 40px 0; padding: 18px 10px; }
+
+  .map-band { padding-block: 64px 80px; }
+  /* The map with the address card beside it (underneath on phones). */
+  .map-wrap { display: grid; gap: 24px; max-width: calc(1180px + 2 * var(--pad)); margin: 0 auto; align-items: center; }
+  .map {
+    overflow: hidden;
+    border-radius: 48px 0;
+    aspect-ratio: 4 / 3;
+    background: var(--griseo);
+    box-shadow: 0 24px 40px -32px rgb(62 66 41 / 0.6);
+  }
+  /* Softened to sit with the site's colours. */
+  .map :global(iframe) { width: 100%; height: 100%; border: 0; display: block; filter: grayscale(0.35) sepia(0.12) saturate(0.9); }
+  .map-card {
+    background: var(--champagne);
+    border-radius: 32px 0;
+    padding: 24px 26px 26px;
+  }
+  .map-name { margin: 0 0 4px; font-size: 22px; font-weight: 300; color: var(--ink); }
+  .map-address { margin: 0 0 18px; color: #555; font-size: 15px; line-height: 1.6; }
+
+  @media (min-width: 768px) {
+    .intro { padding-block: 110px 64px; }
+    .form-band { padding-block: 90px; }
+    .form-card { padding: 30px 28px; }
+    .map-band { padding-block: 90px 120px; }
+  }
+  @media (min-width: 900px) {
+    .map-wrap { grid-template-columns: minmax(0, 2.2fr) minmax(0, 1fr); gap: 40px; }
+    .map { aspect-ratio: 16 / 10; }
+    .map-card { padding: 34px 32px 34px; }
+  }
+  @media (min-width: 960px) {
+    .form-grid { grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr); gap: 56px; }
+    .aside { position: sticky; top: 140px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .rise { animation: none; }
+    .phone { transition: none; }
+  }
+</style>

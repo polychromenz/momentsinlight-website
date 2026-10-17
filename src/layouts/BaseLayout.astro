@@ -23,8 +23,10 @@ interface Props {
   jsonLd?: Record<string, unknown>;
   /** Page background: blog posts sit on Griseo Elegance throughout, like the live site. */
   background?: 'white' | 'alt';
+  /** Keep the page out of Google (e.g. /newcontact while it's being tested). */
+  noindex?: boolean;
 }
-const { title, description, image, type = 'website', jsonLd, background = 'white' } = Astro.props;
+const { title, description, image, type = 'website', jsonLd, background = 'white', noindex = false } = Astro.props;
 // The page's public address. Pages are built as files (weddings.html) but served without
 // the .html (/weddings), which is the address Google should index.
 const canonical = new URL(Astro.url.pathname.replace(/\.html$/, '').replace(/\/index$/, '/').replace(/(.)\/$/, '$1') || '/', site.url).href;
@@ -38,6 +40,7 @@ const ogImage = image ? sized(image, 1500) : undefined;
     <script is:inline>document.documentElement.classList.add('js');</script>
     <title>{title}</title>
     <meta name="description" content={description} />
+    {noindex && <meta name="robots" content="noindex, nofollow" />}
     <link rel="preload" href={raleway400} as="font" type="font/woff2" crossorigin />
     <link rel="preload" href={raleway500} as="font" type="font/woff2" crossorigin />
     <link rel="canonical" href={canonical} />

@@ -1,0 +1,133 @@
+---
+// The enquiry form for the new studio CRM (replaces the Studio Ninja form at the switch; until
+// then it's only on the hidden test page /newcontact). Posts to functions/api/enquiry.js, which
+// saves the lead in the CRM database, alerts Tony and schedules the first reply. Same questions
+// as the Studio Ninja form; spam protection as on the guide signup (a hidden field bots fill in,
+// plus Cloudflare Turnstile).
+
+// Turnstile site key (public), shared with the guide signup. Local previews use Cloudflare's
+// always-pass test key.
+const siteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY
+  || (import.meta.env.DEV ? '1x00000000000000000000AA' : '0x4AAAAAAFXGYYzurJExinLB');
+
+const services = ['Wedding', 'Portraits', 'Family', 'Headshots', 'Lifestyle', 'Event', 'Commercial / Advertising'];
+// Studio Ninja's lead sources, with friendlier wording where needed (value = the source name).
+const sources: [string, string][] = [
+  ['Google', 'Google'], ['Instagram', 'Instagram'], ['Facebook', 'Facebook'], ['MyWeddingGuide', 'My Wedding Guide'],
+  ['Word of mouth', 'A friend or family member'], ['Bride and Groom', 'A couple I photographed'], ['Referral', 'Another wedding supplier'],
+  ['Blog post', 'Your blog'], ['Online directory', 'An online directory'], ['Verve Magazine', 'Verve Magazine'], ['Reddit', 'Reddit'], ['Event', 'An event or wedding show'],
+];
+---
+<form class="enquiry" method="post" action="/api/enquiry" novalidate>
+  <div class="row">
+    <label>First name <span class="req" aria-hidden="true">*</span>
+      <input name="first_name" type="text" autocomplete="given-name" required maxlength="100" placeholder="e.g. Jane" />
+    </label>
+    <label>Last name <span class="req" aria-hidden="true">*</span>
+      <input name="last_name" type="text" autocomplete="family-name" required maxlength="100" placeholder="e.g. Smith" />
+    </label>
+  </div>
+  <div class="row">
+    <label>Email <span class="req" aria-hidden="true">*</span>
+      <input name="email" type="email" autocomplete="email" required maxlength="254" />
+    </label>
+    <label>Phone <span class="opt">(optional)</span>
+      <input name="phone" type="tel" autocomplete="tel" maxlength="40" />
+    </label>
+  </div>
+  <div class="row">
+    <label>Which service are you interested in? <span class="req" aria-hidden="true">*</span>
+      <select name="service" required>
+        {services.map((s) => <option value={s}>{s}</option>)}
+      </select>
+    </label>
+    <label>Event date <span class="req" aria-hidden="true">*</span>
+      <input name="event_date" type="date" required />
+    </label>
+  </div>
+  <label>Venue
+    <input name="venue" type="text" maxlength="200" placeholder="Where is it happening?" />
+  </label>
+  <label>Tell me a little about your plans
+    <textarea name="message" rows="6" maxlength="5000"></textarea>
+  </label>
+  <label>How did you hear about me?
+    <select name="lead_source">
+      <option value="">Choose an option</option>
+      {sources.map(([value, label]) => <option value={value}>{label}</option>)}
+    </select>
+  </label>
+  <!-- Left empty by people; bots fill it in. -->
+  <div class="hp" aria-hidden="true">
+    <label>Website <input name="website" type="text" tabindex="-1" autocomplete="off" /></label>
+  </div>
+  <div class="cf-turnstile" data-sitekey={siteKey} data-size="flexible"></div>
+  <p class="msg" role="alert" hidden></p>
+  <button class="btn" type="submit">Send enquiry</button>
+</form>
+
+<div class="enquiry-thanks" hidden tabindex="-1">
+  <h2>Thank you!</h2>
+  <p>I've got your enquiry and I'll be in touch soon. Keep an eye on your inbox (and just in case, your spam folder).</p>
+</div>
+
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+<script>
+  const form = document.querySelector<HTMLFormElement>('form.enquiry')!;
+  const msg = form.querySelector<HTMLElement>('.msg')!;
+  const button = form.querySelector<HTMLButtonElement>('button[type="submit"]')!;
+  const show = (text: string) => { msg.textContent = text; msg.hidden = false; };
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    msg.hidden = true;
+    if (!form.checkValidity()) {
+      form.reportValidity();
+      return;
+    }
+    if (!form.querySelector<HTMLInputElement>('[name="cf-turnstile-response"]')?.value) {
+      show('Just a moment, the spam check is still finishing. Please try again in a second.');
+      return;
+    }
+    button.disabled = true;
+    button.textContent = 'Sending…';
+    try {
+      const r = await fetch(form.action, { method: 'POST', body: new FormData(form), headers: { accept: 'application/json' } });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(d.error || 'Sorry, something went wrong. Please try again, or call me on 021 625 943.');
+      form.hidden = true;
+      const thanks = document.querySelector<HTMLElement>('.enquiry-thanks')!;
+      thanks.hidden = false;
+      thanks.focus();
+    } catch (err) {
+      show((err as Error).message);
+      // A used Turnstile token can't be reused.
+      (window as unknown as { turnstile?: { reset: () => void } }).turnstile?.reset();
+    } finally {
+      button.disabled = false;
+      button.textContent = 'Send enquiry';
+    }
+  });
+</script>
+
+<style>
+  .enquiry { display: flex; flex-direction: column; gap: 18px; padding: 14px 12px; }
+  .row { display: grid; gap: 18px; }
+  .enquiry label { display: flex; flex-direction: column; gap: 6px; font-size: 14px; font-weight: 500; color: var(--ink); }
+  .req { color: var(--green); }
+  .opt { font-weight: 400; color: #888; }
+  .enquiry input, .enquiry select, .enquiry textarea {
+    font: inherit; font-weight: 400; font-size: 16px; color: var(--ink);
+    padding: 12px 14px; background: var(--white); border: 1px solid #ddd3c4; border-radius: 14px 0;
+    transition: border-color 0.4s var(--ease), border-radius 0.5s var(--ease);
+  }
+  .enquiry input:focus, .enquiry select:focus, .enquiry textarea:focus { outline: none; border-color: var(--green); border-radius: 0 14px; }
+  .enquiry textarea { resize: vertical; }
+  .hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+  .msg { margin: 0; padding: 12px 14px; background: #fbeee8; color: #8a3b1e; border-radius: 12px 0; font-size: 15px; }
+  .enquiry .btn { align-self: flex-start; }
+  .enquiry-thanks { padding: 40px 24px; text-align: center; }
+  .enquiry-thanks h2 { font-weight: 300; font-size: clamp(28px, 2vw + 18px, 40px); margin: 0 0 12px; color: var(--ink); }
+  .enquiry-thanks p { color: #444; line-height: 1.8; max-width: 46ch; margin: 0 auto; }
+  @media (min-width: 640px) { .row { grid-template-columns: 1fr 1fr; } }
+</style>
