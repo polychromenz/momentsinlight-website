@@ -48,8 +48,8 @@ export async function sendStep(env, step, edits = {}) {
   const sent = await sendEmail(env, { to: job.email, subject: email.subject, html: email.html, attachments, threadId: last?.gmail_thread_id });
   const now = new Date().toISOString();
   await db.batch([
-    db.prepare(`INSERT INTO messages (job_id, client_id, step_id, direction, subject, body, gmail_message_id, gmail_thread_id, sent_at)
-      VALUES (?1, ?2, ?3, 'out', ?4, ?5, ?6, ?7, ?8)`).bind(job.id, job.client_id, step.id, email.subject, email.body, sent.id, sent.threadId, now),
+    db.prepare(`INSERT INTO messages (job_id, client_id, step_id, direction, subject, body, gmail_message_id, gmail_thread_id, sent_at, attachments)
+      VALUES (?1, ?2, ?3, 'out', ?4, ?5, ?6, ?7, ?8, ?9)`).bind(job.id, job.client_id, step.id, email.subject, email.body, sent.id, sent.threadId, now, attachments.map((a) => a.name).join('\n')),
     db.prepare(`UPDATE steps SET status = 'done', done_at = ?2, note = ?3 WHERE id = ?1`)
       .bind(step.id, now, sent.redirected ? `Test mode: sent to ${sent.to} instead of ${sent.intended}` : `Sent to ${sent.to}`),
   ]);

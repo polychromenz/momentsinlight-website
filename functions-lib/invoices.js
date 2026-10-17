@@ -90,15 +90,16 @@ export async function sendInvoice(env, inv, kind = 'invoice') {
   if (email.missing.length) throw new Error(`The invoice email needs: ${email.missing.join(', ')}.`);
   const pdf = toBase64(await invoicePdf(inv, job, await paymentSettings(db)));
   const last = await db.prepare('SELECT gmail_thread_id FROM messages WHERE job_id = ?1 AND gmail_thread_id IS NOT NULL ORDER BY sent_at DESC LIMIT 1').bind(job.id).first();
+  const fileName = `${kind === 'payment-receipt' ? 'Receipt' : 'Invoice'} ${inv.number}.pdf`;
   const sent = await sendEmail(env, { to: job.email, subject: email.subject, html: email.html, threadId: last?.gmail_thread_id,
-    attachments: [{ name: `${kind === 'payment-receipt' ? 'Receipt' : 'Invoice'} ${inv.number}.pdf`, type: 'application/pdf', base64: pdf }] });
+    attachments: [{ name: fileName, type: 'application/pdf', base64: pdf }] });
   const now = new Date().toISOString();
   await db.batch([
     kind === 'invoice' ? db.prepare(`UPDATE invoices SET status = CASE WHEN status = 'scheduled' THEN 'sent' ELSE status END, sent_at = COALESCE(sent_at, ?2) WHERE id = ?1`).bind(inv.id, now)
       : kind === 'invoice-reminder' ? db.prepare('UPDATE invoices SET reminders = reminders + 1, last_reminder_at = ?2 WHERE id = ?1').bind(inv.id, now)
       : db.prepare('SELECT 1'),
-    db.prepare(`INSERT INTO messages (job_id, client_id, direction, subject, body, gmail_message_id, gmail_thread_id, sent_at) VALUES (?1, ?2, 'out', ?3, ?4, ?5, ?6, ?7)`)
-      .bind(job.id, job.client_id, email.subject, email.body, sent.id, sent.threadId, now),
+    db.prepare(`INSERT INTO messages (job_id, client_id, direction, subject, body, gmail_message_id, gmail_thread_id, sent_at, attachments) VALUES (?1, ?2, 'out', ?3, ?4, ?5, ?6, ?7, ?8)`)
+      .bind(job.id, job.client_id, email.subject, email.body, sent.id, sent.threadId, now, fileName),
   ]);
   return sent;
 }

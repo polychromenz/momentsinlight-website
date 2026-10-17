@@ -16,8 +16,8 @@ export async function onRequestGet({ request, env }) {
   ).bind(id).first();
   if (!job) return json({ error: 'That job doesn’t exist (it may have been deleted).' }, 404);
   const [steps, messages, others, quotes, contracts, invoices] = await Promise.all([
-    env.DB.prepare('SELECT * FROM steps WHERE job_id = ?1 ORDER BY due_at').bind(id).all(),
-    env.DB.prepare('SELECT id, direction, subject, body, sent_at FROM messages WHERE job_id = ?1 ORDER BY sent_at DESC').bind(id).all(),
+    env.DB.prepare('SELECT * FROM steps WHERE job_id = ?1 ORDER BY created_at, due_at, id').bind(id).all(),
+    env.DB.prepare('SELECT id, direction, subject, body, sent_at, attachments, gmail_message_id FROM messages WHERE job_id = ?1 ORDER BY sent_at DESC').bind(id).all(),
     env.DB.prepare('SELECT id, title, job_type, stage, event_date FROM jobs WHERE client_id = ?1 AND id <> ?2 ORDER BY created_at DESC').bind(job.client_id, id).all(),
     env.DB.prepare('SELECT id, status, total, sent_at, viewed_at, accepted_at, created_at FROM quotes WHERE job_id = ?1 ORDER BY created_at DESC').bind(id).all(),
     env.DB.prepare('SELECT id, quote_id, name, status, sent_at, viewed_at, signed_name, signed_at FROM contracts WHERE job_id = ?1 ORDER BY id DESC').bind(id).all(),

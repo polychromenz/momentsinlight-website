@@ -95,6 +95,15 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
       </div>
     </form>
   </dialog>
+  <dialog class="review msg-view" aria-label="Email">
+    <div class="review-form">
+      <h2 class="review-title msg-title"></h2>
+      <p class="review-to msg-meta"></p>
+      <p class="review-attach msg-files" hidden></p>
+      <iframe class="msg-frame" title="The email"></iframe>
+      <div class="review-actions"><a class="s-btn s-btn--quiet msg-gmail" target="_blank" rel="noopener">Open in Gmail</a><button type="button" class="s-btn s-btn--solid" data-msg-close>Close</button></div>
+    </div>
+  </dialog>
   <div class="s-toast" role="status"></div>
 </StudioLayout>
 
@@ -132,6 +141,8 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
   }
   type Invoice = { id: number; number: string; label: string; amount: number; due_date: string; send_at: string; status: string; sent_at: string | null; reminders: number; paid_at: string | null; paid_method: string | null; paid_note: string; token: string };
   let invoices: Invoice[] = [];
+  type Message = { direction: string; subject: string; body: string; sent_at: string; attachments: string; gmail_message_id: string | null };
+  let messages: Message[] = [];
   async function load() {
     await loadLists();
     const r = await fetch(`/api/studio/crm/job?id=${id}`);
@@ -152,6 +163,12 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
     $('.message').dataset.when = `Enquired ${enquired}`;
 
     $('.steps').innerHTML = d.steps.length ? d.steps.map((s: Step) => {
+      if (s.status === 'skipped' && /^Stopped:/.test(s.note)) {
+        return `<li id="step-${s.id}" class="step step--unneeded">
+        <span class="kind kind--unneeded">Not needed</span>
+        <span class="what"><strong>${esc(s.title)}</strong><br><small>${esc(s.note.replace(/^Stopped: /, 'Stopped because '))}</small></span>
+      </li>`;
+      }
       const open = s.status === 'scheduled' || s.status === 'due' || s.status === 'failed';
       return `<li id="step-${s.id}" class="step step--${s.status}">
         <span class="kind kind--${s.kind}">${kindLabel[s.kind] ?? s.kind}</span>
@@ -162,8 +179,9 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
       </li>`;
     }).join('') : '<li class="empty">No steps planned.</li>';
 
-    $('.messages').innerHTML = d.messages.length ? d.messages.map((m: { direction: string; subject: string; sent_at: string }) =>
-      `<li><span class="dir">${m.direction === 'in' ? 'From them' : 'Sent'}</span> <strong>${esc(m.subject)}</strong> <small>${dateTime(m.sent_at)}</small></li>`).join('')
+    messages = d.messages;
+    $('.messages').innerHTML = d.messages.length ? d.messages.map((m: Message, i: number) =>
+      `<li><button type="button" class="msg-open" data-msg="${i}"><span class="dir">${m.direction === 'in' ? 'From them' : 'Sent'}</span> <strong>${esc(m.subject)}</strong> <small>${dateTime(m.sent_at)}${m.attachments ? ' · 📎' : ''}</small></button></li>`).join('')
       : '<li class="empty">No emails yet. Once Gmail is connected, everything sent from the studio shows here.</li>';
 
     const qs: Record<string, string> = { draft: 'Draft', sent: 'Sent', accepted: 'Accepted', withdrawn: 'Withdrawn', declined: 'Declined' };
@@ -329,6 +347,26 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
       await load();
       return;
     }
+    const mo = t.closest<HTMLButtonElement>('[data-msg]');
+    if (mo) {
+      const m = messages[Number(mo.dataset.msg)];
+      const v = $<HTMLDialogElement>('dialog.msg-view');
+      $('.msg-title').textContent = m.subject;
+      $('.msg-meta').textContent = `${m.direction === 'in' ? 'From them' : 'Sent'} · ${dateTime(m.sent_at)}`;
+      const files = $('.msg-files');
+      files.hidden = !m.attachments;
+      files.textContent = m.attachments ? `Attached: ${m.attachments.split('\n').join(', ')}` : '';
+      // Emails from them: only Gmail's short preview is kept here; the full email is in Gmail.
+      $<HTMLIFrameElement>('.msg-frame').srcdoc = m.direction === 'in'
+        ? `<body style="font:15px/1.7 Raleway,Arial,sans-serif;color:#333;padding:20px;background:#fff">${esc(m.body)}<p style="color:#888;font-size:13px">This is the start of their email. Open it in Gmail to read it all.</p></body>`
+        : emailHtml({ subject: m.subject, body: m.body });
+      const g = $<HTMLAnchorElement>('.msg-gmail');
+      g.hidden = !m.gmail_message_id;
+      if (m.gmail_message_id) g.href = `https://mail.google.com/mail/u/0/#all/${m.gmail_message_id}`;
+      v.showModal();
+      return;
+    }
+    if (t.closest('[data-msg-close]')) { $<HTMLDialogElement>('dialog.msg-view').close(); return; }
     const rv = t.closest<HTMLButtonElement>('[data-review-step]');
     if (rv) { openReview(Number(rv.dataset.reviewStep)); return; }
     const b = t.closest<HTMLButtonElement>('[data-step]');
@@ -382,6 +420,13 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
   .job-page .kind--ready_email { background: #e3e7f6; color: #2f3f86; }
   .job-page .kind--todo { background: #f6ecd6; color: #7a5a14; }
   .job-page .dir { font-size: 12px; color: var(--green); font-weight: 600; }
+  .job-page .msg-open { all: unset; cursor: pointer; display: flex; align-items: baseline; gap: 8px 12px; flex-wrap: wrap; width: 100%; }
+  .job-page .msg-open:hover strong { text-decoration: underline; }
+  .job-page .msg-open:focus-visible { outline: 2px solid var(--green); outline-offset: 3px; }
+  .job-page .step--unneeded .what { opacity: 0.5; }
+  .job-page .kind--unneeded { background: #eeeeee; color: #888; }
+  .msg-view .msg-frame { width: 100%; height: min(70dvh, 640px); border: 1px solid #ece4d7; border-radius: 10px 0; background: #f6f1ea; }
+  .msg-view .msg-gmail[hidden], .msg-view .msg-files[hidden] { display: none; }
   .job-page .empty { color: #888; }
   .job-page .message { margin: 0; white-space: pre-wrap; line-height: 1.7; color: #333; }
   .job-page .message[data-when]::after { content: attr(data-when); display: block; margin-top: 10px; font-size: 13px; color: #888; }

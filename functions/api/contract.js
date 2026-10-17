@@ -66,8 +66,8 @@ export async function onRequestPost({ request, env }) {
     const email = renderTemplate(template, fields(job));
     const last = await env.DB.prepare('SELECT gmail_thread_id FROM messages WHERE job_id = ?1 AND gmail_thread_id IS NOT NULL ORDER BY sent_at DESC LIMIT 1').bind(job.id).first();
     const sent = await sendEmail(env, { to: job.email, subject: email.subject, html: email.html, attachments: [{ name: fileName, type: 'application/pdf', base64: pdf }], threadId: last?.gmail_thread_id });
-    await env.DB.prepare(`INSERT INTO messages (job_id, client_id, direction, subject, body, gmail_message_id, gmail_thread_id, sent_at) VALUES (?1, ?2, 'out', ?3, ?4, ?5, ?6, ?7)`)
-      .bind(job.id, job.client_id, email.subject, email.body, sent.id, sent.threadId, at).run();
+    await env.DB.prepare(`INSERT INTO messages (job_id, client_id, direction, subject, body, gmail_message_id, gmail_thread_id, sent_at, attachments) VALUES (?1, ?2, 'out', ?3, ?4, ?5, ?6, ?7, ?8)`)
+      .bind(job.id, job.client_id, email.subject, email.body, sent.id, sent.threadId, at, fileName).run();
     if (sent.redirected) theirs += ` (Test mode: it went to ${sent.to}.)`;
   } catch (e) {
     console.error('contract signed: copy not sent', e);

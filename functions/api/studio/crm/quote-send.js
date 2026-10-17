@@ -42,8 +42,8 @@ export async function onRequestPost({ request, env }) {
     const now = new Date().toISOString();
     await env.DB.batch([
       env.DB.prepare(`UPDATE quotes SET status = 'sent', sent_at = ?2, updated_at = ?2 WHERE id = ?1`).bind(q.id, now),
-      env.DB.prepare(`INSERT INTO messages (job_id, client_id, direction, subject, body, gmail_message_id, gmail_thread_id, sent_at) VALUES (?1, ?2, 'out', ?3, ?4, ?5, ?6, ?7)`)
-        .bind(job.id, job.client_id, e.subject, e.body, sent.id, sent.threadId, now),
+      env.DB.prepare(`INSERT INTO messages (job_id, client_id, direction, subject, body, gmail_message_id, gmail_thread_id, sent_at, attachments) VALUES (?1, ?2, 'out', ?3, ?4, ?5, ?6, ?7, ?8)`)
+        .bind(job.id, job.client_id, e.subject, e.body, sent.id, sent.threadId, now, attachments.map((a) => a.name).join('\n')),
     ]);
     return json({ ok: true, to: sent.to, redirected: sent.redirected, intended: sent.intended });
   } catch (err) {

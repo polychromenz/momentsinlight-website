@@ -75,8 +75,8 @@ export async function sendContract(env, contract, quoteRow, job) {
   const now = new Date().toISOString();
   await db.batch([
     db.prepare('UPDATE contracts SET sent_at = ?2 WHERE id = ?1').bind(contract.id, now),
-    db.prepare(`INSERT INTO messages (job_id, client_id, direction, subject, body, gmail_message_id, gmail_thread_id, sent_at) VALUES (?1, ?2, 'out', ?3, ?4, ?5, ?6, ?7)`)
-      .bind(job.id, job.client_id, email.subject, email.body, sent.id, sent.threadId, now),
+    db.prepare(`INSERT INTO messages (job_id, client_id, direction, subject, body, gmail_message_id, gmail_thread_id, sent_at, attachments) VALUES (?1, ?2, 'out', ?3, ?4, ?5, ?6, ?7, ?8)`)
+      .bind(job.id, job.client_id, email.subject, email.body, sent.id, sent.threadId, now, attachments.map((a) => a.name).join('\n')),
   ]);
   return sent;
 }
