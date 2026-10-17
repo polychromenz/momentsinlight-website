@@ -103,6 +103,8 @@ export async function sendEmail(env, msg) {
   const text = msg.text ?? out.html.replace(/<style[\s\S]*?<\/style>/gi, '').replace(/<br\s*\/?>/gi, '\n').replace(/<\/(p|div|h\d|li|tr)>/gi, '\n').replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/\n{3,}/g, '\n\n').trim();
   const parts = [
     `From: ${from}`, `To: ${out.to}`, `Subject: ${header(out.subject)}`, 'MIME-Version: 1.0',
+    // A reply: these make it thread in their email program too, not just in Gmail.
+    ...(msg.inReplyTo ? [`In-Reply-To: ${msg.inReplyTo}`, `References: ${msg.references || msg.inReplyTo}`] : []),
     `Content-Type: multipart/mixed; boundary="${boundary}"`, '',
     `--${boundary}`, `Content-Type: multipart/alternative; boundary="${alt}"`, '',
     `--${alt}`, 'Content-Type: text/plain; charset=UTF-8', 'Content-Transfer-Encoding: base64', '', wrap76(b64(enc.encode(text))),
@@ -121,4 +123,26 @@ export async function sendEmail(env, msg) {
   const d = await r.json().catch(() => ({}));
   if (!r.ok) throw new Error(`Gmail couldn’t send it (${r.status}): ${d.error?.message ?? ''}`);
   return { id: d.id, threadId: d.threadId, to: out.to, redirected: out.redirected, intended: out.intended };
+}
+
+/** One email in full, for reading it in the studio: who, when, subject, its HTML (or text) and
+ *  attachment names, and its Message-ID (to reply to it). */
+export async function message(env, id) {
+  const r = await fetch(`https://gmail.googleapis.com/gmail/v1/users/me/messages/${encodeURIComponent(id)}?format=full`, { headers: { authorization: `Bearer ${await googleToken(env)}` } });
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(`Gmail couldn’t open that email (${r.status}): ${d.error?.message ?? ''}`);
+  const h = (name) => d.payload?.headers?.find((x) => x.name.toLowerCase() === name)?.value ?? '';
+  const parts = []; const files = [];
+  const walk = (p) => {
+    if (!p) return;
+    if (p.parts) { p.parts.forEach(walk); return; }
+    if (p.filename) { files.push(p.filename); return; }
+    if (p.body?.data) parts.push({ type: p.mimeType, text: new TextDecoder().decode(Uint8Array.from(atob(p.body.data.replace(/-/g, '+').replace(/_/g, '/')), (c) => c.charCodeAt(0))) });
+  };
+  walk(d.payload);
+  return {
+    id: d.id, threadId: d.threadId, at: new Date(Number(d.internalDate)).toISOString(),
+    from: h('from'), to: h('to'), subject: h('subject'), messageId: h('message-id'), references: h('references'),
+    html: parts.find((p) => p.type === 'text/html')?.text ?? '', text: parts.find((p) => p.type === 'text/plain')?.text ?? '', files,
+  };
 }

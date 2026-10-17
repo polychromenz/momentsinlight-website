@@ -5,8 +5,10 @@
 // once are fine: every email, invoice and reminder is claimed before it's sent.
 //
 // Each run:
-//   1. Replies: for leads with follow-ups waiting, checks their Gmail conversation; if the client
-//      has replied, records it and stops the steps marked "stop on reply".
+//   1. Emails: checks open leads' and booked jobs' Gmail conversations (a dozen per run, those
+//      with follow-ups waiting first, then the longest unchecked) and adds new emails to their
+//      Emails list: their replies, and anything Tony sent them from Gmail himself. A reply stops
+//      the steps marked "stop on reply".
 //   2. Sends automatic emails that are due (each step claimed first, so it can never go twice),
 //      unless a stop condition applies. Anything that can't send is marked "Didn't send" on
 //      Today and Tony gets an alert.
@@ -37,31 +39,37 @@ export async function onRequestPost({ request, env }) {
   const log = { replies: 0, sent: 0, skipped: 0, failed: 0 };
   const gmail = await connection(db);
 
-  // 1. Replies.
+  // 1. Emails in their conversations.
   if (gmail) {
-    const waiting = await db.prepare(
-      `SELECT DISTINCT j.id, j.client_id, c.email FROM jobs j JOIN clients c ON c.id = j.client_id JOIN steps s ON s.job_id = j.id
-       WHERE j.replied_at IS NULL AND s.status = 'scheduled' AND (',' || s.stop_on || ',') LIKE '%,reply,%' LIMIT 40`,
+    const me = [(gmail.email || '').toLowerCase(), 'tony@momentsinlight.co.nz'];
+    const jobs = await db.prepare(
+      `SELECT j.id, j.client_id, j.replied_at,
+         (SELECT gmail_thread_id FROM messages m WHERE m.job_id = j.id AND m.gmail_thread_id IS NOT NULL ORDER BY m.sent_at DESC LIMIT 1) AS t,
+         EXISTS (SELECT 1 FROM steps s WHERE s.job_id = j.id AND s.status = 'scheduled' AND (',' || s.stop_on || ',') LIKE '%,reply,%') AS waiting
+       FROM jobs j WHERE j.stage IN ('lead', 'booked') AND t IS NOT NULL
+       ORDER BY waiting DESC, j.mail_checked_at IS NOT NULL, j.mail_checked_at LIMIT 12`,
     ).all();
-    for (const job of waiting.results) {
-      const threads = await db.prepare('SELECT DISTINCT gmail_thread_id t FROM messages WHERE job_id = ?1 AND gmail_thread_id IS NOT NULL').bind(job.id).all();
-      for (const { t } of threads.results) {
-        let msgs;
-        try { msgs = await thread(env, t); } catch (e) { console.error('crm run: thread', e.message); continue; }
-        const theirs = msgs.filter((m) => m.from && m.from !== (gmail.email || '').toLowerCase() && m.from !== 'tony@momentsinlight.co.nz');
-        if (!theirs.length) continue;
-        const first = theirs[0];
-        await db.batch([
-          db.prepare('UPDATE jobs SET replied_at = ?2, updated_at = ?3 WHERE id = ?1 AND replied_at IS NULL').bind(job.id, first.at, now),
+    for (const job of jobs.results) {
+      let msgs;
+      try { msgs = await thread(env, job.t); } catch (e) { console.error('crm run: thread', e.message); continue; }
+      const known = new Set((await db.prepare('SELECT gmail_message_id FROM messages WHERE job_id = ?1 AND gmail_message_id IS NOT NULL').bind(job.id).all()).results.map((r) => r.gmail_message_id));
+      const fresh = msgs.filter((m) => !known.has(m.id));
+      const theirs = fresh.filter((m) => m.from && !me.includes(m.from));
+      const stmts = [
+        db.prepare('UPDATE jobs SET mail_checked_at = ?2 WHERE id = ?1').bind(job.id, now),
+        ...fresh.map((m) => db.prepare(
+          `INSERT INTO messages (job_id, client_id, direction, subject, body, gmail_message_id, gmail_thread_id, sent_at)
+           SELECT ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8 WHERE NOT EXISTS (SELECT 1 FROM messages WHERE gmail_message_id = ?6)`,
+        ).bind(job.id, job.client_id, me.includes(m.from) ? 'out' : 'in', m.subject, m.snippet, m.id, job.t, m.at)),
+      ];
+      if (theirs.length) {
+        stmts.push(
+          db.prepare('UPDATE jobs SET replied_at = ?2, updated_at = ?3 WHERE id = ?1 AND replied_at IS NULL').bind(job.id, theirs[0].at, now),
           db.prepare(`UPDATE steps SET status = 'skipped', done_at = ?2, note = 'Stopped: they replied' WHERE job_id = ?1 AND status = 'scheduled' AND (',' || stop_on || ',') LIKE '%,reply,%'`).bind(job.id, now),
-          ...theirs.map((m) => db.prepare(
-            `INSERT INTO messages (job_id, client_id, direction, subject, body, gmail_message_id, gmail_thread_id, sent_at)
-             SELECT ?1, ?2, 'in', ?3, ?4, ?5, ?6, ?7 WHERE NOT EXISTS (SELECT 1 FROM messages WHERE gmail_message_id = ?5)`,
-          ).bind(job.id, job.client_id, m.subject, m.snippet, m.id, t, m.at)),
-        ]);
+        );
         log.replies++;
-        break;
       }
+      await db.batch(stmts);
     }
   }
 

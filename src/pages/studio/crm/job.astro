@@ -74,7 +74,7 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
             <p class="message"></p>
           </section>
           <section class="card">
-            <h2>Emails</h2>
+            <div class="card-head"><h2>Emails</h2><button type="button" class="s-btn" data-compose>✉ Write email</button></div>
             <ul class="messages"></ul>
           </section>
         </div>
@@ -124,13 +124,31 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
       </div>
     </form>
   </dialog>
+  <dialog class="review compose" aria-label="Write an email">
+    <form method="dialog" class="review-form compose-form">
+      <h2 class="review-title compose-title">Write an email</h2>
+      <p class="review-to compose-to"></p>
+      <label class="compose-start">Start from <select name="template"><option value="">A blank email</option></select></label>
+      <p class="review-missing compose-missing" hidden></p>
+      <label>Subject<input name="subject" /></label>
+      <div class="review-cols">
+        <label>Email<textarea name="body" rows="16"></textarea></label>
+        <div class="review-preview"><span>What they see</span><iframe title="Email preview"></iframe></div>
+      </div>
+      <div class="review-attach compose-attach"></div>
+      <div class="review-actions">
+        <button type="button" class="s-btn s-btn--quiet" data-compose="cancel">Cancel</button>
+        <button type="button" class="s-btn s-btn--solid" data-compose="send">Send</button>
+      </div>
+    </form>
+  </dialog>
   <dialog class="review msg-view" aria-label="Email">
     <div class="review-form">
       <h2 class="review-title msg-title"></h2>
       <p class="review-to msg-meta"></p>
       <p class="review-attach msg-files" hidden></p>
-      <iframe class="msg-frame" title="The email"></iframe>
-      <div class="review-actions"><a class="s-btn s-btn--quiet msg-gmail" target="_blank" rel="noopener">Open in Gmail</a><button type="button" class="s-btn s-btn--solid" data-msg-close>Close</button></div>
+      <iframe class="msg-frame" title="The email" sandbox="allow-popups allow-popups-to-escape-sandbox"></iframe>
+      <div class="review-actions"><a class="s-btn s-btn--quiet msg-gmail" target="_blank" rel="noopener">Open in Gmail</a><button type="button" class="s-btn s-btn--quiet" data-msg-close>Close</button><button type="button" class="s-btn s-btn--solid" data-msg-reply>Reply</button></div>
     </div>
   </dialog>
   <dialog class="review q-view" aria-label="Questionnaire answers">
@@ -180,7 +198,7 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
   }
   type Invoice = { id: number; number: string; label: string; amount: number; due_date: string; send_at: string; status: string; sent_at: string | null; reminders: number; paid_at: string | null; paid_method: string | null; paid_note: string; token: string };
   let invoices: Invoice[] = [];
-  type Message = { direction: string; subject: string; body: string; sent_at: string; attachments: string; gmail_message_id: string | null };
+  type Message = { id: number; direction: string; subject: string; body: string; sent_at: string; attachments: string; gmail_message_id: string | null };
   let messages: Message[] = [];
   // ---- Portal ----
   let portal: { link: string; path: string; galleries: { id: number; title: string; url: string }[]; documents: { id: number; name: string; size: number; shared: boolean }[]; uploads: { id: number; name: string; size: number; created_at: string; questionnaire_id: number | null }[] };
@@ -389,6 +407,45 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
     showPreview();
     dlg.showModal();
   }
+  // ---- Write an email ----
+  const cf = $<HTMLFormElement>('.compose-form');
+  const composePreview = cf.querySelector('iframe')!;
+  const composeRich = attachRich(cf.elements.namedItem('body') as HTMLTextAreaElement, { minHeight: 340 });
+  const composeDocs = attachPicker($('.compose-attach'));
+  let replyingTo: number | null = null;
+  let viewing: Message | null = null;
+  const showComposePreview = () => { composePreview.srcdoc = emailHtml({ subject: (cf.elements.namedItem('subject') as HTMLInputElement).value, body: (cf.elements.namedItem('body') as HTMLTextAreaElement).value }); };
+  cf.addEventListener('input', showComposePreview);
+  async function loadDraft(template: string) {
+    const r = await fetch(`/api/studio/crm/email?job=${id}${template ? `&template=${encodeURIComponent(template)}` : ''}${replyingTo ? `&reply=${replyingTo}` : ''}`);
+    const d = await r.json();
+    if (!r.ok) { toast(d.error || 'Couldn’t start the email.', true); return null; }
+    (cf.elements.namedItem('subject') as HTMLInputElement).value = d.subject;
+    composeRich.set(d.body);
+    composeDocs.set(d.documents, d.attachments);
+    const miss = $('.compose-missing');
+    miss.hidden = !d.missing.length;
+    miss.textContent = d.missing.length ? `Fill in the gaps in [square brackets]: ${d.missing.join(', ')}` : '';
+    showComposePreview();
+    return d;
+  }
+  async function openCompose(reply: number | null) {
+    replyingTo = reply;
+    const d = await loadDraft('');
+    if (!d) return;
+    if (!d.gmail) { toast('Connect Gmail first (on the Clients page).', true); return; }
+    const sel = cf.elements.namedItem('template') as HTMLSelectElement;
+    sel.replaceChildren(new Option('A blank email', ''), ...d.templates.map((x: { key: string; name: string }) => new Option(x.name, x.key)));
+    $('.compose-title').textContent = reply ? 'Reply' : 'Write an email';
+    $('.compose-to').innerHTML = d.mode === 'live' ? `To: <strong>${esc(d.to)}</strong>${reply ? ' · in the same conversation' : ''}` : `To: ${esc(d.to)} · <strong>test mode: it will go to ${esc(d.deliversTo)}</strong>`;
+    $<HTMLDialogElement>('dialog.compose').showModal();
+  }
+  (cf.elements.namedItem('template') as HTMLSelectElement).addEventListener('change', async (e) => {
+    const subjectNow = (cf.elements.namedItem('subject') as HTMLInputElement).value;
+    await loadDraft((e.target as HTMLSelectElement).value);
+    if (replyingTo && subjectNow) (cf.elements.namedItem('subject') as HTMLInputElement).value = subjectNow; // keep "Re: …" on a reply
+  });
+
   dlg.addEventListener('click', async (e) => {
     const b = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-review]');
     if (!b) return;
@@ -519,23 +576,50 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
     const mo = t.closest<HTMLButtonElement>('[data-msg]');
     if (mo) {
       const m = messages[Number(mo.dataset.msg)];
+      viewing = m;
       const v = $<HTMLDialogElement>('dialog.msg-view');
       $('.msg-title').textContent = m.subject;
       $('.msg-meta').textContent = `${m.direction === 'in' ? 'From them' : 'Sent'} · ${dateTime(m.sent_at)}`;
       const files = $('.msg-files');
       files.hidden = !m.attachments;
       files.textContent = m.attachments ? `Attached: ${m.attachments.split('\n').join(', ')}` : '';
-      // Emails from them: only Gmail's short preview is kept here; the full email is in Gmail.
-      $<HTMLIFrameElement>('.msg-frame').srcdoc = m.direction === 'in'
-        ? `<body style="font:15px/1.7 Raleway,Arial,sans-serif;color:#333;padding:20px;background:#fff">${esc(m.body)}<p style="color:#888;font-size:13px">This is the start of their email. Open it in Gmail to read it all.</p></body>`
-        : emailHtml({ subject: m.subject, body: m.body });
+      const frame = $<HTMLIFrameElement>('.msg-frame');
+      const wrap = (html: string) => `<base target="_blank"><body style="font:15px/1.7 Raleway,Arial,sans-serif;color:#333;padding:16px 20px;background:#fff;margin:0">${html}</body>`;
+      // Sent from the studio: as it was sent. Otherwise (their emails, or sent from Gmail): the whole email from Gmail.
+      frame.srcdoc = m.direction === 'out' && m.body && m.body.length > 200 ? emailHtml({ subject: m.subject, body: m.body }) : wrap('<p style="color:#888">Opening the email…</p>');
       const g = $<HTMLAnchorElement>('.msg-gmail');
       g.hidden = !m.gmail_message_id;
       if (m.gmail_message_id) g.href = `https://mail.google.com/mail/u/0/#all/${m.gmail_message_id}`;
       v.showModal();
+      if (m.gmail_message_id && !(m.direction === 'out' && m.body && m.body.length > 200)) {
+        const r = await fetch(`/api/studio/crm/email?message=${m.id}`);
+        const d = await r.json().catch(() => ({}));
+        if (!r.ok) { frame.srcdoc = wrap(`<p>${esc(m.body)}</p><p style="color:#a8432a">Couldn’t open the whole email: ${esc(d.error || r.status)}. Use Open in Gmail.</p>`); return; }
+        if (d.files?.length) { files.hidden = false; files.textContent = `Attached: ${d.files.join(', ')}`; }
+        frame.srcdoc = d.html ? d.html.replace(/<head>/i, '<head><base target="_blank">') : wrap(`<div style="white-space:pre-wrap">${esc(d.text)}</div>`);
+      }
       return;
     }
     if (t.closest('[data-msg-close]')) { $<HTMLDialogElement>('dialog.msg-view').close(); return; }
+    if (t.closest('[data-msg-reply]') && viewing) { $<HTMLDialogElement>('dialog.msg-view').close(); openCompose(viewing.id); return; }
+    const cb = t.closest<HTMLButtonElement>('[data-compose]');
+    if (cb && !cb.dataset.compose) { openCompose(null); return; }
+    if (cb?.dataset.compose === 'cancel') { $<HTMLDialogElement>('dialog.compose').close(); return; }
+    if (cb?.dataset.compose === 'send') {
+      if (composeDocs.over()) { toast('The attachments are over Gmail’s 25 MB limit. Untick one.', true); return; }
+      cb.disabled = true; cb.textContent = 'Sending…';
+      const r = await fetch('/api/studio/crm/email', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({
+        job_id: id, reply: replyingTo, attachments: composeDocs.get(),
+        subject: (cf.elements.namedItem('subject') as HTMLInputElement).value, body: (cf.elements.namedItem('body') as HTMLTextAreaElement).value,
+      }) });
+      const d = await r.json().catch(() => ({}));
+      cb.disabled = false; cb.textContent = 'Send';
+      if (!r.ok) { toast(d.error || 'Couldn’t send.', true); return; }
+      $<HTMLDialogElement>('dialog.compose').close();
+      toast(d.redirected ? `Test mode: sent to ${d.to} (not ${d.intended}).` : `Sent to ${d.to}.`);
+      await load();
+      return;
+    }
     const rv = t.closest<HTMLButtonElement>('[data-review-step]');
     if (rv) { openReview(Number(rv.dataset.reviewStep)); return; }
     const b = t.closest<HTMLButtonElement>('[data-step]');
@@ -619,6 +703,9 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
   .job-page .kind--unneeded { background: #eeeeee; color: #888; }
   .msg-view .msg-frame { width: 100%; height: min(70dvh, 640px); border: 1px solid #ece4d7; border-radius: 10px 0; background: #f6f1ea; }
   .msg-view .msg-gmail[hidden], .msg-view .msg-files[hidden] { display: none; }
+  .compose-start { flex-direction: row !important; align-items: center; gap: 10px !important; }
+  .compose-start select { font: inherit; font-weight: 400; font-size: 14px; padding: 7px 10px; border: 1px solid #ddd3c4; border-radius: 10px 0; }
+  .compose .review-preview iframe { height: 460px; }
   .job-page .empty { color: #888; }
   .job-page .message { margin: 0; white-space: pre-wrap; line-height: 1.7; color: #333; }
   .job-page .message[data-when]::after { content: attr(data-when); display: block; margin-top: 10px; font-size: 13px; color: #888; }
