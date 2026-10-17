@@ -9,6 +9,20 @@
 Replace Studio Ninja (expensive, quirky, very limited email templates) with a custom CRM built
 into the website. Run Studio Ninja in parallel until each phase is proven, then cancel.
 
+## Principles (Tony, 17 Oct 2026)
+
+- **Build it the way Tony works, not the way Studio Ninja works.** Studio Ninja forced
+  compromises; the exports are a starting point, not a spec. Re-plan each workflow from what
+  Tony actually does now (e.g. weddings: plan and practice shoot about **6 weeks** before, then a
+  chat about the plan for the day **1 week** before), and tidy the templates to match.
+- **Emails match the website's style:** same fonts, champagne/green palette, leaf-corner shapes
+  and buttons, so an email from Tony feels like part of momentsinlight.co.nz. Kept simple enough
+  to read well in Gmail, Outlook and on phones, and to look like a personal email rather than a
+  newsletter.
+- **A better signature:** Studio Ninja's is just "Tony", phone number and the logo. The new one
+  is designed with the site: name, role, phone, website, the logo, and perhaps a small photo or
+  social links.
+
 ## Decisions
 
 - **Hosting:** Cloudflare.

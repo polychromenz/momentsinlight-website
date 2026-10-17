@@ -162,11 +162,14 @@ just from the shoot date.
 
 - **Portrait, family and headshot email templates** (initial enquiry response and follow-ups,
   thanks for booking, pre-shoot reminder, post-shoot email), if they differ from the wedding ones.
-- **Email signature** text.
 - **Payment schedule 10/40/50:** when each part is due (e.g. 10% on booking, 40% at…, 50% before
   the wedding?).
 - **Products & Packages** list (if anything beyond the two wedding packages is used).
 - Which contract goes to which couples (standard vs "no ads" vs NZIPP).
+
+## Signature
+
+Studio Ninja's signature: "Tony", phone number, and the ML Moments in Light logo (applied to every email). To be redesigned (see the plan's Principles).
 
 ## Things noticed (to confirm with Tony)
 
@@ -175,6 +178,7 @@ just from the shoot date.
   and $3,995 are right.** Use these in the new quotes.
 - **Contract clause 2** refers to "Section 11" for force majeure, which is clause **10** in both
   wedding contracts.
+- **Wedding timings have moved on from the templates:** Tony now plans the day and does the practice shoot about 6 weeks before, then chats again about the plan 1 week before. Email 04 says "about 6 weeks", the workflow sends 05 at 1 month. Re-plan from how Tony works now.
 - The contract email cites NZIPP standard terms sections 14 and 15, but the standard wedding
   contract is Tony's own 20 clauses (the NZIPP terms are a separate contract).
 - Email 08 and 10 have no `%client_name%` greeting (08 starts "Wow, what a wedding!!", 10 "Hi
