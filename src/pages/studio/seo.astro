@@ -49,6 +49,7 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
       <div class="card-head"><h2>Site health check</h2><button type="button" class="s-btn s-btn--quiet" data-health>Run it now</button></div>
       <p class="hint">Every page checked for Google titles and descriptions, photos without descriptions, headings and broken links. Runs by itself on the 2nd of each month.</p>
       <div class="health-body"><p class="muted">Loading…</p></div>
+      <div class="fix-bar" hidden><span class="fix-count"></span><button type="button" class="s-btn s-btn--solid" data-fix-save>Save changes</button></div>
     </section>
   </main>
   <div class="s-toast" role="status"></div>
@@ -127,20 +128,96 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
       <ul class="list">${(d.not_blogged ?? []).map((j: any) => `<li><span class="what">${j.id ? `<a href="/studio/crm/job?id=${j.id}">${esc(j.couple)}</a>` : `<strong>${esc(j.couple)}</strong>`}<br><small>Wedding ${new Date(`${j.event_date}T12:00:00Z`).toLocaleDateString('en-NZ', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' })}${j.venue ? ` · ${esc(j.venue)}` : ''}</small></span><a class="s-btn s-btn--quiet" href="${esc(draftWedding(j))}">Write it</a></li>`).join('') || '<li class="muted">All caught up.</li>'}</ul>`;
   }
 
+  // ---- Site health: fixing things here ----
+  let healthSummary: any = null;
+  const fixes = new Map<string, any>(); // "path|src" or "path|page" -> the change
+  const updateBar = () => {
+    const n = [...fixes.values()].filter((c) => (c.src ? c.alt?.trim() : c.title?.trim() || c.description?.trim())).length;
+    $('.fix-bar').hidden = !n;
+    $('.fix-count').textContent = `${n} change${n === 1 ? '' : 's'} ready to save`;
+  };
+  const thumb = (src: string) => src.replace(/\/(public(\.webp)?|w=[^/]*)$/, '/w=240');
+  const kindFor = (path: string) => (/portrait/.test(path) ? 'portrait' : /family/.test(path) ? 'family' : /blog\/(how|tips|wedding-|finding|confetti|engagement|invites|planning|crafting|the-magic|vintage|choosing|discover|we-are)/.test(path) ? 'article' : 'wedding');
+  const fixBtn = (path: string, what: 'photos' | 'page') => `<button type="button" class="fix-btn" data-fix="${what}" data-path="${esc(path)}">Fix</button>`;
+  async function openFix(btn: HTMLButtonElement) {
+    const li = btn.closest('li')!;
+    const existing = li.querySelector('.fix-panel');
+    if (existing) { existing.remove(); return; }
+    const path = btn.dataset.path!;
+    const what = btn.dataset.fix;
+    const photos = what === 'photos' ? (healthSummary.noAlt.find((x: any) => x.path === path)?.photos ?? []) : [];
+    const panel = document.createElement('div');
+    panel.className = 'fix-panel';
+    panel.innerHTML = '<p class="muted">Loading…</p>';
+    li.append(panel);
+    if (what === 'photos' && !photos.length) { panel.innerHTML = '<p class="muted">Click “Run it now” first, so the check notes which photos these are.</p>'; return; }
+    const { ok, d } = await post({ action: 'fix_info', path, photos });
+    if (!ok) { panel.innerHTML = `<p class="note">${esc(d.error || 'Couldn’t open it.')}</p>`; return; }
+    if (what === 'photos') {
+      panel.innerHTML = d.photos.map((p: any) => `<div class="fix-photo" data-src="${esc(p.src)}"><img src="${esc(thumb(p.src))}" alt="" loading="lazy">
+        ${p.editable ? `<div class="fix-fields"><textarea rows="2" maxlength="250" placeholder="What’s in the photo, in a sentence" data-alt>${esc(fixes.get(`${path}|${p.src}`)?.alt ?? p.alt)}</textarea>
+        <div class="fix-actions"><button type="button" class="s-btn s-btn--quiet" data-suggest>✨ Suggest</button>${p.post ? `<small class="muted">In “${esc(p.post)}”</small>` : ''}</div></div>` : `<p class="muted">${esc(p.why)}</p>`}</div>`).join('')
+        + (d.photos.filter((p: any) => p.editable).length > 1 ? '<button type="button" class="s-btn s-btn--quiet" data-suggest-all>✨ Suggest them all</button>' : '');
+    } else {
+      const p = d.page;
+      const c = fixes.get(`${path}|page`) ?? {};
+      panel.innerHTML = p.editable ? `<label>Google title <small class="cnt"></small><input data-title maxlength="120" value="${esc(c.title ?? p.title)}"></label>
+        <label>Google description <small class="cnt"></small><textarea data-desc rows="3" maxlength="320">${esc(c.description ?? p.description)}</textarea></label>
+        ${p.editor ? `<a class="s-btn s-btn--quiet" href="${esc(p.editor)}">Open in the post editor</a>` : ''}` : `<p class="muted">${esc(p.why)}</p>`;
+      panel.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>('[data-title], [data-desc]').forEach((el) => count(el));
+    }
+    panel.dataset.path = path;
+  }
+  function count(el: HTMLInputElement | HTMLTextAreaElement) {
+    const n = el.value.trim().length;
+    const [lo, hi] = el.matches('[data-title]') ? [30, 60] : [120, 155];
+    const c = el.closest('label')!.querySelector('.cnt')!;
+    c.textContent = `${n} (aim for ${lo}–${hi})`;
+    c.className = `cnt ${n >= lo && n <= hi ? 'up' : 'down'}`;
+  }
+  async function suggest(row: HTMLElement) {
+    const btn = row.querySelector<HTMLButtonElement>('[data-suggest]')!;
+    const path = row.closest<HTMLElement>('.fix-panel')!.dataset.path!;
+    btn.disabled = true; btn.textContent = 'Looking…';
+    const r = await fetch('/api/studio/describe', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ src: row.dataset.src, kind: kindFor(path) }) });
+    const d = await r.json().catch(() => ({}));
+    btn.disabled = false; btn.textContent = '✨ Suggest';
+    if (!r.ok) { toast(d.error || 'No suggestion came back.', true); return; }
+    const ta = row.querySelector<HTMLTextAreaElement>('[data-alt]')!;
+    ta.value = d.description;
+    fixes.set(`${path}|${row.dataset.src}`, { path, src: row.dataset.src, alt: ta.value });
+    updateBar();
+  }
+  document.addEventListener('input', (e) => {
+    const el = e.target as HTMLElement;
+    const panel = el.closest<HTMLElement>('.fix-panel');
+    if (!panel) return;
+    const path = panel.dataset.path!;
+    if (el.matches('[data-alt]')) {
+      const src = el.closest<HTMLElement>('.fix-photo')!.dataset.src!;
+      fixes.set(`${path}|${src}`, { path, src, alt: (el as HTMLTextAreaElement).value });
+    } else if (el.matches('[data-title], [data-desc]')) {
+      count(el as HTMLInputElement);
+      fixes.set(`${path}|page`, { path, title: panel.querySelector<HTMLInputElement>('[data-title]')!.value, description: panel.querySelector<HTMLTextAreaElement>('[data-desc]')!.value });
+    }
+    updateBar();
+  });
+
   async function loadHealth() {
     const { d } = await api('health');
     const b = $('.health-body');
     if (d.none) { b.innerHTML = '<p class="muted">Not run yet. Click “Run it now”.</p>'; return; }
     if (!d.finished) { b.innerHTML = `<p>Checking… ${d.done} of ${d.pages.length} pages.</p>`; return; }
     const s = d.summary;
+    healthSummary = s;
     const sec = (title: string, items: string[], good: string) => `<details${items.length ? ' open' : ''}><summary>${items.length ? `<b class="down">${items.length}</b>` : '<b class="up">✓</b>'} ${title}</summary>${items.length ? `<ul>${items.slice(0, 40).map((i) => `<li>${i}</li>`).join('')}</ul>` : `<p class="muted">${good}</p>`}</details>`;
     const link = (p: string) => `<a href="https://www.momentsinlight.co.nz${esc(p)}" target="_blank" rel="noopener">${esc(p)}</a>`;
     b.innerHTML = `<p class="hint">${s.pages} pages checked, ${new Date(d.started).toLocaleDateString('en-NZ', { day: 'numeric', month: 'long' })}.</p>
       ${sec('Broken links', s.broken.map((x: any) => `${esc(x.link)} <small>(on ${x.from.map(link).join(', ')})</small>`), 'No broken links.')}
-      ${sec('Pages without a good Google description', s.noDesc.map(link), 'Every page has one.')}
-      ${sec('Google titles too short or too long', s.shortTitles.map((x: any) => `${link(x.path)} <small>“${esc(x.title)}” (${x.title.length})</small>`), 'All good.')}
-      ${sec('Same title on more than one page', s.dupTitles.map((x: any) => `“${esc(x.title)}” <small>${x.pages.map(link).join(', ')}</small>`), 'All different.')}
-      ${sec('Photos without a description', s.noAlt.map((x: any) => `${link(x.path)} <small>${x.count} of ${x.of}</small>`), 'Every photo has one.')}
+      ${sec('Pages without a good Google description', s.noDesc.map((p: string) => `${link(p)} ${fixBtn(p, 'page')}`), 'Every page has one.')}
+      ${sec('Google titles too short or too long', s.shortTitles.map((x: any) => `${link(x.path)} <small>“${esc(x.title)}” (${x.title.length})</small> ${fixBtn(x.path, 'page')}`), 'All good.')}
+      ${sec('Same title on more than one page', s.dupTitles.flatMap((x: any) => x.pages.map((p: string) => `${link(p)} <small>“${esc(x.title)}”, also on ${x.pages.length - 1} other page${x.pages.length > 2 ? 's' : ''}</small> ${fixBtn(p, 'page')}`)), 'All different.')}
+      ${sec('Photos without a description', s.noAlt.map((x: any) => `${link(x.path)} <small>${x.count} of ${x.of}</small> ${fixBtn(x.path, 'photos')}`), 'Every photo has one.')}
       ${sec('Pages without exactly one main heading', s.h1.map((x: any) => `${link(x.path)} <small>${x.h1} headings</small>`), 'All good.')}`;
   }
 
@@ -179,6 +256,29 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
 
   document.addEventListener('click', async (e) => {
     const t = e.target as HTMLElement;
+    const fb = t.closest<HTMLButtonElement>('[data-fix]');
+    if (fb) { e.preventDefault(); await openFix(fb); return; }
+    const sg = t.closest<HTMLButtonElement>('[data-suggest]');
+    if (sg) { await suggest(sg.closest<HTMLElement>('.fix-photo')!); return; }
+    const sa = t.closest<HTMLButtonElement>('[data-suggest-all]');
+    if (sa) {
+      sa.disabled = true;
+      const rows = [...sa.closest<HTMLElement>('.fix-panel')!.querySelectorAll<HTMLElement>('.fix-photo')].filter((r) => r.querySelector('[data-alt]') && !(r.querySelector<HTMLTextAreaElement>('[data-alt]')!.value.trim()));
+      for (const r of rows) await suggest(r);
+      sa.disabled = false; return;
+    }
+    if (t.closest('[data-fix-save]')) {
+      const btn = t.closest<HTMLButtonElement>('[data-fix-save]')!;
+      const changes = [...fixes.values()].filter((c) => (c.src ? c.alt?.trim() : c.title?.trim() || c.description?.trim()));
+      if (!changes.length) return;
+      btn.disabled = true; btn.textContent = 'Saving…';
+      const { ok, d } = await post({ action: 'fix_save', changes });
+      btn.disabled = false; btn.textContent = 'Save changes';
+      if (!ok) { toast(d.error || 'Couldn’t save.', true); return; }
+      fixes.clear(); updateBar();
+      toast(`Saved ${[d.photos && `${d.photos} photo description${d.photos === 1 ? '' : 's'}`, d.pages && `${d.pages} page${d.pages === 1 ? '' : 's'}`].filter(Boolean).join(' and ')}. The website updates in about 2 minutes.`);
+      await loadHealth(); return;
+    }
     const sb = t.closest<HTMLButtonElement>('[data-sort]');
     if (sb) {
       const k = sb.dataset.sort!;
@@ -270,7 +370,19 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
   .seo a.chip { text-decoration: none; white-space: nowrap; }
   .seo a.chip.idea:hover { background: var(--green); color: var(--white); }
   .seo .s-btn.danger { color: #a8432a; }
-  .seo details.ckw { margin: 4px 0 8px; } .seo details.ckw summary { font-size: 13px; color: var(--green); }
+  .seo details.ckw { margin: 4px 0 8px; }
+  .seo .fix-btn { margin-left: 6px; border: 1px solid #ddd3c4; background: var(--white); border-radius: 8px 0; padding: 1px 9px; font: inherit; font-size: 12px; color: var(--green); cursor: pointer; }
+  .seo .fix-btn:hover { background: var(--green); color: var(--white); }
+  .seo .fix-panel { margin: 8px 0 12px; padding: 12px; background: #faf6ee; border-radius: 14px 0; display: flex; flex-direction: column; gap: 10px; }
+  .seo .fix-panel label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: #555; }
+  .seo .fix-panel input, .seo .fix-panel textarea { font: inherit; font-size: 14px; padding: 8px 10px; border: 1px solid #ddd3c4; border-radius: 8px 0; background: var(--white); width: 100%; box-sizing: border-box; }
+  .seo .fix-photo { display: flex; gap: 12px; align-items: flex-start; }
+  .seo .fix-photo img { width: 120px; height: 90px; object-fit: cover; border-radius: 8px 0; flex: none; background: #eee; }
+  .seo .fix-fields { flex: 1; display: flex; flex-direction: column; gap: 6px; }
+  .seo .fix-actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .seo .fix-bar { position: sticky; bottom: 12px; display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-top: 12px; padding: 10px 14px; background: var(--white); border: 1px solid #ddd3c4; border-radius: 14px 0; box-shadow: 0 10px 28px -16px rgb(0 0 0 / 0.4); }
+  .seo .fix-bar[hidden] { display: none; }
+  @media (max-width: 600px) { .seo .fix-photo { flex-direction: column; } .seo .fix-photo img { width: 100%; height: 160px; } } .seo details.ckw summary { font-size: 13px; color: var(--green); }
   .seo .card-head > span { display: flex; gap: 6px; flex-wrap: wrap; }
   .seo .card h2 { margin: 0 0 8px; font-weight: 300; font-size: 22px; color: var(--ink); }
   .seo .card h3 { margin: 22px 0 6px; font-size: 12px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--green); }

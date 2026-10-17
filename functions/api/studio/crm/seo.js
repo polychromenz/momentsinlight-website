@@ -8,10 +8,13 @@
 //                         { action: 'competitor_keywords', id }  the searches they rank for (DataForSEO)
 //                         { action: 'track', keywords: [...] }   add searches to the tracked list
 //                         { action: 'competitor_remove', id }    remove a competitor (and what was saved about them)
+//                         { action: 'fix_info', path, photos }   what can be fixed on a page (site health > Fix)
+//                         { action: 'fix_save', changes }        save fixes: [{ path, src, alt } | { path, title, description }]
 import { json } from '../../../../functions-lib/studio.js';
 import { gscReady, searchReport, trackedKeywords, keywordIdeas, venueIdeas, contentStatus, siteHealth, seoSettings, saveSeoSettings, competitorReport, checkCompetitor } from '../../../../functions-lib/seo.js';
 import { connection } from '../../../../functions-lib/gmail.js';
 import { competitorKeywords } from '../../../../functions-lib/rankings.js';
+import { fixInfo, saveFixes, markFixed } from '../../../../functions-lib/seo-fix.js';
 
 export async function onRequestGet({ request, env }) {
   const part = new URL(request.url).searchParams.get('part');
@@ -53,6 +56,13 @@ export async function onRequestPost({ request, env }) {
       const c = await env.DB.prepare(`SELECT id, business, website FROM contacts WHERE id = ?1 AND type = 'Competitor'`).bind(Number(d.id)).first();
       if (!c) return json({ error: 'That competitor doesn’t exist.' }, 404);
       return json(await competitorKeywords(env, c));
+    }
+    if (d.action === 'fix_info') return json(await fixInfo(env, String(d.path || '/'), Array.isArray(d.photos) ? d.photos.map(String) : []));
+    if (d.action === 'fix_save') {
+      const changes = (Array.isArray(d.changes) ? d.changes : []).slice(0, 200).map((c) => ({ path: String(c.path || '/'), src: c.src ? String(c.src) : undefined, alt: c.alt, title: c.title, description: c.description }));
+      const r = await saveFixes(env, changes);
+      await markFixed(env.DB, changes);
+      return json(r);
     }
     if (d.action === 'competitor_remove') {
       const id = Number(d.id);
