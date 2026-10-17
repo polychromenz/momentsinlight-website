@@ -2,6 +2,25 @@
 // steps, and alert emails to Tony. Data lives in the site's D1 database (bound as DB); see
 // migrations/0002_crm.sql and docs/studio-crm-wedding-workflow.md.
 
+// ---- Test mode: the safety lock on client emails ----
+// Until Tony switches the CRM on for real (Cloudflare setting CRM_SEND_MODE = "live", set by
+// Tony on switch-over day), every client email is redirected to him instead, with a note saying
+// who it would have gone to. Missing or any other value = test mode. EVERY client email must go
+// through outgoing() below; nothing else may choose a recipient.
+export const SAFE_RECIPIENTS = ['tony@momentsinlight.co.nz', 'polychromenz@gmail.com'];
+
+export const sendMode = (env) => (env.CRM_SEND_MODE === 'live' ? 'live' : 'test');
+
+/** The email as it will really be sent: unchanged in live mode (or to a safe address); in test
+ *  mode, anything for anyone else goes to Tony with "TEST" on it. */
+export function outgoing(env, { to, subject, html }) {
+  const intended = String(to ?? '').trim().toLowerCase();
+  if (sendMode(env) === 'live' || SAFE_RECIPIENTS.includes(intended)) return { to: intended, subject, html, redirected: false, intended };
+  const note = `<div style="margin:0 0 16px;padding:12px 16px;background:#fff4d6;border:1px solid #e0c46c;border-radius:10px 0;font-family:Arial,sans-serif;font-size:14px;color:#5c4400">
+<strong>TEST MODE</strong>: this email would have gone to <strong>${intended.replace(/[<>&"]/g, '')}</strong>. The studio is in test mode, so it came to you instead.</div>`;
+  return { to: SAFE_RECIPIENTS[0], subject: `[TEST → ${intended}] ${subject}`, html: html.includes('<body') ? html.replace(/<body([^>]*)>/, `<body$1>${note}`) : note + html, redirected: true, intended };
+}
+
 const HOUR = 3600_000;
 const DAY = 24 * HOUR;
 

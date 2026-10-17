@@ -9,6 +9,7 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
   <span slot="bar" class="save-state" aria-live="polite"></span>
   <button slot="bar" type="button" class="s-btn s-btn--solid" data-act="save" disabled>Save</button>
 
+<div class="test-banner" hidden><strong>TEST MODE</strong>: client emails are redirected to you, nothing reaches a client. It switches to live only when you set CRM_SEND_MODE to “live” in Cloudflare.</div>
   <main class="job-page">
     <p class="status" aria-live="polite">Loading…</p>
     <div class="content" hidden>
@@ -89,6 +90,7 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
     const r = await fetch(`/api/studio/crm/job?id=${id}`);
     const d = await r.json();
     if (!r.ok) { $('.status').textContent = d.error || `Something went wrong (${r.status}).`; return; }
+    $('.test-banner').hidden = d.mode === 'live';
     const j = d.job;
     document.title = `${j.title} · Moments Studio`;
     $('.title').textContent = j.title;
@@ -163,6 +165,7 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
 </script>
 
 <style is:global>
+  .test-banner { background: #fff4d6; color: #5c4400; border-bottom: 1px solid #e0c46c; padding: 10px clamp(14px, 3vw, 32px); font-size: 14px; line-height: 1.5; }
   .studio-bar .save-state { font-size: 13px; color: #888; }
   .job-page { max-width: 1100px; margin: 0 auto; padding: 28px clamp(14px, 3vw, 32px) 80px; }
   .job-page .status { color: #666; }

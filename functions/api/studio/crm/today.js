@@ -3,6 +3,7 @@
 // "Today" = Tony's to-dos and ready-to-send emails that are due (or overdue), plus any automatic
 // email that failed. "Coming up" = the next 14 days of planned steps.
 import { json } from '../../../../functions-lib/studio.js';
+import { sendMode } from '../../../../functions-lib/crm.js';
 
 export async function onRequestGet({ env }) {
   if (!env.DB) return json({ error: 'The database isn’t connected (DB binding).' }, 500);
@@ -25,5 +26,5 @@ export async function onRequestGet({ env }) {
        WHERE j.stage IN ('lead', 'booked') ORDER BY j.created_at DESC LIMIT 200`,
     ).all(),
   ]);
-  return json({ today: today.results, upcoming: upcoming.results, jobs: jobs.results });
+  return json({ mode: sendMode(env), today: today.results, upcoming: upcoming.results, jobs: jobs.results });
 }

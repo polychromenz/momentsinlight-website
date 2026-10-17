@@ -8,6 +8,7 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
   <a slot="bar" class="s-btn s-btn--quiet" href="/studio/reviews">★ Reviews</a>
   <a slot="bar" class="s-btn s-btn--quiet" href="/studio/stats">📈 Stats</a>
 
+<div class="test-banner" hidden><strong>TEST MODE</strong>: client emails are redirected to you, nothing reaches a client. It switches to live only when you set CRM_SEND_MODE to “live” in Cloudflare.</div>
   <main class="crm">
     <p class="status" aria-live="polite">Loading…</p>
     <div class="content" hidden>
@@ -76,6 +77,7 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
       if (!r.ok) throw new Error(d.error || `Something went wrong (${r.status}).`);
       $('.today').innerHTML = d.today.length ? d.today.map((s: Step) => stepRow(s, true)).join('') : '<li class="empty">Nothing due. Enjoy your day!</li>';
       $('.upcoming').innerHTML = d.upcoming.length ? d.upcoming.map((s: Step) => stepRow(s, false)).join('') : '<li class="empty">Nothing planned in the next two weeks.</li>';
+      $('.test-banner').hidden = d.mode === 'live';
       jobs = d.jobs;
       renderJobs();
       $('.content').hidden = false;
@@ -106,6 +108,7 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
 </script>
 
 <style is:global>
+  .test-banner { background: #fff4d6; color: #5c4400; border-bottom: 1px solid #e0c46c; padding: 10px clamp(14px, 3vw, 32px); font-size: 14px; line-height: 1.5; }
   .crm { max-width: 1100px; margin: 0 auto; padding: 28px clamp(14px, 3vw, 32px) 80px; }
   .crm .status { color: #666; }
   .crm .card { background: var(--white); border-radius: 24px 0; padding: 20px 24px; margin-bottom: 16px; }

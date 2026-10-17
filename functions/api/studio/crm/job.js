@@ -3,6 +3,7 @@
 //   PUT  /api/studio/crm/job            { id, ...fields } update the details Tony can edit
 // Marking a lead booked or lost stops any steps waiting on that ('booked' in stop_on).
 import { json } from '../../../../functions-lib/studio.js';
+import { sendMode } from '../../../../functions-lib/crm.js';
 
 const STAGES = ['lead', 'booked', 'completed', 'lost'];
 
@@ -19,7 +20,7 @@ export async function onRequestGet({ request, env }) {
     env.DB.prepare('SELECT id, direction, subject, body, sent_at FROM messages WHERE job_id = ?1 ORDER BY sent_at DESC').bind(id).all(),
     env.DB.prepare('SELECT id, title, job_type, stage, event_date FROM jobs WHERE client_id = ?1 AND id <> ?2 ORDER BY created_at DESC').bind(job.client_id, id).all(),
   ]);
-  return json({ job, steps: steps.results, messages: messages.results, otherJobs: others.results });
+  return json({ mode: sendMode(env), job, steps: steps.results, messages: messages.results, otherJobs: others.results });
 }
 
 export async function onRequestPut({ request, env }) {

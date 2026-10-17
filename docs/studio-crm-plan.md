@@ -114,6 +114,21 @@ Rebuild Studio Ninja-style workflows: scheduled actions relative to job dates.
   happy and ready to leave Studio Ninja, its form moves onto /contact and `/newcontact` is
   removed (redirected to /contact).
 
+## Client safety during development (Tony, 17 Oct 2026)
+
+Tony can't risk the development system emailing real clients. So:
+
+1. **No client data until the switch.** Studio Ninja's clients are imported only at the very end,
+   as the last step before cancelling. Until then the CRM holds test enquiries only.
+2. **One way in.** Only the hidden /newcontact form creates leads; the real /contact page keeps
+   sending enquiries to Studio Ninja.
+3. **Test-mode lock** (`functions-lib/crm.js`, `outgoing()`): every client email goes through one
+   function. Unless the Cloudflare setting `CRM_SEND_MODE` is exactly `live`, any email for
+   anyone other than tony@momentsinlight.co.nz or polychromenz@gmail.com is redirected to Tony,
+   subject "[TEST → their address] …" and a note at the top saying who it would have gone to.
+   Missing setting = test mode. **Only Tony sets it to live, on switch-over day.**
+4. A **TEST MODE banner** shows across the studio's Clients pages while the lock is on.
+
 ## Build phases
 
 1. **Enquiries:** own enquiry form, tested on `/newcontact` (Turnstile spam protection, as on the
