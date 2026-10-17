@@ -1,5 +1,6 @@
 // The couple's invoice page (/invoice?t=…) talks to this. Public, but each invoice is only
-// reachable with its long random token.
+// reachable with its long random token. Invoices not emailed yet open too (the link is in the
+// PDF), so a couple can pay early; a paid invoice is never emailed later.
 //   GET  /api/invoice?t=…          the invoice (and bank transfer details)
 //   GET  /api/invoice?t=…&pdf=1    the invoice PDF (a receipt once paid)
 //   POST /api/invoice  { t }       a Stripe Checkout page to pay by card → { url }
@@ -14,7 +15,7 @@ const find = (env, t) => (/^[a-f0-9]{48}$/.test(t || '') ? env.DB.prepare('SELEC
 export async function onRequestGet({ request, env }) {
   const url = new URL(request.url);
   const inv = await find(env, url.searchParams.get('t'));
-  if (!inv || inv.status === 'void' || inv.status === 'scheduled') return reply({ error: 'This invoice isn’t available. Please get in touch with Tony.' }, 404);
+  if (!inv || !inv.status || inv.status === 'void') return reply({ error: 'This invoice isn’t available. Please get in touch with Tony.' }, 404);
   const job = await loadJob(env.DB, inv.job_id);
   const pay = await paymentSettings(env.DB);
   if (url.searchParams.has('pdf')) {
@@ -34,7 +35,7 @@ export async function onRequestGet({ request, env }) {
 export async function onRequestPost({ request, env }) {
   const d = await request.json().catch(() => null);
   const inv = await find(env, d?.t);
-  if (!inv || inv.status !== 'sent') return reply({ error: inv?.status === 'paid' ? 'This invoice is already paid. Thank you!' : 'This invoice isn’t available.' }, 409);
+  if (!inv || !['sent', 'scheduled'].includes(inv.status)) return reply({ error: inv?.status === 'paid' ? 'This invoice is already paid. Thank you!' : 'This invoice isn’t available.' }, 409);
   try {
     return reply({ url: await checkout(env, inv, await loadJob(env.DB, inv.job_id)) });
   } catch (e) {
