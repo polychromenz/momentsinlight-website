@@ -6,10 +6,12 @@
 // Spam protection as on the guide signup: a hidden "website" field bots fill in, plus
 // Cloudflare Turnstile when TURNSTILE_SECRET_KEY is set.
 import { planEnquirySteps, alertTony, WORKFLOWS } from '../../functions-lib/crm.js';
+import { clashes, clashText, syncSoon } from '../../functions-lib/calendar.js';
 
 const reply = (data, status = 200) => new Response(JSON.stringify(data), { status, headers: { 'content-type': 'application/json' } });
 
-export async function onRequestPost({ request, env }) {
+export async function onRequestPost(context) {
+  const { request, env } = context;
   let form;
   try { form = await request.formData(); } catch { return reply({ error: 'Sorry, that didn’t come through. Please try again.' }, 400); }
 
@@ -92,11 +94,16 @@ export async function onRequestPost({ request, env }) {
   }
 
   const nzDate = new Date(`${f.date}T12:00:00Z`).toLocaleDateString('en-NZ', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
-  await alertTony(env, `New ${f.service.toLowerCase()} enquiry: ${f.first} ${f.last}`, [
+  // Is the date already taken (booked), or wanted by another lead?
+  const clash = await clashes(env.DB, f.date, jobId).catch(() => []);
+  const booked = clash.some((c) => c.stage === 'booked');
+  await alertTony(env, `${clash.length ? (booked ? '⚠ Date already booked · ' : '⚠ Date clash · ') : ''}New ${f.service.toLowerCase()} enquiry: ${f.first} ${f.last}`, [
+    ...(clash.length ? [['⚠ Date clash', clashText(clash)]] : []),
     ['Name', `${f.first} ${f.last}`], ['Email', f.email], ['Phone', f.phone], ['Service', f.service], ['Date', nzDate],
     ['Venue', f.venue], ['Heard via', f.source], ['Message', f.message],
     ['Next', workflow ? 'Enquiry response (01) goes automatically in about an hour.' : 'No workflow for this type yet: reply from the studio.'],
   ], new URL(`/studio/crm/job?id=${jobId}`, request.url).href);
+  syncSoon(context, jobId);
 
   return reply({ ok: true });
 }

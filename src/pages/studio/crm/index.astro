@@ -80,7 +80,7 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
       $('.today').innerHTML = d.today.length ? d.today.map((s: Step) => stepRow(s, true)).join('') : '<li class="empty">Nothing due. Enjoy your day!</li>';
       $('.upcoming').innerHTML = d.upcoming.length ? d.upcoming.map((s: Step) => stepRow(s, false)).join('') : '<li class="empty">Nothing planned in the next two weeks.</li>';
       $('.test-banner').hidden = d.mode === 'live';
-      $('.gmail-state').innerHTML = d.gmail ? `Gmail: <strong>connected</strong> as ${esc(d.gmail.email || 'your account')}` : 'Gmail: <strong>not connected</strong>. Connect it so the studio can send emails from your address.';
+      $('.gmail-state').innerHTML = d.gmail ? `Gmail: <strong>connected</strong> as ${esc(d.gmail.email || 'your account')} · Google Calendar: ${d.gmail.calendar ? '<strong>connected</strong>' : '<strong>not yet</strong> (press Reconnect and allow the calendar)'}` : 'Gmail: <strong>not connected</strong>. Connect it so the studio can send emails from your address (and fill your Google Calendar).';
       $('[data-connect]').textContent = d.gmail ? 'Reconnect' : 'Connect Gmail';
       $<HTMLButtonElement>('[data-gmail-test]').hidden = !d.gmail;
       jobs = d.jobs;

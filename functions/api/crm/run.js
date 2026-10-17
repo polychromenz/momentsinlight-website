@@ -10,11 +10,13 @@
 //      Today and Tony gets an alert.
 //   3. Tidies steps stuck mid-send (e.g. a crash) into "Didn't send" after 30 minutes.
 //   4. Sends invoices on their send dates; 5. reminders on the due date and 3 days late.
+//   6. Google Calendar: copies over any job that changed and didn't sync straight away.
 // Ready-to-send emails and to-dos need nothing here: they appear on Today when due.
 import { sendStep } from '../../../functions-lib/crm-send.js';
 import { thread, connection } from '../../../functions-lib/gmail.js';
 import { alertTony } from '../../../functions-lib/crm.js';
 import { sendInvoice } from '../../../functions-lib/invoices.js';
+import { calendarReady, syncJob } from '../../../functions-lib/calendar.js';
 
 const reply = (data, status = 200) => new Response(JSON.stringify(data), { status, headers: { 'content-type': 'application/json' } });
 const stops = (step, ev) => (',' + step.stop_on + ',').includes(`,${ev},`);
@@ -119,6 +121,15 @@ export async function onRequestPost({ request, env }) {
       log.reminders++;
     } catch (e) {
       console.error('crm run: reminder', inv.number, e.message);
+    }
+  }
+
+  // 6. Google Calendar catch-up (a few at a time).
+  log.calendar = 0;
+  if (await calendarReady(db)) {
+    const stale = await db.prepare('SELECT id FROM jobs WHERE gcal_synced_at IS NULL OR gcal_synced_at < updated_at ORDER BY updated_at DESC LIMIT 15').all();
+    for (const { id } of stale.results) {
+      try { await syncJob(env, id); log.calendar++; } catch (e) { console.error('crm run: calendar', id, e.message); break; }
     }
   }
 

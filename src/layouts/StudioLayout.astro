@@ -8,12 +8,13 @@ import '@fontsource/raleway/500.css';
 import '@fontsource/raleway/600.css';
 import '../styles/global.css';
 
-type Section = 'dashboard' | 'clients' | 'blog' | 'reviews' | 'stats' | 'settings';
+type Section = 'dashboard' | 'clients' | 'calendar' | 'blog' | 'reviews' | 'stats' | 'settings';
 interface Props { title: string; section?: Section }
 const { title, section } = Astro.props;
 const menu: [Section, string, string][] = [
   ['dashboard', 'Dashboard', '/studio'],
   ['clients', 'Clients', '/studio/crm'],
+  ['calendar', 'Calendar', '/studio/calendar'],
   ['blog', 'Blog', '/studio/blog'],
   ['reviews', 'Reviews', '/studio/reviews'],
   ['stats', 'Stats', '/studio/stats'],

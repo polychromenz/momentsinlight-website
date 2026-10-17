@@ -11,7 +11,9 @@
 // crm.js) before anything leaves; nothing else in the CRM sends client email.
 import { outgoing } from './crm.js';
 
-export const SCOPES = ['https://www.googleapis.com/auth/gmail.send', 'https://www.googleapis.com/auth/gmail.readonly', 'openid', 'email'];
+// gmail.send/readonly: send as Tony and see replies. calendar.app.created: the studio's own
+// "Moments in Light" calendar only (functions-lib/calendar.js); it can't see his other calendars.
+export const SCOPES = ['https://www.googleapis.com/auth/gmail.send', 'https://www.googleapis.com/auth/gmail.readonly', 'https://www.googleapis.com/auth/calendar.app.created', 'openid', 'email'];
 export const REDIRECT = 'https://www.momentsinlight.co.nz/api/studio/crm/gmail-callback';
 
 // ---- Encrypting the refresh token (AES-GCM, key from the client secret via HKDF) ----
@@ -48,7 +50,8 @@ export async function saveConnection(db, value) {
 }
 
 let cached = { token: '', until: 0 };
-async function accessToken(env) {
+/** An access token for Google (Gmail, and the studio calendar). */
+export async function googleToken(env) {
   if (cached.token && Date.now() < cached.until) return cached.token;
   const c = await connection(env.DB);
   if (!c?.refresh) throw new Error('Gmail isn’t connected. Use “Connect Gmail” in the studio.');
@@ -65,7 +68,7 @@ async function accessToken(env) {
 /** A Gmail conversation's messages: id, when, who from, subject and a short snippet. */
 export async function thread(env, threadId) {
   const r = await fetch(`https://gmail.googleapis.com/gmail/v1/users/me/threads/${encodeURIComponent(threadId)}?format=metadata&metadataHeaders=From&metadataHeaders=Subject`, {
-    headers: { authorization: `Bearer ${await accessToken(env)}` },
+    headers: { authorization: `Bearer ${await googleToken(env)}` },
   });
   if (r.status === 404) return [];
   const d = await r.json().catch(() => ({}));
@@ -112,7 +115,7 @@ export async function sendEmail(env, msg) {
   parts.push(`--${boundary}--`, '');
   const r = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
     method: 'POST',
-    headers: { authorization: `Bearer ${await accessToken(env)}`, 'content-type': 'application/json' },
+    headers: { authorization: `Bearer ${await googleToken(env)}`, 'content-type': 'application/json' },
     body: JSON.stringify({ raw: b64url(parts.join('\r\n')), ...(msg.threadId ? { threadId: msg.threadId } : {}) }),
   });
   const d = await r.json().catch(() => ({}));

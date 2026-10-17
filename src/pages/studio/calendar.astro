@@ -1,0 +1,142 @@
+---
+// Moments Studio calendar: a month of wedding/shoot dates (leads and booked jobs) and
+// appointments, with a Leads / Jobs filter. A list instead of the grid on a phone. Clashing
+// dates are marked. Data from functions/api/studio/crm/calendar.js.
+import StudioLayout from '../../layouts/StudioLayout.astro';
+---
+<StudioLayout title="Calendar" section="calendar">
+  <main class="cal">
+    <div class="cal-tools">
+      <div class="cal-nav">
+        <button type="button" class="s-btn s-btn--quiet" data-move="-1" aria-label="Previous month">‹</button>
+        <h1 class="cal-title"></h1>
+        <button type="button" class="s-btn s-btn--quiet" data-move="1" aria-label="Next month">›</button>
+        <button type="button" class="s-btn s-btn--quiet" data-today>Today</button>
+      </div>
+      <div class="cal-filter" role="group" aria-label="Show">
+        <button type="button" data-show="all" class="on">All</button>
+        <button type="button" data-show="lead">Leads</button>
+        <button type="button" data-show="job">Jobs</button>
+      </div>
+    </div>
+    <p class="cal-google" hidden></p>
+    <div class="cal-grid" role="grid" aria-label="Month"></div>
+    <ul class="cal-list"></ul>
+    <p class="cal-key"><span class="ev ev--lead">Lead</span> wedding or shoot date not booked yet · <span class="ev ev--job">Job</span> booked · <span class="ev ev--appt">Appointment</span> · <span class="ev ev--clash">⚠</span> two on one date</p>
+  </main>
+</StudioLayout>
+
+<script>
+  const $ = <T extends HTMLElement = HTMLElement>(s: string) => document.querySelector<T>(s)!;
+  const esc = (s: unknown) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
+  const iso = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  const today = iso(new Date());
+  const params = new URLSearchParams(location.search);
+  let month = /^\d{4}-\d{2}$/.test(params.get('m') || '') ? new Date(`${params.get('m')}-01T00:00:00`) : new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+  let show = 'all';
+  let data: any = null;
+  const tm = (t: string | null) => (t ? new Date(`2000-01-01T${t}:00`).toLocaleTimeString('en-NZ', { hour: 'numeric', minute: '2-digit' }).replace(':00', '') : '');
+  const who = (title: string, partner: string) => (partner ? `${title.split(' ')[0]} & ${partner}` : title);
+
+  function items() {
+    const out: Record<string, string[]> = {};
+    const add = (date: string, html: string) => (out[date] ||= []).push(html);
+    for (const j of data.jobs) {
+      const kind = j.stage === 'lead' ? 'lead' : 'job';
+      if (show !== 'all' && show !== kind) continue;
+      add(j.event_date, `<a class="ev ev--${kind}${j.clash ? ' ev--clash' : ''}" href="/studio/crm/job?id=${j.id}" title="${esc(`${j.job_type}${j.venue ? ` · ${j.venue}` : ''}`)}"><b>${j.clash ? '⚠ ' : ''}${kind === 'lead' ? 'Lead' : esc(j.job_type)}</b> ${esc(who(j.title, j.partner_name))}</a>`);
+    }
+    for (const a of data.appointments) {
+      const kind = a.stage === 'lead' ? 'lead' : 'job';
+      if (show !== 'all' && show !== kind) continue;
+      add(a.date, `<a class="ev ev--appt" href="/studio/crm/job?id=${a.job_id}" title="${esc(a.location)}"><b>${a.start_time ? tm(a.start_time) : 'All day'}</b> ${esc(a.title)}: ${esc(who(a.job_title, a.partner_name))}</a>`);
+    }
+    return out;
+  }
+
+  function draw() {
+    $('.cal-title').textContent = month.toLocaleDateString('en-NZ', { month: 'long', year: 'numeric' });
+    const by = items();
+    // Weeks start on Monday.
+    const first = new Date(month); first.setDate(1 - ((month.getDay() + 6) % 7));
+    const cells: string[] = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((d) => `<div class="cal-dow" role="columnheader">${d}</div>`);
+    const d = new Date(first);
+    for (let i = 0; i < 42; i++) {
+      const key = iso(d);
+      const other = d.getMonth() !== month.getMonth();
+      if (i >= 35 && other && i % 7 === 0) break;
+      cells.push(`<div class="cal-day${other ? ' other' : ''}${key === today ? ' today' : ''}" role="gridcell"><span class="cal-n">${d.getDate()}</span>${(by[key] || []).join('')}</div>`);
+      d.setDate(d.getDate() + 1);
+    }
+    $('.cal-grid').innerHTML = cells.join('');
+    // The phone list: this month's days that have something.
+    const days = Object.keys(by).filter((k) => k.slice(0, 7) === iso(month).slice(0, 7)).sort();
+    $('.cal-list').innerHTML = days.map((k) => `<li><span class="cal-ld${k === today ? ' today' : ''}">${new Date(`${k}T12:00:00`).toLocaleDateString('en-NZ', { weekday: 'short', day: 'numeric' })}</span><span class="cal-li">${by[k].join('')}</span></li>`).join('') || '<li class="empty">Nothing this month.</li>';
+  }
+
+  async function load() {
+    const from = new Date(month); from.setDate(-7);
+    const to = new Date(month.getFullYear(), month.getMonth() + 1, 7);
+    history.replaceState(null, '', `?m=${iso(month).slice(0, 7)}`);
+    const r = await fetch(`/api/studio/crm/calendar?from=${iso(from)}&to=${iso(to)}`);
+    data = await r.json().catch(() => null);
+    if (!r.ok || !data) { $('.cal-grid').textContent = data?.error || 'Couldn’t load the calendar.'; return; }
+    const g = $('.cal-google');
+    g.hidden = data.google === 'on';
+    g.innerHTML = data.google === 'reconnect'
+      ? 'Google Calendar isn’t connected yet. <a href="/api/studio/crm/gmail-connect">Reconnect Google</a> and tick the calendar permission (it only gets a calendar of its own, “Moments in Light”).'
+      : 'Connect Gmail on the Clients page first; the calendar connects at the same time.';
+    draw();
+  }
+
+  document.addEventListener('click', (e) => {
+    const t = e.target as HTMLElement;
+    const mv = t.closest<HTMLButtonElement>('[data-move]');
+    if (mv) { month = new Date(month.getFullYear(), month.getMonth() + Number(mv.dataset.move), 1); load(); return; }
+    if (t.closest('[data-today]')) { month = new Date(new Date().getFullYear(), new Date().getMonth(), 1); load(); return; }
+    const sh = t.closest<HTMLButtonElement>('[data-show]');
+    if (sh) { show = sh.dataset.show!; document.querySelectorAll('[data-show]').forEach((b) => b.classList.toggle('on', b === sh)); draw(); }
+  });
+  load();
+</script>
+
+<style is:global>
+  .cal { max-width: 1300px; margin: 0 auto; padding: 24px clamp(14px, 3vw, 32px) 80px; }
+  .cal-tools { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+  .cal-nav { display: flex; align-items: center; gap: 6px; }
+  .cal-nav .s-btn { padding: 8px 14px; font-size: 16px; }
+  .cal-title { margin: 0 6px; min-width: 190px; text-align: center; font-weight: 300; font-size: 28px; color: var(--ink); }
+  .cal-filter { display: flex; gap: 6px; }
+  .cal-filter button { padding: 7px 14px; border: 1px solid #ddd3c4; border-radius: 999px; background: var(--white); font: inherit; font-size: 14px; cursor: pointer; }
+  .cal-filter button.on { background: var(--green); border-color: var(--green); color: var(--white); }
+  .cal-google { margin: 0 0 12px; padding: 10px 14px; background: #fff4d6; color: #5c4400; border-radius: 12px 0; font-size: 14px; }
+  .cal-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); background: var(--white); border-radius: 24px 0; overflow: hidden; border: 1px solid #ece4d7; animation: s-rise 0.8s var(--ease) both; }
+  .cal-dow { padding: 10px; font-size: 12px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--green); text-align: center; border-bottom: 1px solid #ece4d7; }
+  .cal-day { min-height: 118px; padding: 6px 6px 8px; border-right: 1px solid #f3eee6; border-bottom: 1px solid #f3eee6; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+  .cal-day:nth-child(7n + 7) { border-right: 0; }
+  .cal-day.other { background: #fcfaf7; }
+  .cal-day.other .cal-n { color: #c8c0b2; }
+  .cal-n { align-self: flex-end; font-size: 13px; color: #777; width: 26px; height: 26px; display: grid; place-items: center; border-radius: 50%; }
+  .cal-day.today .cal-n { background: var(--green); color: var(--white); }
+  .ev { display: block; padding: 4px 7px; border-radius: 8px 0; font-size: 12px; line-height: 1.35; color: var(--ink); text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; border-left: 3px solid; transition: border-radius 0.35s var(--ease), filter 0.2s; }
+  a.ev:hover { border-radius: 0 8px; filter: brightness(0.97); opacity: 1; }
+  .ev b { font-weight: 600; }
+  .ev--lead { background: #fbf3df; border-color: #d9b45c; }
+  .ev--job { background: #e9eddf; border-color: var(--green); }
+  .ev--appt { background: #eef0f7; border-color: #7d8ca8; }
+  .ev--clash { box-shadow: inset 0 0 0 1px #c46a4a; }
+  .cal-list { display: none; list-style: none; margin: 0; padding: 0; }
+  .cal-key { margin: 14px 0 0; font-size: 13px; color: #777; display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; }
+  .cal-key .ev { display: inline-block; white-space: normal; }
+  @media (max-width: 760px) {
+    .cal-grid { display: none; }
+    .cal-list { display: flex; flex-direction: column; gap: 8px; }
+    .cal-list li { display: flex; gap: 12px; background: var(--white); border-radius: 16px 0; padding: 10px 12px; animation: s-rise 0.6s var(--ease) both; }
+    .cal-list .empty { color: #888; }
+    .cal-ld { flex: 0 0 64px; font-size: 13px; color: #777; padding-top: 4px; }
+    .cal-ld.today { color: var(--green); font-weight: 600; }
+    .cal-li { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+    .cal-li .ev { white-space: normal; font-size: 13px; }
+    .cal-title { min-width: 0; font-size: 22px; }
+  }
+</style>

@@ -28,5 +28,5 @@ export async function onRequestGet({ env }) {
     ).all(),
     connection(env.DB),
   ]);
-  return json({ mode: sendMode(env), gmail: gmail ? { email: gmail.email, connected_at: gmail.connected_at } : null, today: today.results, upcoming: upcoming.results, jobs: jobs.results });
+  return json({ mode: sendMode(env), gmail: gmail ? { email: gmail.email, connected_at: gmail.connected_at, calendar: String(gmail.scopes || '').includes('calendar.app.created') } : null, today: today.results, upcoming: upcoming.results, jobs: jobs.results });
 }

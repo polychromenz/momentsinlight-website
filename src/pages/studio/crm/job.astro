@@ -17,6 +17,7 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
       <header class="head">
         <p class="eyebrow-line"></p>
         <h1 class="title"></h1>
+        <p class="clash" role="alert" hidden></p>
         <div class="stage" role="group" aria-label="Where they're at">
         </div>
       </header>
@@ -26,6 +27,20 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
           <section class="card">
             <h2>Steps</h2>
             <ul class="steps"></ul>
+          </section>
+          <section class="card appts-card">
+            <div class="card-head"><h2>Appointments</h2><button type="button" class="s-btn s-btn--quiet" data-appt-new>+ Add</button></div>
+            <ul class="quotes appts"></ul>
+            <form class="appt-form" autocomplete="off" hidden>
+              <input name="title" placeholder="e.g. Practice shoot" aria-label="What" list="appt-kinds" required />
+              <datalist id="appt-kinds"><option>Practice shoot</option><option>Planning meeting</option><option>Discovery call</option><option>Engagement shoot</option></datalist>
+              <input name="date" type="date" aria-label="Date" required />
+              <input name="start_time" type="time" aria-label="Start time (optional)" />
+              <input name="end_time" type="time" aria-label="End time (optional)" />
+              <input name="location" placeholder="Where (optional)" aria-label="Where" />
+              <div class="appt-btns"><button type="submit" class="s-btn s-btn--solid">Save</button><button type="button" class="s-btn s-btn--quiet" data-appt-cancel>Cancel</button></div>
+            </form>
+            <p class="hint gcal-note" hidden></p>
           </section>
           <section class="card">
             <div class="card-head"><h2>Quotes</h2><button type="button" class="s-btn" data-act="new-quote">+ New quote</button></div>
@@ -196,6 +211,28 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
     if (await portalPost({ action: 'share', document_ids: ids })) toast('Their portal’s files updated.');
   });
 
+  let clashList: any[] = [];
+  let appts: any[] = [];
+  let editingAppt = 0;
+  const apptForm = $<HTMLFormElement>('.appt-form');
+  function openAppt(a: any | null) {
+    editingAppt = a?.id ?? 0;
+    apptForm.reset();
+    if (a) for (const k of ['title', 'date', 'start_time', 'end_time', 'location']) (apptForm.elements.namedItem(k) as HTMLInputElement).value = a[k] ?? '';
+    apptForm.hidden = false;
+    (apptForm.elements.namedItem('title') as HTMLInputElement).focus();
+  }
+  apptForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const body = { ...Object.fromEntries(new FormData(apptForm)), ...(editingAppt ? { id: editingAppt } : { job_id: id }) };
+    const r = await fetch('/api/studio/crm/appointment', { method: editingAppt ? 'PUT' : 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) { toast(d.error || 'Couldn’t save it.', true); return; }
+    apptForm.hidden = true;
+    toast('Saved. It’s in the calendar.');
+    await load();
+  });
+
   async function load() {
     await loadLists();
     const r = await fetch(`/api/studio/crm/job?id=${id}`);
@@ -258,6 +295,19 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
     const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Pacific/Auckland' });
     const signed = d.contracts.filter((c: { status: string }) => c.status === 'signed');
     invoices = d.invoices;
+    // Date clash: another open lead or a booking on the same date.
+    clashList = d.clashes;
+    const cl = $('.clash');
+    cl.hidden = !d.clashes.length;
+    cl.innerHTML = d.clashes.length ? `⚠ ${d.clashes.some((c: any) => c.stage === 'booked') ? 'This date is already booked' : 'Another lead wants this date'}: ${d.clashes.map((c: any) => `<a href="/studio/crm/job?id=${c.id}">${esc(c.title)}</a> (${c.stage === 'booked' ? 'booked' : 'lead'}, ${esc(c.job_type)})`).join(', ')}` : '';
+    // Appointments.
+    appts = d.appointments;
+    const tm = (t: string | null) => (t ? new Date(`2000-01-01T${t}:00`).toLocaleTimeString('en-NZ', { hour: 'numeric', minute: '2-digit' }) : '');
+    $('.appts').innerHTML = d.appointments.map((a: any, i: number) => `<li class="inv"><span class="what"><strong>${esc(a.title)}</strong><br><small>${new Date(`${a.date}T12:00:00Z`).toLocaleDateString('en-NZ', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' })}${a.start_time ? ` · ${tm(a.start_time)}${a.end_time ? `–${tm(a.end_time)}` : ''}` : ' · all day'}${a.location ? ` · ${esc(a.location)}` : ''}</small></span>
+      <button type="button" class="s-btn s-btn--quiet" data-appt-edit="${i}">Change</button><button type="button" class="s-btn s-btn--quiet" data-appt-delete="${a.id}">Remove</button></li>`).join('') || '<li class="empty">None yet: practice shoot, planning meeting…</li>';
+    const gn = $('.gcal-note');
+    gn.hidden = d.googleCalendar;
+    gn.textContent = 'These and the wedding date go into your Google Calendar once it’s connected (Clients page).';
     const qStatus = (q: { status: string; submitted_at: string | null; created_at: string; updated_at: string }) => q.status === 'submitted'
       ? `<b class="ok">Sent in</b> ${dateTime(q.submitted_at!)}${q.updated_at > q.submitted_at! ? ' · changed since' : ''}`
       : q.updated_at > q.created_at ? `Started, not sent in yet · last saved ${dateTime(q.updated_at)}` : 'Not started yet';
@@ -367,6 +417,8 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
     if (st && st.dataset.stage !== stage) {
       const next = st.dataset.stage!;
       if (next === 'lost' && !confirm('Mark as not going ahead? Any follow-ups waiting will stop.')) return;
+      const taken = clashList.filter((c) => c.stage === 'booked');
+      if (next === 'booked' && taken.length && !confirm(`This date is already booked: ${taken.map((c) => c.title).join(', ')}. Mark this one booked as well?`)) return;
       stage = next;
       await save();
       return;
@@ -378,6 +430,12 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
       location.href = `/studio/crm/quote?id=${d.id}`;
       return;
     }
+    if (t.closest('[data-appt-new]')) { openAppt(null); return; }
+    if (t.closest('[data-appt-cancel]')) { apptForm.hidden = true; return; }
+    const ae = t.closest<HTMLButtonElement>('[data-appt-edit]');
+    if (ae) { openAppt(appts[Number(ae.dataset.apptEdit)]); return; }
+    const ad = t.closest<HTMLButtonElement>('[data-appt-delete]');
+    if (ad) { if (confirm('Remove this appointment?')) { await fetch(`/api/studio/crm/appointment?id=${ad.dataset.apptDelete}`, { method: 'DELETE' }); await load(); } return; }
     if (t.closest('[data-portal-copy]') && portal) { await navigator.clipboard.writeText(portal.link); toast('Portal link copied.'); return; }
     const gr = t.closest<HTMLButtonElement>('[data-gallery-remove]');
     if (gr) { if (confirm('Remove this gallery from their portal?')) await portalPost({ action: 'gallery-remove', id: Number(gr.dataset.galleryRemove) }); return; }
@@ -500,6 +558,13 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
   .job-page .stage { display: flex; gap: 6px; flex-wrap: wrap; }
   .job-page .stage button { padding: 7px 14px; border: 1px solid #ddd3c4; border-radius: 999px; background: var(--white); font: inherit; font-size: 14px; cursor: pointer; }
   .job-page .stage { align-items: center; }
+  .job-page .clash { margin: 0 0 12px; padding: 10px 14px; background: #fbeee8; color: #8a3b1e; border-radius: 12px 0; font-size: 14px; }
+  .job-page .clash a { color: #8a3b1e; font-weight: 600; }
+  .job-page .appt-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; margin-top: 10px; }
+  .job-page .appt-form input { font: inherit; font-size: 14px; padding: 8px 10px; border: 1px solid #ddd3c4; border-radius: 10px 0; min-width: 0; }
+  .job-page .appt-form input[name="title"], .job-page .appt-form input[name="location"] { grid-column: 1 / -1; }
+  .job-page .appt-btns { display: flex; gap: 8px; grid-column: 1 / -1; }
+  .job-page .gcal-note { margin: 8px 0 0; font-size: 13px; color: #888; }
   .job-page .stage-now { padding: 7px 14px; border-radius: 999px; background: var(--green); color: var(--white); font-size: 14px; font-weight: 500; }
   .job-page .stage-now--lost { background: #8a8a80; }
   .job-page .stage-now--completed { background: var(--olive); }

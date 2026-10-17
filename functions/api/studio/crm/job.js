@@ -4,6 +4,7 @@
 // Marking a lead booked or lost stops any steps waiting on that ('booked' in stop_on).
 import { json } from '../../../../functions-lib/studio.js';
 import { sendMode } from '../../../../functions-lib/crm.js';
+import { clashes, syncSoon, calendarReady } from '../../../../functions-lib/calendar.js';
 
 const STAGES = ['lead', 'booked', 'completed', 'lost'];
 
@@ -15,7 +16,7 @@ export async function onRequestGet({ request, env }) {
      FROM jobs j JOIN clients c ON c.id = j.client_id WHERE j.id = ?1`,
   ).bind(id).first();
   if (!job) return json({ error: 'That job doesn’t exist (it may have been deleted).' }, 404);
-  const [steps, messages, others, quotes, contracts, invoices, questionnaires, qTemplates, qDefault] = await Promise.all([
+  const [steps, messages, others, quotes, contracts, invoices, questionnaires, qTemplates, qDefault, clash, appointments, gcal] = await Promise.all([
     env.DB.prepare('SELECT * FROM steps WHERE job_id = ?1 ORDER BY created_at, due_at, id').bind(id).all(),
     env.DB.prepare('SELECT id, direction, subject, body, sent_at, attachments, gmail_message_id FROM messages WHERE job_id = ?1 ORDER BY sent_at DESC').bind(id).all(),
     env.DB.prepare('SELECT id, title, job_type, stage, event_date FROM jobs WHERE client_id = ?1 AND id <> ?2 ORDER BY created_at DESC').bind(job.client_id, id).all(),
@@ -25,12 +26,17 @@ export async function onRequestGet({ request, env }) {
     env.DB.prepare('SELECT id, name, status, token, created_at, updated_at, submitted_at FROM questionnaires WHERE job_id = ?1 ORDER BY id').bind(id).all(),
     env.DB.prepare('SELECT key, name FROM questionnaire_templates ORDER BY name').all(),
     env.DB.prepare(`SELECT questionnaire_key FROM lists WHERE kind = 'job_type' AND value = ?1`).bind(job.job_type).first(),
+    clashes(env.DB, job.event_date, job.id),
+    env.DB.prepare('SELECT id, title, date, start_time, end_time, location, notes FROM appointments WHERE job_id = ?1 ORDER BY date, start_time').bind(id).all(),
+    calendarReady(env.DB),
   ]);
   return json({ mode: sendMode(env), job, steps: steps.results, messages: messages.results, otherJobs: others.results, quotes: quotes.results, contracts: contracts.results, invoices: invoices.results,
-    questionnaires: questionnaires.results, questionnaireTemplates: qTemplates.results, defaultQuestionnaire: qDefault?.questionnaire_key ?? null });
+    questionnaires: questionnaires.results, questionnaireTemplates: qTemplates.results, defaultQuestionnaire: qDefault?.questionnaire_key ?? null,
+    clashes: clash, appointments: appointments.results, googleCalendar: gcal });
 }
 
-export async function onRequestPut({ request, env }) {
+export async function onRequestPut(context) {
+  const { request, env } = context;
   const d = await request.json().catch(() => null);
   const id = Number(d?.id);
   if (!id) return json({ error: 'Which job?' }, 400);
@@ -77,5 +83,6 @@ export async function onRequestPut({ request, env }) {
     if (String(e).includes('UNIQUE')) return json({ error: 'Another client already has that email address.' }, 409);
     throw e;
   }
+  syncSoon(context, id);
   return json({ ok: true });
 }
