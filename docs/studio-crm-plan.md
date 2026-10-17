@@ -22,6 +22,9 @@ into the website. Run Studio Ninja in parallel until each phase is proven, then 
 - **A better signature:** Studio Ninja's is just "Tony", phone number and the logo. The new one
   is designed with the site: name, role, phone, website, the logo, and perhaps a small photo or
   social links.
+- **Chosen design (17 Oct 2026):** design A "the card" (champagne background, logo on top, white
+  leaf-cornered card, green section labels and button) with the photo signature (photo, name,
+  role, phone, website, Instagram, small logo). Sample: [email-design/preview.html](email-design/preview.html).
 
 ## Decisions
 
