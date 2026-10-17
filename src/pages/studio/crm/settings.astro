@@ -23,6 +23,7 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
       <button type="button" role="tab" data-tab="payments">Payments</button>
       <button type="button" role="tab" data-tab="portal">Client portal</button>
       <button type="button" role="tab" data-tab="links">Your links</button>
+      <button type="button" role="tab" data-tab="sn">Studio Ninja</button>
       <button type="button" role="tab" data-tab="workflows">Workflows</button>
     </div>
     <p class="status" aria-live="polite">Loading…</p>
@@ -72,6 +73,12 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
           <p class="hint">Sent quotes keep the schedule they were sent with; changes apply to new quotes.</p>
         </form>
       </div>
+    </section>
+
+    <section class="pane card" data-pane="sn" hidden>
+      <p class="hint">Bringing your history across from Studio Ninja. Step 1 searches your Gmail for the emails Studio Ninja sent you (new enquiries, bookings…) and counts them by kind and year, so we can see what can be read from them. It only reads; nothing in Gmail changes. It takes up to a minute.</p>
+      <div class="actions" style="justify-content:flex-start"><button type="button" class="s-btn s-btn--solid" data-sn-survey>Search my Gmail for Studio Ninja emails</button></div>
+      <div class="sn-result"></div>
     </section>
 
     <section class="pane" data-pane="links" hidden>
@@ -598,7 +605,7 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
     if (t.closest('[data-act="new-template"]')) { openTemplate(null); field('name').focus(); return; }
     const pane = t.closest<HTMLElement>('[data-pane]');
     const kind = pane?.dataset.pane as 'job_type' | 'lead_source';
-    if (!pane || ['templates', 'documents', 'schedules', 'contracts', 'workflows', 'payments', 'questionnaires', 'portal', 'links'].includes(kind as string)) return;
+    if (!pane || ['templates', 'documents', 'schedules', 'contracts', 'workflows', 'payments', 'questionnaires', 'portal', 'links', 'sn'].includes(kind as string)) return;
     if (t.closest('[data-act="add"]')) {
       data[kind] = [...readList(kind), { value: '', label: '', workflow: null, on_form: true }];
       renderList(kind);
@@ -636,6 +643,27 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
     toast('Saved.');
     await load(current?.key);
   });
+
+  // ---- Studio Ninja (import) ----
+  function showSurvey(d: any) {
+    if (!d || d.none) { $('.sn-result').innerHTML = '<p class="hint">Not run yet.</p>'; return; }
+    if (d.error) { $('.sn-result').innerHTML = `<p class="hint" style="color:#a8432a">${esc(d.error)}</p>`; return; }
+    const years = [2020, 2021, 2022, 2023, 2024, 2025, 2026];
+    $('.sn-result').innerHTML = `<p class="hint">Found ${d.total_found}${d.more ? '+' : ''} Studio Ninja emails (searched ${new Date(d.at).toLocaleString('en-NZ', { dateStyle: 'medium', timeStyle: 'short' })}). Claude can read these results from here; the examples have the details hidden.</p>
+      <table class="list-table sn-table"><thead><tr><th>Kind of email</th>${years.map((y) => `<th>${y}</th>`).join('')}</tr></thead><tbody>
+      ${d.kinds.map((k: any) => `<tr><td><strong>${esc(k.subject)}</strong><br><small>${esc(k.from)}</small></td>${years.map((y) => `<td>${k.years[y] ?? '–'}</td>`).join('')}</tr>`).join('')}
+      </tbody></table>`;
+  }
+  document.addEventListener('click', async (e) => {
+    const b = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-sn-survey]');
+    if (!b) return;
+    b.disabled = true; const label = b.textContent; b.textContent = 'Searching your Gmail… (up to a minute)';
+    const r = await fetch('/api/studio/crm/sn-gmail', { method: 'POST' });
+    const d = await r.json().catch(() => ({ error: `Something went wrong (${r.status}).` }));
+    b.disabled = false; b.textContent = label;
+    showSurvey(d);
+  });
+  fetch('/api/studio/crm/sn-gmail').then((r) => r.json()).then(showSurvey).catch(() => {});
 
   // ---- Your links ----
   const linksForm = $<HTMLFormElement>('.links-form');
@@ -700,6 +728,9 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
   .settings .pay-form label { display: flex; flex-direction: column; gap: 5px; font-size: 13px; font-weight: 600; color: #555; }
   .settings .pay-form small { font-weight: 400; color: #888; }
   .settings .pay-form input, .settings .pay-form textarea { font: inherit; font-weight: 400; font-size: 15px; padding: 9px 11px; border: 1px solid #ddd3c4; border-radius: 10px 0; }
+  .settings .sn-table td, .settings .sn-table th { text-align: center; font-size: 13px; }
+  .settings .sn-table td:first-child, .settings .sn-table th:first-child { text-align: left; }
+  .settings .sn-table small { color: #999; }
   .settings .pay-stripe { margin: 0; font-size: 14px; color: #444; }
   .settings .portal-banner-preview { display: block; max-width: 100%; max-height: 200px; width: auto; border-radius: 18px 0; background: var(--champagne); }
   @media (min-width: 700px) { .settings .pay-form .two { grid-template-columns: 1fr 1fr; } }
