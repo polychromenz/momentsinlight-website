@@ -1,7 +1,7 @@
 ---
 // Moments Studio calendar: a month of wedding/shoot dates (leads and booked jobs) and
-// appointments, with a Leads / Jobs filter. A list instead of the grid on a phone. Clashing
-// dates are marked. Data from functions/api/studio/crm/calendar.js.
+// appointments, with a Leads / Jobs filter. On a phone the month is compact (coloured marks) and
+// tapping a day lists it underneath. Clashing dates are marked. Data from functions/api/studio/crm/calendar.js.
 import StudioLayout from '../../layouts/StudioLayout.astro';
 ---
 <StudioLayout title="Calendar" section="calendar">
@@ -35,6 +35,8 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
   let month = /^\d{4}-\d{2}$/.test(params.get('m') || '') ? new Date(`${params.get('m')}-01T00:00:00`) : new Date(new Date().getFullYear(), new Date().getMonth(), 1);
   let show = 'all';
   let data: any = null;
+  let picked = ''; // phone: the day tapped (its events listed under the month)
+  const phone = () => matchMedia('(max-width: 760px)').matches;
   const tm = (t: string | null) => (t ? new Date(`2000-01-01T${t}:00`).toLocaleTimeString('en-NZ', { hour: 'numeric', minute: '2-digit' }).replace(':00', '') : '');
   const who = (title: string, partner: string) => (partner ? `${title.split(' ')[0]} & ${partner}` : title);
 
@@ -65,13 +67,13 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
       const key = iso(d);
       const other = d.getMonth() !== month.getMonth();
       if (i >= 35 && other && i % 7 === 0) break;
-      cells.push(`<div class="cal-day${other ? ' other' : ''}${key === today ? ' today' : ''}" role="gridcell"><span class="cal-n">${d.getDate()}</span>${(by[key] || []).join('')}</div>`);
+      cells.push(`<div class="cal-day${other ? ' other' : ''}${key === today ? ' today' : ''}${key === picked ? ' picked' : ''}" role="gridcell" data-day="${key}"><span class="cal-n">${d.getDate()}</span>${(by[key] || []).join('')}</div>`);
       d.setDate(d.getDate() + 1);
     }
     $('.cal-grid').innerHTML = cells.join('');
-    // The phone list: this month's days that have something.
-    const days = Object.keys(by).filter((k) => k.slice(0, 7) === iso(month).slice(0, 7)).sort();
-    $('.cal-list').innerHTML = days.map((k) => `<li><span class="cal-ld${k === today ? ' today' : ''}">${new Date(`${k}T12:00:00`).toLocaleDateString('en-NZ', { weekday: 'short', day: 'numeric' })}</span><span class="cal-li">${by[k].join('')}</span></li>`).join('') || '<li class="empty">Nothing this month.</li>';
+    // The phone list: the day tapped, or this month's days that have something.
+    const days = picked ? [picked] : Object.keys(by).filter((k) => k.slice(0, 7) === iso(month).slice(0, 7)).sort();
+    $('.cal-list').innerHTML = (picked ? '<li class="cal-all"><button type="button" data-all>Show the whole month</button></li>' : '') + days.map((k) => `<li><span class="cal-ld${k === today ? ' today' : ''}">${new Date(`${k}T12:00:00`).toLocaleDateString('en-NZ', { weekday: 'short', day: 'numeric' })}</span><span class="cal-li">${by[k].join('') || '<span class="empty">Nothing on.</span>'}</span></li>`).join('') || '<li class="empty">Nothing this month.</li>';
   }
 
   async function load() {
@@ -92,8 +94,11 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
   document.addEventListener('click', (e) => {
     const t = e.target as HTMLElement;
     const mv = t.closest<HTMLButtonElement>('[data-move]');
-    if (mv) { month = new Date(month.getFullYear(), month.getMonth() + Number(mv.dataset.move), 1); load(); return; }
-    if (t.closest('[data-today]')) { month = new Date(new Date().getFullYear(), new Date().getMonth(), 1); load(); return; }
+    if (mv) { picked = ''; month = new Date(month.getFullYear(), month.getMonth() + Number(mv.dataset.move), 1); load(); return; }
+    if (t.closest('[data-all]')) { picked = ''; draw(); return; }
+    const day = t.closest<HTMLElement>('.cal-day');
+    if (day && phone()) { e.preventDefault(); picked = picked === day.dataset.day ? '' : day.dataset.day!; draw(); return; }
+    if (t.closest('[data-today]')) { picked = ''; month = new Date(new Date().getFullYear(), new Date().getMonth(), 1); load(); return; }
     const sh = t.closest<HTMLButtonElement>('[data-show]');
     if (sh) { show = sh.dataset.show!; document.querySelectorAll('[data-show]').forEach((b) => b.classList.toggle('on', b === sh)); draw(); }
   });
@@ -129,7 +134,16 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
   .cal-key { margin: 14px 0 0; font-size: 13px; color: #777; display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; }
   .cal-key .ev { display: inline-block; white-space: normal; }
   @media (max-width: 760px) {
-    .cal-grid { display: none; }
+    .cal-grid { margin-bottom: 12px; border-radius: 18px 0; }
+    .cal-dow { padding: 8px 0; font-size: 10px; letter-spacing: 0.06em; }
+    .cal-day { min-height: 58px; padding: 3px 3px 5px; gap: 2px; cursor: pointer; }
+    .cal-n { align-self: center; width: 24px; height: 24px; font-size: 12px; }
+    .cal-day.picked { background: rgb(90 94 59 / 0.1); }
+    .cal-day .ev { height: 6px; padding: 0; border-left: 0; border-radius: 3px; font-size: 0; pointer-events: none; }
+    .cal-day .ev--lead { background: #d9b45c; } .cal-day .ev--job { background: var(--green); } .cal-day .ev--appt { background: #7d8ca8; }
+    .cal-day .ev--clash { background: #c46a4a; box-shadow: none; }
+    .cal-all button { border: 0; background: none; padding: 0; font: inherit; font-size: 14px; color: var(--green); text-decoration: underline; cursor: pointer; }
+    .cal-list li.cal-all { background: none; padding: 0 4px; }
     .cal-list { display: flex; flex-direction: column; gap: 8px; }
     .cal-list li { display: flex; gap: 12px; background: var(--white); border-radius: 16px 0; padding: 10px 12px; animation: s-rise 0.6s var(--ease) both; }
     .cal-list .empty { color: #888; }
