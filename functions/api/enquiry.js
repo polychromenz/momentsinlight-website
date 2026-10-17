@@ -91,7 +91,7 @@ export async function onRequestPost({ request, env }) {
     return reply({ error: 'Sorry, something went wrong. Please try again, or call me on 021 625 943.' }, 500);
   }
 
-  const nzDate = new Date(`${f.date}T12:00:00Z`).toLocaleDateString('en-NZ', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  const nzDate = new Date(`${f.date}T12:00:00Z`).toLocaleDateString('en-NZ', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
   await alertTony(env, `New ${f.service.toLowerCase()} enquiry: ${f.first} ${f.last}`, [
     ['Name', `${f.first} ${f.last}`], ['Email', f.email], ['Phone', f.phone], ['Service', f.service], ['Date', nzDate],
     ['Venue', f.venue], ['Heard via', f.source], ['Message', f.message],

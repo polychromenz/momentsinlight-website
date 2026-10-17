@@ -131,7 +131,7 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
     const j = d.job;
     document.title = `${j.title} · Moments Studio`;
     $('.title').textContent = j.title;
-    $('.eyebrow-line').textContent = [j.job_type, j.event_date && new Date(`${j.event_date}T12:00:00Z`).toLocaleDateString('en-NZ', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }), j.venue].filter(Boolean).join(' · ');
+    $('.eyebrow-line').textContent = [j.job_type, j.event_date && new Date(`${j.event_date}T12:00:00Z`).toLocaleDateString('en-NZ', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }), j.venue].filter(Boolean).join(' · ');
     stage = j.stage;
     document.querySelectorAll<HTMLButtonElement>('.stage button').forEach((b) => b.classList.toggle('on', b.dataset.stage === stage));
     const typeSel = form.elements.namedItem('job_type') as HTMLSelectElement;

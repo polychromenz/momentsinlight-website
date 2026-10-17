@@ -47,7 +47,7 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
   type Job = { id: number; title: string; job_type: string; stage: string; event_date: string | null; venue: string; created_at: string };
   const $ = <T extends HTMLElement = HTMLElement>(s: string) => document.querySelector<T>(s)!;
   const esc = (s: unknown) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
-  const nzDate = (d: string | null) => (d ? new Date(`${d}T12:00:00Z`).toLocaleDateString('en-NZ', { day: 'numeric', month: 'short', year: 'numeric' }) : '–');
+  const nzDate = (d: string | null) => (d ? new Date(`${d}T12:00:00Z`).toLocaleDateString('en-NZ', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }) : '–');
   const when = (iso: string) => {
     const d = new Date(iso);
     const days = Math.round((d.setHours(0, 0, 0, 0) - new Date().setHours(0, 0, 0, 0)) / 86400_000);
