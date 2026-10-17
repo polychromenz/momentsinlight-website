@@ -1,0 +1,24 @@
+# The studio CRM's timer: every 15 minutes, asks the website to send any automatic emails that
+# are due and to check for replies (functions/api/crm/run.js). Needs the CRM_RUN_KEY secret here
+# (GitHub > the repository > Settings > Secrets and variables > Actions), the same value as the
+# CRM_RUN_KEY secret in Cloudflare. GitHub sometimes runs scheduled jobs a few minutes late.
+# Client emails stay redirected to Tony while the CRM is in test mode (CRM_SEND_MODE).
+name: CRM timer
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch: {}
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Send due emails and check replies
+        env:
+          KEY: ${{ secrets.CRM_RUN_KEY }}
+        run: |
+          if [ -z "$KEY" ]; then echo "CRM_RUN_KEY isn't set yet"; exit 0; fi
+          curl -fsS -X POST -H "X-Run-Key: $KEY" https://www.momentsinlight.co.nz/api/crm/run
+          echo

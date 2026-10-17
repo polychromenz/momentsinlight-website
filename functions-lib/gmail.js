@@ -62,6 +62,24 @@ async function accessToken(env) {
   return cached.token;
 }
 
+/** A Gmail conversation's messages: id, when, who from, subject and a short snippet. */
+export async function thread(env, threadId) {
+  const r = await fetch(`https://gmail.googleapis.com/gmail/v1/users/me/threads/${encodeURIComponent(threadId)}?format=metadata&metadataHeaders=From&metadataHeaders=Subject`, {
+    headers: { authorization: `Bearer ${await accessToken(env)}` },
+  });
+  if (r.status === 404) return [];
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(`Gmail couldn’t read the conversation (${r.status}): ${d.error?.message ?? ''}`);
+  const h = (m, name) => m.payload?.headers?.find((x) => x.name.toLowerCase() === name)?.value ?? '';
+  return (d.messages ?? []).map((m) => ({
+    id: m.id,
+    at: new Date(Number(m.internalDate)).toISOString(),
+    from: (h(m, 'from').match(/<([^>]+)>/)?.[1] ?? h(m, 'from')).trim().toLowerCase(),
+    subject: h(m, 'subject'),
+    snippet: (m.snippet ?? '').replace(/&#39;/g, "'").replace(/&quot;/g, '"').replace(/&amp;/g, '&'),
+  }));
+}
+
 // ---- Building and sending a message ----
 const b64url = (s) => b64(enc.encode(s)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 const header = (s) => (/^[\x20-\x7e]*$/.test(s) ? s : `=?UTF-8?B?${b64(enc.encode(s))}?=`);
