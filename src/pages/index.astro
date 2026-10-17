@@ -69,8 +69,8 @@ const jsonLd = {
     interval={6}
     images={slides.map(([src, width, height, alt]) => ({ src, width, height, alt }))}
   >
-    <p class="hero-eyebrow">Auckland wedding photographer</p>
-    <h1 class="hero-title">{home.h1}</h1>
+    {/* One main heading for Google: "Auckland wedding photographer" + the headline, styled as before. */}
+    <h1 class="hero-h1"><span class="hero-eyebrow">{home.eyebrow}</span> <span class="hero-title">{home.h1}</span></h1>
   </Slideshow>
 
   <section class="intro wrap" data-reveal>
@@ -140,8 +140,10 @@ const jsonLd = {
 
 <style>
   /* Phone layout first, desktop below. */
-  .hero-eyebrow { margin: 0 0 10px; font-size: 12px; font-weight: 500; letter-spacing: 0.32em; text-transform: uppercase; color: var(--green); }
+  .hero-h1 { margin: 0; padding: 0; font: inherit; color: inherit; }
+  .hero-eyebrow { display: block; margin: 0 0 10px; font-size: 12px; font-weight: 500; letter-spacing: 0.32em; text-transform: uppercase; color: var(--green); }
   .hero-title {
+    display: block;
     margin: 0 auto;
     padding: 0;
     max-width: 1000px;
