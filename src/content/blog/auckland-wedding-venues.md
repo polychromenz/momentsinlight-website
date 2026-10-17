@@ -8,6 +8,7 @@ author: "Tony Gorham"
 categories: ["Info"]
 tags: []
 thumbnail: "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/colour/_30A9345-website/public"
+thumbnailAlt: "Couple holding hands with their celebrant under a floral arch at a marquee ceremony"
 ---
 Choosing a venue is one of the first big decisions of planning a wedding, and often one of the most personal — it sets the tone for everything that follows, from the light your ceremony will be held in, to the backdrop of every photograph you'll keep for the rest of your life.
 

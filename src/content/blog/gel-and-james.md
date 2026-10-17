@@ -9,6 +9,7 @@ categories: ["Wedding"]
 tags: []
 review: "james"
 thumbnail: "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2025-gel-and-james/mono/_MIL4907/public"
+thumbnailAlt: "Black and white photo of Gel and James under a large tree in a garden"
 gallery:
   - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2025-gel-and-james/mono/_MIL4880-Edit/public","alt":"Black and white photo of Gel and James beneath an olive tree in a walled garden","width":2048,"height":1365}
   - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2025-gel-and-james/colour/SOCIAL__MIL4011-website/public","alt":"Close-up of Gel's peach and pink rose bouquet","width":2048,"height":1365}

@@ -9,6 +9,7 @@ categories: ["Wedding"]
 tags: ["the-barn-waimauku"]
 review: "Mikaela Ellwood"
 thumbnail: "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-mikaela-and-dylan/colour/_Q9A0973-Edit-2/public"
+thumbnailAlt: "Mikaela and Dylan kissing beside a gold-framed mirror at The Barn Waimauku"
 gallery:
   - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-mikaela-and-dylan/colour/_Q9A0978/public","alt":"Mikaela and Dylan kiss beside a mirror before the celebrations","width":2048,"height":1366}
   - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-mikaela-and-dylan/colour/_30A5453/public","alt":"Mikaela and Dylan with their bridal party in green under the trees","width":2048,"height":1152}

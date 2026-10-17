@@ -8,6 +8,7 @@ author: "Tony Gorham"
 categories: ["Info"]
 tags: []
 thumbnail: "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/mono/_Q9A0292-website/public"
+thumbnailAlt: "Black and white photo of a wedding seating chart on an easel in a reception room"
 ---
 Creating a mood board for your wedding using Pinterest is a fantastic way to gather inspiration and visualise your dream wedding. Let’s dive into the steps:
 

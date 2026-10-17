@@ -8,6 +8,7 @@ author: "Tony Gorham"
 categories: ["Info"]
 tags: []
 thumbnail: "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/colour/_30A3220-website/public"
+thumbnailAlt: "Wedding reception table with white roses, greenery, glasses and a gold table number"
 ---
 Let’s explore some delightful table decoration options for weddings in Auckland, New Zealand. Whether you’re planning a rustic, elegant, or modern wedding, these ideas will help you create a memorable and visually stunning reception:
 

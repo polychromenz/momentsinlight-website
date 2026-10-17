@@ -22,6 +22,9 @@ const blog = defineCollection({
     // Where the faces are in the thumbnail, so cropped covers keep them: a preset from Pages CMS
     // (top, upper, center, lower, bottom) or an exact CSS position such as "52% 26%".
     thumbnailPosition: z.string().optional(),
+    // A description of the cover photo, for Google and screen readers, when it isn't one of the
+    // gallery photos (those have their own).
+    thumbnailAlt: z.string().optional(),
     // Per-post layout choices (empty = the default for the post's type):
     //   opening: 'photo' (cover full width, names over it) or 'text' (centred heading)
     //   galleryStyle: 'story' (large photo then pairs), 'columns' (uncropped) or 'slideshow'

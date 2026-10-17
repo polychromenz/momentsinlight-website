@@ -19,13 +19,14 @@ export type PostData = {
   draft: boolean;
   thumbnail?: string;
   thumbnailPosition?: string;
+  thumbnailAlt?: string;
   opening?: 'photo' | 'text';
   galleryStyle?: 'story' | 'columns' | 'slideshow';
   gallery: Photo[];
   [other: string]: unknown;
 };
 
-const ORDER = ['title', 'seoTitle', 'description', 'date', 'updated', 'author', 'venue', 'venueUrl', 'categories', 'tags', 'review', 'draft', 'thumbnail', 'thumbnailPosition', 'opening', 'galleryStyle', 'gallery'];
+const ORDER = ['title', 'seoTitle', 'description', 'date', 'updated', 'author', 'venue', 'venueUrl', 'categories', 'tags', 'review', 'draft', 'thumbnail', 'thumbnailPosition', 'thumbnailAlt', 'opening', 'galleryStyle', 'gallery'];
 
 const day = (v: unknown) => {
   if (!v) return undefined;

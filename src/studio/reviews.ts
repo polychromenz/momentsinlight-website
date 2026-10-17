@@ -2,7 +2,7 @@
 // through /api/studio/reviews; review photos upload straight to Cloudflare Images.
 import { slugify } from './frontmatter';
 
-type Photo = { src: string; width?: number; height?: number };
+type Photo = { src: string; alt?: string; width?: number; height?: number };
 type Review = { name: string; date: string; rating: number; text: string; photos: Photo[]; reply?: string; url?: string };
 
 const $ = <T extends HTMLElement = HTMLElement>(s: string) => document.querySelector<T>(s)!;

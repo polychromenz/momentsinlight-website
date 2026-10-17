@@ -8,6 +8,7 @@ author: "Tony Gorham"
 categories: ["Info"]
 tags: []
 thumbnail: "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/colour/wedding-party-inside-vintage-routemaster-auckland-website/public.webp"
+thumbnailAlt: "Wedding party relaxing on the grass beside a red London Routemaster double-decker bus"
 ---
 When it comes to wedding day entrances, few things are as iconic (or as fun) as pulling up in a classic **1964 London Routemaster double-decker bus**. Tony here at **Moments in Light** has always had a soft spot for Routemasters — ever since childhood, riding them in London, peering out the top-deck windows as the city whooshed by. That memory is exactly what makes the idea of seeing your guests stepping off that big red beauty so electrifying.
 

@@ -8,6 +8,7 @@ author: "Tony Gorham"
 categories: ["Info"]
 tags: []
 thumbnail: "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/colour/WeddingDanceAuckland-website/public"
+thumbnailAlt: "Wedding Dance Auckland logo"
 ---
 This week in my search for content to help our lovely couples, I spoke to [Wedding Dance Auckland](https://weddingdanceauckla.wixsite.com/mysite) about how they can help you make your first dance less daunting….
 

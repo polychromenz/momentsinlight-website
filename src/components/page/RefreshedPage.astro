@@ -230,7 +230,7 @@ const eager = () => { const e = firstPhoto; firstPhoto = false; return e; };
       </section>
     );
     if (it.kind === 'hero') return (
-      <Slideshow hero first label={it.heading} images={[{ src: it.image.src, alt: '', width: it.image.width, height: it.image.height }]}>
+      <Slideshow hero first label={it.heading} images={[{ src: it.image.src, alt: it.image.alt ?? '', width: it.image.width, height: it.image.height }]}>
         <h1 class="hero-title">{it.heading}</h1>
       </Slideshow>
     );

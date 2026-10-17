@@ -8,6 +8,7 @@ author: "Tony Gorham"
 categories: ["Wedding"]
 tags: []
 thumbnail: "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-emma-and-corey/colour/_30A4481-Edit/public"
+thumbnailAlt: "Emma and Corey gazing at each other on their wedding day in Hamilton"
 gallery:
   - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-emma-and-corey/colour/_30A4339/public","alt":"Emma hugs Corey from behind, her rings showing on his shoulder","width":2048,"height":1366}
   - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-emma-and-corey/colour/_30A4388-Edit/public","alt":"Corey smiles at Emma during their portraits at Hamilton Gardens","width":2048,"height":1366}

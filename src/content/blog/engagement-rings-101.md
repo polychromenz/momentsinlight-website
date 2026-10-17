@@ -8,6 +8,7 @@ author: "Tony Gorham"
 categories: ["Info"]
 tags: []
 thumbnail: "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/colour/_30A5339-website/public"
+thumbnailAlt: "Two gold wedding rings on Ellie and Ryan’s wedding invitation beside white roses"
 ---
 Choosing an engagement ring is one of the most meaningful purchases you'll ever make — and also one of the most confusing. Between diamond cut comparisons, setting styles, carat weights, and whether to go lab-grown or natural, it's easy to walk into a jeweller feeling overwhelmed and walk out unsure whether you made the right call.
 

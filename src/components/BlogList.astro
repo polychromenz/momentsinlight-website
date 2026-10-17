@@ -6,7 +6,7 @@
 import type { CollectionEntry } from 'astro:content';
 import Img from './Img.astro';
 import BlogSearch from './BlogSearch.astro';
-import { coverPosition, storyName } from '../lib/blog';
+import { coverPosition, coverAlt, storyName } from '../lib/blog';
 
 interface Props {
   posts: CollectionEntry<'blog'>[];
@@ -52,7 +52,7 @@ const month = (d: Date) => d.toLocaleDateString('en-NZ', { month: 'long', year: 
           <a class="card" href={href}>
             <span class="frame">
               {img && (
-                <Img src={img} alt="" sizes="(min-width: 1100px) 31vw, (min-width: 640px) 46vw, 90vw" loading={i < 3 ? 'eager' : 'lazy'}
+                <Img src={img} alt={coverAlt(p.data)} sizes="(min-width: 1100px) 31vw, (min-width: 640px) 46vw, 90vw" loading={i < 3 ? 'eager' : 'lazy'}
                   style={`object-position:${coverPosition(p.data.thumbnailPosition) ?? '50% 50%'}`} />
               )}
               <span class="shade" aria-hidden="true"><span>{wedding ? 'View love story' : 'Read more'} <span class="arrow">→</span></span></span>

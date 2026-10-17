@@ -8,6 +8,7 @@ author: "Tony Gorham"
 categories: ["Info"]
 tags: []
 thumbnail: "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/colour/anna-the-celebrant-website/public"
+thumbnailAlt: "Celebrant Anna leading a garden ceremony as the couple hold hands under a floral arch"
 ---
 Planning a wedding is a journey filled with loads of decisions, and each one contributes to the uniqueness of your day. One of the choices you'll make is choosing the right marriage celebrant for you – they set the tone for your ceremony and ensure that your marriage is legally official!
 

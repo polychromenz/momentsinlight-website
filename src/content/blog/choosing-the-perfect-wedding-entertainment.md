@@ -7,6 +7,7 @@ author: "Tony Gorham"
 categories: ["Info"]
 tags: []
 thumbnail: "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/colour/_W2A6120_SOCIAL-website/public"
+thumbnailAlt: "Wedding guests dancing with their hands in the air on a packed dance floor"
 ---
 When it comes to planning your wedding, selecting the right entertainment is crucial for creating a memorable experience for you and your guests. Here’s a guide to help you choose the perfect entertainment for your special day:
 

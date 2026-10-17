@@ -8,6 +8,7 @@ author: "Tony Gorham"
 categories: ["Info"]
 tags: []
 thumbnail: "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/mono/SOCIAL__30A9554-Edit-2-website/public"
+thumbnailAlt: "Black and white photo of a bride and groom embracing on the deck by the lake at Abel Estate"
 ---
 ### Intro
 

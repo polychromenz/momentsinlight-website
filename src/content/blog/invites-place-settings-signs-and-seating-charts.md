@@ -8,6 +8,7 @@ author: "Tony Gorham"
 categories: ["Info"]
 tags: []
 thumbnail: "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/colour/_Q9A0304-website/public"
+thumbnailAlt: "Reception table with a thank-you card, a place name card and white flowers"
 ---
 There’s so much to think of find. Here is my list of New Zealand based suppliers for invites and more. Any text is from their website so you can see what they say before visiting them. Not all of these will offer everything you need but it’s nice having them all together. One good tip is to see if you can find someone that has everything you want. That way you’ll have a consistent look and feel which always looks just that little bit more polished. I have added a quick list of what they offer next to their name but vendors add and remove products over time so don’t rule people out without checking.
 

@@ -8,6 +8,7 @@ author: "Tony Gorham"
 categories: []
 tags: []
 thumbnail: "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/mono/_Q9A1548-website/public"
+thumbnailAlt: "Black and white photo of the best man giving his speech with a microphone"
 ---
 1. Start with a Memorable Opener\
    Your opening line sets the tone for your entire speech. Consider a funny joke, a compliment, or an inspirational quote related to brotherhood or marriage. For example:\

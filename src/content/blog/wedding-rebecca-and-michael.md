@@ -8,6 +8,7 @@ author: "Tony Gorham"
 categories: ["Wedding"]
 tags: []
 thumbnail: "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2025-rebecca-and-michael/colour/_MIL8850/public"
+thumbnailAlt: "Rebecca and Michael arm in arm on a beach path, looking out to sea"
 gallery:
   - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2025-rebecca-and-michael/colour/SOCIAL__MIL8576-website/public","alt":"Rebecca smiles over her shoulder in her veil","width":1536,"height":2048}
   - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2025-rebecca-and-michael/colour/SOCIAL__MIL8569-website/public","alt":"Rebecca's veil is pinned into her hair","width":2048,"height":1536}

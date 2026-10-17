@@ -8,6 +8,7 @@ author: "Tony Gorham"
 categories: ["Info"]
 tags: []
 thumbnail: "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/colour/SOCIAL__MIL6780-website/public"
+thumbnailAlt: "Couple posing in front of a patterned screen during a practice wedding shoot"
 gallery:
   - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/colour/SOCIAL__MIL6740-website/public","alt":"A couple pose outside The Hotel Britomart during their practice shoot","width":2048,"height":1536}
   - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/colour/SOCIAL__MIL6713-website/public","alt":"The couple walk hand in hand across the paved street at Britomart","width":2048,"height":1536}

@@ -8,6 +8,7 @@ author: "Tony Gorham"
 categories: ["Info"]
 tags: []
 thumbnail: "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/colour/092A5080_SOCIAL-website/public"
+thumbnailAlt: "Celebrant reading the vows as the groom places the ring on the bride’s finger"
 ---
 Planning a wedding involves many decisions, and choosing the right wedding celebrant is a crucial one. Auckland, New Zealand, offers a diverse selection of experienced celebrants who can create a meaningful and personalised ceremony for your special day. Whether you’re envisioning a traditional, modern, or unique celebration, here are some reputable wedding celebrants in Auckland to consider:
 

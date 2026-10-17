@@ -8,6 +8,7 @@ author: "Tony Gorham"
 categories: ["Info"]
 tags: []
 thumbnail: "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/colour/SOCIAL__30A3316-website/public"
+thumbnailAlt: "Groom placing the ring on the bride’s finger as the celebrant reads under a floral arch"
 ---
 Writing your own wedding vows is a beautiful and personal way to express your love and commitment to your partner. Whether you’re planning a New Zealand wedding or any other celebration, heartfelt vows can make your ceremony even more special. Here’s a guide to help you create meaningful and memorable wedding vows:
 

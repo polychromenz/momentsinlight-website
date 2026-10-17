@@ -8,6 +8,7 @@ author: "Tony Gorham"
 categories: ["Info"]
 tags: []
 thumbnail: "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/colour/_W2A4718_SOCIAL-website/public"
+thumbnailAlt: "Bride holding a white bouquet of roses and daisies in a garden"
 ---
 1. **Wedding Florist Auckland**\
    **About**: Wedding Florist Auckland, located on the North Shore, specialises exclusively in weddings. Their highly personalised service ensures that each couple receives undivided attention, making your dream wedding a reality.\

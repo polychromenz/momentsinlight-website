@@ -9,6 +9,7 @@ categories: ["Wedding"]
 tags: ["the-barn-waimauku"]
 review: "Tayla Johnson"
 thumbnail: "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-tay-and-jesse/colour/_30A8106-Edit/public"
+thumbnailAlt: "Tay and Jesse among the trees in golden evening light at The Barn Waimauku"
 gallery:
   - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-tay-and-jesse/colour/_30A8202/public","alt":"Tay and Jesse embrace on a railway line in golden light","width":1638,"height":2048}
   - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-tay-and-jesse/colour/_30A6376/public","alt":"Tay shares a first look with her dad","width":2048,"height":1366}

@@ -8,6 +8,7 @@ author: "Tony Gorham"
 categories: ["Info"]
 tags: []
 thumbnail: "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2025-paige-and-connor/colour/_Q9A1313-Edit/public"
+thumbnailAlt: "Bride and groom kissing in front of a large wine barrel at Markovina Vineyard Estate"
 ---
 Set among rolling vines and landscaped gardens, **Markovina Vineyard Estate** is one of Auckland’s most versatile and sought-after wedding venues. With ceremony spots that work in both sunshine and rain, endless photo backdrops, and a warm, family-run team, it’s no wonder so many couples fall in love with this Kumeu gem.
 

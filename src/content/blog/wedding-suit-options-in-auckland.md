@@ -8,6 +8,7 @@ author: "Tony Gorham"
 categories: ["Info"]
 tags: []
 thumbnail: "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/colour/_W2A1023_SOCIAL-website/public"
+thumbnailAlt: "Wedding party in grey suits and sage dresses walking through a forest"
 ---
 When it comes to dressing your best for your wedding day, finding the perfect suit is essential. Whether you’re looking to buy a suit that you can cherish forever or prefer the convenience of hiring one, Auckland offers several excellent options. Let’s explore both avenues:
 

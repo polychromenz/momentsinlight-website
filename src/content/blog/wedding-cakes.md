@@ -8,6 +8,7 @@ author: "Tony Gorham"
 categories: ["Info"]
 tags: []
 thumbnail: "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/colour/_Q9A0558-website/public"
+thumbnailAlt: "Two-tier white wedding cake with a running bride and groom cake topper"
 ---
 The cake rarely gets as much planning attention as the dress or the venue, but it earns its place in the photographs all the same — the design itself, the detail shots before the reception, and of course the cutting, one of the moments every wedding day comes back to. Getting the right baker matters more than it might seem.
 

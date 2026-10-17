@@ -8,6 +8,7 @@ author: "Tony Gorham"
 categories: ["Info"]
 tags: []
 thumbnail: "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/mono/myweddingguide_large-website/public"
+thumbnailAlt: "My Wedding Guide logo"
 ---
 📸 **Exciting News!** 📸
 

@@ -7,6 +7,7 @@ author: "Tony Gorham"
 categories: ["Info"]
 tags: []
 thumbnail: "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/mono/_W2A0600-2_SOCIAL-website/public"
+thumbnailAlt: "Black and white photo of a couple celebrating with their wedding party on a terrace by the sea"
 ---
 Certainly! 🌸 Planning a wedding in Auckland, New Zealand offers a delightful mix of natural beauty, cultural richness, and unique venues. Whether you’re envisioning an intimate gathering or a grand celebration, here are some creative wedding ideas to make your special day unforgettable:
 

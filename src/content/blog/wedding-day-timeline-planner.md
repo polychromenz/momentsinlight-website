@@ -8,6 +8,7 @@ author: "Tony Gorham"
 categories: ["Info"]
 tags: []
 thumbnail: "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/colour/runorder-wedding-featured-image-website/public"
+thumbnailAlt: "The RunOrder app on a phone showing a live wedding day timeline"
 ---
 A good wedding day timeline is the difference between a relaxed day and one spent chasing the clock. After photographing weddings across Auckland, I've seen the same pattern again and again: the days that feel calm aren't the ones with the most time. They're the ones where everyone knows what's happening next.
 

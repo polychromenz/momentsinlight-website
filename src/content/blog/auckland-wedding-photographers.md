@@ -8,6 +8,7 @@ author: "Tony Gorham"
 categories: ["Info"]
 tags: []
 thumbnail: "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/colour/__tay-barn-bronze-nzipp-2026-website/public"
+thumbnailAlt: "Tay and Jesse at sunset in front of an old red barn at The Barn Waimauku, a Bronze award-winning photo"
 ---
 When it comes to planning your wedding, choosing the right photographer can be as crucial as picking the perfect dress or venue. Your wedding photos are the tangible memories that will grace your walls and photo albums for years to come. In bustling Auckland, with its blend of stunning landscapes and urban chic, finding the right photographer means capturing not just images, but the essence of your love story. But how do you wade through the myriad options to find the perfect fit?
 

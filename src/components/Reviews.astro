@@ -72,7 +72,7 @@ const paragraphs = (s: string) => s.split(/\n{2,}/).map((p) => p.trim()).filter(
           <div class="photos">
             {r.photos.slice(0, 4).map((ph, n) => (
               <button type="button" class="ph" data-photo={`${i}:${n}`} aria-label={`Photo ${n + 1} of ${r.photos.length} from ${r.name}'s review`}>
-                <Img src={ph.src} alt="" width={ph.width} height={ph.height} sizes="(min-width: 1200px) 110px, (min-width: 640px) 20vw, 40vw" />
+                <Img src={ph.src} alt={ph.alt ?? ''} width={ph.width} height={ph.height} sizes="(min-width: 1200px) 110px, (min-width: 640px) 20vw, 40vw" />
                 {n === 3 && r.photos.length > 4 && <span class="plus">+{r.photos.length - 4}</span>}
               </button>
             ))}
@@ -99,7 +99,7 @@ const paragraphs = (s: string) => s.split(/\n{2,}/).map((p) => p.trim()).filter(
             <div class="photos wide">
               {r.photos.map((ph, n) => (
                 <button type="button" class="ph" data-photo={`${i}:${n}`} aria-label={`Photo ${n + 1} of ${r.photos.length}`}>
-                  <Img src={ph.src} alt="" width={ph.width} height={ph.height} sizes="120px" />
+                  <Img src={ph.src} alt={ph.alt ?? ''} width={ph.width} height={ph.height} sizes="120px" />
                 </button>
               ))}
             </div>
@@ -120,7 +120,7 @@ const paragraphs = (s: string) => s.split(/\n{2,}/).map((p) => p.trim()).filter(
   <dialog class="lightbox" data-photo-dialog aria-label="Review photo">
     <button type="button" class="close" data-close aria-label="Close">×</button>
     <div class="lb-photo">
-      <img alt="" data-lb-img />
+      <img alt="Review photo" data-lb-img />
       <button type="button" class="nav prev" data-lb="-1" aria-label="Previous photo">‹</button>
       <button type="button" class="nav next" data-lb="1" aria-label="Next photo">›</button>
       <span class="lb-count" data-lb-count></span>
@@ -129,7 +129,7 @@ const paragraphs = (s: string) => s.split(/\n{2,}/).map((p) => p.trim()).filter(
   </dialog>
 </section>
 
-<script define:vars={{ photos: reviews.map((r) => r.photos.map((p) => p.src)) }}>
+<script define:vars={{ photos: reviews.map((r) => r.photos.map((p) => p.src)), alts: reviews.map((r) => r.photos.map((p) => p.alt ?? '')) }}>
   const root = document.querySelector('[data-reviews]');
   if (root) {
     const cards = [...root.querySelectorAll('.card[data-i]')];
@@ -199,6 +199,7 @@ const paragraphs = (s: string) => s.split(/\n{2,}/).map((p) => p.trim()).filter(
       const [i, n] = cur;
       const list = photos[i];
       img.src = big(list[n]);
+      img.alt = alts[i][n] || 'Review photo';
       counter.textContent = list.length > 1 ? `${n + 1} / ${list.length}` : '';
       lb.querySelectorAll('.nav').forEach((b) => { b.hidden = list.length < 2; });
       if (list[n + 1]) new Image().src = big(list[n + 1]);

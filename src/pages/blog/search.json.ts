@@ -1,7 +1,7 @@
 // The blog search index: every live post's names, place, tags and story words, fetched by the
 // search box (BlogSearch.astro) the first time someone uses it.
 import type { APIRoute } from 'astro';
-import { sortedPosts, coverPosition, storyName } from '../../lib/blog';
+import { sortedPosts, coverPosition, coverAlt, storyName } from '../../lib/blog';
 import { sized } from '../../lib/images.mjs';
 
 export const GET: APIRoute = async () => {
@@ -21,6 +21,7 @@ export const GET: APIRoute = async () => {
       date: d.date.toISOString(),
       img: img ? sized(img, 750) : '',
       pos: coverPosition(d.thumbnailPosition) ?? '50% 50%',
+      alt: coverAlt(d),
       text: [d.title, d.venue, d.description, d.tags.join(' '), words].filter(Boolean).join(' ').toLowerCase(),
     };
   });

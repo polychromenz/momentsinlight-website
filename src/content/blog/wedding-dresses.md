@@ -8,6 +8,7 @@ author: "Tony Gorham"
 categories: ["Info"]
 tags: []
 thumbnail: "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2025-chiedza-and-foster/mono/_30A9428/public"
+thumbnailAlt: "Black and white photo of Chiedza and Foster smiling as they walk back down the aisle"
 ---
 As a wedding photographer, the dress is one of the details I look forward to most. The fabric, the fit, the way it catches the light during getting-ready, the train sweeping across the aisle — it's woven through almost every photograph of your day, so finding the right one matters more than most people realise until they're standing in front of the mirror in it.
 

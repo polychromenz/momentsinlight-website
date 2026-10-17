@@ -8,6 +8,7 @@ author: "Tony Gorham"
 categories: ["Wedding"]
 tags: []
 thumbnail: "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2024-raewyn-and-shane/colour/_DSC8874/public"
+thumbnailAlt: "Raewyn and Shane smiling at each other among the trees on their wedding day"
 gallery:
   - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2024-raewyn-and-shane/colour/_DSC8433/public","alt":"Shane and a groomsman in white shirts wait by the water on the Te Atatu Peninsula","width":2048,"height":1638}
   - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2024-raewyn-and-shane/mono/_W2A0598-2-website/public","alt":"Black and white photo of Raewyn smiling from inside a classic car","width":1600,"height":1067}

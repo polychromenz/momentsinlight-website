@@ -10,6 +10,7 @@ tags: []
 review: "Kayla Wells"
 thumbnail: "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-kayla-and-scott/colour/_30A0947-Edit/public"
 thumbnailPosition: "52% 26%"
+thumbnailAlt: "Kayla hugging Scott from behind on a lawn overlooking the harbour in Devonport"
 gallery:
   - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-kayla-and-scott/colour/_30A0262/public","alt":"Close-up of the floral lace detail on Kayla's gown","width":2048,"height":1366}
   - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-kayla-and-scott/colour/_30A0232/public","alt":"Kayla's bouquet of white roses and tulips","width":2048,"height":1366}

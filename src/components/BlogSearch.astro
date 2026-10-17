@@ -22,7 +22,7 @@ const { categories = [], placeholder = 'Search names, venues or places' } = Astr
 </blog-search>
 
 <script>
-  type Post = { id: string; name: string; place: string; kind: string; cats: string[]; date: string; img: string; pos: string; text: string };
+  type Post = { id: string; name: string; place: string; kind: string; cats: string[]; date: string; img: string; pos: string; alt?: string; text: string };
   const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
   // Folds accents and curly apostrophes, so "maori" finds "Māori" and "jess's" finds "Jess’s".
   const fold = (s: string) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/’/g, "'");
@@ -56,7 +56,7 @@ const { categories = [], placeholder = 'Search names, venues or places' } = Astr
         found.textContent = posts.length ? `${posts.length} ${posts.length === 1 ? 'match' : 'matches'}` : 'Nothing matches that yet. Try a couple’s name, a venue or a place.';
         results.innerHTML = posts.slice(0, 48).map((p) => `
           <li><a class="card" href="/blog/${p.id}">
-            <span class="frame">${p.img ? `<img src="${esc(p.img)}" alt="" loading="lazy" decoding="async" style="object-position:${esc(p.pos)}" />` : ''}</span>
+            <span class="frame">${p.img ? `<img src="${esc(p.img)}" alt="${esc(p.alt ?? '')}" loading="lazy" decoding="async" style="object-position:${esc(p.pos)}" />` : ''}</span>
             <span class="meta">${esc(p.kind)} · ${month(p.date)}</span>
             <span class="name">${esc(p.name)}</span>
             ${p.place ? `<span class="place">${esc(p.place)}</span>` : ''}

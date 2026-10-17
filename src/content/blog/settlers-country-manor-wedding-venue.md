@@ -8,6 +8,7 @@ author: "Tony Gorham"
 categories: ["Info"]
 tags: []
 thumbnail: "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/colour/SOCIAL__MIL3720-website/public"
+thumbnailAlt: "Bride and groom under the brick arches at Settlers Country Manor, her long lace veil spread out"
 ---
 ### Intro
 

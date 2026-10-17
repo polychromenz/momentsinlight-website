@@ -9,6 +9,7 @@ categories: ["Wedding"]
 tags: ["kumeu-valley-estate"]
 review: "Jade McQuoid"
 thumbnail: "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-jade-and-ben/colour/_30A8992/public"
+thumbnailAlt: "Jade and Ben’s garden ceremony under a flower-covered pergola at Kumeu Valley Estate"
 gallery:
   - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-jade-and-ben/colour/_30A8995/public","alt":"Jade and Ben under a flower-covered arch at Kumeu Valley Estate","width":1638,"height":2048}
   - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-jade-and-ben/colour/_30A9675/public","alt":"Jade and Ben embrace between trees strung with fairy lights at night","width":2048,"height":1638}

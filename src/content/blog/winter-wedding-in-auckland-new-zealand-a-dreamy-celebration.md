@@ -8,6 +8,7 @@ author: "Tony Gorham"
 categories: []
 tags: []
 thumbnail: "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2025-paige-and-connor/mono/_Q9A0853/public"
+thumbnailAlt: "Black and white photo of a man hugging two young flower girls at a wedding"
 ---
 Don’t let those colder morning fool you into thinking you can’t tie the know. Winter weddings can be incredibly romantic, with cosy vibes, crisp air, and stunning backdrops. Let’s dive into the details:
 

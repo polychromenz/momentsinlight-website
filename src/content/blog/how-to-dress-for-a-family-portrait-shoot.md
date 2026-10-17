@@ -8,6 +8,7 @@ author: "Tony Gorham"
 categories: []
 tags: []
 thumbnail: "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/colour/092A9373_SOCIAL-website/public"
+thumbnailAlt: "Family in matching navy outfits striking fun poses on the beach at dusk"
 ---
 Tips for Picture-Perfect Outfits
 

@@ -6,7 +6,7 @@
 // shade rises with the link label, and a sage line draws under the names.
 import { getCollection } from 'astro:content';
 import Img from './Img.astro';
-import { coverPosition, storyName, isLive } from '../lib/blog';
+import { coverPosition, coverAlt, storyName, isLive } from '../lib/blog';
 
 interface Props {
   categories?: string[];
@@ -37,7 +37,7 @@ const shown = ids ? ids.map((id) => posts.find((p) => p.id === id)).filter((p) =
             {src && (
               <Img
                 src={src}
-                alt=""
+                alt={coverAlt(p.data)}
                 sizes="(min-width: 1100px) 31vw, (min-width: 640px) 46vw, 90vw"
                 loading={i < 3 ? 'eager' : 'lazy'}
                 style={`object-position:${coverPosition(p.data.thumbnailPosition) ?? '50% 50%'}`}

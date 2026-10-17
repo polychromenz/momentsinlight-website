@@ -20,6 +20,14 @@ export function coverPosition(value?: string) {
   return value ? presets[value] ?? value : undefined;
 }
 
+/** The cover photo's description: its own, or the matching gallery photo's. */
+export function coverAlt(d: { thumbnail?: string; thumbnailAlt?: string; gallery: { src: string; alt: string }[] }) {
+  if (d.thumbnailAlt) return d.thumbnailAlt;
+  const cover = d.thumbnail ?? d.gallery[0]?.src;
+  const key = (u?: string) => String(u ?? '').replace(/\/(public(\.webp)?|w=[^/]*)$/, '');
+  return d.gallery.find((g) => key(g.src) === key(cover))?.alt ?? '';
+}
+
 /** A post title split for cards: "Rebecca & Nick | Bridgewater Estate Wedding" becomes
  *  { name: "Rebecca & Nick", place: "Bridgewater Estate" }. Titles without a separator are
  *  left whole. */

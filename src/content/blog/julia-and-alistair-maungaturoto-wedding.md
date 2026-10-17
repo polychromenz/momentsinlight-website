@@ -9,6 +9,7 @@ categories: ["Wedding"]
 tags: []
 review: "Julia Passmore"
 thumbnail: "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-julia-and-alistair/colour/_Q9A3673-Edit/public"
+thumbnailAlt: "Julia and Alistair leaning against a tree at their home wedding in Maungaturoto"
 gallery:
   - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-julia-and-alistair/colour/_Q9A3598/public","alt":"Julia looks out of the window in her wedding dress","width":1366,"height":2048}
   - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-julia-and-alistair/colour/_Q9A3698-Edit/public","alt":"Julia and Alistair lean on the bonnet of a classic car","width":2048,"height":1313}

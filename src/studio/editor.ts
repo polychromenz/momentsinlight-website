@@ -317,7 +317,7 @@ grid.addEventListener('click', async (e) => {
   const btn = (e.target as Element).closest('button');
   const t = btn && tileOf(btn);
   if (!btn || !t) return;
-  if (btn.classList.contains('star')) { data.thumbnail = t.src; data.thumbnailPosition = undefined; renderPhotos(); renderCover(); markDirty(); }
+  if (btn.classList.contains('star')) { data.thumbnail = t.src; data.thumbnailPosition = undefined; data.thumbnailAlt = undefined; renderPhotos(); renderCover(); markDirty(); }
   if (btn.classList.contains('remove') && confirm('Remove this photo from the post? (It stays in your photo library.)')) {
     tiles = tiles.filter((x) => x !== t);
     if (data.thumbnail === t.src) data.thumbnail = undefined;

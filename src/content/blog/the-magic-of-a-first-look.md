@@ -8,6 +8,7 @@ author: "Tony Gorham"
 categories: ["Info"]
 tags: []
 thumbnail: "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/mono/SOCIAL__MIL4826-2-website/public"
+thumbnailAlt: "Black and white photo of a bride hugging her groom from behind in a garden"
 ---
 Your wedding day is a tapestry of dreams and emotions woven into one unforgettable celebration. Amongst timeless traditions and modern twists, one trend stands out: the *first look*. This intimate moment, when you and your partner share a private encounter before the ceremony, is gaining popularity for a good reason. It's an opportunity to pause, breathe, and truly connect before the whirlwind of the day sweeps you away. But what makes this modern tradition so enchanting, and could it be the perfect addition to your wedding?
 

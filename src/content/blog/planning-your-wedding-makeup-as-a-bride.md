@@ -7,6 +7,7 @@ author: "Tony Gorham"
 categories: ["Info"]
 tags: []
 thumbnail: "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/colour/092A4501_SOCIAL-website/public"
+thumbnailAlt: "Bride in a floral robe with her eyes closed as her makeup is finished"
 ---
 Planning your wedding makeup as a bride is an exciting part of the journey. Let’s dive into some essential considerations, along with New Zealand-specific tips:
 
