@@ -102,10 +102,19 @@ Rebuild Studio Ninja-style workflows: scheduled actions relative to job dates.
   - A log screen showing sent and queued actions.
   - An alert to Tony (via Resend) whenever a step fails.
 
+## Testing and switchover (Tony, 17 Oct 2026)
+
+- **The public website doesn't change until the switch.** The /contact page keeps the Studio
+  Ninja form, and Studio Ninja stays in use, until the very end.
+- New pieces are tested out of sight: the new enquiry form lives on a **temporary page,
+  `/newcontact`** (hidden from Google and the sitemap, not linked from the menu). When Tony is
+  happy and ready to leave Studio Ninja, its form moves onto /contact and `/newcontact` is
+  removed (redirected to /contact).
+
 ## Build phases
 
-1. **Enquiries:** own enquiry form on /contact replaces the Studio Ninja embed (Turnstile spam
-   protection, as on the guide signup), creates a lead, sends the auto-reply, alerts Tony;
+1. **Enquiries:** own enquiry form, tested on `/newcontact` (Turnstile spam protection, as on the
+   guide signup; replaces the Studio Ninja embed on /contact only at the switch), creates a lead, sends the auto-reply, alerts Tony;
    leads list and email template library in `/studio`.
 2. **Quotes → contracts → click-to-sign.**
 3. **Stripe invoicing + client portal** (`/portal`). Studio Ninja can be cancelled once this is
