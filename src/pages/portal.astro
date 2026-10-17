@@ -1,0 +1,221 @@
+---
+// A couple's client portal (/portal?t=…, the link in "Thanks for booking" and later emails, and
+// "Open their portal" in the studio). One page: their booking at a glance with what's done and
+// what's next, then the quote, contract, questionnaire, payments, files and galleries, with a
+// section menu. The banner photo is shown whole (never cropped). Hidden from Google; data from
+// functions/api/portal.js.
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+<BaseLayout title="Your client portal | Moments In Light" description="Your booking with Moments in Light." noindex>
+  <main class="portal">
+    <p class="p-status" aria-live="polite">Loading your portal…</p>
+    <div class="p" hidden>
+      <div class="p-banner"><img alt="" /></div>
+      <header class="p-head">
+        <p class="eyebrow p-eyebrow"></p>
+        <h1 class="display p-title"></h1>
+      </header>
+      <nav class="p-nav" aria-label="Your portal"></nav>
+
+      <section id="overview" class="p-card p-overview">
+        <p class="p-welcome"></p>
+        <div class="p-glance">
+          <dl class="p-facts"></dl>
+          <div><h2 class="p-label">Where things are at</h2><ul class="p-check"></ul></div>
+        </div>
+        <p class="p-contact">Tony Gorham · <a href="tel:+6421625943">021 625 943</a> · <a href="mailto:tony@momentsinlight.co.nz">tony@momentsinlight.co.nz</a></p>
+      </section>
+
+      <section id="quote" class="p-card" hidden><h2>Your quote</h2><div class="p-quote"></div></section>
+      <section id="contract" class="p-card" hidden><h2>Contract</h2><ul class="p-list p-contracts"></ul></section>
+      <section id="questionnaire" class="p-card" hidden><h2>Questionnaire</h2><ul class="p-list p-questionnaires"></ul></section>
+      <section id="payments" class="p-card" hidden><h2>Payments</h2><ul class="p-list p-invoices"></ul><p class="p-owing"></p></section>
+      <section id="files" class="p-card">
+        <h2>Files</h2>
+        <ul class="p-list p-files"></ul>
+        <p class="p-msg" role="alert" hidden></p>
+        <label class="p-upload"><input type="file" accept="image/*,application/pdf" multiple /> <span>+ Add photos or files</span></label>
+        <small class="p-hint">Anything you'd like Tony to have: run sheets, inspiration photos… Photos or PDFs, up to 10 MB each.</small>
+      </section>
+      <section id="gallery" class="p-card" hidden><h2>Your galleries</h2><p class="p-gallery-intro"></p><ul class="p-galleries"></ul></section>
+    </div>
+  </main>
+</BaseLayout>
+
+<script>
+  const $ = <T extends HTMLElement = HTMLElement>(s: string) => document.querySelector<T>(s)!;
+  const esc = (s: unknown) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
+  const money = (c: number) => `$${(c / 100).toLocaleString('en-NZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const size = (n: number) => (n > 1048576 ? `${(n / 1048576).toFixed(1)} MB` : `${Math.max(1, Math.round(n / 1024))} KB`);
+  const day = (iso: string) => new Date(iso).toLocaleDateString('en-NZ', { day: 'numeric', month: 'long', year: 'numeric' });
+  const token = new URLSearchParams(location.search).get('t') || '';
+  const T = encodeURIComponent(token);
+  const chip = (text: string, kind = '') => `<span class="p-chip ${kind}">${esc(text)}</span>`;
+  let d: any;
+
+  function render() {
+    document.title = `${d.couple} | Moments In Light`;
+    $('.p-banner img').setAttribute('src', d.banner);
+    $('.p-eyebrow').textContent = [d.event_date_long, d.venue].filter(Boolean).join(' · ');
+    $('.p-title').textContent = d.couple;
+    $('.p-welcome').textContent = d.welcome;
+
+    const q = d.quote;
+    $('.p-facts').innerHTML = [['Date', d.event_date_long], ['Venue', d.venue], ['Package', q?.package && [q.package, ...q.extras].join(' + ')], ['Total', q?.total != null && `${money(q.total)} incl. GST`]]
+      .filter(([, v]) => v).map(([k, v]) => `<dt>${k}</dt><dd>${esc(v)}</dd>`).join('');
+
+    // Where things are at: done, to do, and what's coming.
+    const check: [boolean, string][] = [];
+    if (q) check.push([q.status === 'accepted', q.status === 'accepted' ? 'Quote accepted' : '<a href="#quote">Have a look at your quote</a>']);
+    for (const c of d.contracts) check.push([c.status === 'signed', c.status === 'signed' ? 'Contract signed' : `<a href="/contract?t=${c.token}">Sign your contract</a>`]);
+    for (const x of d.questionnaires) check.push([x.status === 'submitted', x.status === 'submitted' ? `${esc(x.name)} sent in` : `<a href="/questionnaire?t=${x.token}">Fill in your ${esc(x.name.toLowerCase())}</a>`]);
+    if (d.invoices.length) {
+      const paidN = d.invoices.filter((i: any) => i.status === 'paid').length;
+      const next = d.invoices.find((i: any) => i.status !== 'paid');
+      check.push([!next, next ? `Payments: ${paidN} of ${d.invoices.length} paid · next <a href="#payments">${money(next.amount)} due ${esc(next.due_long)}</a>` : 'All paid. Thank you!']);
+    }
+    if (d.galleries.length) check.push([true, `<a href="#gallery">${d.galleries.length === 1 ? 'Your gallery is ready' : 'Your galleries are ready'}</a>`]);
+    $('.p-check').innerHTML = check.map(([done, text]) => `<li class="${done ? 'done' : ''}"><span class="tick" aria-hidden="true">${done ? '✓' : ''}</span><span>${text}</span></li>`).join('') || '<li>Tony will add things here as your booking goes along.</li>';
+
+    // Quote.
+    $('#quote').hidden = !q;
+    if (q) $('.p-quote').innerHTML = (q.package ? `<p class="p-pkg">${esc([q.package, ...q.extras].join(' + '))}</p>` : '<p>Your quote is ready to look at.</p>')
+      + (q.payments.length ? `<table class="p-table"><tbody>${q.payments.map((p: any) => `<tr><td>${esc(p.label)}<small>${esc(p.due)}</small></td><td>${money(p.amount)}</td></tr>`).join('')}<tr class="total"><td>Total (incl. GST)</td><td>${money(q.total)}</td></tr></tbody></table>` : '')
+      + `<div class="p-btns"><a class="btn btn--outline" href="/quote?t=${q.token}">${q.status === 'accepted' ? 'See your quote' : 'View and accept'}</a><a class="p-link" href="/api/quote?t=${q.token}&pdf=1" target="_blank" rel="noopener">PDF</a></div>`;
+
+    // Contract.
+    $('#contract').hidden = !d.contracts.length;
+    $('.p-contracts').innerHTML = d.contracts.map((c: any) => `<li><span class="what"><strong>${esc(c.name)}</strong>${c.status === 'signed' ? `<small>Signed by ${esc(c.signed_name)}, ${day(c.signed_at)}</small>` : '<small>Ready for you to sign</small>'}</span>
+      ${c.status === 'signed' ? chip('Signed', 'ok') : chip('To sign', 'todo')}
+      <a class="${c.status === 'signed' ? 'p-link' : 'btn'}" href="/contract?t=${c.token}">${c.status === 'signed' ? 'View' : 'Sign now'}</a>
+      <a class="p-link" href="/api/contract?t=${c.token}&pdf=1" target="_blank" rel="noopener">PDF</a></li>`).join('');
+
+    // Questionnaire.
+    $('#questionnaire').hidden = !d.questionnaires.length;
+    $('.p-questionnaires').innerHTML = d.questionnaires.map((x: any) => `<li><span class="what"><strong>${esc(x.name)}</strong><small>${x.status === 'submitted' ? `Sent in ${day(x.submitted_at)}. You can still change your answers.` : x.started ? 'Started. Your answers are saved as you go.' : 'Helps Tony plan your day.'}</small></span>
+      ${x.status === 'submitted' ? chip('Sent in', 'ok') : chip('To do', 'todo')}
+      <a class="${x.status === 'submitted' ? 'p-link' : 'btn'}" href="/questionnaire?t=${x.token}">${x.status === 'submitted' ? 'See answers' : x.started ? 'Carry on' : 'Fill it in'}</a></li>`).join('');
+
+    // Payments.
+    $('#payments').hidden = !d.invoices.length;
+    $('.p-invoices').innerHTML = d.invoices.map((i: any) => `<li><span class="what"><strong>${esc(i.label)} · ${money(i.amount)}</strong><small>${i.status === 'paid' ? `Paid ${day(i.paid_at)}${i.paid_method === 'card' ? ' by card' : i.paid_method === 'bank' ? ' by bank transfer' : ''}` : `Due ${esc(i.due_long)}`}</small></span>
+      ${i.status === 'paid' ? chip('Paid', 'ok') : chip('Due', 'todo')}
+      <a class="${i.status === 'paid' ? 'p-link' : 'btn'}" href="/invoice?t=${i.token}">${i.status === 'paid' ? 'Receipt' : 'Pay'}</a>
+      <a class="p-link" href="/api/invoice?t=${i.token}&pdf=1" target="_blank" rel="noopener">PDF</a></li>`).join('');
+    $('.p-owing').innerHTML = d.invoices.length ? (d.owing ? `Paid so far: <strong>${money(d.paid)}</strong> · Still to pay: <strong>${money(d.owing)}</strong>` : `All <strong>${money(d.paid)}</strong> paid. Thank you!`) : '';
+
+    // Files: from Tony, and theirs.
+    $('.p-files').innerHTML = [
+      ...d.documents.map((x: any) => `<li><span class="what"><a href="/api/portal?t=${T}&doc=${x.id}" target="_blank" rel="noopener">${esc(x.name)}</a><small>From Tony · ${size(x.size)}</small></span></li>`),
+      ...d.uploads.map((u: any) => `<li><span class="what"><a href="/api/portal?t=${T}&upload=${u.id}" target="_blank" rel="noopener">${esc(u.name)}</a><small>${u.questionnaire_id ? 'From your questionnaire' : 'You added this'} · ${size(u.size)}</small></span>${u.questionnaire_id ? '' : `<button type="button" class="p-remove" data-remove="${u.id}">Remove</button>`}</li>`),
+    ].join('') || '<li class="empty">No files yet.</li>';
+
+    // Galleries.
+    $('#gallery').hidden = !d.galleries.length;
+    $('.p-gallery-intro').textContent = d.gallery_intro;
+    $('.p-galleries').innerHTML = d.galleries.map((g: any) => `<li><a href="${esc(g.url)}" target="_blank" rel="noopener"><span><strong>${esc(g.title)}</strong>${g.note ? `<small>${esc(g.note)}</small>` : ''}</span><span class="arrow" aria-hidden="true">→</span></a></li>`).join('');
+
+    // The section menu: only what's there.
+    $('.p-nav').innerHTML = [['overview', 'Overview'], ['quote', 'Quote'], ['contract', 'Contract'], ['questionnaire', 'Questionnaire'], ['payments', 'Payments'], ['files', 'Files'], ['gallery', 'Gallery']]
+      .filter(([id]) => !document.getElementById(id)!.hidden).map(([id, label]) => `<a href="#${id}">${label}</a>`).join('');
+  }
+
+  async function load() {
+    const r = await fetch(`/api/portal?t=${T}`);
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) { $('.p-status').textContent = data.error || 'This portal isn’t available.'; return; }
+    d = data;
+    render();
+    $('.p').hidden = false; $('.p-status').hidden = true;
+    if (location.hash) document.querySelector(location.hash)?.scrollIntoView();
+  }
+
+  $<HTMLInputElement>('.p-upload input').addEventListener('change', async (e) => {
+    const input = e.target as HTMLInputElement;
+    const msg = $('.p-msg'); msg.hidden = true;
+    const label = $('.p-upload span');
+    const files = [...(input.files ?? [])];
+    for (const [i, f] of files.entries()) {
+      label.textContent = `Uploading ${i + 1} of ${files.length}…`;
+      if (f.size > 10 * 1024 * 1024) { msg.textContent = `“${f.name}” is over 10 MB. Please choose a smaller version.`; msg.hidden = false; continue; }
+      const fd = new FormData(); fd.append('t', token); fd.append('file', f);
+      const r = await fetch('/api/portal', { method: 'POST', body: fd });
+      const x = await r.json().catch(() => ({}));
+      if (!r.ok) { msg.textContent = x.error || `“${f.name}” didn’t upload. Please try again.`; msg.hidden = false; continue; }
+      d.uploads.push(x);
+    }
+    label.textContent = '+ Add photos or files';
+    input.value = '';
+    render();
+  });
+  document.addEventListener('click', async (e) => {
+    const b = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-remove]');
+    if (!b || !confirm('Remove this file?')) return;
+    await fetch(`/api/portal?t=${T}&upload=${b.dataset.remove}`, { method: 'DELETE' });
+    d.uploads = d.uploads.filter((u: any) => u.id !== Number(b.dataset.remove));
+    render();
+  });
+
+  if (token) load(); else $('.p-status').textContent = 'This portal link isn’t complete. Please use the link in your email.';
+</script>
+
+<style>
+  .portal { background: var(--champagne); padding: 0 0 90px; min-height: 60vh; }
+  .p-status { text-align: center; color: #666; padding: 48px var(--pad); }
+  .p-banner { display: flex; justify-content: center; background: var(--champagne); padding: 28px var(--pad) 0; }
+  .p-banner img { display: block; height: clamp(170px, 30vw, 340px); width: auto; max-width: 100%; object-fit: contain; border-radius: 28px 0; }
+  .p-head { text-align: center; padding: 26px var(--pad) 6px; }
+  .p-title { font-size: clamp(32px, 2.6vw + 18px, 50px); margin: 0; padding: 0; }
+  .p-nav { display: flex; justify-content: center; gap: 6px; flex-wrap: wrap; padding: 14px var(--pad) 22px; }
+  .p-nav :global(a) { padding: 7px 15px; border: 1px solid #ddd3c4; border-radius: 999px; background: var(--white); font-size: 14px; color: #555; text-decoration: none; transition: border-radius 0.4s var(--ease), background-color 0.3s var(--ease), color 0.3s var(--ease); }
+  .p-nav :global(a:hover) { background: var(--green); border-color: var(--green); color: var(--white); opacity: 1; }
+  .p > section { max-width: 900px; margin: 0 auto 20px; scroll-margin-top: 150px; }
+  .p-card { background: var(--white); border-radius: 28px 0; padding: 26px clamp(18px, 4vw, 36px); margin-inline: var(--pad) !important; }
+  @media (min-width: 980px) { .p-card { margin-inline: auto !important; } }
+  .p-card h2, .p-label { margin: 0 0 14px; font-weight: 300; font-size: 24px; color: var(--ink); }
+  .p-label { font-size: 12px !important; font-weight: 600 !important; letter-spacing: 0.2em; text-transform: uppercase; color: var(--green) !important; }
+  .p-welcome { margin: 0 0 22px; white-space: pre-line; line-height: 1.75; color: #444; }
+  .p-glance { display: grid; gap: 22px; }
+  @media (min-width: 720px) { .p-glance { grid-template-columns: 1fr 1fr; } }
+  .p-facts { display: grid; grid-template-columns: auto 1fr; gap: 6px 16px; margin: 0; font-size: 15px; align-content: start; }
+  .p-facts :global(dt) { color: #888; }
+  .p-facts :global(dd) { margin: 0; color: var(--ink); }
+  .p-check { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 9px; font-size: 15px; color: #444; }
+  .p-check :global(li) { display: flex; gap: 10px; align-items: baseline; }
+  .p-check :global(.tick) { flex: 0 0 20px; height: 20px; border: 1.5px solid #cfc5b4; border-radius: 50%; display: inline-grid; place-items: center; font-size: 12px; color: var(--white); transform: translateY(4px); }
+  .p-check :global(li.done .tick) { background: var(--green); border-color: var(--green); }
+  .p-contact { margin: 22px 0 0; padding-top: 16px; border-top: 1px solid #f1ebe1; font-size: 14px; color: #666; }
+  .p-list, .p-galleries { list-style: none; margin: 0; padding: 0; }
+  .p-list :global(li) { display: flex; align-items: center; gap: 8px 14px; flex-wrap: wrap; padding: 12px 0; border-bottom: 1px solid #f1ebe1; }
+  .p-list :global(li:last-child) { border-bottom: 0; }
+  .p-list :global(.what) { flex: 1; min-width: 200px; display: flex; flex-direction: column; gap: 2px; }
+  .p-list :global(.what small), .p-quote :global(small) { color: #888; font-size: 13px; }
+  .p-list :global(.what a) { color: var(--ink); }
+  .p-list :global(.empty) { color: #888; }
+  .p :global(.p-chip) { font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; padding: 3px 10px; border-radius: 999px; background: #f6ecd6; color: #7a5a14; }
+  .p :global(.p-chip.ok) { background: #e6ecd9; color: #3e4229; }
+  .p :global(.p-link) { font-size: 14px; color: var(--green); }
+  .p :global(.btn) { padding: 10px 20px; font-size: 14px; }
+  .p-quote :global(.p-pkg) { margin: 0 0 12px; font-size: 18px; color: var(--ink); }
+  .p-quote :global(.p-table) { width: 100%; border-collapse: collapse; font-size: 15px; margin-bottom: 14px; }
+  .p-quote :global(.p-table) :global(td) { padding: 9px 0; border-bottom: 1px solid #f3eee6; vertical-align: top; }
+  .p-quote :global(.p-table) :global(td small) { display: block; }
+  .p-quote :global(.p-table) :global(td:last-child) { text-align: right; }
+  .p-quote :global(.p-table) :global(tr.total td) { border-bottom: 0; font-weight: 600; color: var(--ink); }
+  .p-quote :global(.p-btns) { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+  .p-owing { margin: 14px 0 0; font-size: 15px; color: #555; }
+  .p-owing:empty { display: none; }
+  .p-upload { display: inline-flex; margin-top: 14px; padding: 10px 16px; border: 1px dashed var(--green); border-radius: 12px 0; color: var(--green); font-size: 14px; font-weight: 600; cursor: pointer; }
+  .p-upload input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+  .p-upload:focus-within { outline: 2px solid var(--green); outline-offset: 2px; }
+  .p-hint { display: block; margin-top: 6px; color: #888; font-size: 13px; }
+  .p-msg { margin: 12px 0 0; padding: 10px 14px; background: #fbeee8; color: #8a3b1e; border-radius: 12px 0; }
+  .p :global(.p-remove) { font: inherit; font-size: 13px; border: 0; background: none; color: #a8432a; cursor: pointer; text-decoration: underline; }
+  .p-gallery-intro { margin: 0 0 18px; white-space: pre-line; line-height: 1.75; color: #444; }
+  .p-galleries :global(a) { display: flex; justify-content: space-between; align-items: center; gap: 14px; padding: 16px 20px; margin-bottom: 10px; background: var(--champagne); border-radius: 18px 0; color: var(--ink); text-decoration: none; transition: border-radius 0.4s var(--ease), background-color 0.3s var(--ease); }
+  .p-galleries :global(a:hover) { border-radius: 0 18px; opacity: 1; }
+  .p-galleries :global(a span:first-child) { display: flex; flex-direction: column; gap: 2px; }
+  .p-galleries :global(small) { color: #777; font-size: 13px; }
+  .p-galleries :global(.arrow) { font-size: 22px; color: var(--green); }
+  .p [hidden], .p-msg[hidden] { display: none !important; }
+</style>

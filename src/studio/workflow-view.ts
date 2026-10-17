@@ -18,7 +18,7 @@ export const WEDDING: Stage[] = [
     { title: 'Contract sent to sign, with the quote PDF', kind: 'auto', when: 'Straight after accepting', status: 'live', note: 'Your Moments in Light contract, or the one chosen on the quote.' },
     { title: 'Contract signed', kind: 'auto', when: 'When they sign online', status: 'live', note: 'Signed PDF emailed to them and to you.' },
     { title: '10% deposit invoice', kind: 'auto', when: 'Straight after signing', status: 'live', note: 'All the invoices are made at signing; they pay by card or bank transfer (you mark those paid). A receipt goes when it’s paid.' },
-    { title: '04 Thanks for booking', kind: 'auto', when: 'Once the deposit is paid', status: 'live', note: 'The portal link goes to their accepted quote until the client portal is built.' },
+    { title: '04 Thanks for booking', kind: 'auto', when: 'Once the deposit is paid', status: 'live', note: 'With the link to their client portal.' },
   ] },
   { name: 'Planning', steps: [
     { title: '05 Let’s plan your day + questionnaire', kind: 'auto', when: '6 weeks before the wedding', status: 'later', note: 'Arranges the planning meeting and practice shoot; links the photo guide.' },

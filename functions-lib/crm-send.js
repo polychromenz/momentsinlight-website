@@ -6,6 +6,7 @@
 import { sendEmail } from './gmail.js';
 import { renderTemplate, fields } from './email-render.js';
 import { attachmentsFor } from './documents.js';
+import { portalToken, portalLink } from './portal.js';
 
 /** A template's attached document ids. */
 export const templateAttachments = (t) => JSON.parse(t?.attachments || '[]');
@@ -16,11 +17,9 @@ export const loadJob = (db, jobId) => db.prepare(
 ).bind(jobId).first();
 
 
-/** Links for a job's emails. Until the client portal is built, {{portal_link}} is their
- *  accepted quote (it shows the booking details and payment plan). */
+/** Links for a job's emails: {{portal_link}} is their client portal. */
 export async function jobLinks(db, job) {
-  const q = await db.prepare(`SELECT token FROM quotes WHERE job_id = ?1 AND status = 'accepted' ORDER BY accepted_at DESC LIMIT 1`).bind(job.id).first();
-  return q ? { portal_link: `https://www.momentsinlight.co.nz/quote?t=${q.token}` } : {};
+  return { portal_link: portalLink(await portalToken(db, job.id)) };
 }
 
 /** The email a step would send, filled in (for review, or before sending). */

@@ -6,6 +6,7 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
 import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
 ---
 <StudioLayout title="Client" section="clients">
+  <a slot="bar" class="s-btn s-btn--quiet portal-open" href="#" target="_blank" rel="noopener" hidden>Open their portal ↗</a>
   <span slot="bar" class="save-state" aria-live="polite"></span>
   <button slot="bar" type="button" class="s-btn s-btn--solid" data-act="save" disabled>Save</button>
 
@@ -41,6 +42,17 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
           <section class="card">
             <h2>Invoices</h2>
             <ul class="quotes invoices"></ul>
+          </section>
+          <section class="card portal-card">
+            <div class="card-head"><h2>Client portal</h2><span class="portal-actions"><a class="s-btn portal-open" href="#" target="_blank" rel="noopener">Open their portal ↗</a><button type="button" class="s-btn s-btn--quiet" data-portal-copy>Copy link</button></span></div>
+            <p class="hint">What they see: their booking, quote, contract, questionnaire, payments, plus the files and galleries below.</p>
+            <h3 class="sub">Galleries</h3>
+            <ul class="quotes portal-galleries"></ul>
+            <form class="portal-add" autocomplete="off"><input name="title" placeholder="Name, e.g. Your practice shoot" aria-label="Gallery name" /><input name="url" placeholder="Pic-Time link" aria-label="Gallery link" /><button type="submit" class="s-btn s-btn--quiet">+ Add gallery</button></form>
+            <h3 class="sub">Files from you <small>(tick to share from your Documents)</small></h3>
+            <div class="portal-docs"></div>
+            <h3 class="sub">Files from them</h3>
+            <ul class="quotes portal-uploads"></ul>
           </section>
           <section class="card">
             <h2>Their enquiry</h2>
@@ -153,6 +165,37 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
   let invoices: Invoice[] = [];
   type Message = { direction: string; subject: string; body: string; sent_at: string; attachments: string; gmail_message_id: string | null };
   let messages: Message[] = [];
+  // ---- Portal ----
+  let portal: { link: string; path: string; galleries: { id: number; title: string; url: string }[]; documents: { id: number; name: string; size: number; shared: boolean }[]; uploads: { id: number; name: string; size: number; created_at: string; questionnaire_id: number | null }[] };
+  const kb = (n: number) => (n > 1048576 ? `${(n / 1048576).toFixed(1)} MB` : `${Math.max(1, Math.round(n / 1024))} KB`);
+  async function loadPortal() {
+    const r = await fetch(`/api/studio/crm/portal?job=${id}`);
+    const p = await r.json().catch(() => ({}));
+    if (!r.ok) return;
+    portal = p;
+    document.querySelectorAll<HTMLAnchorElement>('.portal-open').forEach((a) => { a.href = p.path; a.hidden = false; });
+    $('.portal-galleries').innerHTML = p.galleries.map((g: any) => `<li class="inv"><span class="what"><a href="${esc(g.url)}" target="_blank" rel="noopener"><strong>${esc(g.title)}</strong></a><br><small>${esc(g.url)}</small></span><button type="button" class="s-btn s-btn--quiet" data-gallery-remove="${g.id}">Remove</button></li>`).join('') || '<li class="empty">None yet. Add the Pic-Time link when their gallery is ready.</li>';
+    $('.portal-docs').innerHTML = p.documents.length ? p.documents.map((x: any) => `<label class="pdoc"><input type="checkbox" value="${x.id}"${x.shared ? ' checked' : ''} /> ${esc(x.name)} <small>${kb(x.size)}</small></label>`).join('') : '<p class="empty">Upload files in Settings &gt; Documents first.</p>';
+    $('.portal-uploads').innerHTML = p.uploads.map((u: any) => `<li class="inv"><span class="what"><a href="/api/studio/crm/portal?job=${id}&upload=${u.id}" target="_blank" rel="noopener">${esc(u.name)}</a><br><small>${kb(u.size)} · ${u.questionnaire_id ? 'from their questionnaire' : 'added in their portal'} · ${dateTime(u.created_at)}</small></span>${u.questionnaire_id ? '' : `<button type="button" class="s-btn s-btn--quiet" data-upload-remove="${u.id}">Remove</button>`}</li>`).join('') || '<li class="empty">Nothing yet.</li>';
+  }
+  async function portalPost(body: Record<string, unknown>) {
+    const r = await fetch('/api/studio/crm/portal', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ job_id: id, ...body }) });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) { toast(d.error || 'Couldn’t save that.', true); return false; }
+    await loadPortal();
+    return true;
+  }
+  $<HTMLFormElement>('.portal-add').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const fm = e.target as HTMLFormElement;
+    const v = (n: string) => (fm.elements.namedItem(n) as HTMLInputElement).value;
+    if (await portalPost({ action: 'gallery', title: v('title'), url: v('url') })) { fm.reset(); toast('Gallery added to their portal.'); }
+  });
+  $('.portal-docs').addEventListener('change', async () => {
+    const ids = [...document.querySelectorAll<HTMLInputElement>('.portal-docs input:checked')].map((i) => Number(i.value));
+    if (await portalPost({ action: 'share', document_ids: ids })) toast('Their portal’s files updated.');
+  });
+
   async function load() {
     await loadLists();
     const r = await fetch(`/api/studio/crm/job?id=${id}`);
@@ -335,6 +378,11 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
       location.href = `/studio/crm/quote?id=${d.id}`;
       return;
     }
+    if (t.closest('[data-portal-copy]') && portal) { await navigator.clipboard.writeText(portal.link); toast('Portal link copied.'); return; }
+    const gr = t.closest<HTMLButtonElement>('[data-gallery-remove]');
+    if (gr) { if (confirm('Remove this gallery from their portal?')) await portalPost({ action: 'gallery-remove', id: Number(gr.dataset.galleryRemove) }); return; }
+    const ur = t.closest<HTMLButtonElement>('[data-upload-remove]');
+    if (ur) { if (confirm('Delete this file they uploaded?')) await portalPost({ action: 'upload-remove', id: Number(ur.dataset.uploadRemove) }); return; }
     const ql = t.closest<HTMLButtonElement>('[data-q-link]');
     if (ql) { await navigator.clipboard.writeText(location.origin.replace(/localhost:\d+/, 'www.momentsinlight.co.nz') + ql.dataset.qLink); toast('Link copied. Paste it into an email to them.'); return; }
     if (t.closest('[data-q-close]')) { $<HTMLDialogElement>('dialog.q-view').close(); return; }
@@ -438,7 +486,7 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
   });
 
   if (!id) $('.status').textContent = 'Which client? Open one from the Clients page.';
-  else load();
+  else { load(); loadPortal(); }
 </script>
 
 <style is:global>
@@ -471,6 +519,15 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
   .job-page .inv--void .what { opacity: 0.5; }
   .job-page .inv .late { color: #a8432a; }
   .job-page .inv .ok { color: var(--green); }
+  .job-page .portal-card .hint { margin: 0 0 6px; font-size: 14px; color: #777; }
+  .job-page .portal-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+  .job-page .sub { margin: 16px 0 4px; font-size: 12px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--green); }
+  .job-page .sub small { text-transform: none; letter-spacing: 0; font-weight: 400; color: #999; }
+  .job-page .portal-add { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+  .job-page .portal-add input { flex: 1 1 180px; font: inherit; font-size: 14px; padding: 8px 10px; border: 1px solid #ddd3c4; border-radius: 10px 0; }
+  .job-page .portal-docs { display: flex; flex-direction: column; gap: 6px; font-size: 14px; }
+  .job-page .pdoc { display: flex; gap: 8px; align-items: center; }
+  .job-page .pdoc small { color: #999; }
   .job-page .q-make select { font: inherit; font-size: 14px; padding: 7px 10px; border: 1px solid #ddd3c4; border-radius: 10px 0; }
   .q-view .q-view-body { max-height: 65dvh; overflow: auto; padding-right: 6px; }
   .job-page .card h2 { margin: 0 0 12px; font-weight: 300; font-size: 22px; color: var(--ink); }
