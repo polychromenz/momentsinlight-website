@@ -55,14 +55,20 @@ export const kindOf = (subject) => subject
   .trim();
 
 /** An email's layout with the details blanked: labels kept, values hidden. */
+// Only labels are kept: a line ending in ':' (Studio Ninja puts the value on the next line, so
+// that line is hidden too), and every other line is shown as its first word only. No names,
+// messages or details can come through.
 function redact(text) {
-  return text.split('\n').map((l) => l.trim()).filter(Boolean).slice(0, 60).map((l) => {
-    const label = l.match(/^([A-Za-z][A-Za-z /&()'?-]{1,40}):\s*(.*)$/);
-    if (label) return `${label[1]}: ${label[2] ? '…' : ''}`;
-    if (l.includes('\t')) return l.split('\t').map((c) => (c.trim() ? (/^[A-Za-z /&()'?-]{1,30}$/.test(c.trim()) && !/\s\S+\s\S+\s/.test(c) ? c.trim() : '…') : '')).join(' | ');
-    // Other lines: first few words, names and numbers hidden.
-    return l.split(/\s+/).slice(0, 8).map((w, i) => (/[@\d]/.test(w) ? '#' : i > 0 && /^[A-Z][a-z]/.test(w) ? 'Xxx' : w)).join(' ') + (l.split(/\s+/).length > 8 ? ' …' : '');
-  }).join('\n');
+  const lines = text.replace(/[^\n]*\{[^}]*\}/g, '').split('\n').map((l) => l.trim()).filter(Boolean).slice(0, 80);
+  const out = [];
+  let afterLabel = false;
+  for (const l of lines) {
+    const label = l.match(/^([A-Za-z][A-Za-z /&()'?-]{1,60}):\s*(.*)$/);
+    if (label) { out.push(`${label[1]}: …`); afterLabel = !label[2]; continue; }
+    if (afterLabel) { afterLabel = false; continue; } // that label's value
+    out.push(`${l.split(/\s+/)[0].replace(/[^A-Za-z']/g, '') || '…'} …`);
+  }
+  return out.join('\n');
 }
 
 /** Step 1: the survey. Cloudflare allows about 50 outside requests per call, so it stays lean:
@@ -93,4 +99,63 @@ export async function survey(env) {
   await env.DB.prepare(`INSERT INTO settings (key, value, updated_at) VALUES ('sn_survey', ?1, ?2) ON CONFLICT (key) DO UPDATE SET value = ?1, updated_at = ?2`)
     .bind(JSON.stringify(result), result.at).run();
   return result;
+}
+
+// ---- Step 2: reading the emails (into the sn_gmail table, migrations/0019_sn_gmail.sql) ----
+// Studio Ninja's notification layouts: "Label:" lines with the value on the next line(s).
+export const KINDS = {
+  lead: 'from:studioninja.app subject:("New lead from")',
+  quote_accepted: 'from:studioninja.app subject:("Your quote for")',
+  contract_signed: 'from:studioninja.app subject:("Your contract for")',
+};
+const BATCH = 35; // emails read per call (Cloudflare allows about 50 outside requests)
+
+/** "Label:" → value pairs from an SN email (values may run over several lines). */
+export function fieldsOf(text) {
+  const lines = text.replace(/[^\n]*\{[^}]*\}/g, '').split('\n').map((l) => l.trim());
+  const out = {};
+  let key = null;
+  for (const l of lines) {
+    if (/^(Regards,|Click here|Feedback or questions|PS -)/.test(l)) { key = null; continue; }
+    const m = l.match(/^([A-Za-z][A-Za-z /&()'?-]{1,60}):\s*(.*)$/);
+    // A label starts a new field the first time it appears (people type "Venue:" etc. in their
+    // own message too; those stay part of the message).
+    // Inside their message only Studio Ninja's own question labels end it.
+    const inMessage = key && /wedding plans|message/i.test(key);
+    if (m && !(m[1].trim() in out) && (!inMessage || /\?$/.test(m[1].trim()))) { key = m[1].trim(); out[key] = m[2] || ''; continue; }
+    if (key && l) out[key] = out[key] ? `${out[key]}\n${l}` : l;
+  }
+  return out;
+}
+
+/** The job name in an SN subject: "Your quote for Jane Smith (Website Contact Form Wedding) has been accepted" → the name part. */
+const subjectName = (s) => s.replace(/^(New lead from|Your quote for|Your contract for)\s+/i, '').replace(/\s+(has been accepted|is signed|has been signed).*$/i, '').trim();
+
+/** Read the next batch of one kind. Returns how many there are, how many are read, how many left. */
+export async function readBatch(env, kind) {
+  const ids = await search(env, KINDS[kind], 1000);
+  const have = new Set((await env.DB.prepare('SELECT message_id FROM sn_gmail WHERE kind = ?1').bind(kind).all()).results.map((r) => r.message_id));
+  const todo = ids.filter((id) => !have.has(id)).slice(0, BATCH);
+  const msgs = await Promise.all(todo.map((id) => full(env, id).catch(() => null)));
+  const now = new Date().toISOString();
+  const stmts = [];
+  for (const m of msgs.filter(Boolean)) {
+    const subject = header(m, 'subject');
+    const f = kind === 'lead' ? fieldsOf(textOf(m)) : {};
+    const data = kind === 'lead'
+      ? { first_name: f['First Name'] ?? '', last_name: f['Last Name'] ?? '', email: (f.Email ?? '').toLowerCase(), phone: f['Phone (optional)'] ?? f.Phone ?? '',
+        service: f['Which services are you interested in?'] ?? '', venue: f.Venue ?? '', event_date: f['Event Date'] ?? '',
+        source: f['How did you hear about us?'] ?? f['How did you hear about me?'] ?? '', message: f['Tell me a little about your wedding plans'] ?? '', other: Object.keys(f) }
+      : { job: subjectName(subject), accepted: /accepted/i.test(textOf(m)) };
+    stmts.push(env.DB.prepare('INSERT OR IGNORE INTO sn_gmail (message_id, kind, received_at, subject, data, created_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6)')
+      .bind(m.id, kind, new Date(Number(m.internalDate)).toISOString(), subject, JSON.stringify(data), now));
+  }
+  if (stmts.length) await env.DB.batch(stmts);
+  return { kind, total: ids.length, read: have.size + stmts.length, left: Math.max(0, ids.length - have.size - stmts.length) };
+}
+
+/** Where step 2 is up to, for each kind (no Gmail calls). */
+export async function progress(env) {
+  const rows = (await env.DB.prepare('SELECT kind, count(*) n, min(received_at) first, max(received_at) last FROM sn_gmail GROUP BY kind').all()).results;
+  return Object.fromEntries(Object.keys(KINDS).map((k) => [k, rows.find((r) => r.kind === k) ?? { n: 0 }]));
 }

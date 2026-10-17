@@ -650,9 +650,44 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
     if (d.error) { $('.sn-result').innerHTML = `<p class="hint" style="color:#a8432a">${esc(d.error)}</p>`; return; }
     $('.sn-result').innerHTML = `<p class="hint">Found ${d.total_found} Studio Ninja emails (searched ${new Date(d.at).toLocaleString('en-NZ', { dateStyle: 'medium', timeStyle: 'short' })}). Claude can read these results from here; the examples have the details hidden.</p>
       <table class="list-table sn-table"><thead><tr><th>Kind of email</th><th>How many</th><th>Readable</th></tr></thead><tbody>
-      ${d.kinds.map((k: any) => `<tr><td><strong>${esc(k.subject)}</strong><br><small>${esc(k.from)}</small></td><td>${k.count ?? '–'}</td><td>${k.layout && !k.layout.startsWith('(couldn') ? '✓' : '–'}</td></tr>`).join('')}
-      </tbody></table>`;
+      ${d.kinds.map((k: any) => `<tr><td><strong>${esc(k.subject)}</strong><br><small>${esc(k.from)}</small></td><td>${k.count ?? '–'}</td></tr>`).join('')}
+      </tbody></table>
+      <h3 class="sn-h">Step 2: read the enquiries and bookings</h3>
+      <p class="hint">Reads the "New lead", "quote accepted" and "contract" emails into a holding area (35 at a time, it keeps going by itself). Nothing is added to your clients yet; that's the import, after you've checked the report. You can remove what was read at any time.</p>
+      <p class="sn-progress">${snProgress(d.progress)}</p>
+      <div class="actions" style="justify-content:flex-start"><button type="button" class="s-btn s-btn--solid" data-sn-read>Read the Studio Ninja emails</button><button type="button" class="s-btn s-btn--quiet" data-sn-clear>Remove what was read</button></div>`;
   }
+  const SN_KINDS: Record<string, string> = { lead: 'Enquiries', quote_accepted: 'Quotes accepted', contract_signed: 'Contracts' };
+  const snProgress = (p: any) => (p ? Object.entries(SN_KINDS).map(([k, label]) => `${label}: <strong>${p[k]?.n ?? 0}</strong>${p[k]?.first ? ` <small>(${p[k].first.slice(0, 10)} to ${p[k].last.slice(0, 10)})</small>` : ''}`).join(' · ') : '');
+  document.addEventListener('click', async (e) => {
+    const t = e.target as HTMLElement;
+    const rb = t.closest<HTMLButtonElement>('[data-sn-read]');
+    if (rb) {
+      rb.disabled = true;
+      for (const kind of Object.keys(SN_KINDS)) {
+        for (let i = 0; i < 20; i++) {
+          rb.textContent = `Reading ${SN_KINDS[kind].toLowerCase()}…`;
+          const r = await fetch('/api/studio/crm/sn-gmail', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'read', kind }) });
+          const d = await r.json().catch(() => ({ error: `Something went wrong (${r.status}).` }));
+          if (!r.ok) { toast(d.error, true); rb.disabled = false; rb.textContent = 'Read the Studio Ninja emails'; return; }
+          rb.textContent = `${SN_KINDS[kind]}: ${d.read} of ${d.total}`;
+          if (!d.left) break;
+        }
+      }
+      const g = await (await fetch('/api/studio/crm/sn-gmail')).json();
+      $('.sn-progress').innerHTML = snProgress(g.progress);
+      rb.disabled = false; rb.textContent = 'Read the Studio Ninja emails';
+      toast('Done. Tell Claude, and it will add them to the dry-run report.');
+      return;
+    }
+    if (t.closest('[data-sn-clear]')) {
+      if (!confirm('Remove everything read from the Studio Ninja emails? (Your Gmail isn’t touched; you can read them again any time.)')) return;
+      await fetch('/api/studio/crm/sn-gmail', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'clear' }) });
+      const g = await (await fetch('/api/studio/crm/sn-gmail')).json();
+      $('.sn-progress').innerHTML = snProgress(g.progress);
+      toast('Removed.');
+    }
+  });
   document.addEventListener('click', async (e) => {
     const b = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-sn-survey]');
     if (!b) return;
@@ -730,6 +765,9 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
   .settings .sn-table td, .settings .sn-table th { text-align: center; font-size: 13px; }
   .settings .sn-table td:first-child, .settings .sn-table th:first-child { text-align: left; }
   .settings .sn-table small { color: #999; }
+  .settings .sn-h { margin: 22px 0 6px; font-weight: 400; font-size: 18px; color: var(--ink); }
+  .settings .sn-progress { font-size: 14px; color: #444; }
+  .settings .sn-progress small { color: #999; }
   .settings .pay-stripe { margin: 0; font-size: 14px; color: #444; }
   .settings .portal-banner-preview { display: block; max-width: 100%; max-height: 200px; width: auto; border-radius: 18px 0; background: var(--champagne); }
   @media (min-width: 700px) { .settings .pay-form .two { grid-template-columns: 1fr 1fr; } }
