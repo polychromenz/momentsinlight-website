@@ -32,6 +32,12 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
       <h2 class="sugg-title">Suggested fix</h2>
       <p class="sugg-note" hidden></p>
       <div class="sugg-items"></div>
+      <div class="pv" hidden>
+        <div class="pv-head"><span class="lbl">On the page</span><span class="pv-what muted"></span>
+          <div class="pv-mode" role="group" aria-label="Show"><button type="button" data-pv="before">Now</button><button type="button" data-pv="after" class="on">Suggested</button></div>
+          <a class="pv-open" target="_blank" rel="noopener">Open the page ↗</a></div>
+        <iframe class="pv-frame" title="Page preview"></iframe>
+      </div>
       <div class="sugg-actions"><button type="button" class="s-btn s-btn--quiet" data-sugg-close>Cancel</button><button type="button" class="s-btn s-btn--quiet" data-sugg-again>✨ Suggest again</button><button type="button" class="s-btn s-btn--solid" data-sugg-apply>Apply fix</button></div>
     </div>
   </dialog>
@@ -53,13 +59,86 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
   const limits: Record<string, [number, number]> = { title: [30, 60], description: [120, 155] };
   const counter = (type: string, v: string) => { const l = limits[type]; if (!l) return ''; const n = v.trim().length; return `<small class="${n >= l[0] && n <= l[1] ? 'up' : 'down'}">${n} characters (aim for ${l[0]}–${l[1]})</small>`; };
   const labelOf = (i: any) => i.label ?? ({ title: 'Google title', description: 'Google description', h1: 'Main heading', text: 'Paragraph', photo: 'Photo description', append: 'Add a link' } as any)[i.type];
+  // ---- Previews ----
+  const md = (t: string) => esc(t).replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>');
+  const serp = (path: string, title: string, desc: string) => `<div class="serp"><span class="serp-site">Moments In Light</span><span class="serp-url">momentsinlight.co.nz${path === '/' ? '' : esc(path.replace(/\//g, ' › ').replace(/^ › /, ' › '))}</span><span class="serp-title">${esc(title.length > 62 ? title.slice(0, 60) + '…' : title)}</span><span class="serp-desc">${esc(desc.length > 160 ? desc.slice(0, 158) + '…' : desc)}</span></div>`;
+  function googlePreview(i: any) {
+    if (!i.ctx) return '';
+    const t = (v: string) => (i.type === 'title' ? v : i.ctx.title), dsc = (v: string) => (i.type === 'description' ? v : i.ctx.description);
+    return `<div class="g-preview"><span class="lbl">How it looks on Google</span><div class="g-cols"><div><small class="muted">Now</small>${serp(i.path, t(i.before), dsc(i.before))}</div><div><small class="muted">Suggested</small><div data-g-after>${serp(i.path, t(i.after), dsc(i.after))}</div></div></div></div>`;
+  }
+  let pvItem = -1;
+  let pvMode: 'before' | 'after' = 'after';
+  const onPage = (i: any) => ['h1', 'text', 'photo', 'append'].includes(i.type);
+  const norm = (t: string) => String(t ?? '').replace(/\[([^\]]*)\]\([^)]*\)/g, '$1').replace(/[*_#>`]/g, '').replace(/[’']/g, "'").replace(/\s+/g, ' ').trim().toLowerCase();
+  function showPreview(n: number) {
+    const i = sugg!.items[n];
+    const pv = document.querySelector<HTMLElement>('.pv')!;
+    if (!i || !onPage(i)) return;
+    pv.hidden = false;
+    document.querySelectorAll('.sugg-item').forEach((x) => x.classList.toggle('previewing', Number((x as HTMLElement).dataset.n) === n));
+    document.querySelector('.pv-what')!.textContent = `${labelOf(i)} · ${i.path}`;
+    document.querySelector<HTMLAnchorElement>('.pv-open')!.href = i.path;
+    const frame = document.querySelector<HTMLIFrameElement>('.pv-frame')!;
+    if (pvItem !== -1 && sugg!.items[pvItem]?.path === i.path && frame.contentDocument?.readyState === 'complete') { pvItem = n; applyPreview(); return; }
+    pvItem = n;
+    frame.onload = () => [300, 1200, 2500].forEach((ms) => setTimeout(applyPreview, ms));
+    frame.src = i.path;
+  }
+  function applyPreview() {
+    const i = sugg?.items[pvItem];
+    const doc = document.querySelector<HTMLIFrameElement>('.pv-frame')!.contentDocument;
+    if (!i || !doc?.body) return;
+    doc.querySelectorAll('[data-pv-mark]').forEach((el) => { const o = (el as HTMLElement).dataset.pvOrig; if (o !== undefined) el.innerHTML = o; (el as HTMLElement).removeAttribute('style'); el.removeAttribute('data-pv-mark'); });
+    doc.querySelectorAll('[data-pv-added], [data-pv-caption]').forEach((el) => el.remove());
+    if (!doc.getElementById('pv-style')) { const st = doc.createElement('style'); st.id = 'pv-style'; st.textContent = '[data-reveal]{opacity:1!important;transform:none!important}[data-pv-mark]{outline:3px solid #c9a24a!important;outline-offset:6px;background:rgba(201,162,74,.12)!important}.pv-cap{position:absolute;left:8px;right:8px;bottom:8px;background:rgba(0,0,0,.75);color:#fff;font:14px/1.4 Arial,sans-serif;padding:6px 10px;border-radius:8px 0;z-index:9}'; doc.head.append(st); }
+    const after = pvMode === 'after';
+    let target: HTMLElement | null = null;
+    const mark = (el: HTMLElement, html?: string) => { el.dataset.pvOrig = el.innerHTML; el.dataset.pvMark = ''; if (html !== undefined) el.innerHTML = html; target = el; };
+    if (i.type === 'h1') { const el = doc.querySelector<HTMLElement>('main h1, h1'); if (el) mark(el, after ? esc(i.after) : undefined); }
+    if (i.type === 'text') {
+      const want = norm(i.show ?? i.before).slice(0, 40);
+      const el = [...doc.querySelectorAll<HTMLElement>('main p, p')].find((p) => norm(p.textContent ?? '').startsWith(want));
+      if (el) mark(el, after ? md(i.after) : undefined);
+    }
+    if (i.type === 'photo') {
+      const key = i.src.replace(/\/(public(\.webp)?|w=[^/]*)$/, '');
+      const img = [...doc.querySelectorAll<HTMLImageElement>('img')].find((m) => (m.getAttribute('src') ?? m.getAttribute('data-src') ?? '').includes(key));
+      if (img) {
+        if (img.dataset.src && !img.getAttribute('src')) img.src = img.dataset.src;
+        const box = (img.closest('figure, li, a, div') as HTMLElement) ?? img.parentElement!;
+        if (getComputedStyle(box).position === 'static') box.style.position = 'relative';
+        mark(box);
+        const cap = doc.createElement('div'); cap.className = 'pv-cap'; cap.dataset.pvCaption = '';
+        cap.textContent = `Photo description: ${after ? i.after || '(none)' : i.before || '(none yet)'}`;
+        box.append(cap);
+      }
+    }
+    if (i.type === 'append') {
+      const ps = [...doc.querySelectorAll<HTMLElement>('main article p, main .story p, main p')].filter((p) => (p.textContent ?? '').trim().split(' ').length > 6);
+      const last = ps.at(-1);
+      if (last && after) { const p = doc.createElement('p'); p.dataset.pvAdded = ''; p.innerHTML = md(i.after); last.after(p); mark(p); } else if (last) mark(last);
+    }
+    (target as HTMLElement | null)?.scrollIntoView({ block: 'center' });
+  }
+
   function drawSugg() {
     const box = document.querySelector('.sugg-items')!;
     box.innerHTML = sugg!.items.map((i, n) => `<div class="sugg-item" data-n="${n}">
       <p class="sugg-label"><label><input type="checkbox" data-use checked> ${esc(labelOf(i))}</label> <small class="muted">${esc(i.path)}</small></p>
       ${i.type === 'photo' ? `<img src="${esc(i.src.replace(/\/(public|w=[^/]*)$/, '/w=360'))}" alt="" class="sugg-img">` : ''}
       <div class="sugg-cols"><div><span class="lbl">Now</span><div class="before">${esc(i.show ?? i.before) || '<span class="muted">(nothing)</span>'}</div></div>
-      <div><span class="lbl">Suggested</span><textarea data-after rows="${i.type === 'text' ? 6 : i.type === 'description' || i.type === 'append' ? 3 : 2}">${esc(i.after)}</textarea><span class="cnt">${counter(i.type, i.after)}</span>${i.options?.length > 1 ? `<div class="opts"><span class="lbl">Or choose</span>${i.options.map((o: string, m: number) => `<button type="button" class="opt${o === i.after ? ' on' : ''}" data-opt="${m}">${esc(o)}</button>`).join('')}</div>` : ''}</div></div></div>`).join('');
+      <div><span class="lbl">Suggested</span><textarea data-after rows="${i.type === 'text' ? 6 : i.type === 'description' || i.type === 'append' ? 3 : 2}">${esc(i.after)}</textarea><span class="cnt">${counter(i.type, i.after)}</span>${onPage(i) ? `<button type="button" class="pv-btn" data-preview="${n}">👁 Preview on the page</button>` : ''}${i.options?.length > 1 ? `<div class="opts"><span class="lbl">Or choose</span>${i.options.map((o: string, m: number) => `<button type="button" class="opt${o === i.after ? ' on' : ''}" data-opt="${m}">${esc(o)}</button>`).join('')}</div>` : ''}</div></div>${googlePreview(i)}</div>`).join('');
+    document.querySelector<HTMLElement>('.pv')!.hidden = true;
+    pvItem = -1;
+    const first = sugg!.items.findIndex(onPage);
+    if (first !== -1) showPreview(first);
+  }
+  function refreshItem(n: number) {
+    const i = sugg!.items[n];
+    const g = document.querySelector(`.sugg-item[data-n="${n}"] [data-g-after]`);
+    if (g && i.ctx) g.innerHTML = serp(i.path, i.type === 'title' ? i.after : i.ctx.title, i.type === 'description' ? i.after : i.ctx.description);
+    if (n === pvItem && pvMode === 'after') applyPreview();
   }
   async function openSuggest(keyword: string, key: string) {
     const k = data.keywords.find((x: any) => x.keyword === keyword);
@@ -143,6 +222,7 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
     const n = Number(ta.closest<HTMLElement>('.sugg-item')!.dataset.n);
     sugg.items[n].after = ta.value;
     ta.parentElement!.querySelector('.cnt')!.innerHTML = counter(sugg.items[n].type, ta.value);
+    refreshItem(n);
   });
   document.addEventListener('click', async (e) => {
     const t = e.target as HTMLElement;
@@ -158,8 +238,13 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
       ta.value = sugg.items[n].after;
       item.querySelector('.cnt')!.innerHTML = counter(sugg.items[n].type, ta.value);
       item.querySelectorAll('.opt').forEach((x) => x.classList.toggle('on', x === ob));
+      refreshItem(n);
       return;
     }
+    const pb = t.closest<HTMLButtonElement>('[data-preview]');
+    if (pb) { showPreview(Number(pb.dataset.preview)); document.querySelector('.pv')!.scrollIntoView({ block: 'nearest' }); return; }
+    const pm = t.closest<HTMLButtonElement>('[data-pv]');
+    if (pm) { pvMode = pm.dataset.pv as 'before' | 'after'; document.querySelectorAll('[data-pv]').forEach((x) => x.classList.toggle('on', x === pm)); applyPreview(); return; }
     if (t.closest('[data-sugg-again]') && sugg) { await openSuggest(sugg.keyword, sugg.key); return; }
     const ap = t.closest<HTMLButtonElement>('[data-sugg-apply]');
     if (ap && sugg) {
@@ -243,7 +328,7 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
   .above li.you { background: #e9eddf; font-weight: 600; }
   .above .n { flex: 0 0 22px; color: #999; } .above a { color: var(--ink); } .above small { color: #999; }
   .cmp { width: 100%; border-collapse: collapse; font-size: 13px; margin: 10px 0 4px; } .cmp th, .cmp td { text-align: left; padding: 5px 6px; border-bottom: 1px solid #f1ebe1; } .cmp a { color: var(--ink); }
-  .sugg { border: 0; border-radius: 22px 0; padding: 0; width: min(860px, 94vw); max-height: 90vh; box-shadow: 0 30px 70px -30px rgb(0 0 0 / 0.5); }
+  .sugg { border: 0; border-radius: 22px 0; padding: 0; width: min(1000px, 96vw); max-height: 90vh; box-shadow: 0 30px 70px -30px rgb(0 0 0 / 0.5); }
   .sugg::backdrop { background: rgb(20 20 15 / 0.45); }
   .sugg-in { padding: 22px 24px; display: flex; flex-direction: column; gap: 12px; }
   .sugg-title { margin: 0; font-weight: 300; font-size: 22px; color: var(--ink); }
@@ -258,6 +343,23 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
   .sugg .before { padding: 9px 11px; background: #f6f2ea; border-radius: 8px 0; font-size: 14px; color: #555; white-space: pre-wrap; min-height: 2.4em; }
   .sugg textarea { width: 100%; box-sizing: border-box; font: inherit; font-size: 14px; padding: 9px 11px; border: 1px solid var(--green); border-radius: 8px 0; }
   .sugg .cnt small { font-size: 12px; }
+  .sugg .g-preview { margin-top: 12px; }
+  .sugg .g-cols { display: grid; gap: 12px; margin-top: 4px; }
+  @media (min-width: 700px) { .sugg .g-cols { grid-template-columns: 1fr 1fr; } }
+  .serp { display: flex; flex-direction: column; gap: 2px; padding: 12px 14px; background: #fff; border: 1px solid #e8e8e8; border-radius: 10px; font-family: Arial, sans-serif; margin-top: 4px; }
+  .serp-site { font-size: 14px; color: #202124; }
+  .serp-url { font-size: 12px; color: #4d5156; }
+  .serp-title { font-size: 19px; line-height: 1.3; color: #1a0dab; margin-top: 4px; }
+  .serp-desc { font-size: 14px; line-height: 1.5; color: #4d5156; }
+  .sugg .pv-btn { margin-top: 8px; border: 0; background: none; padding: 0; font: inherit; font-size: 13px; color: var(--green); text-decoration: underline; cursor: pointer; }
+  .sugg-item.previewing { border-left: 3px solid #c9a24a; padding-left: 10px; }
+  .pv { border-top: 1px solid #f1ebe1; padding-top: 12px; }
+  .pv-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; font-size: 13px; }
+  .pv-mode { display: flex; gap: 4px; margin-left: auto; }
+  .pv-mode button { padding: 5px 12px; border: 1px solid #ddd3c4; border-radius: 999px; background: var(--white); font: inherit; font-size: 13px; cursor: pointer; }
+  .pv-mode button.on { background: var(--green); border-color: var(--green); color: var(--white); }
+  .pv-open { font-size: 13px; color: var(--green); }
+  .pv-frame { width: 100%; height: 440px; border: 1px solid #e6dccb; border-radius: 12px 0; background: #fff; }
   .sugg .opts { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
   .sugg .opt { text-align: left; border: 1px solid #e6dccb; background: var(--white); border-radius: 8px 0; padding: 7px 10px; font: inherit; font-size: 13px; color: #444; cursor: pointer; }
   .sugg .opt:hover { border-color: var(--green); }

@@ -66,13 +66,13 @@ export async function suggestFix(env, { keyword, key, target, pages = [] }) {
   if (key === 'title') {
     if (!src) return notHere(CODE);
     const opts = await options(env, `${about}\n\nWrite a Google title for this page, at most 60 characters, with "${keyword}" (or very close wording) near the start, and a romantic, timeless feel. End with " | Moments In Light" only if it still fits in 60 characters.`, 60);
-    return { items: [{ type: 'title', path: target, before: titleOf(src), after: opts[0], options: opts }] };
+    return { items: [{ type: 'title', path: target, before: titleOf(src), after: opts[0], options: opts, ctx: { title: page.title, description: page.desc } }] };
   }
   if (key === 'desc') {
     if (!src) return notHere(CODE);
     const before = src.file.endsWith('.md') ? getField(split(src.content).fm, 'description') : JSON.parse(src.content).description;
     const opts = await options(env, `${about}\n\nWrite the Google description for this page: 140 to 155 characters, using "${keyword}" naturally, in his warm, romantic voice, giving a couple a reason to click.`, 120);
-    return { items: [{ type: 'description', path: target, before: before ?? '', after: opts[0], options: opts }] };
+    return { items: [{ type: 'description', path: target, before: before ?? '', after: opts[0], options: opts, ctx: { title: page.title, description: page.desc } }] };
   }
   if (key === 'h1') {
     if (!src) return notHere(CODE);
@@ -117,7 +117,7 @@ export async function suggestFix(env, { keyword, key, target, pages = [] }) {
       const before = titleOf(s);
       const pg = readPage((await builtPage(env, p)).html);
       const after = clean(await ai(env, VOICE, `Page: ${p}\nGoogle title now: ${before}\nMain heading: ${pg.h1}\nOpening: ${pg.intro.slice(0, 300)}\n\nThis page's Google title competes with another page for the search "${keyword}". Write a more specific Google title (at most 60 characters) that describes what THIS page is about (the couple, the venue, the topic) in his warm voice, and doesn't use the phrase "${keyword}".`, 60));
-      items.push({ type: 'title', path: p, before, after });
+      items.push({ type: 'title', path: p, before, after, ctx: { title: pg.title, description: pg.desc } });
     }
     return items.length ? { items } : notHere('Those pages are built into the site’s code. Ask Claude to change their titles.');
   }
