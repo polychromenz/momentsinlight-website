@@ -2,6 +2,7 @@
 //   POST /api/studio/describe { src, names?, kind? } -> { description }
 // `names` (e.g. "Ellie and Ryan") lets the suggestion use the couple's names.
 import { json, IMAGES_HASH } from '../../../functions-lib/studio.js';
+import { see } from '../../../functions-lib/ai.js';
 
 export async function onRequestPost({ request, env }) {
   const { src, names, kind } = await request.json().catch(() => ({}));
@@ -14,8 +15,7 @@ export async function onRequestPost({ request, env }) {
   const what = kind === 'portrait' ? 'portrait session' : kind === 'family' ? 'family photo session' : kind === 'article' ? 'photo' : 'wedding';
   const prompt = `Describe this ${what} photograph in one short sentence of 8 to 16 words, for a website's image description.${who} Say what is happening and where if visible. Describe people neutrally ("the couple", "two people", "guests") and never assume genders or roles such as bride and groom unless they are obvious from the names given. Don't start with "A photo of" or "The image". Use NZ English.`;
   try {
-    const out = await env.AI.run('@cf/llava-hf/llava-1.5-7b-hf', { image: bytes, prompt, max_tokens: 60 });
-    let text = String(out?.description ?? out?.response ?? '').trim();
+    let text = await see(env, bytes, prompt, 60);
     text = text.replace(/^(the|this) (image|photo|picture|photograph) (shows|features|depicts|captures)\s+/i, '').replace(/\s+/g, ' ');
     text = text.split(/(?<=\.)\s/)[0].replace(/\.$/, '');
     if (!text) return json({ error: 'No suggestion came back. Try again.' }, 502);

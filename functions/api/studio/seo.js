@@ -1,6 +1,7 @@
 // A suggested Google title and description for a post, from Cloudflare's text AI.
 //   POST /api/studio/seo { title, kind, venue, text } -> { seoTitle, description }
 import { json } from '../../../functions-lib/studio.js';
+import { chat } from '../../../functions-lib/ai.js';
 
 export async function onRequestPost({ request, env }) {
   const { title = '', kind = 'wedding', venue = '', text = '' } = await request.json().catch(() => ({}));
@@ -14,8 +15,7 @@ export async function onRequestPost({ request, env }) {
     },
   ];
   try {
-    const out = await env.AI.run('@cf/meta/llama-3.1-8b-instruct', { messages, max_tokens: 220 });
-    const raw = String(out?.response ?? '');
+    const raw = await chat(env, messages, 220);
     const found = raw.match(/\{[\s\S]*\}/);
     const data = found ? JSON.parse(found[0]) : null;
     if (!data?.seoTitle || !data?.description) return json({ error: 'No suggestion came back. Try again.' }, 502);

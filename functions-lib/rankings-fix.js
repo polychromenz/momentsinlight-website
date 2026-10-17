@@ -12,6 +12,7 @@ import { readRepoFile, IMAGES_HASH } from './studio.js';
 import { builtPosts } from './schedules.js';
 import { readPage, stems } from './rankings.js';
 import { fileFor, split, getField, jsonStrings } from './seo-fix.js';
+import { chat, see } from './ai.js';
 
 const SITE = 'https://www.momentsinlight.co.nz';
 const decode = (t) => String(t ?? '').replace(/&#39;|&rsquo;/g, '’').replace(/&quot;/g, '"').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&nbsp;/g, ' ');
@@ -19,9 +20,7 @@ const plain = (t) => decode(String(t ?? '').replace(/<[^>]+>/g, ' ').replace(/\[
 const same = (a, b) => plain(a).toLowerCase().replace(/[’']/g, "'").slice(0, 60) === plain(b).toLowerCase().replace(/[’']/g, "'").slice(0, 60);
 
 async function ai(env, system, user, max = 200) {
-  if (!env.AI) throw new Error('Suggestions aren’t switched on yet.');
-  const out = await env.AI.run('@cf/meta/llama-3.1-8b-instruct', { messages: [{ role: 'system', content: system }, { role: 'user', content: user }], max_tokens: max });
-  return String(out?.response ?? '').trim();
+  return chat(env, [{ role: 'system', content: system }, { role: 'user', content: user }], max);
 }
 const VOICE = 'You write for Moments in Light, the website of Tony Gorham, a wedding and portrait photographer in Auckland, New Zealand. Use NZ English, warm and natural, no hype, no emojis, never invent facts. Reply with the text only: no quotes, no notes.';
 const clean = (t) => String(t).split('\n').filter(Boolean)[0]?.replace(/^["“']|["”']$/g, '').replace(/^(title|description|heading)\s*:\s*/i, '').trim() ?? '';
@@ -134,10 +133,7 @@ async function describe(env, src, keyword) {
   try {
     const img = await fetch(src.replace(/\/[^/]+$/, '/w=640'), { headers: { accept: 'image/jpeg' } });
     if (!img.ok) return '';
-    const out = await env.AI.run('@cf/llava-hf/llava-1.5-7b-hf', {
-      image: [...new Uint8Array(await img.arrayBuffer())], max_tokens: 60,
-      prompt: `Describe this photograph in one short sentence of 8 to 16 words, for a website's image description. It is on a page about "${keyword}"; mention the place only if it fits. Describe people neutrally ("the couple", "guests") and never assume genders. Don't start with "A photo of" or "The image". Use NZ English.`,
-    });
+    const out = { description: await see(env, [...new Uint8Array(await img.arrayBuffer())], `Describe this photograph in one short sentence of 8 to 16 words, for a website's image description. It is on a page about "${keyword}"; mention the place only if it fits. Describe people neutrally ("the couple", "guests") and never assume genders. Don't start with "A photo of" or "The image". Use NZ English.`) };
     let t = String(out?.description ?? out?.response ?? '').trim().replace(/^(the|this) (image|photo|picture|photograph) (shows|features|depicts|captures)\s+/i, '').split(/(?<=\.)\s/)[0].replace(/\.$/, '');
     return t ? t[0].toUpperCase() + t.slice(1) : '';
   } catch { return ''; }
