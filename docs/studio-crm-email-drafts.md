@@ -1,5 +1,8 @@
 # Studio CRM: portrait and headshot email drafts
 
+**Parked:** Tony sells very few portraits and headshots, so weddings come first; finish these
+later.
+
 Drafted 17 Oct 2026 from Tony's wedding templates and the website's portrait, premium portrait
 and headshot pages, for the steps in the Portrait and Headshots workflows (see
 [studio-crm-findings.md](studio-crm-findings.md)). **Drafts for Tony to edit**: anything marked
