@@ -2,7 +2,7 @@
 //   GET  /api/studio/crm/quote-send?id=3   the email filled in, for review
 //   POST /api/studio/crm/quote-send        { id, subject, body }  send it (test-mode lock applies)
 import { json } from '../../../../functions-lib/studio.js';
-import { renderTemplate, fields } from '../../../../functions-lib/email-render.js';
+import { renderTemplate, fields, studioLinks } from '../../../../functions-lib/email-render.js';
 import { sendEmail, connection } from '../../../../functions-lib/gmail.js';
 import { loadJob, templateAttachments } from '../../../../functions-lib/crm-send.js';
 import { listDocuments, attachmentsFor } from '../../../../functions-lib/documents.js';
@@ -16,7 +16,7 @@ async function prepare(env, id) {
   const job = await loadJob(env.DB, q.job_id);
   const template = await env.DB.prepare(`SELECT * FROM templates WHERE key = 'quote-ready'`).first();
   if (!template) throw new Error('The “Quote ready” email template is missing (Settings).');
-  const values = fields(job, { quote_link: `https://www.momentsinlight.co.nz/quote?t=${q.token}`, quote_valid_until: longDate(q.valid_until), payment_plan: planHtml(parseQuote(q), job) });
+  const values = fields(job, { ...(await studioLinks(env.DB)), quote_link: `https://www.momentsinlight.co.nz/quote?t=${q.token}`, quote_valid_until: longDate(q.valid_until), payment_plan: planHtml(parseQuote(q), job) });
   return { q, job, template, values };
 }
 

@@ -4,7 +4,7 @@
 // a PDF of the accepted quote attached. The couple signs at /contract?t=… (functions/api/contract.js).
 // All client email goes through sendEmail(), so the test-mode lock applies.
 import { sendEmail } from './gmail.js';
-import { renderTemplate, fields } from './email-render.js';
+import { renderTemplate, fields, studioLinks } from './email-render.js';
 import { attachmentsFor } from './documents.js';
 import { templateAttachments } from './crm-send.js';
 import { clean, toHtml } from './rich-html.js';
@@ -66,7 +66,7 @@ export async function sendContract(env, contract, quoteRow, job) {
   const template = await db.prepare(`SELECT * FROM templates WHERE key = 'contract-ready'`).first();
   if (!template) throw new Error('The “Contract ready to sign” email template is missing (Settings).');
   const q = parseQuote(quoteRow);
-  const email = renderTemplate(template, fields(job, { contract_link: `${SITE}/contract?t=${contract.token}` }));
+  const email = renderTemplate(template, fields(job, { ...(await studioLinks(db)), contract_link: `${SITE}/contract?t=${contract.token}` }));
   if (email.missing.length) throw new Error(`The contract email needs: ${email.missing.join(', ')}.`);
   const pdf = toBase64(await quotePdf(q, job, quoteNumber(q)));
   const attachments = [{ name: `Moments in Light quote ${quoteNumber(q)}.pdf`, type: 'application/pdf', base64: pdf }, ...await attachmentsFor(db, templateAttachments(template))];

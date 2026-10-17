@@ -10,12 +10,13 @@ import { paymentSettings, stripeReady } from '../../../../functions-lib/invoices
 import { cleanQuestions } from '../../../../functions-lib/questionnaires.js';
 import { clean } from '../../../../functions-lib/rich-html.js';
 import { portalSettings } from '../../../../functions-lib/portal.js';
+import { studioLinks } from '../../../../functions-lib/email-render.js';
 import { cleanSteps } from '../../../../functions-lib/workflows.js';
 
 const LISTS = ['job_type', 'lead_source'];
 
 export async function onRequestGet({ env }) {
-  const [lists, templates, schedules, documents, contracts, payments, questionnaires, portal, workflows] = await Promise.all([
+  const [lists, templates, schedules, documents, contracts, payments, questionnaires, portal, workflows, links] = await Promise.all([
     env.DB.prepare('SELECT kind, value, label, workflow, on_form, contract_key, questionnaire_key FROM lists ORDER BY kind, sort, id').all(),
     env.DB.prepare('SELECT key, name, subject, body, attachments, updated_at FROM templates ORDER BY key').all(),
     env.DB.prepare('SELECT key, name, parts FROM payment_schedules ORDER BY name').all(),
@@ -25,6 +26,7 @@ export async function onRequestGet({ env }) {
     env.DB.prepare('SELECT key, name, intro, questions, updated_at FROM questionnaire_templates ORDER BY name').all(),
     portalSettings(env.DB),
     env.DB.prepare('SELECT key, name, steps, updated_at FROM workflows ORDER BY name').all(),
+    studioLinks(env.DB),
   ]);
   const by = (k) => lists.results.filter((r) => r.kind === k).map(({ kind, ...r }) => ({ ...r, on_form: !!r.on_form }));
   return json({
@@ -35,7 +37,7 @@ export async function onRequestGet({ env }) {
     schedules: schedules.results.map((s) => ({ ...s, parts: JSON.parse(s.parts) })),
     workflows: workflows.results.map((w) => ({ ...w, steps: JSON.parse(w.steps) })),
     contracts: contracts.results,
-    payments, stripe: stripeReady(env), portal,
+    payments, stripe: stripeReady(env), portal, links,
     questionnaires: questionnaires.results.map((q) => ({ ...q, questions: JSON.parse(q.questions) })),
   });
 }
@@ -187,6 +189,13 @@ export async function onRequestPut({ request, env }) {
     const used = await env.DB.prepare(`SELECT value FROM lists WHERE kind = 'job_type' AND questionnaire_key = ?1`).bind(d.delete_questionnaire).all();
     if (used.results.length) return json({ error: `It’s the default for ${used.results.map((r) => r.value).join(', ')}. Choose another in Job types first.` }, 409);
     await env.DB.prepare('DELETE FROM questionnaire_templates WHERE key = ?1').bind(d.delete_questionnaire).run();
+    return json({ ok: true });
+  }
+  // Your links: { links: { booking_link } } → {{booking_link}} in emails.
+  if (d?.links) {
+    const booking = text(d.links.booking_link, 500);
+    if (booking && !/^https:\/\/\S+$/.test(booking)) return json({ error: 'The link needs to start with https:// (copy it from your browser’s address bar).' }, 400);
+    await env.DB.prepare(`INSERT INTO settings (key, value, updated_at) VALUES ('links', ?1, ?2) ON CONFLICT (key) DO UPDATE SET value = ?1, updated_at = ?2`).bind(JSON.stringify({ booking_link: booking }), now).run();
     return json({ ok: true });
   }
   // Portal: { portal: { welcome, gallery_intro, banner } } (empty = the default wording).

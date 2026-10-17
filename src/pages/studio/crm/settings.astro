@@ -22,6 +22,7 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
       <button type="button" role="tab" data-tab="questionnaires">Questionnaires</button>
       <button type="button" role="tab" data-tab="payments">Payments</button>
       <button type="button" role="tab" data-tab="portal">Client portal</button>
+      <button type="button" role="tab" data-tab="links">Your links</button>
       <button type="button" role="tab" data-tab="workflows">Workflows</button>
     </div>
     <p class="status" aria-live="polite">Loading…</p>
@@ -71,6 +72,15 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
           <p class="hint">Sent quotes keep the schedule they were sent with; changes apply to new quotes.</p>
         </form>
       </div>
+    </section>
+
+    <section class="pane" data-pane="links" hidden>
+      <form class="card links-form pay-form" autocomplete="off">
+        <p class="hint">Links you use in lots of emails. Put them in a template with the merge field shown, and every email fills it in, so if a link changes you only change it here.</p>
+        <label>Book a chat with me <small>(your Google booking page)</small><input name="booking_link" type="url" placeholder="https://calendar.app.google/…" /></label>
+        <p class="hint">In a template: <code>{'{{booking_link}}'}</code>, or as a button: select some text, click Link and type <code>{'{{booking_link}}'}</code>. <a class="links-test" href="#" target="_blank" rel="noopener" hidden>Open it to check ↗</a></p>
+        <div class="actions"><button type="submit" class="s-btn s-btn--solid">Save</button></div>
+      </form>
     </section>
 
     <section class="pane" data-pane="portal" hidden>
@@ -176,11 +186,11 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
     const t = $('.s-toast'); t.textContent = text; t.classList.toggle('error', error); t.classList.add('show');
     setTimeout(() => t.classList.remove('show'), 4000);
   };
-  const sample = { first_name: 'Emma', last_name: 'Smith', partner_name: 'Liam', couple: 'Emma & Liam', event_date: 'Saturday, 20 February 2027', venue: 'Tui Hills', quote_link: 'https://www.momentsinlight.co.nz/quote', quote_valid_until: '16 November 2026', portal_link: 'https://www.momentsinlight.co.nz/', gallery_link: 'https://www.momentsinlight.co.nz/', contract_link: 'https://www.momentsinlight.co.nz/', payment_amount: '$299.50', payment_due_date: '24 October 2026', invoice_number: 'MIL-2026-0001', invoice_label: 'Deposit (10%)', invoice_link: 'https://www.momentsinlight.co.nz/invoice' };
+  const sample = { first_name: 'Emma', last_name: 'Smith', partner_name: 'Liam', couple: 'Emma & Liam', event_date: 'Saturday, 20 February 2027', venue: 'Tui Hills', quote_link: 'https://www.momentsinlight.co.nz/quote', quote_valid_until: '16 November 2026', portal_link: 'https://www.momentsinlight.co.nz/', gallery_link: 'https://www.momentsinlight.co.nz/', contract_link: 'https://www.momentsinlight.co.nz/', payment_amount: '$299.50', payment_due_date: '24 October 2026', invoice_number: 'MIL-2026-0001', invoice_label: 'Deposit (10%)', invoice_link: 'https://www.momentsinlight.co.nz/invoice', booking_link: 'https://calendar.app.google/', questionnaire_link: 'https://www.momentsinlight.co.nz/questionnaire', shoot_date: 'Saturday, 20 February', shoot_time: '2:00 pm', location: 'Tui Hills' };
 
   type Part = { percent: number; label: string; when: string; days?: number; months?: number };
   type Schedule = { key: string; name: string; parts: Part[] };
-  let data: { job_type: Item[]; lead_source: Item[]; templates: Template[]; workflows: Wf[]; documents: LibraryDoc[]; schedules: Schedule[]; contracts: ContractT[]; payments: Record<string, string>; stripe: { ok: boolean; test?: boolean; why?: string }; questionnaires: Qn[]; portal: Record<string, string> };
+  let data: { job_type: Item[]; lead_source: Item[]; templates: Template[]; workflows: Wf[]; documents: LibraryDoc[]; schedules: Schedule[]; contracts: ContractT[]; payments: Record<string, string>; stripe: { ok: boolean; test?: boolean; why?: string }; questionnaires: Qn[]; portal: Record<string, string>; links: Record<string, string> };
   let current: Template | null = null;
   let tab = 'templates';
   const editor = $<HTMLFormElement>('.tpl-editor');
@@ -588,7 +598,7 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
     if (t.closest('[data-act="new-template"]')) { openTemplate(null); field('name').focus(); return; }
     const pane = t.closest<HTMLElement>('[data-pane]');
     const kind = pane?.dataset.pane as 'job_type' | 'lead_source';
-    if (!pane || ['templates', 'documents', 'schedules', 'contracts', 'workflows', 'payments', 'questionnaires', 'portal'].includes(kind as string)) return;
+    if (!pane || ['templates', 'documents', 'schedules', 'contracts', 'workflows', 'payments', 'questionnaires', 'portal', 'links'].includes(kind as string)) return;
     if (t.closest('[data-act="add"]')) {
       data[kind] = [...readList(kind), { value: '', label: '', workflow: null, on_form: true }];
       renderList(kind);
@@ -627,6 +637,20 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
     await load(current?.key);
   });
 
+  // ---- Your links ----
+  const linksForm = $<HTMLFormElement>('.links-form');
+  const linkTest = () => { const v = (linksForm.elements.namedItem('booking_link') as HTMLInputElement).value.trim(); const a = $<HTMLAnchorElement>('.links-test'); a.hidden = !/^https:\/\//.test(v); a.href = v; };
+  function renderLinks() { (linksForm.elements.namedItem('booking_link') as HTMLInputElement).value = data.links.booking_link || ''; linkTest(); }
+  linksForm.addEventListener('input', linkTest);
+  linksForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const r = await fetch('/api/studio/crm/settings', { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ links: Object.fromEntries(new FormData(linksForm)) }) });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) { toast(d.error || 'Couldn’t save.', true); return; }
+    toast('Saved. Emails with {{booking_link}} use it from now on.');
+    await load(current?.key);
+  });
+
   // ---- Client portal ----
   const portalForm = $<HTMLFormElement>('.portal-form');
   const bannerPreview = () => { $<HTMLImageElement>('.portal-banner-preview').src = (portalForm.elements.namedItem('banner') as HTMLInputElement).value; };
@@ -649,7 +673,7 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
     const d = await r.json();
     if (!r.ok) { $('.status').textContent = d.error || `Something went wrong (${r.status}).`; return; }
     data = d;
-    renderTemplates(); renderList('job_type'); renderList('lead_source'); renderDocs(); renderSchedules(); renderContracts(); renderPayments(); renderQns(); renderPortal(); renderWfs();
+    renderTemplates(); renderList('job_type'); renderList('lead_source'); renderDocs(); renderSchedules(); renderContracts(); renderPayments(); renderQns(); renderPortal(); renderWfs(); renderLinks();
     openWf(data.workflows.find((x) => x.key === (openWf_ ?? currentWf?.key)) ?? data.workflows[0] ?? null);
     openQn(data.questionnaires.find((x) => x.key === (openQn_ ?? currentQn?.key)) ?? data.questionnaires[0] ?? null);
     openContract(data.contracts.find((x) => x.key === (openContract_ ?? currentCon?.key)) ?? data.contracts[0] ?? null);

@@ -4,7 +4,7 @@
 // and send" in the studio (functions/api/studio/crm/send.js) for ready-to-send ones.
 // Every send goes through sendEmail(), so the test-mode lock always applies.
 import { sendEmail } from './gmail.js';
-import { renderTemplate, fields } from './email-render.js';
+import { renderTemplate, fields, studioLinks } from './email-render.js';
 import { attachmentsFor } from './documents.js';
 import { portalToken, portalLink } from './portal.js';
 import { ruleOf, planAfter } from './workflows.js';
@@ -22,7 +22,7 @@ export const loadJob = (db, jobId) => db.prepare(
 /** Links for a job's emails: {{portal_link}} is their client portal. For a step that sends a
  *  questionnaire, {{questionnaire_link}} (made now if they don't have that one yet). */
 export async function jobLinks(db, job, step = null, env = null) {
-  const out = { portal_link: portalLink(await portalToken(db, job.id)) };
+  const out = { ...(await studioLinks(db)), portal_link: portalLink(await portalToken(db, job.id)) };
   const want = ruleOf(step).questionnaire;
   const any = await db.prepare(`SELECT * FROM questionnaires WHERE job_id = ?1 ${want ? 'AND template_key = ?2' : ''} ORDER BY id DESC LIMIT 1`).bind(...(want ? [job.id, want] : [job.id])).first();
   if (any) out.questionnaire_link = questionnaireLink(any);

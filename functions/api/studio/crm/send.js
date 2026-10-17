@@ -41,7 +41,7 @@ export async function onRequestPost({ request, env }) {
   const subject = (d?.subject ?? '').toString().trim();
   const body = (d?.body ?? '').toString().trim();
   if (!id || !subject || !body) return json({ error: 'The email needs a subject and some text.' }, 400);
-  if (/\[(first_name|last_name|partner_name|couple|event_date|venue|portal_link|contract_link|payment_amount|payment_due_date|questionnaire_link|shoot_date|shoot_time|location)\]/.test(subject + body) || hasCheck(subject + body)) {
+  if (/\[(first_name|last_name|partner_name|couple|event_date|venue|portal_link|contract_link|payment_amount|payment_due_date|questionnaire_link|shoot_date|shoot_time|location|booking_link)\]/.test(subject + body) || hasCheck(subject + body)) {
     return json({ error: 'There’s still a gap to fill in (something in [square brackets]).' }, 400);
   }
   const step = await env.DB.prepare('SELECT * FROM steps WHERE id = ?1').bind(id).first();

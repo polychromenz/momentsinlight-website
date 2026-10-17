@@ -13,7 +13,7 @@ import { contractPdf, toBase64 } from '../../functions-lib/pdf.js';
 import { fingerprintOf } from '../../functions-lib/contracts.js';
 import { storeNamed, loadNamed } from '../../functions-lib/documents.js';
 import { sendEmail } from '../../functions-lib/gmail.js';
-import { renderTemplate, fields } from '../../functions-lib/email-render.js';
+import { renderTemplate, fields, studioLinks } from '../../functions-lib/email-render.js';
 import { createInvoices, sendInvoice, money } from '../../functions-lib/invoices.js';
 
 const reply = (data, status = 200) => new Response(JSON.stringify(data), { status, headers: { 'content-type': 'application/json', 'cache-control': 'no-store' } });
@@ -63,7 +63,7 @@ export async function onRequestPost({ request, env }) {
   try {
     const template = await env.DB.prepare(`SELECT * FROM templates WHERE key = 'contract-signed'`).first();
     if (!template) throw new Error('the “Contract signed” email template is missing');
-    const email = renderTemplate(template, fields(job));
+    const email = renderTemplate(template, fields(job, await studioLinks(env.DB)));
     const last = await env.DB.prepare('SELECT gmail_thread_id FROM messages WHERE job_id = ?1 AND gmail_thread_id IS NOT NULL ORDER BY sent_at DESC LIMIT 1').bind(job.id).first();
     const sent = await sendEmail(env, { to: job.email, subject: email.subject, html: email.html, attachments: [{ name: fileName, type: 'application/pdf', base64: pdf }], threadId: last?.gmail_thread_id });
     await env.DB.prepare(`INSERT INTO messages (job_id, client_id, direction, subject, body, gmail_message_id, gmail_thread_id, sent_at, attachments) VALUES (?1, ?2, 'out', ?3, ?4, ?5, ?6, ?7, ?8)`)

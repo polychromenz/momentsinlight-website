@@ -7,7 +7,7 @@
 // All client email goes through sendEmail(): the test-mode lock applies. Stripe: while the CRM is
 // in test mode only Stripe *test* keys are used, so no real card can be charged.
 import { sendEmail } from './gmail.js';
-import { renderTemplate, fields } from './email-render.js';
+import { renderTemplate, fields, studioLinks } from './email-render.js';
 import { loadJob } from './crm-send.js';
 import { sendMode, alertTony } from './crm.js';
 import { parseQuote, payments, longDate } from './quotes.js';
@@ -87,7 +87,7 @@ export async function sendInvoice(env, inv, kind = 'invoice') {
   const job = await loadJob(db, inv.job_id);
   const template = await db.prepare('SELECT * FROM templates WHERE key = ?1').bind(kind).first();
   if (!template) throw new Error(`The “${kind}” email template is missing (Settings).`);
-  const email = renderTemplate(template, invoiceValues(inv, job));
+  const email = renderTemplate(template, { ...(await studioLinks(db)), ...invoiceValues(inv, job) });
   if (email.missing.length) throw new Error(`The invoice email needs: ${email.missing.join(', ')}.`);
   const pdf = toBase64(await invoicePdf(inv, job, await paymentSettings(db)));
   const last = await db.prepare('SELECT gmail_thread_id FROM messages WHERE job_id = ?1 AND gmail_thread_id IS NOT NULL ORDER BY sent_at DESC LIMIT 1').bind(job.id).first();
