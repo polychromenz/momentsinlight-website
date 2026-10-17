@@ -9,7 +9,7 @@ import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import Tracking from '../components/Tracking.astro';
 import { site } from '../data/site';
-import { sized } from '../lib/images.mjs';
+import { sized, responsive } from '../lib/images.mjs';
 // Body text (400) and headings (500): fetched straight away, so they're usually ready before
 // any text is drawn and the text doesn't jump when the font swaps in.
 import raleway400 from '@fontsource/raleway/files/raleway-latin-400-normal.woff2?url';
@@ -25,8 +25,12 @@ interface Props {
   background?: 'white' | 'alt';
   /** Keep the page out of Google (e.g. /newcontact while it's being tested). */
   noindex?: boolean;
+  /** The page's first big photo: the browser starts fetching it before anything else
+   *  (same sizes as the <img>, so it's the same file). */
+  heroImage?: { src: string; sizes?: string };
 }
-const { title, description, image, type = 'website', jsonLd, background = 'white', noindex = false } = Astro.props;
+const { title, description, image, type = 'website', jsonLd, background = 'white', noindex = false, heroImage } = Astro.props;
+const hero = heroImage ? responsive(heroImage.src) : null;
 // The page's public address. Pages are built as files (weddings.html) but served without
 // the .html (/weddings), which is the address Google should index.
 const canonical = new URL(Astro.url.pathname.replace(/\.html$/, '').replace(/\/index$/, '/').replace(/(.)\/$/, '$1') || '/', site.url).href;
@@ -41,6 +45,9 @@ const ogImage = image ? sized(image, 1500) : undefined;
     <title>{title}</title>
     <meta name="description" content={description} />
     {noindex && <meta name="robots" content="noindex, nofollow" />}
+    {/* Photos come from Cloudflare Images: connect to it straight away. */}
+    <link rel="preconnect" href="https://imagedelivery.net" />
+    {hero && <link rel="preload" as="image" href={hero.src} imagesrcset={hero.srcset} imagesizes={heroImage!.sizes ?? '100vw'} fetchpriority="high" />}
     <link rel="preload" href={raleway400} as="font" type="font/woff2" crossorigin />
     <link rel="preload" href={raleway500} as="font" type="font/woff2" crossorigin />
     <link rel="canonical" href={canonical} />
