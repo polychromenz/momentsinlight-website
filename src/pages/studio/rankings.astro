@@ -27,6 +27,14 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
     <p class="rk-status"></p>
     <div class="rk-list"><p class="muted">Loading…</p></div>
   </main>
+  <dialog class="sugg" aria-label="Suggested fix">
+    <div class="sugg-in">
+      <h2 class="sugg-title">Suggested fix</h2>
+      <p class="sugg-note" hidden></p>
+      <div class="sugg-items"></div>
+      <div class="sugg-actions"><button type="button" class="s-btn s-btn--quiet" data-sugg-close>Cancel</button><button type="button" class="s-btn s-btn--quiet" data-sugg-again>✨ Suggest again</button><button type="button" class="s-btn s-btn--solid" data-sugg-apply>Apply fix</button></div>
+    </div>
+  </dialog>
   <div class="s-toast" role="status"></div>
 </StudioLayout>
 
@@ -37,6 +45,39 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
   const post = async (body: any) => { const r = await fetch('/api/studio/crm/rankings', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) }); return { ok: r.ok, d: await r.json().catch(() => ({})) }; };
   const day = (iso: string) => new Date(`${iso.slice(0, 10)}T12:00:00Z`).toLocaleDateString('en-NZ', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' });
   let data: any = null;
+  // Fixes that can be suggested and applied from here.
+  const SUGGEST = ['title', 'desc', 'h1', 'intro', 'alt', 'compete', 'inlinks'];
+  const applied = new Set<string>();
+  let sugg: { keyword: string; key: string; items: any[] } | null = null;
+  const dlg = () => document.querySelector<HTMLDialogElement>('dialog.sugg')!;
+  const limits: Record<string, [number, number]> = { title: [30, 60], description: [120, 155] };
+  const counter = (type: string, v: string) => { const l = limits[type]; if (!l) return ''; const n = v.trim().length; return `<small class="${n >= l[0] && n <= l[1] ? 'up' : 'down'}">${n} characters (aim for ${l[0]}–${l[1]})</small>`; };
+  const labelOf = (i: any) => i.label ?? ({ title: 'Google title', description: 'Google description', h1: 'Main heading', text: 'Paragraph', photo: 'Photo description', append: 'Add a link' } as any)[i.type];
+  function drawSugg() {
+    const box = document.querySelector('.sugg-items')!;
+    box.innerHTML = sugg!.items.map((i, n) => `<div class="sugg-item" data-n="${n}">
+      <p class="sugg-label"><label><input type="checkbox" data-use checked> ${esc(labelOf(i))}</label> <small class="muted">${esc(i.path)}</small></p>
+      ${i.type === 'photo' ? `<img src="${esc(i.src.replace(/\/(public|w=[^/]*)$/, '/w=360'))}" alt="" class="sugg-img">` : ''}
+      <div class="sugg-cols"><div><span class="lbl">Now</span><div class="before">${esc(i.show ?? i.before) || '<span class="muted">(nothing)</span>'}</div></div>
+      <div><span class="lbl">Suggested</span><textarea data-after rows="${i.type === 'text' ? 6 : i.type === 'description' || i.type === 'append' ? 3 : 2}">${esc(i.after)}</textarea><span class="cnt">${counter(i.type, i.after)}</span></div></div></div>`).join('');
+  }
+  async function openSuggest(keyword: string, key: string) {
+    const k = data.keywords.find((x: any) => x.keyword === keyword);
+    const fix = k.fixes.find((x: any) => x.key === key);
+    const d = dlg();
+    sugg = { keyword, key, items: [] };
+    document.querySelector('.sugg-title')!.textContent = `${fix.title.replace(/ \(.*\)$/, '')}: “${keyword}”`;
+    document.querySelector('.sugg-items')!.innerHTML = '<p class="muted">Thinking of a suggestion…</p>';
+    const note = document.querySelector<HTMLElement>('.sugg-note')!; note.hidden = true;
+    document.querySelector<HTMLButtonElement>('[data-sugg-apply]')!.hidden = true;
+    if (!d.open) d.showModal();
+    const { ok, d: r } = await post({ action: 'suggest', keyword, key, target: k.target, pages: fix.pages ?? [] });
+    if (!ok) { document.querySelector('.sugg-items')!.innerHTML = `<p class="note">${esc(r.error || 'No suggestion came back. Try again.')}</p>`; return; }
+    sugg.items = r.items ?? [];
+    if (r.note) { note.textContent = r.note; note.hidden = false; }
+    document.querySelector<HTMLButtonElement>('[data-sugg-apply]')!.hidden = !sugg.items.length;
+    drawSugg();
+  }
   const open = new Set<string>();
 
   const place = (p: number | null | undefined) => (p == null ? '<span class="pos none">not in top 20</span>' : `<span class="pos ${p <= 3 ? 'top' : p <= 10 ? 'p1' : 'p2'}">#${p}</span>`);
@@ -61,7 +102,7 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
     const fixHtml = (f: any) => `<li class="fix ${f.ok ? 'ok' : 'todo'}"><span class="mark">${f.ok ? '✓' : '✗'}</span><div><strong>${esc(f.title)}</strong><p>${esc(f.detail)}</p>
       ${f.contacts?.length ? `<p class="links">${f.contacts.map((c: any) => `<a href="/studio/contacts/contact?id=${c.id}">${esc(c.business)}</a>`).join(' · ')}</p>` : ''}
       ${f.map?.length ? `<p class="links">In the map now: ${f.map.map((m: any) => `${esc(m.title)}${m.rating ? ` (${m.rating}★, ${m.votes ?? 0} reviews)` : ''}`).join(' · ')}</p>` : ''}
-      ${f.ok ? (f.task === 'closed' ? '<small class="up">Task closed: fixed</small>' : '') : f.task === 'open' ? '<small class="muted">In your tasks</small>' : `<button type="button" class="s-btn s-btn--quiet" data-task="${esc(f.key)}" data-kw="${esc(k.keyword)}">+ Add to my tasks</button>`}</div></li>`;
+      ${f.ok ? (f.task === 'closed' ? '<small class="up">Task closed: fixed</small>' : '') : f.task === 'open' ? '<small class="muted">In your tasks</small>' : `${SUGGEST.includes(f.key) && !applied.has(`${k.keyword}|${f.key}`) ? `<button type="button" class="s-btn s-btn--quiet" data-suggest="${esc(f.key)}" data-kw="${esc(k.keyword)}">✨ Suggest fix</button>` : ''}${applied.has(`${k.keyword}|${f.key}`) ? '<small class="up">Applied: the website updates in about 2 minutes, and this ticks off at the next check.</small>' : ''}<button type="button" class="s-btn s-btn--quiet" data-task="${esc(f.key)}" data-kw="${esc(k.keyword)}">+ Add to my tasks</button>`}</div></li>`;
     const top = k.top?.organic?.length ? `<details class="above"><summary>Who's on Google for this (${esc(day(r.run))}, ${r.mobile ? 'phone' : 'desktop'})</summary>
       <ol>${k.top.organic.map((x: any) => `<li class="${(x.domain || '').endsWith('momentsinlight.co.nz') ? 'you' : ''}"><span class="n">${x.rank}</span><a href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.title || x.domain)}</a> <small>${esc(x.domain)}${/easyweddings|weddingwire|bridebook|facebook|instagram|pinterest|directory|nzweddings|theknot|hitched/.test(x.domain) ? ' · directory' : ''}</small></li>`).join('')}</ol>
       <button type="button" class="s-btn s-btn--quiet" data-compare="${esc(k.keyword)}">Compare with the top 3</button>
@@ -96,8 +137,32 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
     if (data.pending) setTimeout(async () => { const { d } = await post({ action: 'collect' }); if (d.collected) load(); else setTimeout(load, 30000); }, 30000);
   }
 
+  document.addEventListener('input', (e) => {
+    const ta = (e.target as HTMLElement).closest<HTMLTextAreaElement>('.sugg [data-after]');
+    if (!ta || !sugg) return;
+    const n = Number(ta.closest<HTMLElement>('.sugg-item')!.dataset.n);
+    sugg.items[n].after = ta.value;
+    ta.parentElement!.querySelector('.cnt')!.innerHTML = counter(sugg.items[n].type, ta.value);
+  });
   document.addEventListener('click', async (e) => {
     const t = e.target as HTMLElement;
+    const sb = t.closest<HTMLButtonElement>('[data-suggest]');
+    if (sb) { open.add(sb.dataset.kw!); await openSuggest(sb.dataset.kw!, sb.dataset.suggest!); return; }
+    if (t.closest('[data-sugg-close]')) { dlg().close(); return; }
+    if (t.closest('[data-sugg-again]') && sugg) { await openSuggest(sugg.keyword, sugg.key); return; }
+    const ap = t.closest<HTMLButtonElement>('[data-sugg-apply]');
+    if (ap && sugg) {
+      const items = sugg.items.filter((_, n) => document.querySelector<HTMLInputElement>(`.sugg-item[data-n="${n}"] [data-use]`)?.checked);
+      if (!items.length) { toast('Tick at least one change.', true); return; }
+      ap.disabled = true; ap.textContent = 'Applying…';
+      const { ok, d } = await post({ action: 'apply', items });
+      ap.disabled = false; ap.textContent = 'Apply fix';
+      if (!ok) { toast(d.error || 'Couldn’t apply it.', true); return; }
+      applied.add(`${sugg.keyword}|${sugg.key}`);
+      dlg().close();
+      toast('Applied. The website updates in about 2 minutes.');
+      load(); return;
+    }
     const tg = t.closest<HTMLButtonElement>('[data-toggle]');
     if (tg) { const c = tg.closest('.kw')!; c.classList.toggle('open'); c.classList.contains('open') ? open.add(tg.dataset.toggle!) : open.delete(tg.dataset.toggle!); return; }
     const tk = t.closest<HTMLButtonElement>('[data-task]');
@@ -167,5 +232,21 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
   .above li.you { background: #e9eddf; font-weight: 600; }
   .above .n { flex: 0 0 22px; color: #999; } .above a { color: var(--ink); } .above small { color: #999; }
   .cmp { width: 100%; border-collapse: collapse; font-size: 13px; margin: 10px 0 4px; } .cmp th, .cmp td { text-align: left; padding: 5px 6px; border-bottom: 1px solid #f1ebe1; } .cmp a { color: var(--ink); }
+  .sugg { border: 0; border-radius: 22px 0; padding: 0; width: min(860px, 94vw); max-height: 90vh; box-shadow: 0 30px 70px -30px rgb(0 0 0 / 0.5); }
+  .sugg::backdrop { background: rgb(20 20 15 / 0.45); }
+  .sugg-in { padding: 22px 24px; display: flex; flex-direction: column; gap: 12px; }
+  .sugg-title { margin: 0; font-weight: 300; font-size: 22px; color: var(--ink); }
+  .sugg-note { margin: 0; padding: 10px 12px; background: #fff4d6; color: #5c4400; border-radius: 10px 0; font-size: 14px; }
+  .sugg-item { border-top: 1px solid #f1ebe1; padding-top: 12px; }
+  .sugg-label { margin: 0 0 8px; font-size: 14px; font-weight: 600; display: flex; gap: 8px; flex-wrap: wrap; align-items: baseline; }
+  .sugg-label label { display: inline-flex; gap: 6px; align-items: center; cursor: pointer; }
+  .sugg-img { width: 180px; height: 120px; object-fit: cover; border-radius: 8px 0; margin-bottom: 8px; }
+  .sugg-cols { display: grid; gap: 12px; }
+  @media (min-width: 700px) { .sugg-cols { grid-template-columns: 1fr 1fr; } }
+  .sugg-cols .lbl { display: block; margin-bottom: 4px; }
+  .sugg .before { padding: 9px 11px; background: #f6f2ea; border-radius: 8px 0; font-size: 14px; color: #555; white-space: pre-wrap; min-height: 2.4em; }
+  .sugg textarea { width: 100%; box-sizing: border-box; font: inherit; font-size: 14px; padding: 9px 11px; border: 1px solid var(--green); border-radius: 8px 0; }
+  .sugg .cnt small { font-size: 12px; }
+  .sugg-actions { display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap; border-top: 1px solid #f1ebe1; padding-top: 12px; }
   @media (max-width: 600px) { .kw-head, .kw-body { padding-left: 14px; padding-right: 14px; } .rk .card { padding: 16px 14px; } .rk .kw { padding: 0; } }
 </style>

@@ -7,6 +7,9 @@ import TonyPhoto from '../components/TonyPhoto.astro';
 import ReviewCarousel from '../components/ReviewCarousel.astro';
 import { site } from '../data/site';
 import reviews from '../data/reviews.json';
+// The home page's Google title and description, main heading and opening line (editable from the
+// studio's Rankings page).
+import home from '../data/home.json';
 
 const cf = (path: string) => `https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/${path}/public`;
 
@@ -53,8 +56,8 @@ const jsonLd = {
 };
 ---
 <BaseLayout
-  title="Auckland Wedding Photographer | Moments In Light"
-  description="Auckland wedding photographer capturing timeless, candid, and elegant photography. I don’t just go through the motions; I go through the emotions with you."
+  title={home.title}
+  description={home.description}
   image={hero}
   jsonLd={jsonLd}
 >
@@ -66,13 +69,13 @@ const jsonLd = {
     images={slides.map(([src, width, height, alt]) => ({ src, width, height, alt }))}
   >
     <p class="hero-eyebrow">Auckland wedding photographer</p>
-    <h1 class="hero-title">Timeless, refined wedding photography that captures the feeling of your day</h1>
+    <h1 class="hero-title">{home.h1}</h1>
   </Slideshow>
 
   <section class="intro wrap" data-reveal>
     <hr class="hairline" />
     <h2 class="display intro-title">Refined wedding photography, captured naturally</h2>
-    <p class="lead">I photograph weddings across Auckland and beyond, capturing the day with a calm, considered approach.</p>
+    <p class="lead">{home.intro}</p>
     <p>My focus is on creating images that feel natural, effortless, and true to you — without over-direction or anything feeling forced. The result is a collection of photographs that not only look beautiful, but feel genuine and lasting over time.</p>
     <p>Based in Auckland, available throughout New Zealand.</p>
     <ul class="proof" data-stagger>

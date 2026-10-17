@@ -15,6 +15,9 @@ import { builtPosts } from './schedules.js';
 const key = (u) => String(u ?? '').replace(/\/(public(\.webp)?|w=[^/]*)$/, '');
 const postFile = (id) => `src/content/blog/${id}.md`;
 const pageFile = (path) => `src/data/pages${path}.json`;
+const HOME = 'src/data/home.json';
+/** The file a page's own words live in (null = built into the site's code). */
+export const fileFor = (path) => (path === '/' ? HOME : isPost(path) ? postFile(path.slice(6)) : !path.startsWith('/blog') ? pageFile(path) : null);
 const isPost = (path) => /^\/blog\/[a-z0-9-]+$/.test(path) && !/^\/blog\/(search|page)$/.test(path);
 
 // ---- Front matter, line by line (keeps the file exactly as it was apart from the change) ----
@@ -58,6 +61,23 @@ function setJsonPhotoAlt(text, src, alt) {
   return n ? JSON.stringify(d, null, jsonIndent(text)) + (text.endsWith('\n') ? '\n' : '') : null;
 }
 
+/** Replace a piece of wording wherever it appears in a page's data (headings and paragraphs). */
+export function replaceInJson(text, before, after) {
+  const d = JSON.parse(text); let n = 0;
+  const visit = (o) => {
+    if (!o || typeof o !== 'object') return;
+    for (const k of Object.keys(o)) {
+      const v = o[k];
+      if (typeof v === 'string' && before && v.includes(before)) { o[k] = v.split(before).join(after); n++; } else visit(v);
+    }
+  };
+  visit(d);
+  return n ? JSON.stringify(d, null, jsonIndent(text)) + (text.endsWith('\n') ? '\n' : '') : null;
+}
+/** Every string in a page's data (for finding the source of a heading or paragraph). */
+export function jsonStrings(text) { const out = []; walk(JSON.parse(text), (o) => { for (const v of Object.values(o)) if (typeof v === 'string') out.push(v); }); return out; }
+export { split, getField };
+
 /** Which file a photo's description lives in. */
 async function photoFile(env, path, src, covers) {
   if (/\/reviews\//.test(src)) return { file: 'src/data/reviews.json', kind: 'review' };
@@ -68,7 +88,7 @@ async function photoFile(env, path, src, covers) {
   return { file: null };
 }
 
-const cache = (env) => { const files = new Map(); return async (file) => { if (!files.has(file)) files.set(file, await readRepoFile(env, file).catch(() => ({ exists: false }))); return files.get(file); }; };
+const cache = (env) => { const files = new Map(); return async (file) => { if (!files.has(file)) files.set(file, await readRepoFile(env, file).then((f) => (f.exists ? { ...f, content: f.content.replace(/\r\n/g, '\n') } : f)).catch(() => ({ exists: false }))); return files.get(file); }; };
 
 /** What can be fixed on a page, and the current wording. */
 export async function fixInfo(env, path, photos = []) {
@@ -88,7 +108,7 @@ export async function fixInfo(env, path, photos = []) {
     out.photos.push({ src, editable: true, alt, file: where.file, post: where.file.endsWith('.md') ? where.file.slice(17, -3) : null });
   }
   // The page's Google title and description.
-  const file = isPost(path) ? postFile(path.slice(6)) : path !== '/' && !path.startsWith('/blog') ? pageFile(path) : null;
+  const file = fileFor(path);
   const f = file && await read(file);
   if (f?.exists) {
     if (file.endsWith('.md')) { const fm = split(f.content).fm; out.page = { editable: true, file, title: getField(fm, 'seoTitle') || getField(fm, 'title') || '', description: getField(fm, 'description') || '', editor: `/studio/edit?id=${path.slice(6)}` }; }
@@ -123,7 +143,7 @@ export async function saveFixes(env, changes) {
       }
       edits.set(where.file, text); photos++;
     } else if (c.title !== undefined || c.description !== undefined) {
-      const file = isPost(c.path) ? postFile(c.path.slice(6)) : c.path !== '/' && !c.path.startsWith('/blog') ? pageFile(c.path) : null;
+      const file = fileFor(c.path);
       if (!file) continue;
       let text = await current(file);
       if (file.endsWith('.md')) {
@@ -140,6 +160,32 @@ export async function saveFixes(env, changes) {
       }
       edits.set(file, text); pages++;
     }
+  }
+  for (const c of changes) {
+    if (!c.h1 && !c.text && !c.append) continue;
+    const file = fileFor(c.path);
+    if (!file) continue;
+    let text = await current(file);
+    if (file === HOME) {
+      const d = JSON.parse(text);
+      if (c.h1?.after?.trim()) d.h1 = c.h1.after.trim();
+      if (c.text?.after?.trim()) { if (d.intro !== c.text.before) throw new Error('The home page’s opening line has changed since; suggest again.'); d.intro = c.text.after.trim(); }
+      text = JSON.stringify(d, null, 2) + '\n';
+    } else if (file.endsWith('.md')) {
+      const sp = split(text);
+      let { fm, rest } = sp;
+      if (c.h1?.after?.trim()) fm = setField(fm, 'title', c.h1.after.trim().slice(0, 150), []);
+      if (c.text?.after?.trim()) { if (!rest.includes(c.text.before)) throw new Error(`The wording on ${c.path} has changed since; suggest again.`); rest = rest.replace(c.text.before, () => c.text.after.trim()); }
+      if (c.append?.trim()) rest = rest.replace(/\s*$/, `\n\n${c.append.trim()}\n`);
+      text = join(fm, rest);
+    } else {
+      for (const [b, a] of [c.h1, c.text].filter((x) => x?.after?.trim()).map((x) => [x.before, x.after.trim()])) {
+        const next = replaceInJson(text, b, a);
+        if (next === null) throw new Error(`The wording on ${c.path} has changed since; suggest again.`);
+        text = next;
+      }
+    }
+    edits.set(file, text); pages++;
   }
   if (!edits.size) return { files: 0, photos: 0, pages: 0 };
   // One commit for every file: GitHub's tree API (the site rebuilds once).

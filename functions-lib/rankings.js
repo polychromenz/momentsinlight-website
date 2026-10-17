@@ -230,7 +230,8 @@ export async function rankingsReport(env) {
       fix('words', enough, `Enough words (${p.words}${avg ? `; the top 3 average ${avg}` : ''})`, enough ? 'Fine.' : avg ? `The pages above you have more to say. Add the useful things couples ask about: the venue’s spots for photos, timings, light at different times of day, wet-weather options, a story or two.` : 'Under 400 words gives Google little to go on. Add what couples want to know about it. (Click “Compare with the top 3” for a real target.)');
       fix('alt', !p.noAlt, `Photos have descriptions${p.imgs ? ` (${p.imgs - p.noAlt} of ${p.imgs})` : ''}`, p.noAlt ? `${p.noAlt} ${p.noAlt === 1 ? 'photo has' : 'photos have'} none. Describe them plainly, and mention the place where it fits (“bride and groom under the oaks at Kumeu Valley Estate”).` : 'Yes.');
     } else fix('page', false, `Couldn’t read ${t.page}`, 'Choose the page for this search below.');
-    if (inlinks) {
+    if (t.page === '/') fix('inlinks', true, 'Linked from your other pages', 'The home page is linked from every page (the logo and menu).');
+    else if (inlinks) {
       const from = (inlinks[t.page] ?? []).filter((x) => x !== t.page);
       fix('inlinks', from.length >= 3, `Linked from your other pages (${from.length})`, from.length >= 3 ? 'Good.' : `Link to it from 3 or more of your blog posts and pages, using words like “${keyword}” as the link text. Blog posts at the same venue are ideal.`);
     } else fix('inlinks', true, 'Links from your other pages', 'Run the Site health check on the SEO page to count these.', { unknown: true });
