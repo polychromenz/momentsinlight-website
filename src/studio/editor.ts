@@ -553,7 +553,7 @@ $('[data-act="delete"]').addEventListener('click', async () => {
     dirty = false;
     const recent = JSON.parse(localStorage.getItem('studio-recent') ?? '[]').filter((p: { id: string }) => p.id !== id);
     localStorage.setItem('studio-recent', JSON.stringify(recent));
-    location.href = '/studio';
+    location.href = '/studio/blog';
   } catch (err) {
     toast(esc((err as Error).message), true);
   }

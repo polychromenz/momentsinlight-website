@@ -1,99 +1,253 @@
 ---
-// Moments Studio: your posts, newest first, with search and filters, and a New post button.
+// Moments Studio home: the dashboard. Totals for a date range (compared with a year earlier),
+// leads vs booked by month, where leads came from, and the lists to act on: upcoming shoots,
+// recent leads, payments, tasks. Data from functions/api/studio/crm/dashboard.js.
 import StudioLayout from '../../layouts/StudioLayout.astro';
 ---
-<StudioLayout title="Your posts">
-  <a slot="bar" class="s-btn s-btn--quiet" href="/studio/crm">👥 Clients</a>
-  <a slot="bar" class="s-btn s-btn--quiet" href="/studio/stats">📈 Stats</a>
-  <a slot="bar" class="s-btn s-btn--quiet" href="/studio/reviews">★ Reviews</a>
-  <a slot="bar" class="s-btn s-btn--quiet" href="/" target="_blank" rel="noopener">View site ↗</a>
-  <a slot="bar" class="s-btn s-btn--solid" href="/studio/edit?new=1">+ New post</a>
-
-  <main class="list-page">
-    <div class="tools">
-      <input class="search" type="search" placeholder="Search posts…" aria-label="Search posts" />
-      <div class="filters" role="group" aria-label="Show">
-        <button type="button" data-filter="all" class="on">All</button>
-        <button type="button" data-filter="Wedding">Love stories</button>
-        <button type="button" data-filter="Portrait">Portraits</button>
-        <button type="button" data-filter="Family">Family</button>
-        <button type="button" data-filter="article">Articles</button>
-        <button type="button" data-filter="unpublished">Drafts &amp; scheduled</button>
+<StudioLayout title="Dashboard" section="dashboard">
+  <div class="test-banner" hidden><strong>TEST MODE</strong>: client emails are redirected to you, nothing reaches a client. It switches to live only when you set CRM_SEND_MODE to “live” in Cloudflare.</div>
+  <main class="dash">
+    <div class="dash-tools">
+      <select class="dash-type" aria-label="Job type"><option value="">All job types</option></select>
+      <div class="dash-ranges" role="group" aria-label="Date range">
+        <button type="button" data-range="7">7 days</button>
+        <button type="button" data-range="30" class="on">30 days</button>
+        <button type="button" data-range="mtd">This month</button>
+        <button type="button" data-range="ytd">This year</button>
+        <button type="button" data-range="custom">Choose dates</button>
+      </div>
+      <div class="dash-custom" hidden>
+        <input type="date" class="dash-from" aria-label="From" /> to <input type="date" class="dash-to" aria-label="To" />
       </div>
     </div>
-    <p class="status" aria-live="polite">Loading your posts…</p>
-    <ul class="posts"></ul>
+    <p class="status" aria-live="polite">Loading…</p>
+
+    <div class="content" hidden>
+      <div class="tiles">
+        <a class="tile" href="/studio/crm"><span class="tile-label">New leads</span><strong class="t-leads"></strong><small class="c-leads"></small></a>
+        <a class="tile" href="/studio/crm"><span class="tile-label">Booked</span><strong class="t-booked"></strong><small class="c-booked"></small></a>
+        <div class="tile"><span class="tile-label">Payments received</span><strong class="t-payments"></strong><small class="c-payments"></small></div>
+        <div class="tile"><span class="tile-label">Value booked</span><strong class="t-value"></strong><small class="c-value"></small></div>
+      </div>
+
+      <div class="charts">
+        <section class="card">
+          <h2>Leads and bookings</h2>
+          <p class="legend"><span class="key key--leads"></span>Leads <span class="key key--booked"></span>Booked</p>
+          <div class="line-chart"></div>
+        </section>
+        <section class="card">
+          <h2>Where leads came from</h2>
+          <div class="pie-wrap"><div class="pie"></div><ul class="pie-legend"></ul></div>
+        </section>
+      </div>
+
+      <div class="lists">
+        <section class="card" data-list="shoots"><div class="card-head"><h2>Upcoming weddings and shoots</h2></div><ul></ul><div class="pager"></div></section>
+        <section class="card" data-list="leads"><div class="card-head"><h2>Recent leads</h2></div><ul></ul><div class="pager"></div></section>
+        <section class="card" data-list="payments"><div class="card-head"><h2>Payments due</h2></div><ul></ul><div class="pager"></div></section>
+        <section class="card" data-list="tasks"><div class="card-head"><h2>Tasks</h2><a class="s-btn s-btn--quiet" href="/studio/crm">Clients →</a></div><ul></ul><div class="pager"></div></section>
+      </div>
+      <p class="note">Counts cover enquiries made through the new system. Your Studio Ninja history will show here once it's brought across.</p>
+    </div>
   </main>
 </StudioLayout>
 
 <script>
-  type Post = { id: string; title: string; date: string; draft: boolean; categories: string[]; venue: string; cover: string; coverPosition: string; photos: number };
-  const list = document.querySelector<HTMLUListElement>('.posts')!;
-  const status = document.querySelector<HTMLElement>('.status')!;
-  const search = document.querySelector<HTMLInputElement>('.search')!;
-  let posts: Post[] = [];
-  let filter = 'all';
-
-  const thumb = (src: string) => (src.startsWith('https://imagedelivery.net/') ? src.replace(/\/[^/]+$/, '/w=500,q=75') : src);
-  const presets: Record<string, string> = { top: '50% 0%', upper: '50% 25%', center: '50% 50%', lower: '50% 75%', bottom: '50% 100%' };
-  const state = (p: Post) => (p.draft ? 'draft' : p.date > new Date().toISOString().slice(0, 10) ? 'scheduled' : 'live');
-  const kind = (p: Post) => (['Wedding', 'Portrait', 'Family'].find((c) => p.categories.includes(c)) ?? 'article');
-  const kindLabel: Record<string, string> = { Wedding: 'Love story', Portrait: 'Portrait', Family: 'Family', article: 'Article' };
-  const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
-
-  const render = () => {
-    const q = search.value.trim().toLowerCase();
-    const shown = posts.filter((p) =>
-      (filter === 'all' || (filter === 'unpublished' ? state(p) !== 'live' : kind(p) === filter)) &&
-      (!q || `${p.title} ${p.venue} ${p.id}`.toLowerCase().includes(q)));
-    status.textContent = shown.length ? `${shown.length} post${shown.length === 1 ? '' : 's'}` : 'No posts match.';
-    list.innerHTML = shown.map((p) => {
-      const s = state(p);
-      const chip = s === 'live' ? '' : `<span class="s-chip s-chip--${s}">${s === 'draft' ? 'Draft' : 'Scheduled ' + p.date}</span>`;
-      return `<li><a href="/studio/edit?id=${encodeURIComponent(p.id)}">
-        <span class="cover">${p.cover ? `<img src="${esc(thumb(p.cover))}" alt="" loading="lazy" style="object-position:${presets[p.coverPosition] ?? (p.coverPosition || '50% 50%')}">` : '<span class="no-cover">No photo yet</span>'}</span>
-        <span class="meta">${kindLabel[kind(p)]} · ${new Date(p.date).toLocaleDateString('en-NZ', { day: 'numeric', month: 'short', year: 'numeric' })}${p.photos ? ` · ${p.photos} photos` : ''} ${chip}</span>
-        <span class="title">${esc(p.title)}</span>
-      </a></li>`;
-    }).join('');
+  const $ = <T extends HTMLElement = HTMLElement>(s: string, root: ParentNode = document) => root.querySelector<T>(s)!;
+  const esc = (s: unknown) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
+  const money = (c: number) => `$${Math.round(c / 100).toLocaleString('en-NZ')}`;
+  const day = (d: string) => new Date(`${d.slice(0, 10)}T12:00:00Z`).toLocaleDateString('en-NZ', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' });
+  const ago = (iso: string) => {
+    const days = Math.round((new Date().setHours(0, 0, 0, 0) - new Date(iso).setHours(0, 0, 0, 0)) / 86400_000);
+    return days === 0 ? 'today' : days === 1 ? 'yesterday' : days > 0 ? `${days} days ago` : days === -1 ? 'tomorrow' : `in ${-days} days`;
   };
+  const PAGE = 5;
 
-  document.querySelectorAll<HTMLButtonElement>('.filters button').forEach((b) =>
-    b.addEventListener('click', () => {
-      document.querySelectorAll('.filters button').forEach((x) => x.classList.toggle('on', x === b));
-      filter = b.dataset.filter!;
-      render();
-    }),
-  );
-  search.addEventListener('input', render);
+  let range = '30';
+  let type = '';
+  const pages: Record<string, number> = { shoots: 0, leads: 0, payments: 0, tasks: 0 };
+  let rows: Record<string, string[]> = {};
 
-  fetch('/studio/posts.json', { cache: 'no-store' })
-    .then((r) => r.json())
-    .then((d) => {
-      posts = d.posts;
-      // Posts saved in the last few minutes may not be in the list yet (the site is still
-      // rebuilding); the editor keeps a note of them.
-      const recent = JSON.parse(localStorage.getItem('studio-recent') ?? '[]') as Post[];
-      for (const r of recent) if (!posts.some((p) => p.id === r.id)) posts.unshift(r);
-      render();
-    })
-    .catch(() => { status.textContent = 'Couldn’t load your posts. Check your connection and reload.'; });
+  // The range's start and end, as moments in NZ time (Tony's computer is in NZ).
+  function bounds() {
+    const now = new Date();
+    const start = new Date(now); start.setHours(0, 0, 0, 0);
+    let from: Date, to = new Date(start.valueOf() + 86400_000);
+    if (range === '7' || range === '30') from = new Date(start.valueOf() - (Number(range) - 1) * 86400_000);
+    else if (range === 'mtd') from = new Date(now.getFullYear(), now.getMonth(), 1);
+    else if (range === 'ytd') from = new Date(now.getFullYear(), 0, 1);
+    else {
+      const f = $<HTMLInputElement>('.dash-from').value, t = $<HTMLInputElement>('.dash-to').value;
+      from = f ? new Date(`${f}T00:00:00`) : new Date(start.valueOf() - 29 * 86400_000);
+      if (t) to = new Date(new Date(`${t}T00:00:00`).valueOf() + 86400_000);
+    }
+    return { from: from.toISOString(), to: to.toISOString() };
+  }
+
+  const compare = (now: number, before: number, fmt = (n: number) => String(n)) =>
+    before === 0 && now === 0 ? 'Same as a year ago' : before === 0 ? `Up from 0 a year ago` : `${now >= before ? '▲' : '▼'} ${Math.abs(Math.round(((now - before) / before) * 100))}% on a year ago (${fmt(before)})`;
+
+  function lineChart(data: { month: string; leads: number; booked: number }[]) {
+    const W = 640, H = 220, L = 30, B = 26, T = 10, R = 10;
+    const max = Math.max(4, ...data.map((d) => Math.max(d.leads, d.booked)));
+    const top = Math.ceil(max / 4) * 4;
+    const x = (i: number) => L + (i * (W - L - R)) / (data.length - 1);
+    const y = (v: number) => T + (H - T - B) * (1 - v / top);
+    const path = (k: 'leads' | 'booked') => data.map((d, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(d[k]).toFixed(1)}`).join('');
+    const area = (k: 'leads' | 'booked') => `${path(k)}L${x(data.length - 1)},${y(0)}L${x(0)},${y(0)}Z`;
+    const grid = [0, 1, 2, 3, 4].map((i) => { const v = (top / 4) * i; return `<line x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}" class="g"/><text x="${L - 6}" y="${y(v) + 4}" text-anchor="end">${v}</text>`; }).join('');
+    const labels = data.map((d, i) => `<text x="${x(i)}" y="${H - 6}" text-anchor="middle">${new Date(`${d.month}-15T12:00:00Z`).toLocaleDateString('en-NZ', { month: 'short', timeZone: 'UTC' })}</text>`).join('');
+    const dots = (k: 'leads' | 'booked') => data.map((d, i) => `<circle cx="${x(i)}" cy="${y(d[k])}" r="3" class="d-${k}"><title>${d.month}: ${d[k]} ${k}</title></circle>`).join('');
+    return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Leads and bookings by month">${grid}${labels}
+      <path d="${area('leads')}" class="a-leads"/><path d="${path('leads')}" class="l-leads"/>
+      <path d="${area('booked')}" class="a-booked"/><path d="${path('booked')}" class="l-booked"/>${dots('leads')}${dots('booked')}</svg>`;
+  }
+
+  const COLOURS = ['#5a5e3b', '#b9a27a', '#8c9a6b', '#d7c3a1', '#3e4229', '#a8432a', '#7d8ca8', '#c9b8d8'];
+  function pie(data: { source: string; n: number }[]) {
+    const total = data.reduce((a, d) => a + d.n, 0);
+    if (!total) return ['<p class="empty">No leads in this range.</p>', ''];
+    let a0 = -Math.PI / 2;
+    const slices = data.map((d, i) => {
+      const a1 = a0 + (d.n / total) * Math.PI * 2;
+      const big = a1 - a0 > Math.PI ? 1 : 0;
+      const p = (a: number, r: number) => `${(100 + r * Math.cos(a)).toFixed(2)},${(100 + r * Math.sin(a)).toFixed(2)}`;
+      const shape = d.n === total ? `<circle cx="100" cy="100" r="90" fill="${COLOURS[i % 8]}"/>` : `<path d="M${p(a0, 90)}A90,90 0 ${big} 1 ${p(a1, 90)}L100,100Z" fill="${COLOURS[i % 8]}"><title>${esc(d.source)}: ${d.n}</title></path>`;
+      a0 = a1;
+      return shape;
+    }).join('');
+    return [`<svg viewBox="0 0 200 200" role="img" aria-label="Lead sources">${slices}<circle cx="100" cy="100" r="48" fill="#fff"/><text x="100" y="98" text-anchor="middle" class="pie-n">${total}</text><text x="100" y="116" text-anchor="middle" class="pie-l">leads</text></svg>`,
+      data.map((d, i) => `<li><span class="key" style="background:${COLOURS[i % 8]}"></span>${esc(d.source)} <small>${d.n} (${Math.round((d.n / total) * 100)}%)</small></li>`).join('')];
+  }
+
+  function renderList(name: string) {
+    const sec = $(`[data-list="${name}"]`);
+    const all = rows[name] ?? [];
+    const pages_ = Math.max(1, Math.ceil(all.length / PAGE));
+    pages[name] = Math.min(pages[name], pages_ - 1);
+    $('ul', sec).innerHTML = all.length ? all.slice(pages[name] * PAGE, pages[name] * PAGE + PAGE).join('') : `<li class="empty">${({ shoots: 'Nothing booked coming up.', leads: 'No open leads.', payments: 'Nothing owing.', tasks: 'Nothing to do. Nice!' } as Record<string, string>)[name]}</li>`;
+    $('.pager', sec).innerHTML = pages_ > 1 ? `<button type="button" data-page="-1" ${pages[name] === 0 ? 'disabled' : ''} aria-label="Previous">‹</button><span>${pages[name] + 1} of ${pages_}</span><button type="button" data-page="1" ${pages[name] >= pages_ - 1 ? 'disabled' : ''} aria-label="Next">›</button>` : '';
+  }
+
+  async function load() {
+    const { from, to } = bounds();
+    const r = await fetch(`/api/studio/crm/dashboard?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}&type=${encodeURIComponent(type)}`);
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) { $('.status').textContent = d.error || `Something went wrong (${r.status}).`; $('.status').hidden = false; return; }
+    $('.test-banner').hidden = d.mode === 'live';
+    const sel = $<HTMLSelectElement>('.dash-type');
+    if (sel.options.length === 1) sel.append(...d.types.map((t: string) => new Option(t, t)));
+
+    const t = d.totals, b = d.before;
+    $('.t-leads').textContent = t.leads; $('.c-leads').textContent = compare(t.leads, b.leads);
+    $('.t-booked').textContent = t.booked; $('.c-booked').textContent = compare(t.booked, b.booked);
+    $('.t-payments').textContent = money(t.payments); $('.c-payments').textContent = compare(t.payments, b.payments, money);
+    $('.t-value').textContent = money(t.booked_value); $('.c-value').textContent = compare(t.booked_value, b.booked_value, money);
+
+    $('.line-chart').innerHTML = lineChart(d.chart);
+    const [svg, legend] = pie(d.sources);
+    $('.pie').innerHTML = svg; $('.pie-legend').innerHTML = legend;
+
+    const job = (id: number, text: string) => `<a href="/studio/crm/job?id=${id}">${esc(text)}</a>`;
+    rows = {
+      shoots: d.shoots.map((j: any) => `<li><span class="when">${day(j.event_date)}</span><span class="what">${job(j.id, j.title)}<small>${esc(j.job_type)}${j.venue ? ` · ${esc(j.venue)}` : ''} · ${ago(`${j.event_date}T12:00:00`)}</small></span></li>`),
+      leads: d.leads.map((j: any) => {
+        const [dir, subject, at] = (j.last_email || '').split('|');
+        const [step, due, kind] = (j.next_step || '').split('|');
+        const mail = j.replied_at ? '<span class="chip chip--in">Replied</span>' : dir ? `<span class="chip">${dir === 'in' ? 'From them' : 'Emailed'} ${ago(at)}</span>` : '<span class="chip chip--none">No email yet</span>';
+        return `<li><span class="when">${ago(j.created_at)}</span><span class="what">${job(j.id, j.title)} ${mail}<small>${esc(j.job_type)}${j.event_date ? ` · ${day(j.event_date)}` : ''}${step ? ` · Next: ${esc(step)} ${kind === 'auto_email' ? '(automatic) ' : ''}${due < d.now ? 'due ' : ''}${ago(due)}` : ''}${subject && !step ? ` · Last: ${esc(subject)}` : ''}</small></span></li>`;
+      }),
+      payments: d.payments.map((i: any) => {
+        const late = i.status === 'sent' && i.due_date < d.today;
+        return `<li class="${late ? 'late' : ''}"><span class="when">${day(i.due_date)}</span><span class="what">${job(i.job_id, i.title)} <strong class="amt">${money(i.amount)}</strong><small>${esc(i.number)} · ${esc(i.label)} · ${late ? '<b>Overdue</b>' : i.status === 'sent' ? 'Sent, not paid yet' : `Sends ${day(i.send_at)}`}</small></span></li>`;
+      }),
+      tasks: d.tasks.map((s: any) => {
+        const overdue = s.due_at < d.now;
+        return `<li class="${s.status === 'failed' ? 'late' : ''}"><span class="when">${s.status === 'failed' ? 'Didn’t send' : overdue ? `Due ${ago(s.due_at)}` : ago(s.due_at)}</span><span class="what"><a href="/studio/crm/job?id=${s.job_id}#step-${s.id}">${esc(s.title)}</a><small>${esc(s.job_title)} · ${s.kind === 'todo' ? 'To-do' : 'Email to send'}</small></span></li>`;
+      }),
+    };
+    Object.keys(rows).forEach(renderList);
+    $('.content').hidden = false; $('.status').hidden = true;
+  }
+
+  document.addEventListener('click', (e) => {
+    const t = e.target as HTMLElement;
+    const rb = t.closest<HTMLButtonElement>('[data-range]');
+    if (rb) {
+      range = rb.dataset.range!;
+      document.querySelectorAll('[data-range]').forEach((b) => b.classList.toggle('on', b === rb));
+      $('.dash-custom').hidden = range !== 'custom';
+      if (range === 'custom' && !$<HTMLInputElement>('.dash-from').value) {
+        const today = new Date().toLocaleDateString('en-CA');
+        $<HTMLInputElement>('.dash-to').value = today;
+        $<HTMLInputElement>('.dash-from').value = new Date(Date.now() - 29 * 86400_000).toLocaleDateString('en-CA');
+      }
+      load();
+      return;
+    }
+    const pb = t.closest<HTMLButtonElement>('[data-page]');
+    if (pb) { const name = pb.closest<HTMLElement>('[data-list]')!.dataset.list!; pages[name] += Number(pb.dataset.page); renderList(name); }
+  });
+  $('.dash-type').addEventListener('change', (e) => { type = (e.target as HTMLSelectElement).value; load(); });
+  document.querySelectorAll('.dash-custom input').forEach((i) => i.addEventListener('change', load));
+  load();
 </script>
 
-<style>
-  .list-page { max-width: 1240px; margin: 0 auto; padding: 28px clamp(14px, 3vw, 32px) 80px; }
-  .tools { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; margin-bottom: 18px; }
-  .search { flex: 1 1 260px; padding: 12px 16px; border: 1px solid #ddd3c4; border-radius: 12px 0; font: inherit; font-size: 15px; background: var(--white); }
-  .filters { display: flex; flex-wrap: wrap; gap: 6px; }
-  .filters button { padding: 8px 14px; border: 1px solid #ddd3c4; border-radius: 999px; background: var(--white); font: inherit; font-size: 14px; cursor: pointer; color: #444; }
-  .filters button.on { background: var(--green); border-color: var(--green); color: var(--white); }
-  .status { color: #777; font-size: 14px; margin: 0 0 14px; }
-  .posts { list-style: none; margin: 0; padding: 0; display: grid; gap: 22px; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
-  .posts :global(a) { display: flex; flex-direction: column; gap: 8px; text-decoration: none; color: var(--ink); background: var(--white); border-radius: 24px 0; overflow: hidden; padding-bottom: 16px; transition: transform 0.4s var(--ease), box-shadow 0.4s var(--ease); }
-  .posts :global(a:hover) { opacity: 1; transform: translateY(-3px); box-shadow: 0 16px 28px -22px rgb(0 0 0 / 0.5); }
-  .posts :global(.cover) { display: block; aspect-ratio: 3 / 2; background: #eee7dc; }
-  .posts :global(.cover img) { width: 100%; height: 100%; object-fit: cover; }
-  .posts :global(.no-cover) { display: grid; place-items: center; height: 100%; color: #999; font-size: 14px; }
-  .posts :global(.meta) { padding: 0 16px; font-size: 12px; color: #777; letter-spacing: 0.03em; }
-  .posts :global(.title) { padding: 0 16px; font-size: 17px; line-height: 1.35; }
+<style is:global>
+  .test-banner { background: #fff4d6; color: #5c4400; border-bottom: 1px solid #e0c46c; padding: 10px clamp(14px, 3vw, 32px); font-size: 14px; line-height: 1.5; }
+  .dash { max-width: 1240px; margin: 0 auto; padding: 24px clamp(14px, 3vw, 32px) 80px; }
+  .dash .status { color: #666; }
+  .dash-tools { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: center; margin-bottom: 18px; }
+  .dash-type { font: inherit; font-size: 14px; padding: 8px 12px; border: 1px solid #ddd3c4; border-radius: 10px 0; background: var(--white); }
+  .dash-ranges { display: flex; flex-wrap: wrap; gap: 6px; }
+  .dash-ranges button { padding: 7px 14px; border: 1px solid #ddd3c4; border-radius: 999px; background: var(--white); font: inherit; font-size: 14px; cursor: pointer; }
+  .dash-ranges button.on { background: var(--green); border-color: var(--green); color: var(--white); }
+  .dash-custom { display: flex; gap: 8px; align-items: center; font-size: 14px; color: #555; }
+  .dash-custom input { font: inherit; font-size: 14px; padding: 6px 8px; border: 1px solid #ddd3c4; border-radius: 8px 0; }
+  .dash .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px; margin-bottom: 16px; }
+  .dash .tile { display: flex; flex-direction: column; gap: 4px; background: var(--white); border-radius: 24px 0; padding: 18px 22px; color: inherit; text-decoration: none; }
+  .dash a.tile:hover { opacity: 1; box-shadow: 0 10px 24px -18px rgb(0 0 0 / 0.5); }
+  .dash .tile-label { font-size: 12px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: var(--green); }
+  .dash .tile strong { font-size: 34px; font-weight: 300; color: var(--ink); }
+  .dash .tile small { font-size: 13px; color: #777; }
+  .dash .card { background: var(--white); border-radius: 24px 0; padding: 18px 22px; min-width: 0; }
+  .dash .card h2 { margin: 0 0 10px; font-weight: 300; font-size: 21px; color: var(--ink); }
+  .dash .card-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+  .dash .card-head .s-btn { padding: 6px 10px; font-size: 13px; }
+  .dash .charts, .dash .lists { display: grid; gap: 16px; margin-bottom: 16px; }
+  .dash .legend { margin: 0 0 6px; font-size: 13px; color: #666; display: flex; gap: 6px; align-items: center; }
+  .dash .key { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-left: 6px; }
+  .dash .key--leads { background: #b9a27a; } .dash .key--booked { background: #5a5e3b; }
+  .dash .line-chart svg { width: 100%; height: auto; display: block; }
+  .dash .line-chart text { font-size: 11px; fill: #888; font-family: inherit; }
+  .dash .line-chart .g { stroke: #f0eae0; }
+  .dash .l-leads, .dash .l-booked { fill: none; stroke-width: 2.5; }
+  .dash .l-leads { stroke: #b9a27a; } .dash .l-booked { stroke: #5a5e3b; }
+  .dash .a-leads { fill: rgb(185 162 122 / 0.18); } .dash .a-booked { fill: rgb(90 94 59 / 0.2); }
+  .dash .d-leads { fill: #b9a27a; } .dash .d-booked { fill: #5a5e3b; }
+  .dash .pie-wrap { display: flex; flex-wrap: wrap; gap: 18px; align-items: center; }
+  .dash .pie svg { width: 170px; height: 170px; display: block; }
+  .dash .pie-n { font-size: 30px; font-weight: 300; fill: var(--ink); } .dash .pie-l { font-size: 12px; fill: #888; }
+  .dash .pie-legend { list-style: none; margin: 0; padding: 0; font-size: 14px; display: flex; flex-direction: column; gap: 6px; }
+  .dash .pie-legend .key { margin: 0 8px 0 0; vertical-align: -1px; }
+  .dash .pie-legend small { color: #888; }
+  .dash [data-list] ul { list-style: none; margin: 0; padding: 0; }
+  .dash [data-list] li { display: flex; gap: 14px; padding: 10px 0; border-bottom: 1px solid #f1ebe1; font-size: 14px; }
+  .dash [data-list] li:last-child { border-bottom: 0; }
+  .dash [data-list] .when { flex: 0 0 104px; color: #777; font-size: 13px; padding-top: 1px; }
+  .dash [data-list] .what { flex: 1; min-width: 0; }
+  .dash [data-list] .what a { color: var(--ink); font-weight: 500; }
+  .dash [data-list] .what small { display: block; color: #777; font-size: 13px; margin-top: 2px; }
+  .dash [data-list] li.late .when, .dash [data-list] li.late b { color: #a8432a; }
+  .dash .amt { float: right; font-weight: 600; color: var(--ink); }
+  .dash .chip { display: inline-block; margin-left: 6px; padding: 1px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; background: #eef1e4; color: var(--olive); }
+  .dash .chip--in { background: #e3e7f6; color: #2f3f86; } .dash .chip--none { background: #f6ecd6; color: #7a5a14; }
+  .dash .empty { color: #888; }
+  .dash .pager { display: flex; justify-content: flex-end; align-items: center; gap: 8px; font-size: 13px; color: #777; margin-top: 6px; }
+  .dash .pager:empty { display: none; }
+  .dash .pager button { font: inherit; font-size: 16px; width: 30px; height: 30px; border: 1px solid #ddd3c4; border-radius: 8px 0; background: var(--white); cursor: pointer; }
+  .dash .pager button:disabled { opacity: 0.4; cursor: default; }
+  .dash .note { font-size: 13px; color: #888; margin: 0; }
+  @media (min-width: 900px) { .dash .charts { grid-template-columns: 1.6fr 1fr; } .dash .lists { grid-template-columns: 1fr 1fr; align-items: start; } }
 </style>

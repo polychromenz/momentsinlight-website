@@ -1,14 +1,24 @@
 ---
-// The studio's frame: private (no search engines), the site's fonts and colours, a simple bar
-// at the top. No site menu or footer.
+// The studio's frame: private (no search engines), the site's fonts and colours, and a bar at
+// the top with the studio menu (section = the one you're in) and the page's own buttons (slot
+// "bar"). No site menu or footer.
 import '@fontsource/raleway/300.css';
 import '@fontsource/raleway/400.css';
 import '@fontsource/raleway/500.css';
 import '@fontsource/raleway/600.css';
 import '../styles/global.css';
 
-interface Props { title: string }
-const { title } = Astro.props;
+type Section = 'dashboard' | 'clients' | 'blog' | 'reviews' | 'stats' | 'settings';
+interface Props { title: string; section?: Section }
+const { title, section } = Astro.props;
+const menu: [Section, string, string][] = [
+  ['dashboard', 'Dashboard', '/studio'],
+  ['clients', 'Clients', '/studio/crm'],
+  ['blog', 'Blog', '/studio/blog'],
+  ['reviews', 'Reviews', '/studio/reviews'],
+  ['stats', 'Stats', '/studio/stats'],
+  ['settings', 'Settings', '/studio/crm/settings'],
+];
 ---
 <!doctype html>
 <html lang="en-NZ">
@@ -22,7 +32,10 @@ const { title } = Astro.props;
   <body class="studio-body">
     <header class="studio-bar">
       <a class="studio-brand" href="/studio">Moments <span>Studio</span></a>
-      <slot name="bar" />
+      <nav class="studio-nav" aria-label="Studio">
+        {menu.map(([key, label, href]) => <a href={href} aria-current={key === section ? 'page' : undefined}>{label}</a>)}
+      </nav>
+      <div class="studio-actions"><slot name="bar" /></div>
     </header>
     <slot />
   </body>
@@ -44,7 +57,14 @@ const { title } = Astro.props;
     background: var(--white);
     border-bottom: 1px solid #e8dfd2;
   }
-  .studio-brand { font-size: 18px; font-weight: 300; color: var(--ink); text-decoration: none; letter-spacing: 0.02em; margin-right: auto; }
+  .studio-brand { font-size: 18px; font-weight: 300; color: var(--ink); text-decoration: none; letter-spacing: 0.02em; }
+  .studio-nav { display: flex; gap: 2px; overflow-x: auto; scrollbar-width: none; }
+  .studio-nav a { padding: 8px 12px; border-radius: 10px 0; font-size: 14px; font-weight: 500; color: #555; text-decoration: none; white-space: nowrap; }
+  .studio-nav a:hover { background: rgb(90 94 59 / 0.08); opacity: 1; }
+  .studio-nav a[aria-current='page'] { background: var(--green); color: var(--white); }
+  .studio-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-left: auto; }
+  .studio-actions:empty { display: none; }
+  @media (max-width: 760px) { .studio-nav { order: 3; flex-basis: 100%; margin: 0 -6px; } }
   .studio-brand span { font-weight: 600; color: var(--green); }
   .s-btn {
     display: inline-flex; align-items: center; gap: 8px;
