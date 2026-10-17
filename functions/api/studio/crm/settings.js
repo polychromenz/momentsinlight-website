@@ -8,17 +8,20 @@ import { json } from '../../../../functions-lib/studio.js';
 import { WORKFLOWS } from '../../../../functions-lib/crm.js';
 import { listDocuments } from '../../../../functions-lib/documents.js';
 import { paymentSettings, stripeReady } from '../../../../functions-lib/invoices.js';
+import { cleanQuestions } from '../../../../functions-lib/questionnaires.js';
+import { clean } from '../../../../functions-lib/rich-html.js';
 
 const LISTS = ['job_type', 'lead_source'];
 
 export async function onRequestGet({ env }) {
-  const [lists, templates, schedules, documents, contracts, payments] = await Promise.all([
-    env.DB.prepare('SELECT kind, value, label, workflow, on_form, contract_key FROM lists ORDER BY kind, sort, id').all(),
+  const [lists, templates, schedules, documents, contracts, payments, questionnaires] = await Promise.all([
+    env.DB.prepare('SELECT kind, value, label, workflow, on_form, contract_key, questionnaire_key FROM lists ORDER BY kind, sort, id').all(),
     env.DB.prepare('SELECT key, name, subject, body, attachments, updated_at FROM templates ORDER BY key').all(),
     env.DB.prepare('SELECT key, name, parts FROM payment_schedules ORDER BY name').all(),
     listDocuments(env.DB),
     env.DB.prepare('SELECT key, name, note, body, updated_at FROM contract_templates ORDER BY name').all(),
     paymentSettings(env.DB),
+    env.DB.prepare('SELECT key, name, intro, questions, updated_at FROM questionnaire_templates ORDER BY name').all(),
   ]);
   const by = (k) => lists.results.filter((r) => r.kind === k).map(({ kind, ...r }) => ({ ...r, on_form: !!r.on_form }));
   return json({
@@ -30,6 +33,7 @@ export async function onRequestGet({ env }) {
     workflows: Object.keys(WORKFLOWS),
     contracts: contracts.results,
     payments, stripe: stripeReady(env),
+    questionnaires: questionnaires.results.map((q) => ({ ...q, questions: JSON.parse(q.questions) })),
   });
 }
 
@@ -49,13 +53,13 @@ export async function onRequestPut({ request, env }) {
       if (!value) continue;
       if (seen.has(value.toLowerCase())) return json({ error: `“${value}” is in the list twice.` }, 400);
       seen.add(value.toLowerCase());
-      items.push({ value, label: text(it.label, 120) || value, workflow: d.list === 'job_type' && WORKFLOWS[it.workflow] ? it.workflow : null, on_form: it.on_form ? 1 : 0, contract_key: d.list === 'job_type' && it.contract_key ? text(it.contract_key, 80) : null });
+      items.push({ value, label: text(it.label, 120) || value, workflow: d.list === 'job_type' && WORKFLOWS[it.workflow] ? it.workflow : null, on_form: it.on_form ? 1 : 0, contract_key: d.list === 'job_type' && it.contract_key ? text(it.contract_key, 80) : null, questionnaire_key: d.list === 'job_type' && it.questionnaire_key ? text(it.questionnaire_key, 80) : null });
     }
     if (!items.length) return json({ error: 'The list needs at least one item.' }, 400);
     await env.DB.batch([
       env.DB.prepare('DELETE FROM lists WHERE kind = ?1').bind(d.list),
-      ...items.map((it, i) => env.DB.prepare('INSERT INTO lists (kind, value, label, workflow, on_form, sort, contract_key) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)')
-        .bind(d.list, it.value, it.label, it.workflow, it.on_form, i, it.contract_key)),
+      ...items.map((it, i) => env.DB.prepare('INSERT INTO lists (kind, value, label, workflow, on_form, sort, contract_key, questionnaire_key) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)')
+        .bind(d.list, it.value, it.label, it.workflow, it.on_form, i, it.contract_key, it.questionnaire_key)),
     ]);
     return json({ ok: true });
   }
@@ -128,6 +132,32 @@ export async function onRequestPut({ request, env }) {
     const used = await env.DB.prepare('SELECT name FROM quote_templates WHERE schedule_key = ?1').bind(d.delete_schedule).all();
     if (used.results.length) return json({ error: `The ${used.results.map((r) => r.name).join(', ')} quote template uses it. Choose another schedule there first.` }, 409);
     await env.DB.prepare('DELETE FROM payment_schedules WHERE key = ?1').bind(d.delete_schedule).run();
+    return json({ ok: true });
+  }
+  // Questionnaires: { questionnaire: { key?, name, intro, questions } } or { delete_questionnaire: key }.
+  // Couples' questionnaires keep their own copy, so changes apply to new ones only.
+  if (d?.questionnaire) {
+    const name = text(d.questionnaire.name, 120);
+    if (!name) return json({ error: 'A questionnaire needs a name.' }, 400);
+    let questions;
+    try { questions = cleanQuestions(d.questionnaire.questions); } catch (e) { return json({ error: e.message }, 400); }
+    if (!questions.length) return json({ error: 'Add at least one question.' }, 400);
+    const intro = clean((d.questionnaire.intro ?? '').toString().trim().slice(0, 20000));
+    let key = d.questionnaire.key;
+    if (key) {
+      const r = await env.DB.prepare('UPDATE questionnaire_templates SET name = ?2, intro = ?3, questions = ?4, updated_at = ?5 WHERE key = ?1').bind(key, name, intro, JSON.stringify(questions), now).run();
+      if (!r.meta.changes) return json({ error: 'That questionnaire no longer exists.' }, 404);
+    } else {
+      key = slug(name) || 'questionnaire';
+      for (let n = 2; await env.DB.prepare('SELECT 1 FROM questionnaire_templates WHERE key = ?1').bind(key).first(); n++) key = `${slug(name)}-${n}`;
+      await env.DB.prepare('INSERT INTO questionnaire_templates (key, name, intro, questions, updated_at) VALUES (?1, ?2, ?3, ?4, ?5)').bind(key, name, intro, JSON.stringify(questions), now).run();
+    }
+    return json({ ok: true, key });
+  }
+  if (d?.delete_questionnaire) {
+    const used = await env.DB.prepare(`SELECT value FROM lists WHERE kind = 'job_type' AND questionnaire_key = ?1`).bind(d.delete_questionnaire).all();
+    if (used.results.length) return json({ error: `It’s the default for ${used.results.map((r) => r.value).join(', ')}. Choose another in Job types first.` }, 409);
+    await env.DB.prepare('DELETE FROM questionnaire_templates WHERE key = ?1').bind(d.delete_questionnaire).run();
     return json({ ok: true });
   }
   // Payments: { payments: { bank_name, account_name, account_number, gst_number, instructions } }

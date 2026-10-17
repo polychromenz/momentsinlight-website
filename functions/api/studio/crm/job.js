@@ -15,15 +15,19 @@ export async function onRequestGet({ request, env }) {
      FROM jobs j JOIN clients c ON c.id = j.client_id WHERE j.id = ?1`,
   ).bind(id).first();
   if (!job) return json({ error: 'That job doesn’t exist (it may have been deleted).' }, 404);
-  const [steps, messages, others, quotes, contracts, invoices] = await Promise.all([
+  const [steps, messages, others, quotes, contracts, invoices, questionnaires, qTemplates, qDefault] = await Promise.all([
     env.DB.prepare('SELECT * FROM steps WHERE job_id = ?1 ORDER BY created_at, due_at, id').bind(id).all(),
     env.DB.prepare('SELECT id, direction, subject, body, sent_at, attachments, gmail_message_id FROM messages WHERE job_id = ?1 ORDER BY sent_at DESC').bind(id).all(),
     env.DB.prepare('SELECT id, title, job_type, stage, event_date FROM jobs WHERE client_id = ?1 AND id <> ?2 ORDER BY created_at DESC').bind(job.client_id, id).all(),
     env.DB.prepare('SELECT id, status, total, sent_at, viewed_at, accepted_at, created_at FROM quotes WHERE job_id = ?1 ORDER BY created_at DESC').bind(id).all(),
     env.DB.prepare('SELECT id, quote_id, name, status, sent_at, viewed_at, signed_name, signed_at FROM contracts WHERE job_id = ?1 ORDER BY id DESC').bind(id).all(),
     env.DB.prepare('SELECT id, contract_id, number, label, amount, due_date, send_at, status, sent_at, reminders, paid_at, paid_method, paid_note, token FROM invoices WHERE job_id = ?1 ORDER BY due_date, id').bind(id).all(),
+    env.DB.prepare('SELECT id, name, status, token, created_at, updated_at, submitted_at FROM questionnaires WHERE job_id = ?1 ORDER BY id').bind(id).all(),
+    env.DB.prepare('SELECT key, name FROM questionnaire_templates ORDER BY name').all(),
+    env.DB.prepare(`SELECT questionnaire_key FROM lists WHERE kind = 'job_type' AND value = ?1`).bind(job.job_type).first(),
   ]);
-  return json({ mode: sendMode(env), job, steps: steps.results, messages: messages.results, otherJobs: others.results, quotes: quotes.results, contracts: contracts.results, invoices: invoices.results });
+  return json({ mode: sendMode(env), job, steps: steps.results, messages: messages.results, otherJobs: others.results, quotes: quotes.results, contracts: contracts.results, invoices: invoices.results,
+    questionnaires: questionnaires.results, questionnaireTemplates: qTemplates.results, defaultQuestionnaire: qDefault?.questionnaire_key ?? null });
 }
 
 export async function onRequestPut({ request, env }) {
@@ -65,7 +69,7 @@ export async function onRequestPut({ request, env }) {
   if ((jobFields.stage === 'booked' || jobFields.stage === 'lost') && job.stage !== jobFields.stage) {
     stmts.push(env.DB.prepare(
       `UPDATE steps SET status = 'skipped', note = ?2, done_at = ?3 WHERE job_id = ?1 AND status IN ('scheduled', 'due') AND (',' || stop_on || ',') LIKE '%,booked,%'`,
-    ).bind(id, jobFields.stage === 'booked' ? 'Stopped: booked' : 'Stopped: marked lost', now));
+    ).bind(id, jobFields.stage === 'booked' ? 'Stopped: booked' : 'Stopped: not going ahead', now));
   }
   try {
     await env.DB.batch(stmts);

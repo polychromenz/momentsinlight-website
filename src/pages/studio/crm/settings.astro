@@ -1,9 +1,11 @@
 ---
 // Moments Studio CRM settings: email templates (edit with a live preview, add new), job types
 // and lead sources (add, rename, reorder, remove, choose which show on the enquiry form), and the
-// documents library that templates attach (upload, download, rename, replace, delete).
+// documents library that templates attach (upload, download, rename, replace, delete), payment
+// schedules, contracts, questionnaires, payments and the workflows view.
 // Data from functions/api/studio/crm/settings.js.
 import StudioLayout from '../../../layouts/StudioLayout.astro';
+import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
 ---
 <StudioLayout title="Settings" section="settings">
   <span slot="bar" class="save-state" aria-live="polite"></span>
@@ -17,6 +19,7 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
       <button type="button" role="tab" data-tab="documents">Documents</button>
       <button type="button" role="tab" data-tab="schedules">Payment schedules</button>
       <button type="button" role="tab" data-tab="contracts">Contracts</button>
+      <button type="button" role="tab" data-tab="questionnaires">Questionnaires</button>
       <button type="button" role="tab" data-tab="payments">Payments</button>
       <button type="button" role="tab" data-tab="workflows">Workflows</button>
     </div>
@@ -25,7 +28,7 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
     <section class="pane" data-pane="templates" hidden>
       <div class="tpl-layout">
         <div class="card tpl-list-card">
-          <ul class="tpl-list"></ul>
+          <ul class="tpl-list email-list"></ul>
           <button type="button" class="s-btn s-btn--quiet" data-act="new-template">+ New template</button>
         </div>
         <form class="card tpl-editor" autocomplete="off">
@@ -46,7 +49,7 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
 
     <section class="pane card" data-pane="job_type" hidden>
       <p class="hint">The services people can choose on the enquiry form, and which workflow each one follows.</p>
-      <table class="list-table"><thead><tr><th></th><th>Job type</th><th>Workflow</th><th>Default contract</th><th>On the form</th><th></th></tr></thead><tbody></tbody></table>
+      <table class="list-table"><thead><tr><th></th><th>Job type</th><th>Workflow</th><th>Default contract</th><th>Questionnaire</th><th>On the form</th><th></th></tr></thead><tbody></tbody></table>
       <div class="actions"><button type="button" class="s-btn s-btn--quiet" data-act="add">+ Add</button><button type="button" class="s-btn s-btn--solid" data-act="save-list">Save</button></div>
     </section>
 
@@ -80,6 +83,26 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
       </form>
     </section>
 
+    <section class="pane" data-pane="questionnaires" hidden>
+      <div class="tpl-layout">
+        <div class="card"><ul class="tpl-list qn-list"></ul><button type="button" class="s-btn s-btn--quiet" data-act="new-qn">+ New questionnaire</button></div>
+        <form class="card qn-editor" autocomplete="off">
+          <label>Name<input name="qn_name" required /></label>
+          <label>Introduction <small>(shown above the questions)</small><textarea name="qn_intro" rows="5"></textarea></label>
+          <div class="qn-cols">
+            <div>
+              <p class="qn-head">Questions <small>drag ⠿ to reorder</small></p>
+              <ol class="qn-qs"></ol>
+              <div class="qn-add"><select class="qn-type" aria-label="Type of question"></select><button type="button" class="s-btn s-btn--quiet" data-act="qn-add">+ Add question</button></div>
+            </div>
+            <div class="qn-preview"><p class="qn-head">What they see</p><div class="qn-preview-box"><div class="qn-preview-intro"></div><div class="qf"></div></div></div>
+          </div>
+          <div class="actions"><button type="button" class="s-btn s-btn--danger" data-act="qn-delete">Delete</button><button type="submit" class="s-btn s-btn--solid">Save questionnaire</button></div>
+          <p class="hint">Couples' questionnaires keep the questions they were given, so changes apply to new ones. Choose each job type's default questionnaire under Job types.</p>
+        </form>
+      </div>
+    </section>
+
     <section class="pane" data-pane="contracts" hidden>
       <div class="tpl-layout">
         <div class="card"><ul class="tpl-list con-list"></ul><button type="button" class="s-btn s-btn--quiet" data-act="new-contract">+ New contract</button></div>
@@ -107,6 +130,7 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
   </main>
   <div class="s-toast" role="status"></div>
 </StudioLayout>
+<style is:inline set:html={FORM_CSS}></style>
 
 <script>
   import { renderTemplate } from '../../../../functions-lib/email-render.js';
@@ -115,7 +139,10 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
   import { attachPicker, type Doc } from '../../../studio/attach-picker';
   import { payments, money, longDate } from '../../../../functions-lib/quotes.js';
   import { WEDDING, KIND, STATUS } from '../../../studio/workflow-view';
-  type Item = { value: string; label: string; workflow: string | null; on_form: boolean; contract_key?: string | null };
+  import { TYPES, FILLS, formHtml } from '../../../../functions-lib/questionnaire-form.js';
+  type Item = { value: string; label: string; workflow: string | null; on_form: boolean; contract_key?: string | null; questionnaire_key?: string | null };
+  type Question = { id: string; type: string; label: string; placeholder?: string; options?: string[]; required?: boolean; half?: boolean; fill?: string };
+  type Qn = { key: string; name: string; intro: string; questions: Question[] };
   type ContractT = { key: string; name: string; note: string; body: string };
   type Template = { key: string; name: string; subject: string; body: string; attachments: number[] };
   type LibraryDoc = Doc & { type: string; updated_at: string; used_by: string[] };
@@ -129,7 +156,7 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
 
   type Part = { percent: number; label: string; when: string; days?: number; months?: number };
   type Schedule = { key: string; name: string; parts: Part[] };
-  let data: { job_type: Item[]; lead_source: Item[]; templates: Template[]; workflows: string[]; documents: LibraryDoc[]; schedules: Schedule[]; contracts: ContractT[]; payments: Record<string, string>; stripe: { ok: boolean; test?: boolean; why?: string } };
+  let data: { job_type: Item[]; lead_source: Item[]; templates: Template[]; workflows: string[]; documents: LibraryDoc[]; schedules: Schedule[]; contracts: ContractT[]; payments: Record<string, string>; stripe: { ok: boolean; test?: boolean; why?: string }; questionnaires: Qn[] };
   let current: Template | null = null;
   let tab = 'templates';
   const editor = $<HTMLFormElement>('.tpl-editor');
@@ -157,7 +184,7 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
     preview();
   }
   function renderTemplates() {
-    $('.tpl-list').innerHTML = data.templates.map((t) => `<li data-key="${esc(t.key)}"><button type="button">${esc(t.name)}<small>${esc(t.subject)}</small></button></li>`).join('');
+    $('.email-list').innerHTML = data.templates.map((t) => `<li data-key="${esc(t.key)}"><button type="button">${esc(t.name)}<small>${esc(t.subject)}</small></button></li>`).join('');
   }
   rich = attachRich(field('body') as unknown as HTMLTextAreaElement, { minHeight: 420 });
   const picker = attachPicker($('.attach'));
@@ -178,7 +205,7 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
       <td class="drag" title="Drag to reorder" aria-hidden="true">⠿</td>
       <td><input data-k="value" value="${esc(it.value)}" /></td>
       ${kind === 'job_type'
-        ? `<td><select data-k="workflow"><option value="">None (a “reply” to-do)</option>${data.workflows.map((w) => `<option value="${w}"${it.workflow === w ? ' selected' : ''}>${w[0].toUpperCase() + w.slice(1)}</option>`).join('')}</select></td><td><select data-k="contract_key"><option value="">None</option>${data.contracts.map((c) => `<option value="${esc(c.key)}"${it.contract_key === c.key ? ' selected' : ''}>${esc(c.name)}</option>`).join('')}</select></td>`
+        ? `<td><select data-k="workflow"><option value="">None (a “reply” to-do)</option>${data.workflows.map((w) => `<option value="${w}"${it.workflow === w ? ' selected' : ''}>${w[0].toUpperCase() + w.slice(1)}</option>`).join('')}</select></td><td><select data-k="contract_key"><option value="">None</option>${data.contracts.map((c) => `<option value="${esc(c.key)}"${it.contract_key === c.key ? ' selected' : ''}>${esc(c.name)}</option>`).join('')}</select></td><td><select data-k="questionnaire_key"><option value="">None</option>${data.questionnaires.map((c) => `<option value="${esc(c.key)}"${it.questionnaire_key === c.key ? ' selected' : ''}>${esc(c.name)}</option>`).join('')}</select></td>`
         : `<td><input data-k="label" value="${esc(it.label)}" /></td>`}
       <td class="c"><input type="checkbox" data-k="on_form"${it.on_form ? ' checked' : ''} aria-label="Show on the form" /></td>
       <td class="row-btns"><button type="button" data-move="-1" aria-label="Move up">↑</button><button type="button" data-move="1" aria-label="Move down">↓</button><button type="button" data-remove aria-label="Remove">✕</button></td>
@@ -190,7 +217,7 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
   function readList(kind: 'job_type' | 'lead_source'): Item[] {
     return [...document.querySelectorAll<HTMLTableRowElement>(`[data-pane="${kind}"] tbody tr`)].map((tr) => {
       const v = (k: string) => tr.querySelector<HTMLInputElement>(`[data-k="${k}"]`);
-      return { value: v('value')!.value, label: kind === 'job_type' ? v('value')!.value : v('label')!.value, workflow: kind === 'job_type' ? v('workflow')!.value || null : null, on_form: v('on_form')!.checked, contract_key: kind === 'job_type' ? (tr.querySelector('[data-k="contract_key"]') as HTMLSelectElement).value || null : null };
+      return { value: v('value')!.value, label: kind === 'job_type' ? v('value')!.value : v('label')!.value, workflow: kind === 'job_type' ? v('workflow')!.value || null : null, on_form: v('on_form')!.checked, contract_key: kind === 'job_type' ? (tr.querySelector('[data-k="contract_key"]') as HTMLSelectElement).value || null : null, questionnaire_key: kind === 'job_type' ? (tr.querySelector('[data-k="questionnaire_key"]') as HTMLSelectElement).value || null : null };
     });
   }
 
@@ -222,6 +249,94 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
     if (li) openContract(data.contracts.find((x) => x.key === li.dataset.key) ?? null);
     if (t.closest('[data-act="new-contract"]')) { openContract(null); (con.elements.namedItem('con_name') as HTMLInputElement).focus(); }
   });
+  // ---- Questionnaires ----
+  const qn = $<HTMLFormElement>('.qn-editor');
+  const qnRich = attachRich(qn.elements.namedItem('qn_intro') as HTMLTextAreaElement, { fields: [], minHeight: 120 });
+  let currentQn: Qn | null = null;
+  const CHOICES = ['select', 'radio', 'checks'];
+  $('.qn-type').innerHTML = Object.entries(TYPES).map(([k, v]) => `<option value="${k}"${k === 'short' ? ' selected' : ''}>${v}</option>`).join('');
+  const qRow = (q: Question) => {
+    const asks = !['heading', 'text'].includes(q.type);
+    return `<li class="qn-q" data-id="${esc(q.id)}">
+      <span class="drag" title="Drag to reorder" aria-hidden="true">⠿</span>
+      <div class="qn-q-body">
+        <div class="qn-q-top"><select data-q="type" aria-label="Type">${Object.entries(TYPES).map(([k, v]) => `<option value="${k}"${k === q.type ? ' selected' : ''}>${v}</option>`).join('')}</select>
+          <button type="button" class="qn-x" data-qn-remove aria-label="Remove this question">✕</button></div>
+        ${q.type === 'text' ? `<textarea data-q="label" rows="3" aria-label="Text">${esc(q.label)}</textarea>` : `<input data-q="label" value="${esc(q.label)}" aria-label="${q.type === 'heading' ? 'Heading' : 'Question'}" placeholder="${q.type === 'heading' ? 'Heading' : 'The question'}" />`}
+        ${CHOICES.includes(q.type) ? `<label class="qn-small">Choices, one per line<textarea data-q="options" rows="3">${esc((q.options || []).join('\n'))}</textarea></label>` : ''}
+        ${q.type === 'short' || q.type === 'long' ? `<label class="qn-small">Hint in the box (optional)<input data-q="placeholder" value="${esc(q.placeholder ?? '')}" /></label>` : ''}
+        ${asks ? `<div class="qn-flags">
+          <label><input type="checkbox" data-q="required"${q.required ? ' checked' : ''} /> Needed</label>
+          <label><input type="checkbox" data-q="half"${q.half ? ' checked' : ''} /> Half width</label>
+          ${q.type === 'short' ? `<label>Fill in from <select data-q="fill"><option value="">Nothing</option>${Object.entries(FILLS).map(([k, v]) => `<option value="${k}"${q.fill === k ? ' selected' : ''}>${v}</option>`).join('')}</select></label>` : ''}
+        </div>` : ''}
+      </div></li>`;
+  };
+  const readQs = (): Question[] => [...qn.querySelectorAll<HTMLElement>('.qn-q')].map((li) => {
+    const g = (k: string) => li.querySelector<HTMLInputElement>(`[data-q="${k}"]`);
+    const q: Question = { id: li.dataset.id!, type: g('type')!.value, label: g('label')?.value ?? '' };
+    if (g('options')) q.options = g('options')!.value.split('\n').map((o) => o.trim()).filter(Boolean);
+    if (g('placeholder')?.value.trim()) q.placeholder = g('placeholder')!.value.trim();
+    if (g('required')?.checked) q.required = true;
+    if (g('half')?.checked) q.half = true;
+    if (g('fill')?.value) q.fill = g('fill')!.value;
+    return q;
+  });
+  function qnDraw(qs: Question[]) { $('.qn-qs').innerHTML = qs.map(qRow).join(''); qnPreview(); }
+  function qnPreview() {
+    $('.qn-preview-intro').innerHTML = qnRich.get();
+    $('.qn-preview .qf').innerHTML = formHtml(readQs().filter((q) => q.label), {});
+  }
+  function openQn(x: Qn | null) {
+    currentQn = x;
+    (qn.elements.namedItem('qn_name') as HTMLInputElement).value = x?.name ?? '';
+    qnRich.set(x?.intro || '<p></p>');
+    qnDraw(x?.questions ?? []);
+    document.querySelectorAll<HTMLElement>('.qn-list li').forEach((li) => li.classList.toggle('on', li.dataset.key === x?.key));
+  }
+  function renderQns() {
+    $('.qn-list').innerHTML = data.questionnaires.map((x) => `<li data-key="${esc(x.key)}"><button type="button">${esc(x.name)}<small>${x.questions.filter((q) => !['heading', 'text'].includes(q.type)).length} questions · Used by: ${esc(data.job_type.filter((t) => t.questionnaire_key === x.key).map((t) => t.value).join(', ') || 'no job type')}</small></button></li>`).join('');
+  }
+  Sortable.create($('.qn-qs'), { handle: '.drag', animation: 150, onEnd: qnPreview });
+  qn.addEventListener('input', qnPreview);
+  qn.addEventListener('change', (e) => {
+    // A new type changes which settings a question has: redraw it, keeping what's typed.
+    if ((e.target as HTMLElement).dataset.q === 'type') qnDraw(readQs()); else qnPreview();
+  });
+  qn.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const r = await fetch('/api/studio/crm/settings', { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ questionnaire: { key: currentQn?.key, name: (qn.elements.namedItem('qn_name') as HTMLInputElement).value, intro: qnRich.get(), questions: readQs() } }) });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) { toast(d.error || 'Couldn’t save.', true); return; }
+    toast('Questionnaire saved. New questionnaires use it; ones already made keep theirs.');
+    await load(current?.key, undefined, undefined, d.key);
+  });
+  document.addEventListener('click', async (e) => {
+    const t = e.target as HTMLElement;
+    const li = t.closest<HTMLElement>('.qn-list li');
+    if (li) { openQn(data.questionnaires.find((x) => x.key === li.dataset.key) ?? null); return; }
+    if (t.closest('[data-act="new-qn"]')) { openQn(null); (qn.elements.namedItem('qn_name') as HTMLInputElement).focus(); return; }
+    if (t.closest('[data-act="qn-add"]')) {
+      const type = $<HTMLSelectElement>('.qn-type').value;
+      const qs = readQs();
+      qs.push({ id: `q${Math.random().toString(36).slice(2, 8)}`, type, label: '', ...(CHOICES.includes(type) ? { options: ['Yes', 'No'] } : {}) });
+      qnDraw(qs);
+      (qn.querySelector('.qn-q:last-child [data-q="label"]') as HTMLInputElement)?.focus();
+      return;
+    }
+    if (t.closest('[data-qn-remove]')) { t.closest('.qn-q')!.remove(); qnPreview(); return; }
+    if (t.closest('[data-act="qn-delete"]')) {
+      if (!currentQn) { openQn(data.questionnaires[0] ?? null); return; }
+      if (!confirm(`Delete “${currentQn.name}”? Questionnaires already made from it keep their questions and answers.`)) return;
+      const r = await fetch('/api/studio/crm/settings', { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ delete_questionnaire: currentQn.key }) });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) { toast(d.error || 'Couldn’t delete it.', true); return; }
+      currentQn = null;
+      toast('Deleted.');
+      await load(current?.key);
+    }
+  });
+
   // ---- Workflows (read only) ----
   $('.wf').innerHTML = '<h2 class="wf-title">Wedding</h2>' + WEDDING.map((stage) => `<div class="wf-stage"><h3>${esc(stage.name)}</h3><ol>${stage.steps.map((st) => `<li class="wf-step wf-step--${st.status}">
     <div class="wf-top"><strong>${esc(st.title)}</strong><b class="st st--${st.status}">${STATUS[st.status]}</b></div>
@@ -355,12 +470,12 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
     const t = e.target as HTMLElement;
     const tb = t.closest<HTMLButtonElement>('.tabs button');
     if (tb) { showTab(tb.dataset.tab!); return; }
-    const li = t.closest<HTMLElement>('.tpl-list li');
+    const li = t.closest<HTMLElement>('.email-list li');
     if (li) { openTemplate(data.templates.find((x) => x.key === li.dataset.key) ?? null); return; }
     if (t.closest('[data-act="new-template"]')) { openTemplate(null); field('name').focus(); return; }
     const pane = t.closest<HTMLElement>('[data-pane]');
     const kind = pane?.dataset.pane as 'job_type' | 'lead_source';
-    if (!pane || ['templates', 'documents', 'schedules', 'contracts', 'workflows', 'payments'].includes(kind as string)) return;
+    if (!pane || ['templates', 'documents', 'schedules', 'contracts', 'workflows', 'payments', 'questionnaires'].includes(kind as string)) return;
     if (t.closest('[data-act="add"]')) {
       data[kind] = [...readList(kind), { value: '', label: '', workflow: null, on_form: true }];
       renderList(kind);
@@ -399,12 +514,13 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
     await load(current?.key);
   });
 
-  async function load(openKey?: string, openSchedule_?: string, openContract_?: string) {
+  async function load(openKey?: string, openSchedule_?: string, openContract_?: string, openQn_?: string) {
     const r = await fetch('/api/studio/crm/settings');
     const d = await r.json();
     if (!r.ok) { $('.status').textContent = d.error || `Something went wrong (${r.status}).`; return; }
     data = d;
-    renderTemplates(); renderList('job_type'); renderList('lead_source'); renderDocs(); renderSchedules(); renderContracts(); renderPayments();
+    renderTemplates(); renderList('job_type'); renderList('lead_source'); renderDocs(); renderSchedules(); renderContracts(); renderPayments(); renderQns();
+    openQn(data.questionnaires.find((x) => x.key === (openQn_ ?? currentQn?.key)) ?? data.questionnaires[0] ?? null);
     openContract(data.contracts.find((x) => x.key === (openContract_ ?? currentCon?.key)) ?? data.contracts[0] ?? null);
     openSchedule(data.schedules.find((x) => x.key === (openSchedule_ ?? currentSch?.key)) ?? data.schedules[0] ?? null);
     openTemplate(data.templates.find((x) => x.key === openKey) ?? data.templates.find((x) => x.key.startsWith('wedding-01')) ?? data.templates[0] ?? null);
@@ -432,6 +548,30 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
   .settings .pay-stripe { margin: 0; font-size: 14px; color: #444; }
   @media (min-width: 700px) { .settings .pay-form .two { grid-template-columns: 1fr 1fr; } }
   .settings .tpl-layout { display: grid; gap: 16px; }
+  .settings .qn-editor { display: flex; flex-direction: column; gap: 14px; }
+  .settings .qn-editor > label { display: flex; flex-direction: column; gap: 5px; font-size: 13px; font-weight: 600; color: #555; }
+  .settings .qn-editor > label > input { font: inherit; font-weight: 400; font-size: 15px; padding: 9px 11px; border: 1px solid #ddd3c4; border-radius: 10px 0; }
+  .settings .qn-cols { display: grid; gap: 18px; }
+  .settings .qn-head { margin: 0 0 8px; font-size: 13px; font-weight: 600; color: #555; }
+  .settings .qn-head small { font-weight: 400; color: #999; margin-left: 6px; }
+  .settings .qn-qs { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+  .settings .qn-q { display: flex; gap: 8px; padding: 10px 12px; border: 1px solid #ece4d7; border-radius: 14px 0; background: #fdfbf8; }
+  .settings .qn-q .drag { cursor: grab; color: #aaa; font-size: 18px; user-select: none; padding-top: 4px; }
+  .settings .qn-q-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 7px; }
+  .settings .qn-q-top { display: flex; justify-content: space-between; gap: 8px; }
+  .settings .qn-q select, .settings .qn-q input:not([type=checkbox]), .settings .qn-q textarea, .settings .qn-add select { font: inherit; font-size: 14px; padding: 7px 9px; border: 1px solid #ddd3c4; border-radius: 8px 0; background: #fff; min-width: 0; }
+  .settings .qn-q input[data-q="label"] { font-weight: 500; }
+  .settings .qn-small { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: #777; }
+  .settings .qn-flags { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 13px; color: #555; align-items: center; }
+  .settings .qn-flags label { display: inline-flex !important; flex-direction: row !important; align-items: center; gap: 6px !important; font-weight: 400 !important; font-size: 13px !important; }
+  .settings .qn-flags select { width: auto !important; }
+  .settings .qn-small small { display: inline !important; }
+  .settings .qn-x { border: 0; background: none; color: #a8432a; cursor: pointer; font-size: 14px; }
+  .settings .qn-add { display: flex; gap: 8px; align-items: center; margin-top: 10px; }
+  .settings .qn-preview-box { border: 1px solid #ece4d7; border-radius: 20px 0; background: #fff; padding: 20px; max-height: 80vh; overflow: auto; position: sticky; top: 80px; }
+  .settings .qn-preview-intro { color: #444; line-height: 1.7; font-size: 15px; margin-bottom: 16px; }
+  .settings .qn-preview-intro p { margin: 0 0 10px; }
+  @media (min-width: 1100px) { .settings .qn-cols { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; } }
   .settings .tpl-list { list-style: none; margin: 0 0 10px; padding: 0; }
   .settings .tpl-list button { display: block; width: 100%; text-align: left; padding: 9px 10px; border: 0; border-radius: 10px 0; background: none; font: inherit; font-size: 14px; font-weight: 600; color: var(--ink); cursor: pointer; }
   .settings .tpl-list button small { display: block; font-weight: 400; color: #888; font-size: 12px; }

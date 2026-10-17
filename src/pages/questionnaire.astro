@@ -1,0 +1,165 @@
+---
+// A couple's questionnaire (/questionnaire?t=…, the link Tony sends; later also in their portal).
+// Answers save as they type; photos upload straight away; "Send to Tony" checks the needed
+// answers and lets him know. They can come back and change things. Hidden from Google; data from
+// functions/api/questionnaire.js and questionnaire-upload.js.
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { FORM_CSS } from '../../functions-lib/questionnaire-form.js';
+---
+<BaseLayout title="Your questionnaire | Moments In Light" description="Your questionnaire from Moments in Light." noindex>
+  <main class="q-page">
+    <p class="q-status" aria-live="polite">Loading your questionnaire…</p>
+    <div class="q" hidden>
+      <header class="q-head">
+        <p class="eyebrow q-eyebrow"></p>
+        <h1 class="display q-title"></h1>
+        <hr class="hairline" />
+      </header>
+      <div class="q-card q-done" hidden tabindex="-1">
+        <h2>Thank you!</h2>
+        <p class="q-done-text"></p>
+      </div>
+      <form class="q-card" novalidate>
+        <div class="q-intro"></div>
+        <div class="qf"></div>
+        <p class="q-msg" role="alert" hidden></p>
+        <div class="q-actions">
+          <button class="btn q-send" type="submit">Send to Tony</button>
+          <span class="q-saved" aria-live="polite"></span>
+        </div>
+      </form>
+    </div>
+  </main>
+</BaseLayout>
+<style is:inline set:html={FORM_CSS}></style>
+
+<script>
+  import { formHtml, readForm } from '../../functions-lib/questionnaire-form.js';
+  const $ = <T extends HTMLElement = HTMLElement>(s: string) => document.querySelector<T>(s)!;
+  const token = new URLSearchParams(location.search).get('t') || '';
+  const form = $<HTMLFormElement>('form.q-card');
+  type Upload = { id: number; question_id: string; name: string; size: number };
+  let data: { name: string; intro: string; questions: any[]; answers: Record<string, unknown>; status: string; uploads: Upload[]; couple: string; when: string; submitted_at: string | null };
+  let timer = 0;
+  let dirty = false;
+  const fileUrl = (id: number) => `/api/questionnaire?t=${encodeURIComponent(token)}&file=${id}`;
+
+  function draw() {
+    $('.qf').innerHTML = formHtml(data.questions, data.answers, { uploads: data.uploads, fileUrl });
+  }
+  function doneNote() {
+    const done = data.status === 'submitted';
+    $('.q-done').hidden = !done;
+    if (done) $('.q-done-text').textContent = `Tony has your answers (sent ${new Date(data.submitted_at!).toLocaleDateString('en-NZ', { day: 'numeric', month: 'long' })}). You can still change anything below; just press “Send my changes” when you're done.`;
+    $('.q-send').textContent = done ? 'Send my changes' : 'Send to Tony';
+  }
+
+  async function load() {
+    const r = await fetch(`/api/questionnaire?t=${encodeURIComponent(token)}`);
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) { $('.q-status').textContent = d.error || 'This questionnaire isn’t available.'; return; }
+    data = d;
+    document.title = `${d.name} | Moments In Light`;
+    $('.q-eyebrow').textContent = [d.couple, d.when].filter(Boolean).join(' · ');
+    $('.q-title').textContent = d.name;
+    $('.q-intro').innerHTML = d.intro; // cleaned when Tony saved it
+    draw(); doneNote();
+    $('.q').hidden = false; $('.q-status').hidden = true;
+  }
+
+  async function save() {
+    clearTimeout(timer);
+    if (!dirty) return;
+    dirty = false;
+    data.answers = { ...data.answers, ...readForm(form, data.questions) };
+    $('.q-saved').textContent = 'Saving…';
+    const r = await fetch('/api/questionnaire', { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ t: token, answers: data.answers }) });
+    $('.q-saved').textContent = r.ok ? 'Saved' : 'Couldn’t save just now; it will try again.';
+    if (!r.ok) dirty = true;
+  }
+  form.addEventListener('input', (e) => {
+    if ((e.target as HTMLInputElement).type === 'file') return;
+    dirty = true;
+    (e.target as HTMLElement).closest('.qf-q')?.classList.remove('qf-q--missing');
+    $('.q-saved').textContent = '';
+    clearTimeout(timer); timer = window.setTimeout(save, 1200);
+  });
+  addEventListener('pagehide', () => { if (dirty) navigator.sendBeacon?.('/api/questionnaire', new Blob([JSON.stringify({ t: token, answers: { ...data.answers, ...readForm(form, data.questions) } })], { type: 'application/json' })); });
+
+  // Photos and files: upload each straight away.
+  form.addEventListener('change', async (e) => {
+    const input = e.target as HTMLInputElement;
+    if (input.type !== 'file' || !input.files?.length) return;
+    await save();
+    data.answers = { ...data.answers, ...readForm(form, data.questions) };
+    const msg = $('.q-msg'); msg.hidden = true;
+    const label = input.closest('.qf-upload')!.querySelector('span')!;
+    const files = [...input.files];
+    for (const [i, file] of files.entries()) {
+      label.textContent = `Uploading ${i + 1} of ${files.length}…`;
+      if (file.size > 10 * 1024 * 1024) { msg.textContent = `“${file.name}” is over 10 MB. Please choose a smaller version.`; msg.hidden = false; continue; }
+      const fd = new FormData(); fd.append('t', token); fd.append('question', input.dataset.uploadFor!); fd.append('file', file);
+      const r = await fetch('/api/questionnaire-upload', { method: 'POST', body: fd });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) { msg.textContent = d.error || `“${file.name}” didn’t upload. Please try again.`; msg.hidden = false; continue; }
+      data.uploads.push(d);
+    }
+    draw();
+  });
+  form.addEventListener('click', async (e) => {
+    const b = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-remove-upload]');
+    if (!b) return;
+    await save();
+    data.answers = { ...data.answers, ...readForm(form, data.questions) };
+    const id = Number(b.dataset.removeUpload);
+    await fetch(`/api/questionnaire-upload?t=${encodeURIComponent(token)}&id=${id}`, { method: 'DELETE' });
+    data.uploads = data.uploads.filter((u) => u.id !== id);
+    draw();
+  });
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    clearTimeout(timer); dirty = false;
+    data.answers = { ...data.answers, ...readForm(form, data.questions) };
+    const btn = $<HTMLButtonElement>('.q-send'); const msg = $('.q-msg');
+    btn.disabled = true; btn.textContent = 'Sending…'; msg.hidden = true;
+    document.querySelectorAll('.qf-q--missing').forEach((x) => x.classList.remove('qf-q--missing'));
+    const r = await fetch('/api/questionnaire', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ t: token, answers: data.answers }) });
+    const d = await r.json().catch(() => ({}));
+    btn.disabled = false;
+    if (!r.ok) {
+      doneNote();
+      msg.textContent = d.error || 'Something went wrong. Please try again.'; msg.hidden = false;
+      const first = (d.missing || []).map((id: string) => document.getElementById(`q-${id}-l`)?.closest('.qf-q')).filter(Boolean);
+      first.forEach((x: Element) => x.classList.add('qf-q--missing'));
+      (first[0] as HTMLElement | undefined)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
+    data.status = 'submitted'; data.submitted_at = new Date().toISOString();
+    $('.q-saved').textContent = '';
+    doneNote();
+    $('.q-done').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    $('.q-done').focus({ preventScroll: true });
+  });
+
+  if (token) load(); else $('.q-status').textContent = 'This questionnaire link isn’t complete. Please use the link in your email.';
+</script>
+
+<style>
+  .q-page { background: var(--champagne); padding: 48px var(--pad) 90px; min-height: 60vh; }
+  .q-status { text-align: center; color: #666; }
+  .q { max-width: 860px; margin: 0 auto; display: flex; flex-direction: column; gap: 22px; }
+  .q-head { text-align: center; }
+  .q-title { font-size: clamp(30px, 2.4vw + 18px, 46px); margin: 0 0 20px; padding: 0; }
+  .q-card { background: var(--white); border-radius: 28px 0; padding: 28px clamp(18px, 4vw, 40px); }
+  .q-intro { color: #444; line-height: 1.75; margin-bottom: 26px; }
+  .q-intro :global(p) { margin: 0 0 12px; }
+  .q-done h2 { margin: 0 0 8px; font-weight: 300; font-size: 24px; color: var(--ink); }
+  .q-done p { margin: 0; color: #444; line-height: 1.7; }
+  .q-msg { margin: 22px 0 0; padding: 10px 14px; background: #fbeee8; color: #8a3b1e; border-radius: 12px 0; }
+  .q-actions { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-top: 26px; }
+  .q-saved { font-size: 14px; color: #888; }
+  .q-done[hidden], .q-msg[hidden] { display: none; }
+  .q :global(.qf-q--missing .qf-label) { color: #a8432a; }
+  .q :global(.qf-q--missing input), .q :global(.qf-q--missing textarea), .q :global(.qf-q--missing select) { border-color: #a8432a; }
+</style>

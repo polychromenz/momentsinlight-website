@@ -3,6 +3,7 @@
 // notes, the planned steps (to-dos and emails) and the email history.
 // Data from functions/api/studio/crm/job.js and step.js.
 import StudioLayout from '../../../layouts/StudioLayout.astro';
+import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
 ---
 <StudioLayout title="Client" section="clients">
   <span slot="bar" class="save-state" aria-live="polite"></span>
@@ -15,11 +16,7 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
       <header class="head">
         <p class="eyebrow-line"></p>
         <h1 class="title"></h1>
-        <div class="stage" role="group" aria-label="Stage">
-          <button type="button" data-stage="lead">Lead</button>
-          <button type="button" data-stage="booked">Booked</button>
-          <button type="button" data-stage="completed">Completed</button>
-          <button type="button" data-stage="lost">Lost</button>
+        <div class="stage" role="group" aria-label="Where they're at">
         </div>
       </header>
 
@@ -36,6 +33,10 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
           <section class="card">
             <h2>Contracts</h2>
             <ul class="quotes contracts"></ul>
+          </section>
+          <section class="card">
+            <h2>Questionnaire</h2>
+            <ul class="quotes questionnaires"></ul>
           </section>
           <section class="card">
             <h2>Invoices</h2>
@@ -103,11 +104,21 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
       <div class="review-actions"><a class="s-btn s-btn--quiet msg-gmail" target="_blank" rel="noopener">Open in Gmail</a><button type="button" class="s-btn s-btn--solid" data-msg-close>Close</button></div>
     </div>
   </dialog>
+  <dialog class="review q-view" aria-label="Questionnaire answers">
+    <div class="review-form">
+      <h2 class="review-title q-view-title"></h2>
+      <p class="review-to q-view-meta"></p>
+      <div class="qf q-view-body"></div>
+      <div class="review-actions"><button type="button" class="s-btn s-btn--solid" data-q-close>Close</button></div>
+    </div>
+  </dialog>
   <div class="s-toast" role="status"></div>
 </StudioLayout>
+<style is:inline set:html={FORM_CSS}></style>
 
 <script>
   import { emailHtml } from '../../../../functions-lib/email-render.js';
+  import { formHtml } from '../../../../functions-lib/questionnaire-form.js';
   import { attachRich } from '../../../studio/rich-editor';
   import { attachPicker } from '../../../studio/attach-picker';
   type Step = { id: number; kind: string; title: string; due_at: string; status: string; note: string; done_at: string | null; stop_on: string };
@@ -153,7 +164,15 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
     $('.title').textContent = j.title;
     $('.eyebrow-line').textContent = [j.job_type, j.event_date && new Date(`${j.event_date}T12:00:00Z`).toLocaleDateString('en-NZ', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }), j.venue].filter(Boolean).join(' · ');
     stage = j.stage;
-    document.querySelectorAll<HTMLButtonElement>('.stage button').forEach((b) => b.classList.toggle('on', b.dataset.stage === stage));
+    // Where they're at, and only the next sensible actions (no Lost on a booked job).
+    const STAGE: Record<string, [string, [string, string][]]> = {
+      lead: ['Lead', [['booked', 'Mark as booked'], ['lost', 'Not going ahead']]],
+      booked: ['Booked', [['completed', 'Mark as completed']]],
+      completed: ['Completed', [['booked', 'Undo']]],
+      lost: ['Not going ahead', [['lead', 'Undo']]],
+    };
+    const [now, acts] = STAGE[stage] ?? STAGE.lead;
+    $('.stage').innerHTML = `<span class="stage-now stage-now--${stage}">${now}</span>${acts.map(([to, label]) => `<button type="button" data-stage="${to}" class="${label === 'Undo' ? 'undo' : ''}">${label}</button>`).join('')}`;
     const typeSel = form.elements.namedItem('job_type') as HTMLSelectElement;
     if (j.job_type && ![...typeSel.options].some((o) => o.value === j.job_type)) typeSel.add(new Option(j.job_type, j.job_type));
     for (const el of Array.from(form.elements) as HTMLInputElement[]) if (el.name) el.value = j[el.name] ?? '';
@@ -196,6 +215,17 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
     const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Pacific/Auckland' });
     const signed = d.contracts.filter((c: { status: string }) => c.status === 'signed');
     invoices = d.invoices;
+    const qStatus = (q: { status: string; submitted_at: string | null; created_at: string; updated_at: string }) => q.status === 'submitted'
+      ? `<b class="ok">Sent in</b> ${dateTime(q.submitted_at!)}${q.updated_at > q.submitted_at! ? ' · changed since' : ''}`
+      : q.updated_at > q.created_at ? `Started, not sent in yet · last saved ${dateTime(q.updated_at)}` : 'Not started yet';
+    const choose = `<select class="q-pick" aria-label="Which questionnaire">${d.questionnaireTemplates.map((t: { key: string; name: string }) => `<option value="${esc(t.key)}"${t.key === d.defaultQuestionnaire ? ' selected' : ''}>${esc(t.name)}</option>`).join('')}</select>`;
+    $('.questionnaires').innerHTML = (d.questionnaires.length ? d.questionnaires.map((q: any) =>
+      `<li class="inv"><span class="what"><strong>${esc(q.name)}</strong><br><small>${qStatus(q)}</small></span>
+        <button type="button" class="s-btn" data-q="${q.id}" data-q-act="view">See answers</button>
+        <button type="button" class="s-btn s-btn--quiet" data-q-link="/questionnaire?t=${q.token}">Copy link</button>
+        <a class="s-btn s-btn--quiet" href="/questionnaire?t=${q.token}" target="_blank" rel="noopener">Their page ↗</a>
+        <button type="button" class="s-btn s-btn--quiet" data-q="${q.id}" data-q-act="delete">Remove</button></li>`).join('') : '')
+      + (d.questionnaireTemplates.length ? `<li class="inv q-make">${d.questionnaires.length ? '<span class="what"><small>Another one:</small></span>' : '<span class="what"><small>None yet. The planning email will send it; or make it now and copy the link.</small></span>'}${choose}<button type="button" class="s-btn s-btn--quiet" data-q-act="make">Make questionnaire</button></li>` : '<li class="empty">Make a questionnaire in Settings first.</li>');
     $('.invoices').innerHTML = invoices.length ? invoices.map((i) => {
       const late = i.status === 'sent' && i.due_date < today;
       const how = i.paid_method === 'card' ? 'card' : i.paid_method === 'bank' ? 'bank transfer' : esc(i.paid_method || '');
@@ -292,7 +322,7 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
     const st = t.closest<HTMLButtonElement>('.stage button');
     if (st && st.dataset.stage !== stage) {
       const next = st.dataset.stage!;
-      if (next === 'lost' && !confirm('Mark as lost? Any follow-ups waiting will stop.')) return;
+      if (next === 'lost' && !confirm('Mark as not going ahead? Any follow-ups waiting will stop.')) return;
       stage = next;
       await save();
       return;
@@ -302,6 +332,34 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
       const d = await r.json().catch(() => ({}));
       if (!r.ok) { toast(d.error || 'Couldn’t make a quote.', true); return; }
       location.href = `/studio/crm/quote?id=${d.id}`;
+      return;
+    }
+    const ql = t.closest<HTMLButtonElement>('[data-q-link]');
+    if (ql) { await navigator.clipboard.writeText(location.origin.replace(/localhost:\d+/, 'www.momentsinlight.co.nz') + ql.dataset.qLink); toast('Link copied. Paste it into an email to them.'); return; }
+    if (t.closest('[data-q-close]')) { $<HTMLDialogElement>('dialog.q-view').close(); return; }
+    const qa = t.closest<HTMLButtonElement>('[data-q-act]');
+    if (qa) {
+      const act = qa.dataset.qAct!;
+      if (act === 'make') {
+        qa.disabled = true;
+        const r = await fetch('/api/studio/crm/questionnaire', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ job_id: id, key: $<HTMLSelectElement>('.q-pick').value }) });
+        const d = await r.json().catch(() => ({}));
+        if (!r.ok) { toast(d.error || 'Couldn’t make it.', true); qa.disabled = false; return; }
+        toast('Made. Use Copy link to send it to them, or see their page.');
+        await load();
+      } else if (act === 'delete') {
+        if (!confirm('Remove this questionnaire, with any answers and photos they’ve added? This can’t be undone.')) return;
+        await fetch(`/api/studio/crm/questionnaire?id=${qa.dataset.q}`, { method: 'DELETE' });
+        await load();
+      } else if (act === 'view') {
+        const r = await fetch(`/api/studio/crm/questionnaire?id=${qa.dataset.q}`);
+        const d = await r.json().catch(() => ({}));
+        if (!r.ok) { toast(d.error || 'Couldn’t open it.', true); return; }
+        $('.q-view-title').textContent = d.name;
+        $('.q-view-meta').textContent = d.status === 'submitted' ? `Sent in ${dateTime(d.submitted_at)}` : 'Not sent in yet; these are the answers saved so far.';
+        $('.q-view-body').innerHTML = formHtml(d.questions, d.answers, { readonly: true, uploads: d.uploads, fileUrl: (u: number) => `/api/studio/crm/questionnaire?id=${d.id}&file=${u}` });
+        $<HTMLDialogElement>('dialog.q-view').showModal();
+      }
       return;
     }
     const mk = t.closest<HTMLButtonElement>('[data-make-invoices]');
@@ -392,7 +450,11 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
   .job-page .title { margin: 0 0 14px; font-weight: 300; font-size: clamp(30px, 2vw + 20px, 44px); color: var(--ink); }
   .job-page .stage { display: flex; gap: 6px; flex-wrap: wrap; }
   .job-page .stage button { padding: 7px 14px; border: 1px solid #ddd3c4; border-radius: 999px; background: var(--white); font: inherit; font-size: 14px; cursor: pointer; }
-  .job-page .stage button.on { background: var(--green); border-color: var(--green); color: var(--white); }
+  .job-page .stage { align-items: center; }
+  .job-page .stage-now { padding: 7px 14px; border-radius: 999px; background: var(--green); color: var(--white); font-size: 14px; font-weight: 500; }
+  .job-page .stage-now--lost { background: #8a8a80; }
+  .job-page .stage-now--completed { background: var(--olive); }
+  .job-page .stage button.undo { border-color: transparent; background: transparent; text-decoration: underline; color: #666; }
   .job-page .cols { display: grid; gap: 16px; }
   .job-page .card { background: var(--white); border-radius: 24px 0; padding: 20px 24px; margin-bottom: 16px; }
   .job-page .card-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 8px; }
@@ -407,6 +469,9 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
   .job-page .inv--paid .what small { color: var(--green); }
   .job-page .inv--void .what { opacity: 0.5; }
   .job-page .inv .late { color: #a8432a; }
+  .job-page .inv .ok { color: var(--green); }
+  .job-page .q-make select { font: inherit; font-size: 14px; padding: 7px 10px; border: 1px solid #ddd3c4; border-radius: 10px 0; }
+  .q-view .q-view-body { max-height: 65dvh; overflow: auto; padding-right: 6px; }
   .job-page .card h2 { margin: 0 0 12px; font-weight: 300; font-size: 22px; color: var(--ink); }
   .job-page .steps, .job-page .messages { list-style: none; margin: 0; padding: 0; }
   .job-page .step, .job-page .messages li { display: flex; align-items: center; gap: 8px 12px; flex-wrap: wrap; padding: 10px 0; border-bottom: 1px solid #f1ebe1; }
