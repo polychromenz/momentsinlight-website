@@ -32,12 +32,19 @@ export async function buildDigest(db, today = nzDate()) {
       WHERE i.status = 'sent' AND i.due_date <= ?1 ORDER BY i.due_date`).bind(today).all(),
     db.prepare(`SELECT i.job_id, i.number, i.label, i.amount, j.title AS who FROM invoices i JOIN jobs j ON j.id = i.job_id
       WHERE i.status = 'scheduled' AND i.send_at < ?1 ORDER BY i.send_at`).bind(endOfToday).all(),
-    db.prepare(`SELECT id, title, job_type, event_date FROM jobs WHERE created_at >= ?1 ORDER BY created_at`).bind(since).all(),
+    db.prepare(`SELECT j.id, j.title, j.job_type, j.event_date, j.stage,
+      (SELECT COALESCE(st.title, m.subject) FROM messages m LEFT JOIN steps st ON st.id = m.step_id WHERE m.job_id = j.id AND m.direction = 'out' ORDER BY m.sent_at DESC LIMIT 1) AS last_out,
+      EXISTS (SELECT 1 FROM messages m WHERE m.job_id = j.id AND m.direction = 'in') AS replied
+      FROM jobs j WHERE j.created_at >= ?1 ORDER BY j.created_at`).bind(since).all(),
     db.prepare(`SELECT q.job_id, q.name, j.title AS who FROM questionnaires q JOIN jobs j ON j.id = q.job_id WHERE q.submitted_at >= ?1`).bind(since).all(),
     db.prepare(`SELECT t.id, t.title, t.due_date, t.contact_id, c.business FROM tasks t LEFT JOIN contacts c ON c.id = t.contact_id
       WHERE t.status = 'open' AND t.due_date IS NOT NULL AND t.due_date <= ?1 ORDER BY t.due_date`).bind(today).all(),
   ]);
 
+  // Where a new enquiry is at now.
+  const leadNow = (j) => j.stage === 'booked' || j.stage === 'completed' ? '<b style="color:#5a7d2a">now booked ✓</b>'
+    : j.stage === 'lost' ? '<span style="color:#777">not going ahead</span>'
+    : `${j.last_out ? `<span style="color:#777">“${esc(j.last_out.replace(/^\d+\s+/, ''))}” sent</span> · ` : '<span style="color:#777">no email sent yet</span> · '}${j.replied ? '<b style="color:#5a5e3b">in progress</b>' : '<b style="color:#a8432a">no reply yet</b>'}`;
   const sections = [];
   const add = (heading, items) => { if (items.length) sections.push({ heading, items }); };
   add('To do today', tasks.results.map((s) => `${jobLink(s.job_id, s.who)}: ${esc(s.title)}${s.kind === 'ready_email' ? ' <span style="color:#777">(email to review and send)</span>' : ''}${s.due_at < new Date(Date.parse(endOfToday) - 24 * HOUR).toISOString() ? ' <b style="color:#a8432a">overdue</b>' : ''}`));
@@ -47,7 +54,7 @@ export async function buildDigest(db, today = nzDate()) {
   add('Weddings and shoots coming up', shoots.results.map((j) => `<b>${j.event_date === today ? 'Today' : esc(longDay(j.event_date))}</b>${j.event_time ? ` ${time(j.event_time)}` : ''}: ${jobLink(j.id, j.partner_name ? `${j.title.split(' ')[0]} & ${j.partner_name}` : j.title)} (${esc(j.job_type)})${j.venue ? ` · ${esc(j.venue)}` : ''}`));
   add('Payments due or overdue', owing.results.map((i) => `${jobLink(i.job_id, i.who)}: ${esc(i.label)} ${money(i.amount)} <span style="color:${i.due_date < today ? '#a8432a' : '#777'}">${i.due_date < today ? `overdue since ${esc(longDay(i.due_date))}` : 'due today'}</span>`));
   add('New since yesterday', [
-    ...fresh.results.map((j) => `New ${esc(j.job_type.toLowerCase())} enquiry: ${jobLink(j.id, j.title)}${j.event_date ? ` for ${esc(longDay(j.event_date))}` : ''}`),
+    ...fresh.results.map((j) => `New ${esc(j.job_type.toLowerCase())} enquiry: ${jobLink(j.id, j.title)}${j.event_date ? ` for ${esc(longDay(j.event_date))}` : ''} · ${leadNow(j)}`),
     ...answers.results.map((q) => `${jobLink(q.job_id, q.who)} sent in their ${esc(q.name.toLowerCase())}`),
   ]);
   const count = sections.reduce((a, s) => a + s.items.length, 0);
