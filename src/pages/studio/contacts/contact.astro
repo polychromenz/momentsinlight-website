@@ -1,0 +1,288 @@
+---
+// One contact (venue or supplier): their details, outreach status and link check, their emails
+// (write one in the email design; their replies appear here), and tasks about them.
+// Data from functions/api/studio/crm/contacts.js, contact-email.js and tasks.js.
+import StudioLayout from '../../../layouts/StudioLayout.astro';
+---
+<StudioLayout title="Contact" section="contacts">
+  <a slot="bar" class="s-btn s-btn--quiet" href="/studio/contacts">← Contacts</a>
+  <span slot="bar" class="save-state" aria-live="polite"></span>
+  <button slot="bar" type="button" class="s-btn s-btn--solid" data-save disabled>Save</button>
+  <main class="contact-page">
+    <p class="status" aria-live="polite">Loading…</p>
+    <div class="content" hidden>
+      <header class="head">
+        <p class="eyebrow-line"></p>
+        <h1 class="title"></h1>
+        <div class="outreach" role="group" aria-label="Outreach"></div>
+      </header>
+      <div class="cols">
+        <div>
+          <section class="card">
+            <h2>Link to your site</h2>
+            <form class="link-form" autocomplete="off">
+              <label>Your page about them <small>(goes into emails as {'{{our_page}}'})</small><input name="our_page" placeholder="/tui-hills" /></label>
+              <label>Their page where your link should be <small>(e.g. their recommended suppliers page)</small><input name="link_page" placeholder="https://…" /></label>
+            </form>
+            <p class="link-state"></p>
+            <button type="button" class="s-btn s-btn--quiet" data-check>Check now</button>
+          </section>
+          <section class="card">
+            <div class="card-head"><h2>Emails</h2><button type="button" class="s-btn" data-compose>✉ Write email</button></div>
+            <ul class="list messages"></ul>
+          </section>
+          <section class="card">
+            <div class="card-head"><h2>Tasks</h2><button type="button" class="s-btn s-btn--quiet" data-task-add>+ Add task</button></div>
+            <ul class="list tasks"></ul>
+          </section>
+        </div>
+        <form class="card details" autocomplete="off">
+          <h2>Details</h2>
+          <label>Business<input name="business" required /></label>
+          <label>Type<select name="type"></select></label>
+          <label>Contact person<input name="contact_name" /></label>
+          <label>Email<input name="email" type="email" /></label>
+          <label>Phone<input name="phone" type="tel" /></label>
+          <label>Website<input name="website" /></label>
+          <label>Notes<textarea name="notes" rows="6"></textarea></label>
+          <button type="button" class="s-btn s-btn--quiet danger" data-delete>Delete contact</button>
+        </form>
+      </div>
+    </div>
+  </main>
+
+  <dialog class="review compose" aria-label="Write an email">
+    <form method="dialog" class="review-form compose-form">
+      <h2 class="review-title compose-title">Write an email</h2>
+      <p class="review-to compose-to"></p>
+      <label class="compose-start">Start from <select name="template"><option value="">A blank email</option></select></label>
+      <p class="review-missing compose-missing" hidden></p>
+      <label>Subject<input name="subject" /></label>
+      <div class="review-cols">
+        <label>Email<textarea name="body" rows="16"></textarea></label>
+        <div class="review-preview"><span>What they see</span><iframe title="Email preview"></iframe></div>
+      </div>
+      <div class="review-attach compose-attach"></div>
+      <div class="review-actions"><button type="button" class="s-btn s-btn--quiet" data-compose="cancel">Cancel</button><button type="button" class="s-btn s-btn--solid" data-compose="send">Send</button></div>
+    </form>
+  </dialog>
+  <dialog class="review msg-view" aria-label="Email">
+    <div class="review-form">
+      <h2 class="review-title msg-title"></h2>
+      <p class="review-to msg-meta"></p>
+      <p class="review-attach msg-files" hidden></p>
+      <iframe class="msg-frame" title="The email" sandbox="allow-popups allow-popups-to-escape-sandbox"></iframe>
+      <div class="review-actions"><a class="s-btn s-btn--quiet msg-gmail" target="_blank" rel="noopener">Open in Gmail</a><button type="button" class="s-btn s-btn--quiet" data-msg-close>Close</button><button type="button" class="s-btn s-btn--solid" data-msg-reply>Reply</button></div>
+    </div>
+  </dialog>
+  <div class="s-toast" role="status"></div>
+</StudioLayout>
+
+<script>
+  import { emailHtml } from '../../../../functions-lib/email-render.js';
+  import { attachRich } from '../../../studio/rich-editor';
+  import { attachPicker } from '../../../studio/attach-picker';
+  const $ = <T extends HTMLElement = HTMLElement>(s: string) => document.querySelector<T>(s)!;
+  const esc = (s: unknown) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
+  const when = (iso: string) => new Date(iso).toLocaleString('en-NZ', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit' });
+  const day = (d: string) => new Date(`${d}T12:00:00Z`).toLocaleDateString('en-NZ', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' });
+  const toast = (text: string, error = false) => { const t = $('.s-toast'); t.textContent = text; t.classList.toggle('error', error); t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 4000); };
+  const id = Number(new URLSearchParams(location.search).get('id'));
+  const details = $<HTMLFormElement>('.details');
+  const linkForm = $<HTMLFormElement>('.link-form');
+  const saveBtn = $<HTMLButtonElement>('[data-save]');
+  let c: any; let messages: any[] = []; let outreach: Record<string, string> = {};
+  let dirty = false;
+
+  async function load() {
+    const r = await fetch(`/api/studio/crm/contacts?id=${id}`);
+    const d = await r.json();
+    if (!r.ok) { $('.status').textContent = d.error || 'Couldn’t load the contact.'; return; }
+    c = d.contact; messages = d.messages; outreach = d.outreach;
+    document.title = `${c.business} · Moments Studio`;
+    $('.title').textContent = c.business;
+    $('.eyebrow-line').textContent = [c.type, c.contact_name].filter(Boolean).join(' · ');
+    const sel = details.elements.namedItem('type') as HTMLSelectElement;
+    if (!sel.options.length) sel.append(...d.types.map((t: string) => new Option(t, t)));
+    for (const el of [...Array.from(details.elements), ...Array.from(linkForm.elements)] as HTMLInputElement[]) if (el.name) el.value = c[el.name] ?? '';
+    $('.outreach').innerHTML = Object.entries(outreach).map(([k, v]) => `<button type="button" data-outreach="${k}" class="${c.outreach === k ? 'on' : ''}">${esc(v)}</button>`).join('');
+    $('.link-state').innerHTML = !c.link_page ? 'Add their page above, and the studio checks whether it links to your site (daily while you’re in touch, then monthly).'
+      : c.link_found === 1 ? `<b class="ok">✓ Their page links to your site</b> <small>(checked ${when(c.link_checked_at)})</small>`
+      : c.link_found === 0 ? `<b class="no">Their page doesn’t link to your site yet</b> <small>(checked ${when(c.link_checked_at)})</small>` : 'Not checked yet.';
+    $('.messages').innerHTML = messages.map((m, i) => `<li><button type="button" class="msg-open" data-msg="${i}"><span class="dir">${m.direction === 'in' ? 'From them' : 'Sent'}</span> <strong>${esc(m.subject)}</strong> <small>${when(m.sent_at)}${m.attachments ? ' · 📎' : ''}</small></button></li>`).join('')
+      || `<li class="empty">${c.email ? 'No emails yet.' : 'Add their email address to write to them.'}</li>`;
+    const today = new Date().toLocaleDateString('en-CA');
+    $('.tasks').innerHTML = d.tasks.map((t: any) => `<li class="${t.status}"><span class="what"><strong>${esc(t.title)}</strong><br><small>${t.status === 'done' ? `Done${t.done_note ? ` · ${esc(t.done_note)}` : ''}` : t.due_date ? `${t.due_date < today ? '<b class="no">Overdue</b> · ' : ''}Due ${day(t.due_date)}` : 'No due date'}</small></span>
+      ${t.status === 'open' ? `<button type="button" class="s-btn s-btn--quiet" data-task="${t.id}" data-act="done">✓ Done</button>` : `<button type="button" class="s-btn s-btn--quiet" data-task="${t.id}" data-act="reopen">Undo</button>`}</li>`).join('') || '<li class="empty">None.</li>';
+    dirty = false; saveBtn.disabled = true; $('.save-state').textContent = '';
+    $('.content').hidden = false; $('.status').hidden = true;
+  }
+
+  async function save(extra: Record<string, unknown> = {}) {
+    const body = { id, ...Object.fromEntries(new FormData(details)), ...Object.fromEntries(new FormData(linkForm)), ...extra };
+    saveBtn.disabled = true; $('.save-state').textContent = 'Saving…';
+    const r = await fetch('/api/studio/crm/contacts', { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) { toast(d.error || 'Couldn’t save.', true); saveBtn.disabled = false; $('.save-state').textContent = 'Not saved'; return false; }
+    toast('Saved.'); await load(); return true;
+  }
+  const markDirty = () => { dirty = true; saveBtn.disabled = false; $('.save-state').textContent = 'Not saved yet'; };
+  details.addEventListener('input', markDirty); linkForm.addEventListener('input', markDirty);
+  saveBtn.addEventListener('click', () => save());
+  addEventListener('beforeunload', (e) => { if (dirty) e.preventDefault(); });
+
+  // ---- Writing to them ----
+  const cf = $<HTMLFormElement>('.compose-form');
+  const composePreview = cf.querySelector('iframe')!;
+  const composeRich = attachRich(cf.elements.namedItem('body') as HTMLTextAreaElement, { minHeight: 340 });
+  const composeDocs = attachPicker($('.compose-attach'));
+  let replyingTo: number | null = null; let viewing: any = null;
+  const showPreview = () => { composePreview.srcdoc = emailHtml({ subject: (cf.elements.namedItem('subject') as HTMLInputElement).value, body: (cf.elements.namedItem('body') as HTMLTextAreaElement).value }); };
+  cf.addEventListener('input', showPreview);
+  async function loadDraft(template: string) {
+    const r = await fetch(`/api/studio/crm/contact-email?contact=${id}${template ? `&template=${encodeURIComponent(template)}` : ''}${replyingTo ? `&reply=${replyingTo}` : ''}`);
+    const d = await r.json();
+    if (!r.ok) { toast(d.error || 'Couldn’t start the email.', true); return null; }
+    (cf.elements.namedItem('subject') as HTMLInputElement).value = d.subject;
+    composeRich.set(d.body); composeDocs.set(d.documents, d.attachments);
+    const miss = $('.compose-missing'); miss.hidden = !d.missing.length;
+    miss.textContent = d.missing.length ? `Fill in the gaps in [square brackets]: ${d.missing.join(', ')}${d.missing.includes('contact_name') ? ' (add their contact person on the right)' : ''}` : '';
+    showPreview(); return d;
+  }
+  async function openCompose(reply: number | null) {
+    if (dirty && !(await save())) return;
+    if (!c.email) { toast('Add their email address first (on the right), then Save.', true); return; }
+    replyingTo = reply;
+    const d = await loadDraft('');
+    if (!d) return;
+    if (!d.gmail) { toast('Connect Gmail first (on the Clients page).', true); return; }
+    (cf.elements.namedItem('template') as HTMLSelectElement).replaceChildren(new Option('A blank email', ''), ...d.templates.map((x: any) => new Option(x.name, x.key)));
+    $('.compose-title').textContent = reply ? 'Reply' : `Write to ${c.business}`;
+    $('.compose-to').innerHTML = `To: <strong>${esc(d.to)}</strong> · sent from your Gmail${reply ? ', in the same conversation' : ''}`;
+    $<HTMLDialogElement>('dialog.compose').showModal();
+  }
+  (cf.elements.namedItem('template') as HTMLSelectElement).addEventListener('change', async (e) => {
+    const subjectNow = (cf.elements.namedItem('subject') as HTMLInputElement).value;
+    await loadDraft((e.target as HTMLSelectElement).value);
+    if (replyingTo && subjectNow) (cf.elements.namedItem('subject') as HTMLInputElement).value = subjectNow;
+  });
+
+  document.addEventListener('click', async (e) => {
+    const t = e.target as HTMLElement;
+    const ob = t.closest<HTMLButtonElement>('[data-outreach]');
+    if (ob) { await save({ outreach: ob.dataset.outreach }); return; }
+    if (t.closest('[data-check]')) {
+      if (dirty && !(await save())) return;
+      const b = t.closest<HTMLButtonElement>('[data-check]')!; b.disabled = true; b.textContent = 'Checking…';
+      const r = await fetch('/api/studio/crm/contacts', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ id, action: 'check_link' }) });
+      const d = await r.json().catch(() => ({}));
+      b.disabled = false; b.textContent = 'Check now';
+      if (!r.ok) { toast(d.error || 'Couldn’t check.', true); return; }
+      toast(d.found === true ? 'Their page links to your site.' : d.found === false ? 'No link to your site on that page yet.' : 'Couldn’t open their page just now.');
+      await load(); return;
+    }
+    if (t.closest('[data-delete]')) {
+      if (!confirm(`Delete ${c.business}, with its emails list and tasks? (Your Gmail isn’t touched.)`)) return;
+      await fetch(`/api/studio/crm/contacts?id=${id}`, { method: 'DELETE' }); dirty = false; location.href = '/studio/contacts'; return;
+    }
+    const tk = t.closest<HTMLButtonElement>('[data-task]');
+    if (tk) { await fetch('/api/studio/crm/tasks', { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ id: Number(tk.dataset.task), action: tk.dataset.act }) }); await load(); return; }
+    if (t.closest('[data-task-add]')) {
+      const title = prompt('The task:', `Follow up with ${c.business}`);
+      if (!title) return;
+      const due = prompt('Due date (YYYY-MM-DD), or leave empty:', new Date(Date.now() + 7 * 86400_000).toLocaleDateString('en-CA')) ?? '';
+      await fetch('/api/studio/crm/tasks', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ title, due_date: due.trim(), contact_id: id }) });
+      await load(); return;
+    }
+    const mo = t.closest<HTMLButtonElement>('[data-msg]');
+    if (mo) {
+      const m = messages[Number(mo.dataset.msg)]; viewing = m;
+      $('.msg-title').textContent = m.subject;
+      $('.msg-meta').textContent = `${m.direction === 'in' ? 'From them' : 'Sent'} · ${when(m.sent_at)}`;
+      const files = $('.msg-files'); files.hidden = !m.attachments; files.textContent = m.attachments ? `Attached: ${m.attachments.split('\n').join(', ')}` : '';
+      const frame = $<HTMLIFrameElement>('.msg-frame');
+      const wrap = (html: string) => `<base target="_blank"><body style="font:15px/1.7 Raleway,Arial,sans-serif;color:#333;padding:16px 20px;background:#fff;margin:0">${html}</body>`;
+      const studio = m.direction === 'out' && m.body && m.body.length > 200;
+      frame.srcdoc = studio ? emailHtml({ subject: m.subject, body: m.body }) : wrap('<p style="color:#888">Opening the email…</p>');
+      const g = $<HTMLAnchorElement>('.msg-gmail'); g.hidden = !m.gmail_message_id; if (m.gmail_message_id) g.href = `https://mail.google.com/mail/u/0/#all/${m.gmail_message_id}`;
+      $<HTMLDialogElement>('dialog.msg-view').showModal();
+      if (m.gmail_message_id && !studio) {
+        const r = await fetch(`/api/studio/crm/contact-email?message=${m.id}`);
+        const d = await r.json().catch(() => ({}));
+        if (!r.ok) { frame.srcdoc = wrap(`<p>${esc(m.body)}</p><p style="color:#a8432a">Couldn’t open the whole email. Use Open in Gmail.</p>`); return; }
+        if (d.files?.length) { files.hidden = false; files.textContent = `Attached: ${d.files.join(', ')}`; }
+        frame.srcdoc = d.html ? d.html.replace(/<head>/i, '<head><base target="_blank">') : wrap(`<div style="white-space:pre-wrap">${esc(d.text)}</div>`);
+      }
+      return;
+    }
+    if (t.closest('[data-msg-close]')) { $<HTMLDialogElement>('dialog.msg-view').close(); return; }
+    if (t.closest('[data-msg-reply]') && viewing) { $<HTMLDialogElement>('dialog.msg-view').close(); openCompose(viewing.id); return; }
+    const cb = t.closest<HTMLButtonElement>('[data-compose]');
+    if (cb && !cb.dataset.compose) { openCompose(null); return; }
+    if (cb?.dataset.compose === 'cancel') { $<HTMLDialogElement>('dialog.compose').close(); return; }
+    if (cb?.dataset.compose === 'send') {
+      if (composeDocs.over()) { toast('The attachments are over Gmail’s 25 MB limit. Untick one.', true); return; }
+      cb.disabled = true; cb.textContent = 'Sending…';
+      const r = await fetch('/api/studio/crm/contact-email', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({
+        contact_id: id, reply: replyingTo, attachments: composeDocs.get(),
+        subject: (cf.elements.namedItem('subject') as HTMLInputElement).value, body: (cf.elements.namedItem('body') as HTMLTextAreaElement).value }) });
+      const d = await r.json().catch(() => ({}));
+      cb.disabled = false; cb.textContent = 'Send';
+      if (!r.ok) { toast(d.error || 'Couldn’t send.', true); return; }
+      $<HTMLDialogElement>('dialog.compose').close();
+      toast(`Sent to ${d.to}. A follow-up reminder is set for a week’s time, in case they don’t reply.`);
+      await load();
+    }
+  });
+  if (!id) $('.status').textContent = 'Which contact? Open one from Contacts.'; else load();
+</script>
+
+<style is:global>
+  .contact-page { max-width: 1100px; margin: 0 auto; padding: 28px clamp(14px, 3vw, 32px) 80px; }
+  .contact-page .status { color: #666; }
+  .contact-page .eyebrow-line { margin: 0 0 6px; font-size: 12px; font-weight: 500; letter-spacing: 0.2em; text-transform: uppercase; color: var(--green); }
+  .contact-page .title { margin: 0 0 14px; font-weight: 300; font-size: clamp(30px, 2vw + 20px, 44px); color: var(--ink); }
+  .contact-page .outreach { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 18px; }
+  .contact-page .outreach button { padding: 7px 14px; border: 1px solid #ddd3c4; border-radius: 999px; background: var(--white); font: inherit; font-size: 14px; cursor: pointer; }
+  .contact-page .outreach button.on { background: var(--green); border-color: var(--green); color: var(--white); }
+  .contact-page .cols { display: grid; gap: 16px; }
+  @media (min-width: 900px) { .contact-page .cols { grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); } .contact-page .details { position: sticky; top: 80px; align-self: start; } }
+  .contact-page .card { background: var(--white); border-radius: 24px 0; padding: 20px 24px; margin-bottom: 16px; }
+  .contact-page .card h2 { margin: 0 0 12px; font-weight: 300; font-size: 22px; color: var(--ink); }
+  .contact-page .card-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 8px; }
+  .contact-page .card-head h2 { margin: 0; }
+  .contact-page label { display: flex; flex-direction: column; gap: 5px; font-size: 13px; font-weight: 600; color: #555; margin-bottom: 10px; }
+  .contact-page label small { font-weight: 400; color: #999; }
+  .contact-page input, .contact-page select, .contact-page textarea { font: inherit; font-weight: 400; font-size: 15px; padding: 9px 11px; border: 1px solid #ddd3c4; border-radius: 10px 0; background: var(--white); color: var(--ink); width: 100%; box-sizing: border-box; }
+  .contact-page .link-state { margin: 4px 0 10px; font-size: 14px; color: #555; }
+  .contact-page .ok { color: var(--green); } .contact-page .no { color: #a8432a; }
+  .contact-page .list { list-style: none; margin: 0; padding: 0; }
+  .contact-page .list li { display: flex; align-items: center; gap: 8px 12px; flex-wrap: wrap; padding: 10px 0; border-bottom: 1px solid #f1ebe1; }
+  .contact-page .list li:last-child { border-bottom: 0; }
+  .contact-page .list li.done .what { opacity: 0.55; }
+  .contact-page .what { flex: 1; min-width: 200px; }
+  .contact-page .what small, .contact-page .list small { color: #777; font-size: 13px; }
+  .contact-page .empty { color: #888; }
+  .contact-page .dir { font-size: 12px; color: var(--green); font-weight: 600; }
+  .contact-page .msg-open { all: unset; cursor: pointer; display: flex; align-items: baseline; gap: 8px 12px; flex-wrap: wrap; width: 100%; }
+  .contact-page .msg-open:hover strong { text-decoration: underline; }
+  .contact-page .danger { color: #a8432a; margin-top: 6px; }
+  .review { width: min(1100px, calc(100vw - 24px)); max-height: calc(100dvh - 24px); border: 0; border-radius: 28px 0; padding: 0; box-shadow: 0 30px 60px -30px rgb(0 0 0 / 0.5); }
+  .review::backdrop { background: rgb(30 32 20 / 0.45); }
+  .review-form { display: flex; flex-direction: column; gap: 12px; padding: 22px 24px; }
+  .review-title { margin: 0; font-weight: 300; font-size: 24px; color: var(--ink); }
+  .review-to { margin: 0; font-size: 14px; color: #555; }
+  .review-missing { margin: 0; padding: 10px 14px; background: #fff4d6; color: #5c4400; border-radius: 10px 0; font-size: 14px; }
+  .review-attach { margin: 0; font-size: 14px; color: #555; }
+  .review-form label { display: flex; flex-direction: column; gap: 5px; font-size: 13px; font-weight: 600; color: #555; }
+  .review-form input { font: inherit; font-weight: 400; font-size: 15px; padding: 9px 11px; border: 1px solid #ddd3c4; border-radius: 10px 0; }
+  .review-cols { display: grid; gap: 14px; }
+  .review-preview { display: flex; flex-direction: column; gap: 5px; font-size: 13px; font-weight: 600; color: #555; }
+  .review-preview iframe { width: 100%; height: 460px; border: 1px solid #ece4d7; border-radius: 10px 0; background: #f6f1ea; }
+  .review-actions { display: flex; justify-content: flex-end; gap: 8px; }
+  @media (min-width: 900px) { .review-cols { grid-template-columns: 1fr 1fr; } }
+  .compose-start { flex-direction: row !important; align-items: center; gap: 10px !important; }
+  .compose-start select { font: inherit; font-weight: 400; font-size: 14px; padding: 7px 10px; border: 1px solid #ddd3c4; border-radius: 10px 0; width: auto; }
+  .msg-view .msg-frame { width: 100%; height: min(70dvh, 640px); border: 1px solid #ece4d7; border-radius: 10px 0; background: #f6f1ea; }
+  .msg-view .msg-gmail[hidden], .msg-view .msg-files[hidden] { display: none; }
+</style>

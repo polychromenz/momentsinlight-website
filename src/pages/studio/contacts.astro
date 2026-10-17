@@ -1,0 +1,112 @@
+---
+// Moments Studio contacts: venues and suppliers (not clients), with their outreach status (for
+// SEO backlinks) and whether their page links to the site. Data from functions/api/studio/crm/contacts.js.
+import StudioLayout from '../../layouts/StudioLayout.astro';
+---
+<StudioLayout title="Contacts" section="contacts">
+  <button slot="bar" type="button" class="s-btn s-btn--solid" data-add>+ Add contact</button>
+  <main class="contacts">
+    <div class="ct-tools">
+      <h1>Contacts</h1>
+      <input class="ct-search" type="search" placeholder="Search…" aria-label="Search contacts" />
+      <select class="ct-type" aria-label="Type"><option value="">All types</option></select>
+      <select class="ct-status" aria-label="Outreach"><option value="">Any outreach</option></select>
+    </div>
+    <p class="ct-summary"></p>
+    <div class="card"><table class="ct-table"><thead><tr><th>Business</th><th>Type</th><th>Contact</th><th>Outreach</th><th>Link to your site</th><th>Last emailed</th></tr></thead><tbody></tbody></table></div>
+  </main>
+  <dialog class="ct-add" aria-labelledby="ct-add-title">
+    <form class="ct-form" autocomplete="off" novalidate>
+      <h2 id="ct-add-title">Add a contact</h2>
+      <div class="two"><label>Business *<input name="business" required /></label><label>Type<select name="type"></select></label></div>
+      <div class="two"><label>Contact person<input name="contact_name" placeholder="e.g. Sarah Jones" /></label><label>Email<input name="email" type="email" /></label></div>
+      <div class="two"><label>Phone<input name="phone" type="tel" /></label><label>Website<input name="website" placeholder="www.…" /></label></div>
+      <label>Notes<textarea name="notes" rows="3"></textarea></label>
+      <p class="ct-msg" role="alert" hidden></p>
+      <div class="ct-actions"><button type="button" class="s-btn s-btn--quiet" data-cancel>Cancel</button><button type="submit" class="s-btn s-btn--solid">Add contact</button></div>
+    </form>
+  </dialog>
+  <div class="s-toast" role="status"></div>
+</StudioLayout>
+
+<script>
+  const $ = <T extends HTMLElement = HTMLElement>(s: string) => document.querySelector<T>(s)!;
+  const esc = (s: unknown) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
+  const day = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString('en-NZ', { day: 'numeric', month: 'short', year: 'numeric' }) : '–');
+  let data: any = null;
+  const words = (s: string) => s.toLowerCase().split(/\s+/).filter(Boolean);
+
+  function draw() {
+    const q = words($<HTMLInputElement>('.ct-search').value);
+    const type = $<HTMLSelectElement>('.ct-type').value;
+    const status = $<HTMLSelectElement>('.ct-status').value;
+    const list = data.contacts.filter((c: any) => (!type || c.type === type) && (!status || c.outreach === status)
+      && q.every((w) => [c.business, c.contact_name, c.email, c.notes].some((f: string) => (f || '').toLowerCase().split(/[^a-z0-9@.]+/).some((x) => x.startsWith(w)))));
+    const link = (c: any) => !c.link_page ? '<small class="muted">Not set</small>' : c.link_found === 1 ? '<b class="ok">✓ Linked</b>' : c.link_found === 0 ? '<b class="no">Not linked</b>' : '<small class="muted">Not checked yet</small>';
+    $('.ct-table tbody').innerHTML = list.map((c: any) => `<tr>
+      <td><a href="/studio/contacts/contact?id=${c.id}"><strong>${esc(c.business)}</strong></a>${c.email ? '' : ' <small class="muted">· no email yet</small>'}</td>
+      <td>${esc(c.type)}</td><td>${esc(c.contact_name || '–')}</td>
+      <td><span class="st st--${c.outreach}">${esc(data.outreach[c.outreach])}</span></td>
+      <td>${link(c)}</td><td>${day(c.last_emailed_at)}${c.last_reply ? '<br><small class="ok">they replied</small>' : ''}</td></tr>`).join('') || '<tr><td colspan="6" class="muted">No contacts match.</td></tr>';
+    const live = data.contacts.filter((c: any) => c.link_found === 1).length;
+    $('.ct-summary').textContent = `${data.contacts.length} contacts · ${data.contacts.filter((c: any) => c.outreach !== 'none').length} contacted · ${live} linking to your site`;
+  }
+
+  async function load() {
+    const r = await fetch('/api/studio/crm/contacts');
+    data = await r.json();
+    if (!r.ok) { $('.ct-summary').textContent = data.error || 'Couldn’t load contacts.'; return; }
+    const t = $<HTMLSelectElement>('.ct-type'), s = $<HTMLSelectElement>('.ct-status');
+    if (t.options.length === 1) {
+      t.append(...data.types.map((x: string) => new Option(x, x)));
+      s.append(...Object.entries(data.outreach).map(([k, v]) => new Option(v as string, k)));
+      ($<HTMLFormElement>('.ct-form').elements.namedItem('type') as HTMLSelectElement).replaceChildren(...data.types.map((x: string) => new Option(x, x)));
+    }
+    draw();
+  }
+  document.querySelectorAll('.ct-tools input, .ct-tools select').forEach((el) => el.addEventListener('input', draw));
+
+  const dlg = $<HTMLDialogElement>('dialog.ct-add');
+  const form = $<HTMLFormElement>('.ct-form');
+  document.addEventListener('click', (e) => {
+    const t = e.target as HTMLElement;
+    if (t.closest('[data-add]')) { form.reset(); $('.ct-msg').hidden = true; dlg.showModal(); (form.elements.namedItem('business') as HTMLInputElement).focus(); }
+    if (t.closest('[data-cancel]')) dlg.close();
+  });
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const r = await fetch('/api/studio/crm/contacts', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(Object.fromEntries(new FormData(form))) });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) { const m = $('.ct-msg'); m.textContent = d.error || 'Couldn’t add it.'; m.hidden = false; return; }
+    location.href = `/studio/contacts/contact?id=${d.id}`;
+  });
+  load();
+</script>
+
+<style is:global>
+  .contacts { max-width: 1200px; margin: 0 auto; padding: 24px clamp(14px, 3vw, 32px) 80px; }
+  .ct-tools { display: flex; flex-wrap: wrap; gap: 10px 12px; align-items: center; margin-bottom: 8px; }
+  .ct-tools h1 { margin: 0 auto 0 0; font-weight: 300; font-size: 32px; color: var(--ink); }
+  .ct-tools input, .ct-tools select { font: inherit; font-size: 14px; padding: 8px 12px; border: 1px solid #ddd3c4; border-radius: 10px 0; background: var(--white); }
+  .ct-summary { margin: 0 0 12px; font-size: 14px; color: #777; }
+  .contacts .card { background: var(--white); border-radius: 24px 0; padding: 8px 18px; overflow-x: auto; }
+  .ct-table { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 640px; }
+  .ct-table th { text-align: left; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--green); font-weight: 600; padding: 10px 8px; border-bottom: 1px solid #ece4d7; }
+  .ct-table td { padding: 11px 8px; border-bottom: 1px solid #f3eee6; vertical-align: top; }
+  .ct-table a { color: var(--ink); }
+  .contacts .muted, .ct-table .muted { color: #999; }
+  .contacts .ok { color: var(--green); } .contacts .no { color: #a8432a; }
+  .st { font-size: 11px; font-weight: 600; letter-spacing: 0.04em; padding: 3px 9px; border-radius: 999px; background: #eee; color: #666; white-space: nowrap; }
+  .st--emailed { background: #e3e7f6; color: #2f3f86; } .st--replied { background: #f6ecd6; color: #7a5a14; }
+  .st--live { background: #e6ecd9; color: #3e4229; } .st--declined { background: #f4e3de; color: #8a3b1e; }
+  .ct-add { width: min(620px, calc(100vw - 24px)); border: 0; border-radius: 28px 0; padding: 0; box-shadow: 0 30px 60px -30px rgb(0 0 0 / 0.5); }
+  .ct-add::backdrop { background: rgb(30 32 20 / 0.45); }
+  .ct-form { display: flex; flex-direction: column; gap: 12px; padding: 22px 24px; }
+  .ct-form h2 { margin: 0; font-weight: 300; font-size: 26px; color: var(--ink); }
+  .ct-form label { display: flex; flex-direction: column; gap: 5px; font-size: 13px; font-weight: 600; color: #555; min-width: 0; }
+  .ct-form input, .ct-form select, .ct-form textarea { font: inherit; font-weight: 400; font-size: 15px; padding: 9px 11px; border: 1px solid #ddd3c4; border-radius: 10px 0; background: var(--white); min-width: 0; }
+  .ct-form .two { display: grid; gap: 10px; }
+  @media (min-width: 560px) { .ct-form .two { grid-template-columns: 1fr 1fr; } }
+  .ct-msg { margin: 0; padding: 10px 14px; background: #fbeee8; color: #8a3b1e; border-radius: 12px 0; font-size: 14px; }
+  .ct-actions { display: flex; justify-content: flex-end; gap: 8px; }
+</style>

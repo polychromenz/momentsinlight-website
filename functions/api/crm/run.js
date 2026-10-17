@@ -18,6 +18,8 @@
 //   7. Tony's morning email (once a day from 7am NZ, only if there's something in it).
 //   8. Scheduled blog posts (from 6am NZ) and the Friday stats email (8am NZ): functions-lib/schedules.js;
 //      the monthly speed email (from 8am on the 1st, a few pages a run): functions-lib/speed.js.
+//   9. Contacts (venues, suppliers): new emails in their conversations, and checking whether their
+//      pages link to the site (functions-lib/contacts.js).
 // Ready-to-send emails and to-dos need nothing here: they appear on Today when due.
 import { sendStep } from '../../../functions-lib/crm-send.js';
 import { thread, connection } from '../../../functions-lib/gmail.js';
@@ -27,6 +29,7 @@ import { calendarReady, syncJob, noteSync } from '../../../functions-lib/calenda
 import { maybeSendDigest } from '../../../functions-lib/digest.js';
 import { publishScheduledPosts, weeklyStatsEmail } from '../../../functions-lib/schedules.js';
 import { monthlySpeed } from '../../../functions-lib/speed.js';
+import { contactsTimer } from '../../../functions-lib/contacts.js';
 
 const reply = (data, status = 200) => new Response(JSON.stringify(data), { status, headers: { 'content-type': 'application/json' } });
 const stops = (step, ev) => (',' + step.stop_on + ',').includes(`,${ev},`);
@@ -47,7 +50,7 @@ export async function onRequestPost({ request, env }) {
          (SELECT gmail_thread_id FROM messages m WHERE m.job_id = j.id AND m.gmail_thread_id IS NOT NULL ORDER BY m.sent_at DESC LIMIT 1) AS t,
          EXISTS (SELECT 1 FROM steps s WHERE s.job_id = j.id AND s.status = 'scheduled' AND (',' || s.stop_on || ',') LIKE '%,reply,%') AS waiting
        FROM jobs j WHERE j.stage IN ('lead', 'booked') AND t IS NOT NULL
-       ORDER BY waiting DESC, j.mail_checked_at IS NOT NULL, j.mail_checked_at LIMIT 12`,
+       ORDER BY waiting DESC, j.mail_checked_at IS NOT NULL, j.mail_checked_at LIMIT 10`,
     ).all();
     for (const job of jobs.results) {
       let msgs;
@@ -156,6 +159,8 @@ export async function onRequestPost({ request, env }) {
   log.publish = await publishScheduledPosts(env).catch((e) => `error: ${e.message}`);
   log.weekly_stats = await weeklyStatsEmail(env).catch((e) => `error: ${e.message}`);
   log.speed = await monthlySpeed(env).catch((e) => `error: ${e.message}`);
+  // 9. Contacts.
+  log.contacts = await contactsTimer(env, gmail).catch((e) => `error: ${e.message}`);
 
   return reply({ ok: true, ...log });
 }

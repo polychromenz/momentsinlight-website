@@ -39,7 +39,7 @@ const T = (n) => `(?${n} = '' OR j.job_type = ?${n})`;
   const months = Array.from({ length: 12 }, (_, i) => new Date(Date.UTC(end.getUTCFullYear(), end.getUTCMonth() - 11 + i, 1)).toISOString().slice(0, 7));
   const chartFrom = `${months[0]}-01T00:00:00.000Z`;
 
-  const [now_, before, leadsBy, bookedBy, sources, shoots, leads, payments, tasks, types, cohorts, speed, ahead] = await Promise.all([
+  const [now_, before, leadsBy, bookedBy, sources, shoots, leads, payments, tasks, types, cohorts, speed, ahead, own] = await Promise.all([
     totals(from, to),
     totals(yearBefore(from), yearBefore(to)),
     db.prepare(`SELECT substr(j.created_at, 1, 7) m, count(*) n FROM jobs j WHERE j.created_at >= ?1 AND ${T(2)} GROUP BY m`).bind(chartFrom, type).all(),
@@ -72,6 +72,8 @@ const T = (n) => `(?${n} = '' OR j.job_type = ?${n})`;
     // How far ahead of the date they booked.
     db.prepare(`SELECT CASE WHEN d < 91 THEN 'u3' WHEN d < 183 THEN 'u6' WHEN d < 365 THEN 'u12' WHEN d < 548 THEN 'u18' ELSE 'o18' END b, count(*) n
       FROM (SELECT julianday(j.event_date) - julianday(substr(j.booked_at, 1, 10)) d FROM jobs j WHERE j.booked_at >= ?1 AND j.booked_at < ?3 AND j.event_date IS NOT NULL AND ${T(2)}) GROUP BY b`).bind(chartFrom, type, to).all(),
+    // Studio tasks (not about a client).
+    db.prepare(`SELECT t.id, t.title, t.due_date, t.contact_id, c.business FROM tasks t LEFT JOIN contacts c ON c.id = t.contact_id WHERE t.status = 'open' ORDER BY t.due_date IS NULL, t.due_date LIMIT 100`).all(),
   ]);
   const count = (rows) => Object.fromEntries(rows.results.map((r) => [r.m, r.n]));
   const l = count(leadsBy), b = count(bookedBy);
@@ -83,7 +85,7 @@ const T = (n) => `(?${n} = '' OR j.job_type = ?${n})`;
     monthly: months.map((m) => { const r = cohorts.results.find((x) => x.m === m) || {}; return { month: m, enquiries: r.enquiries || 0, won: r.won || 0, lost: r.lost || 0, open: r.open || 0 }; }),
     speed: Object.fromEntries(speed.results.map((r) => [r.b, r.n])),
     ahead: Object.fromEntries(ahead.results.map((r) => [r.b, r.n])),
-    shoots: shoots.results, leads: leads.results, payments: payments.results, tasks: tasks.results,
+    shoots: shoots.results, leads: leads.results, payments: payments.results, tasks: tasks.results, own: own.results,
     types: types.results.map((r) => r.value),
   });
 }

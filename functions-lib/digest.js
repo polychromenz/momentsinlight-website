@@ -19,7 +19,7 @@ const jobLink = (id, text) => `<a href="${SITE}/studio/crm/job?id=${id}" style="
 export async function buildDigest(db, today = nzDate()) {
   const endOfToday = new Date(nzNine(addDays(today, 1)).valueOf() - 9 * HOUR).toISOString();
   const since = new Date(Date.now() - 24 * HOUR).toISOString();
-  const [tasks, failed, autos, appts, shoots, owing, sending, fresh, answers] = await Promise.all([
+  const [tasks, failed, autos, appts, shoots, owing, sending, fresh, answers, own] = await Promise.all([
     db.prepare(`SELECT s.id, s.job_id, s.kind, s.title, s.due_at, j.title AS who FROM steps s JOIN jobs j ON j.id = s.job_id
       WHERE s.status IN ('scheduled', 'due') AND s.kind IN ('todo', 'ready_email') AND s.due_at < ?1 AND s.due_at < ?2 ORDER BY s.due_at`).bind(endOfToday, MANUAL_DUE).all(),
     db.prepare(`SELECT s.job_id, s.title, s.note, j.title AS who FROM steps s JOIN jobs j ON j.id = s.job_id WHERE s.status = 'failed' ORDER BY s.due_at`).all(),
@@ -34,11 +34,14 @@ export async function buildDigest(db, today = nzDate()) {
       WHERE i.status = 'scheduled' AND i.send_at < ?1 ORDER BY i.send_at`).bind(endOfToday).all(),
     db.prepare(`SELECT id, title, job_type, event_date FROM jobs WHERE created_at >= ?1 ORDER BY created_at`).bind(since).all(),
     db.prepare(`SELECT q.job_id, q.name, j.title AS who FROM questionnaires q JOIN jobs j ON j.id = q.job_id WHERE q.submitted_at >= ?1`).bind(since).all(),
+    db.prepare(`SELECT t.id, t.title, t.due_date, t.contact_id, c.business FROM tasks t LEFT JOIN contacts c ON c.id = t.contact_id
+      WHERE t.status = 'open' AND t.due_date IS NOT NULL AND t.due_date <= ?1 ORDER BY t.due_date`).bind(today).all(),
   ]);
 
   const sections = [];
   const add = (heading, items) => { if (items.length) sections.push({ heading, items }); };
   add('To do today', tasks.results.map((s) => `${jobLink(s.job_id, s.who)}: ${esc(s.title)}${s.kind === 'ready_email' ? ' <span style="color:#777">(email to review and send)</span>' : ''}${s.due_at < new Date(Date.parse(endOfToday) - 24 * HOUR).toISOString() ? ' <b style="color:#a8432a">overdue</b>' : ''}`));
+  add('Your tasks', own.results.map((t) => `${t.contact_id ? `<a href="${SITE}/studio/contacts/contact?id=${t.contact_id}" style="color:#2b2d1f">${esc(t.title)}</a>` : esc(t.title)}${t.due_date < today ? ` <b style="color:#a8432a">overdue since ${esc(longDay(t.due_date))}</b>` : ''}`));
   add('Didn’t send (needs you)', failed.results.map((s) => `${jobLink(s.job_id, s.who)}: ${esc(s.title)}${s.note ? ` <span style="color:#777">(${esc(s.note)})</span>` : ''}`));
   add('Appointments today', appts.results.map((a) => `<b>${time(a.start_time)}${a.end_time ? `–${time(a.end_time)}` : ''}</b> ${esc(a.title)}: ${jobLink(a.job_id, a.who)}${a.location ? ` · ${esc(a.location)}` : ''}`));
   add('Weddings and shoots coming up', shoots.results.map((j) => `<b>${j.event_date === today ? 'Today' : esc(longDay(j.event_date))}</b>${j.event_time ? ` ${time(j.event_time)}` : ''}: ${jobLink(j.id, j.partner_name ? `${j.title.split(' ')[0]} & ${j.partner_name}` : j.title)} (${esc(j.job_type)})${j.venue ? ` · ${esc(j.venue)}` : ''}`));
@@ -55,7 +58,8 @@ export async function buildDigest(db, today = nzDate()) {
   ]);
 
   const n = (k) => sections.find((s) => s.heading === k)?.items.length || 0;
-  const bits = [n('To do today') && `${n('To do today')} to do`, n('Appointments today') && `${n('Appointments today')} appointment${n('Appointments today') > 1 ? 's' : ''}`,
+  const todo = n('To do today') + n('Your tasks');
+  const bits = [todo && `${todo} to do`, n('Appointments today') && `${n('Appointments today')} appointment${n('Appointments today') > 1 ? 's' : ''}`,
     n('Payments due or overdue') && `${n('Payments due or overdue')} payment${n('Payments due or overdue') > 1 ? 's' : ''} owing`, n('Didn’t send (needs you)') && `${n('Didn’t send (needs you)')} didn’t send`].filter(Boolean);
   const subject = `Today${bits.length ? `: ${bits.join(', ')}` : ` in the studio`}`;
   const html = `<div style="font-family:Raleway,Arial,sans-serif;color:#1a1a1a;max-width:600px">

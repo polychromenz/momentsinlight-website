@@ -59,7 +59,7 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
         <section class="card" data-list="shoots"><div class="card-head"><h2>Upcoming weddings and shoots</h2></div><ul></ul><div class="pager"></div></section>
         <section class="card" data-list="leads"><div class="card-head"><h2>Recent leads</h2><a class="s-btn s-btn--quiet" href="/studio/crm?add=1">+ Add client</a></div><ul></ul><div class="pager"></div></section>
         <section class="card" data-list="payments"><div class="card-head"><h2>Payments due</h2></div><ul></ul><div class="pager"></div></section>
-        <section class="card" data-list="tasks"><div class="card-head"><h2>Tasks</h2><a class="s-btn s-btn--quiet" href="/studio/crm">Clients →</a></div><ul></ul><div class="pager"></div></section>
+        <section class="card" data-list="tasks"><div class="card-head"><h2>Tasks</h2><button type="button" class="s-btn s-btn--quiet" data-add-task>+ Add task</button></div><ul></ul><div class="pager"></div></section>
       </div>
       <p class="note">Counts cover enquiries made through the new system. Your Studio Ninja history will show here once it's brought across.</p>
     </div>
@@ -195,10 +195,17 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
         const late = i.status === 'sent' && i.due_date < d.today;
         return `<li class="${late ? 'late' : ''}"><span class="when">${day(i.due_date)}</span><span class="what">${job(i.job_id, i.title)} <strong class="amt">${money(i.amount)}</strong><small>${esc(i.number)} · ${esc(i.label)} · ${late ? '<b>Overdue</b>' : i.status === 'sent' ? 'Sent, not paid yet' : `Sends ${day(i.send_at)}`}</small></span></li>`;
       }),
-      tasks: d.tasks.map((s: any) => {
-        const overdue = s.due_at < d.now;
-        return `<li class="${s.status === 'failed' ? 'late' : ''}"><span class="when">${s.status === 'failed' ? 'Didn’t send' : overdue ? `Due ${ago(s.due_at)}` : ago(s.due_at)}</span><span class="what"><a href="/studio/crm/job?id=${s.job_id}#step-${s.id}">${esc(s.title)}</a><small>${esc(s.job_title)} · ${s.kind === 'todo' ? 'To-do' : 'Email to send'}</small></span></li>`;
-      }),
+      tasks: [
+        // Your own tasks (not about a client), soonest first; then the clients' to-dos and emails.
+        ...(d.own || []).map((t: any) => {
+          const late = t.due_date && t.due_date < d.today;
+          return `<li class="${late ? 'late' : ''}"><span class="when">${t.due_date ? (late ? `Due ${ago(`${t.due_date}T12:00:00`)}` : ago(`${t.due_date}T12:00:00`)) : 'Any time'}</span><span class="what">${t.contact_id ? `<a href="/studio/contacts/contact?id=${t.contact_id}">${esc(t.title)}</a>` : `<strong class="own">${esc(t.title)}</strong>`}<small>${t.business ? esc(t.business) : 'Your task'}</small></span><button type="button" class="tick" data-done-task="${t.id}" title="Done" aria-label="Mark done">✓</button></li>`;
+        }),
+        ...d.tasks.map((s: any) => {
+          const overdue = s.due_at < d.now;
+          return `<li class="${s.status === 'failed' ? 'late' : ''}"><span class="when">${s.status === 'failed' ? 'Didn’t send' : overdue ? `Due ${ago(s.due_at)}` : ago(s.due_at)}</span><span class="what"><a href="/studio/crm/job?id=${s.job_id}#step-${s.id}">${esc(s.title)}</a><small>${esc(s.job_title)} · ${s.kind === 'todo' ? 'To-do' : 'Email to send'}</small></span></li>`;
+        }),
+      ],
     };
     Object.keys(rows).forEach(renderList);
     $('.content').hidden = false; $('.status').hidden = true;
@@ -221,6 +228,17 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
     }
     const pb = t.closest<HTMLButtonElement>('[data-page]');
     if (pb) { const name = pb.closest<HTMLElement>('[data-list]')!.dataset.list!; pages[name] += Number(pb.dataset.page); renderList(name); }
+    const dt = t.closest<HTMLButtonElement>('[data-done-task]');
+    if (dt) {
+      dt.disabled = true;
+      fetch('/api/studio/crm/tasks', { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ id: Number(dt.dataset.doneTask), action: 'done' }) }).then(() => load());
+    }
+    if (t.closest('[data-add-task]')) {
+      const title = prompt('What’s the task? (e.g. Write a blog post about Kumeu Valley)');
+      if (!title) return;
+      const due = prompt('Due date (YYYY-MM-DD), or leave empty:', new Date(Date.now() + 7 * 86400_000).toLocaleDateString('en-CA')) ?? '';
+      fetch('/api/studio/crm/tasks', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ title, due_date: due.trim() }) }).then(() => load());
+    }
   });
   document.querySelector('[data-digest]')?.addEventListener('click', async (e) => {
     const b = e.currentTarget as HTMLButtonElement;
@@ -294,6 +312,9 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
   .dash .pager button { font: inherit; font-size: 16px; width: 30px; height: 30px; border: 1px solid #ddd3c4; border-radius: 8px 0; background: var(--white); cursor: pointer; }
   .dash .pager button:disabled { opacity: 0.4; cursor: default; }
   .dash .note { font-size: 13px; color: #888; margin: 0; }
+  .dash .tick { align-self: center; width: 28px; height: 28px; border: 1px solid #ddd3c4; border-radius: 50%; background: var(--white); color: var(--green); cursor: pointer; font-size: 14px; flex: 0 0 28px; }
+  .dash .tick:hover { background: var(--green); color: var(--white); }
+  .dash [data-list] .what .own { font-weight: 500; color: var(--ink); }
   .dash .hint { margin: -4px 0 12px; font-size: 13px; color: #888; }
   .dash .perf { margin-bottom: 16px; }
   .dash .perf-wrap { overflow-x: auto; }
