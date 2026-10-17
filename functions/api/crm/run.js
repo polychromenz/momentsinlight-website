@@ -1,6 +1,8 @@
-// The CRM's timer: called every 15 minutes by the GitHub Action .github/workflows/crm-run.yml
-// (POST /api/crm/run with the X-Run-Key header = the CRM_RUN_KEY secret). Outside /api/studio,
-// so Cloudflare Access doesn't stop it; the key does instead.
+// The CRM's timer: called every 5 minutes by the Cloudflare Worker in workers/crm-timer (its key:
+// the CRM_CRON_KEY secret), and as a backup by the GitHub Action .github/workflows/crm-run.yml
+// (CRM_RUN_KEY; GitHub runs it late or not at all at times). POST /api/crm/run with X-Run-Key.
+// Outside /api/studio, so Cloudflare Access doesn't stop it; the key does instead. Two runs at
+// once are fine: every email, invoice and reminder is claimed before it's sent.
 //
 // Each run:
 //   1. Replies: for leads with follow-ups waiting, checks their Gmail conversation; if the client
@@ -24,7 +26,8 @@ const reply = (data, status = 200) => new Response(JSON.stringify(data), { statu
 const stops = (step, ev) => (',' + step.stop_on + ',').includes(`,${ev},`);
 
 export async function onRequestPost({ request, env }) {
-  if (!env.CRM_RUN_KEY || request.headers.get('x-run-key') !== env.CRM_RUN_KEY) return reply({ error: 'Not allowed.' }, 403);
+  const key = request.headers.get('x-run-key') || '';
+  if (!key || ![env.CRM_RUN_KEY, env.CRM_CRON_KEY].filter(Boolean).includes(key)) return reply({ error: 'Not allowed.' }, 403);
   const db = env.DB;
   const now = new Date().toISOString();
   const log = { replies: 0, sent: 0, skipped: 0, failed: 0 };

@@ -1,0 +1,12 @@
+# The studio CRM's timer: a tiny Cloudflare Worker that runs every 5 minutes (a Cron Trigger) and
+# asks the website to do its timed work (functions/api/crm/run.js): send due emails, invoices and
+# reminders, check for replies, keep Google Calendar up to date, and the morning email.
+# Its key is the CRM_CRON_KEY secret, set on this Worker and on the Pages project (same value).
+# Deploy: cd workers/crm-timer && npx wrangler deploy
+name = "moments-studio-timer"
+main = "index.js"
+compatibility_date = "2026-10-01"
+workers_dev = false
+
+[triggers]
+crons = ["*/5 * * * *"]

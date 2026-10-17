@@ -74,12 +74,16 @@ export async function maybeSendDigest(env) {
   const today = nzDate();
   const hour = nzHour();
   if (hour < 7 || hour >= 12) return hour < 7 ? 'too early' : 'not a morning';
-  const row = await env.DB.prepare(`SELECT value FROM settings WHERE key = 'digest'`).first();
-  if (row && JSON.parse(row.value).last === today) return 'already sent';
+  // Claim today first, so two timers running at once can't both send it.
+  const claim = await env.DB.prepare(`INSERT INTO settings (key, value, updated_at) VALUES ('digest', ?1, ?2)
+    ON CONFLICT (key) DO UPDATE SET value = ?1, updated_at = ?2 WHERE json_extract(settings.value, '$.last') IS NOT ?3`)
+    .bind(JSON.stringify({ last: today }), new Date().toISOString(), today).run();
+  if (!claim.meta.changes) return 'already sent';
   const d = await buildDigest(env.DB, today);
-  if (d.count && !(await emailTony(env, d.subject, d.html))) return 'failed (tries again next run)';
-  await env.DB.prepare(`INSERT INTO settings (key, value, updated_at) VALUES ('digest', ?1, ?2) ON CONFLICT (key) DO UPDATE SET value = ?1, updated_at = ?2`)
-    .bind(JSON.stringify({ last: today, items: d.count }), new Date().toISOString()).run();
+  if (d.count && !(await emailTony(env, d.subject, d.html))) {
+    await env.DB.prepare(`UPDATE settings SET value = '{}' WHERE key = 'digest'`).run(); // try again next run
+    return 'failed (tries again next run)';
+  }
   return d.count ? `sent (${d.count} items)` : 'nothing today';
 }
 
