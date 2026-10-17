@@ -40,7 +40,7 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
     </div>
 
     <section class="card" id="competitors">
-      <div class="card-head"><h2>Competitors</h2><a class="s-btn s-btn--quiet" href="/studio/contacts?add=Competitor">+ Add a competitor</a></div>
+      <div class="card-head"><h2>Competitors</h2><span><button type="button" class="s-btn s-btn--quiet" data-comp-kw-all>Get everyone's keywords</button> <a class="s-btn s-btn--quiet" href="/studio/contacts?add=Competitor">+ Add a competitor</a></span></div>
       <p class="hint">Other photographers you want to keep an eye on. Every Monday the studio reads the list of pages their site gives Google, and shows what's new: blog posts, venue pages, new services.</p>
       <div class="comp-body"><p class="muted">Loading…</p></div>
     </section>
@@ -145,14 +145,50 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
     const names = Object.fromEntries(list.map((c: any) => [c.id, c.business]));
     const short = (u: string) => { try { return decodeURIComponent(new URL(u).pathname); } catch { return u; } };
     const gaps = d.venue_gaps ?? [];
-    b.innerHTML = `${gaps.length ? `<h3>Venues they have pages about and you don't</h3><ul class="list">${gaps.map((g: any) => `<li><span class="what"><strong>${esc(g.name)}</strong>${g.enquiries ? ` <small>· ${g.enquiries} of your enquiries</small>` : ''}<br><small>${g.pages.map((p: any) => `<a href="${esc(p.url)}" target="_blank" rel="noopener">${esc(names[p.contact_id])}</a>`).join(', ')}</small></span><span class="chip idea">Page idea</span></li>`).join('')}</ul>` : ''}
+    const tracked = new Set(d.tracked ?? []);
+    const vol = (v: number | null) => (v == null ? '–' : num(v));
+    const trackBtn = (k: string) => (tracked.has(k) ? '<small class="up">tracking</small>' : `<button type="button" class="add" data-track="${esc(k)}" title="Track this search">+</button>`);
+    const kg = d.keyword_gaps ?? [];
+    const gapHtml = kg.length ? `<h3>Searches your competitors rank for</h3><p class="hint">From the competitors whose keywords you've fetched; the ones several of them are on page 1–2 for come first. Their own business names are left out. + adds a search to the ones you track (and to your Rankings fix lists).</p>
+      <table class="tbl"><thead><tr><th>Search</th><th>Searches a month</th><th>Competitors</th><th>Best position</th><th></th></tr></thead><tbody>${kg.map((g: any) => `<tr><td>${esc(g.keyword)}</td><td>${vol(g.volume)}</td><td title="${esc(g.who.map((w: any) => `${w.business} #${w.position}`).join(', '))}">${g.who.length}</td><td>#${Math.min(...g.who.map((w: any) => w.position ?? 99))}</td><td>${trackBtn(g.keyword)}</td></tr>`).join('')}</tbody></table>
+      <button type="button" class="s-btn s-btn--quiet" data-track-all>Track the top 10 of these</button>` : '';
+    const kwHtml = (c: any) => c.keywords?.length ? `<details class="ckw"><summary>${c.keywords.length} searches they rank for (${new Date(c.keywords[0].fetched_at).toLocaleDateString('en-NZ', { day: 'numeric', month: 'short' })})</summary><table class="tbl"><thead><tr><th>Search</th><th>Searches a month</th><th>Their position</th><th></th></tr></thead><tbody>${c.keywords.map((k: any) => `<tr><td>${esc(k.keyword)}${k.brand ? ' <small class="muted">(their name)</small>' : ''}</td><td>${vol(k.volume)}</td><td><a href="${esc(k.url)}" target="_blank" rel="noopener">#${k.position}</a></td><td>${k.brand ? '' : trackBtn(k.keyword)}</td></tr>`).join('')}</tbody></table></details>` : '';
+    b.innerHTML = gapHtml + `${gaps.length ? `<h3>Venues they have pages about and you don't</h3><ul class="list">${gaps.map((g: any) => `<li><span class="what"><strong>${esc(g.name)}</strong>${g.enquiries ? ` <small>· ${g.enquiries} of your enquiries</small>` : ''}<br><small>${g.pages.map((p: any) => `<a href="${esc(p.url)}" target="_blank" rel="noopener">${esc(names[p.contact_id])}</a>`).join(', ')}</small></span><span class="chip idea">Page idea</span></li>`).join('')}</ul>` : ''}
       ${list.map((c: any) => `<details class="comp"${c.new_pages.length ? ' open' : ''}><summary><strong>${esc(c.business)}</strong> <small>${c.watch_error ? `<span class="down">${esc(c.watch_error)}</span>` : c.watch_checked_at ? `${num(c.pages)} pages · ${c.new_pages.length ? `<b class="down">${c.new_pages.length} new</b> in 3 months` : 'nothing new'} · checked ${new Date(c.watch_checked_at).toLocaleDateString('en-NZ', { day: 'numeric', month: 'short' })}` : 'not checked yet'}</small>
-        <button type="button" class="s-btn s-btn--quiet" data-comp="${c.id}">Check now</button></summary>
-        ${c.new_pages.length ? `<ul>${c.new_pages.map((p: any) => `<li><a href="${esc(p.url)}" target="_blank" rel="noopener">${esc(p.name)}</a> <small>${esc(short(p.url))} · found ${new Date(p.first_seen).toLocaleDateString('en-NZ', { day: 'numeric', month: 'short' })}</small></li>`).join('')}</ul>` : `<p class="muted">${c.website ? (c.watch_checked_at ? 'No new pages lately. (The first check just notes what is there.)' : 'Click Check now for the first look.') : `<a href="/studio/contacts/contact?id=${c.id}">Add their website</a> first.`}</p>`}</details>`).join('')}`;
+        <button type="button" class="s-btn s-btn--quiet" data-comp="${c.id}">Check pages</button> <button type="button" class="s-btn s-btn--quiet" data-comp-kw="${c.id}">${c.keywords?.length ? 'Refresh keywords' : 'Keywords they rank for'}</button></summary>
+        ${kwHtml(c)}
+        ${c.new_pages.length ? `<ul>${c.new_pages.map((p: any) => `<li><a href="${esc(p.url)}" target="_blank" rel="noopener">${esc(p.name)}</a> <small>${esc(short(p.url))} · found ${new Date(p.first_seen).toLocaleDateString('en-NZ', { day: 'numeric', month: 'short' })}</small></li>`).join('')}</ul>` : `<p class="muted">${c.website ? (c.watch_checked_at ? 'No new pages lately. (The first check just notes what is there.)' : 'Click Check pages for the first look.') : `<a href="/studio/contacts/contact?id=${c.id}">Add their website</a> first.`}</p>`}</details>`).join('')}`;
   }
 
   document.addEventListener('click', async (e) => {
     const t = e.target as HTMLElement;
+    const kb = t.closest<HTMLButtonElement>('[data-comp-kw]');
+    if (kb) {
+      e.preventDefault(); kb.disabled = true; kb.textContent = 'Asking DataForSEO…';
+      const { ok, d } = await post({ action: 'competitor_keywords', id: Number(kb.dataset.compKw) });
+      toast(ok ? `Found ${d.count} searches.` : d.error || 'Couldn’t get them.', !ok);
+      await loadCompetitors(); return;
+    }
+    const ka = t.closest<HTMLButtonElement>('[data-comp-kw-all]');
+    if (ka) {
+      const ids = [...document.querySelectorAll<HTMLButtonElement>('[data-comp-kw]')].map((x) => Number(x.dataset.compKw));
+      if (!confirm(`Fetch the keywords for all ${ids.length} competitors? About US${(ids.length * 0.02).toFixed(2)} from your DataForSEO credit.`)) return;
+      ka.disabled = true;
+      for (const [i, id] of ids.entries()) {
+        ka.textContent = `Fetching ${i + 1} of ${ids.length}…`;
+        const { ok, d } = await post({ action: 'competitor_keywords', id });
+        if (!ok && /set up|login/i.test(d.error || '')) { toast(d.error, true); break; }
+      }
+      ka.disabled = false; ka.textContent = "Get everyone's keywords";
+      await loadCompetitors(); return;
+    }
+    if (t.closest('[data-track-all]')) {
+      const { d } = await api('competitors');
+      const top = (d.keyword_gaps ?? []).slice(0, 10).map((g: any) => g.keyword);
+      const r = await post({ action: 'track', keywords: top });
+      toast(r.ok ? `Tracking ${top.length} more searches.` : r.d.error || 'Couldn’t add them.', !r.ok);
+      await loadTracked(); loadCompetitors(); return;
+    }
     const cb = t.closest<HTMLButtonElement>('[data-comp]');
     if (cb) {
       e.preventDefault(); cb.disabled = true; cb.textContent = 'Checking…';
@@ -161,7 +197,7 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
       await loadCompetitors(); return;
     }
     const tr = t.closest<HTMLButtonElement>('[data-track]');
-    if (tr) { await saveKeywords([...tracked, tr.dataset.track!]); toast('Tracking it from Monday.'); return; }
+    if (tr) { e.preventDefault(); const r = await post({ action: 'track', keywords: [tr.dataset.track] }); if (!r.ok) { toast(r.d.error || 'Couldn’t add it.', true); return; } tr.outerHTML = '<small class="up">tracking</small>'; toast('Tracking it. It’s on your Rankings page too.'); await loadTracked(); return; }
     const un = t.closest<HTMLButtonElement>('[data-untrack]');
     if (un) { if (confirm(`Stop tracking “${un.dataset.untrack}”?`)) await saveKeywords([...tracked].filter((k) => k !== un.dataset.untrack)); return; }
     if (t.closest('[data-track-add]')) { const k = prompt('The search to track, as people type it (e.g. kumeu wedding photographer):'); if (k) await saveKeywords([...tracked, k]); return; }
@@ -194,6 +230,8 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
   @media (max-width: 600px) { .seo .card { padding: 16px 14px; } .seo .tbl { font-size: 13px; } .seo .tbl th, .seo .tbl td { padding: 6px 5px; } }
   .seo details.comp summary { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
   .seo details.comp summary small { flex: 1; color: #888; }
+  .seo details.ckw { margin: 4px 0 8px; } .seo details.ckw summary { font-size: 13px; color: var(--green); }
+  .seo .card-head > span { display: flex; gap: 6px; flex-wrap: wrap; }
   .seo .card h2 { margin: 0 0 8px; font-weight: 300; font-size: 22px; color: var(--ink); }
   .seo .card h3 { margin: 22px 0 6px; font-size: 12px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--green); }
   .seo .card-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }

@@ -5,9 +5,12 @@
 //                         { action: 'health' }                   run the site check now (one batch;
 //                                                                 the page keeps calling until it's done)
 //                         { action: 'competitor', id }          read that competitor's sitemap now
+//                         { action: 'competitor_keywords', id }  the searches they rank for (DataForSEO)
+//                         { action: 'track', keywords: [...] }   add searches to the tracked list
 import { json } from '../../../../functions-lib/studio.js';
 import { gscReady, searchReport, trackedKeywords, keywordIdeas, venueIdeas, contentStatus, siteHealth, seoSettings, saveSeoSettings, competitorReport, checkCompetitor } from '../../../../functions-lib/seo.js';
 import { connection } from '../../../../functions-lib/gmail.js';
+import { competitorKeywords } from '../../../../functions-lib/rankings.js';
 
 export async function onRequestGet({ request, env }) {
   const part = new URL(request.url).searchParams.get('part');
@@ -33,7 +36,7 @@ export async function onRequestPost({ request, env }) {
   try {
     if (d.action === 'settings') {
       const s = await seoSettings(env.DB);
-      const keywords = Array.isArray(d.keywords) ? [...new Set(d.keywords.map((k) => String(k).toLowerCase().trim().slice(0, 100)).filter(Boolean))].slice(0, 40) : s.keywords;
+      const keywords = Array.isArray(d.keywords) ? [...new Set(d.keywords.map((k) => String(k).toLowerCase().trim().slice(0, 100)).filter(Boolean))].slice(0, 50) : s.keywords;
       const goal = d.posts_goal !== undefined ? Math.max(0, Math.min(30, Math.round(Number(d.posts_goal) || 0))) : s.posts_goal;
       await saveSeoSettings(env.DB, { ...s, keywords, posts_goal: goal });
       return json({ ok: true });
@@ -44,6 +47,18 @@ export async function onRequestPost({ request, env }) {
       if (!c?.website) return json({ error: 'Add their website on the contact first.' }, 400);
       const r = await checkCompetitor(env, c);
       return r.error ? json({ error: r.error }, 400) : json(r);
+    }
+    if (d.action === 'competitor_keywords') {
+      const c = await env.DB.prepare(`SELECT id, business, website FROM contacts WHERE id = ?1 AND type = 'Competitor'`).bind(Number(d.id)).first();
+      if (!c) return json({ error: 'That competitor doesn’t exist.' }, 404);
+      return json(await competitorKeywords(env, c));
+    }
+    if (d.action === 'track') {
+      const s = await seoSettings(env.DB);
+      const add = (Array.isArray(d.keywords) ? d.keywords : []).map((k) => String(k).toLowerCase().trim().slice(0, 100)).filter(Boolean);
+      const keywords = [...new Set([...s.keywords, ...add])].slice(0, 50);
+      await saveSeoSettings(env.DB, { ...s, keywords });
+      return json({ ok: true, count: keywords.length });
     }
     if (d.action === 'health') return json({ result: await siteHealth(env, { now: !!d.start }) });
     return json({ error: 'What should happen?' }, 400);

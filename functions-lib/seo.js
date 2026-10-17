@@ -292,7 +292,7 @@ export async function competitorReport(env) {
   const db = env.DB;
   const list = (await db.prepare(`SELECT id, business, website, watch_checked_at, watch_error, (SELECT count(*) FROM competitor_pages p WHERE p.contact_id = c.id) pages
     FROM contacts c WHERE type = 'Competitor' ORDER BY business`).all()).results;
-  if (!list.length) return { competitors: [] };
+  if (!list.length) return { competitors: [], keyword_gaps: [], tracked: [] };
   const since = new Date(Date.now() - 90 * DAY).toISOString();
   const fresh = (await db.prepare(`SELECT contact_id, url, first_seen FROM competitor_pages WHERE baseline = 0 AND first_seen >= ?1 ORDER BY first_seen DESC`).bind(since).all()).results;
   const all = (await db.prepare('SELECT contact_id, url FROM competitor_pages').all()).results;
@@ -309,8 +309,24 @@ export async function competitorReport(env) {
       gaps.set(v.key, g);
     }
   }
+  // The searches they rank for (fetched on request): per competitor, and the ones several share.
+  const kws = (await db.prepare('SELECT * FROM competitor_keywords').all()).results;
+  const { keywords: tracked = [] } = await seoSettings(db);
+  const brandWords = (name) => String(name).toLowerCase().split(/[^a-z]+/).filter((w) => w.length >= 4 && !['photography', 'photographer', 'weddings', 'wedding', 'studio', 'photo', 'films', 'cinema', 'creative', 'projects'].includes(w));
+  const branded = (k, c) => brandWords(c.business).some((w) => k.includes(w)) || /moments in light/.test(k);
+  const byKw = new Map();
+  for (const k of kws) {
+    const c = list.find((x) => x.id === k.contact_id);
+    if (!c || branded(k.keyword, c)) continue;
+    const g = byKw.get(k.keyword) ?? { keyword: k.keyword, volume: k.volume, who: [] };
+    g.who.push({ business: c.business, position: k.position });
+    byKw.set(k.keyword, g);
+  }
+  const keyword_gaps = [...byKw.values()].filter((g) => !tracked.includes(g.keyword))
+    .sort((a, b) => b.who.length - a.who.length || (b.volume ?? 0) - (a.volume ?? 0)).slice(0, 60);
   return {
-    competitors: list.map((c) => ({ ...c, new_pages: fresh.filter((p) => p.contact_id === c.id).slice(0, 15).map((p) => ({ url: p.url, name: pageName(p.url), first_seen: p.first_seen })) })),
+    tracked, keyword_gaps,
+    competitors: list.map((c) => ({ ...c, keywords: kws.filter((k) => k.contact_id === c.id).sort((a, b) => (b.volume ?? 0) - (a.volume ?? 0)).slice(0, 60).map(({ keyword, position, volume, url, fetched_at }) => ({ keyword, position, volume, url, fetched_at, brand: branded(keyword, c) })), new_pages: fresh.filter((p) => p.contact_id === c.id).slice(0, 15).map((p) => ({ url: p.url, name: pageName(p.url), first_seen: p.first_seen })) })),
     venue_gaps: [...gaps.values()].sort((a, b) => b.enquiries - a.enquiries || b.pages.length - a.pages.length).slice(0, 20),
   };
 }

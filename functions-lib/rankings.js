@@ -11,7 +11,7 @@ import { seoSettings, saveSeoSettings } from './seo.js';
 
 const SITE = 'https://www.momentsinlight.co.nz';
 const OURS = 'momentsinlight.co.nz';
-const API = 'https://api.dataforseo.com/v3/serp/google/organic';
+const API = 'https://api.dataforseo.com/v3';
 export const LOCATION = 'Auckland,Auckland,New Zealand';
 const DEVICES = ['mobile', 'desktop'];
 const DEPTH = 20; // two pages of results
@@ -41,7 +41,7 @@ export async function postRun(env) {
   const { keywords } = await seoSettings(db);
   if (!keywords.length) return { none: true };
   const list = keywords.slice(0, 50).flatMap((k) => DEVICES.map((device) => ({ keyword: k, device })));
-  const d = await dfs(env, 'task_post', list.map((t) => ({ keyword: t.keyword, location_name: LOCATION, language_code: 'en', device: t.device, depth: DEPTH, tag: `${t.device}|${t.keyword}`.slice(0, 255) })));
+  const d = await dfs(env, 'serp/google/organic/task_post', list.map((t) => ({ keyword: t.keyword, location_name: LOCATION, language_code: 'en', device: t.device, depth: DEPTH, tag: `${t.device}|${t.keyword}`.slice(0, 255) })));
   const now = new Date().toISOString();
   const made = (d.tasks ?? []).filter((t) => t.id && t.status_code < 40000);
   if (!made.length) throw new Error(d.tasks?.[0]?.status_message || 'DataForSEO didn’t take the searches.');
@@ -80,7 +80,7 @@ export async function collect(env, limit = 10) {
   let done = 0;
   for (const t of pending) {
     let d;
-    try { d = await dfs(env, `task_get/advanced/${t.id}`); } catch (e) { console.error('rankings: get', e.message); continue; }
+    try { d = await dfs(env, `serp/google/organic/task_get/advanced/${t.id}`); } catch (e) { console.error('rankings: get', e.message); continue; }
     const task = d.tasks?.[0];
     if (!task || [40601, 40602].includes(task.status_code)) continue; // still in the queue
     if (task.status_code !== 20000) {
@@ -301,4 +301,31 @@ export async function setTarget(db, keyword, page) {
   const targets = { ...(s.targets ?? {}) };
   if (page) targets[keyword] = page; else delete targets[keyword];
   await saveSeoSettings(db, { ...s, targets });
+}
+
+// ---- What competitors rank for (DataForSEO Labs, about US$0.02 per competitor) ----
+const domainOf = (website) => { try { return new URL(/^https?:/.test(website) ? website : `https://${website}`).hostname.replace(/^www\./, ''); } catch { return ''; } };
+/** Fetch the New Zealand searches a competitor is on Google's first two pages for, and save them. */
+export async function competitorKeywords(env, c) {
+  if (!serpReady(env)) throw new Error('DataForSEO isn’t set up yet (see the Rankings page).');
+  const target = domainOf(c.website);
+  if (!target) throw new Error('Add their website on the contact first.');
+  const d = await dfs(env, 'dataforseo_labs/google/ranked_keywords/live', [{
+    target, location_name: 'New Zealand', language_code: 'en', limit: 100, item_types: ['organic'],
+    filters: ['ranked_serp_element.serp_item.rank_group', '<=', 20], order_by: ['keyword_data.keyword_info.search_volume,desc'],
+  }]);
+  const task = d.tasks?.[0];
+  if (task?.status_code >= 40000) throw new Error(`DataForSEO: ${task.status_message}`);
+  const items = task?.result?.[0]?.items ?? [];
+  const now = new Date().toISOString();
+  const rows = items.map((i) => ({ keyword: String(i.keyword_data?.keyword ?? '').toLowerCase(), volume: i.keyword_data?.keyword_info?.search_volume ?? null,
+    position: i.ranked_serp_element?.serp_item?.rank_group ?? null, url: i.ranked_serp_element?.serp_item?.url ?? null })).filter((r) => r.keyword);
+  const db = env.DB;
+  await db.batch([
+    db.prepare('DELETE FROM competitor_keywords WHERE contact_id = ?1').bind(c.id),
+    ...rows.map((r) => db.prepare('INSERT OR REPLACE INTO competitor_keywords (contact_id, keyword, position, volume, url, fetched_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6)')
+      .bind(c.id, r.keyword, r.position, r.volume, r.url, now)),
+  ]);
+  await addSpend(db, d.cost);
+  return { count: rows.length };
 }
