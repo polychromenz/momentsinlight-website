@@ -3,5 +3,113 @@
   "description": "Auckland wedding photographer capturing timeless, candid, and elegant photography. I don’t just go through the motions; I go through the emotions with you.",
   "eyebrow": "Auckland wedding photographer",
   "h1": "Timeless, refined wedding photography that captures the feeling of your day",
-  "intro": "I photograph weddings across Auckland and beyond, capturing the day with a calm, considered approach."
+  "slides": [
+    {
+      "src": "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2025-paige-and-connor/colour/_Q9A1313-Edit/public",
+      "width": 1500,
+      "height": 1000,
+      "alt": "Bride and groom kissing in front of a large wine barrel"
+    },
+    {
+      "src": "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/colour/tay-barn-bronze-nzipp-2026-website/public",
+      "width": 3000,
+      "height": 1703,
+      "alt": "Tay and Jesse at The Barn, Waimauku"
+    },
+    {
+      "src": "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-felicity-and-ronan/colour/_Q9A9733/public",
+      "width": 2048,
+      "height": 1365,
+      "alt": "Felicity and Ronan at Settlers Country Manor"
+    },
+    {
+      "src": "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-emma-and-corey/colour/_30A4401-Edit/public",
+      "width": 2048,
+      "height": 1366,
+      "alt": "Emma and Corey on their wedding day in Hamilton"
+    },
+    {
+      "src": "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-tay-and-jesse/colour/_30A8112-Edit/public",
+      "width": 2048,
+      "height": 1638,
+      "alt": "Tay and Jesse among the trees at golden hour"
+    },
+    {
+      "src": "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2025-chiedza-and-foster/colour/_30A9554/public",
+      "width": 2048,
+      "height": 1366,
+      "alt": "Chiedza and Foster at Abel Estate"
+    }
+  ],
+  "introTitle": "Refined wedding photography, captured naturally",
+  "intro": "I photograph weddings across Auckland and beyond, capturing the day with a calm, considered approach.",
+  "introBody": "<p>My focus is on creating images that feel natural, effortless, and true to you — without over-direction or anything feeling forced. The result is a collection of photographs that not only look beautiful, but feel genuine and lasting over time.</p><p>Based in Auckland, available throughout New Zealand.</p>",
+  "proof": [
+    "NZIPP Iris Awards 2026 · Bronze",
+    "Featured in My Wedding Guide"
+  ],
+  "doors": [
+    {
+      "label": "Weddings & prices",
+      "href": "/weddings",
+      "src": "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/_from-website/mono/chanel-bronze-nzipp-2026-website/public",
+      "width": 3000,
+      "height": 2001,
+      "alt": "Black and white wedding photograph"
+    },
+    {
+      "label": "Love stories",
+      "href": "/wedding-galleries",
+      "src": "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-mikaela-and-dylan/colour/_Q9A0978/public",
+      "width": 2048,
+      "height": 1366,
+      "alt": "Mikaela and Dylan at The Barn, Waimauku"
+    },
+    {
+      "label": "Your wedding photo guide",
+      "href": "/wedding-photo-guide",
+      "src": "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-kayla-and-scott/colour/_30A0232/public",
+      "width": 2048,
+      "height": 1366,
+      "alt": "Kayla and Scott on their wedding day in Devonport"
+    }
+  ],
+  "stories": {
+    "eyebrow": "Recent weddings",
+    "title": "Love stories",
+    "text": "Each wedding I photograph is different, shaped by the people, the setting, and the moments that unfold naturally throughout the day. These are real weddings of real couples.",
+    "link": "All love stories →"
+  },
+  "reviews": [
+    "Tayla Johnson",
+    "Jade McQuoid",
+    "Leah Doolan",
+    "Mikaela Ellwood",
+    "Cerise Brown",
+    "Josh Stewart",
+    "Julia Passmore"
+  ],
+  "approach": {
+    "eyebrow": "Hello, I’m Tony",
+    "title": "My approach",
+    "body": "<p>A calm, unobtrusive approach. I understand that most couples don’t want to feel like they’re on display all day. My role is to create space for you to enjoy your wedding, while quietly documenting everything as it happens. When guidance is needed, I’ll step in with a light touch — enough to help you feel comfortable, but never enough to interrupt the natural flow of the day.</p><p>The focus is always on capturing moments that feel real, relaxed, and timeless.</p>",
+    "button": {
+      "label": "How I work",
+      "href": "/a-guide-to-your-wedding-photos"
+    }
+  },
+  "closing": {
+    "title": "Let’s talk about your day",
+    "body": "<p>If you’re planning your wedding and are looking for a photographer who will capture it in a natural, refined way, I’d love to hear about your plans.</p>",
+    "button": {
+      "label": "Check your date",
+      "href": "/contact"
+    },
+    "image": {
+      "src": "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-tay-and-jesse/colour/_30A8106-Edit/public",
+      "width": 2048,
+      "height": 1638,
+      "alt": "Tay and Jesse at The Barn, Waimauku"
+    }
+  }
 }

@@ -7,31 +7,19 @@ import TonyPhoto from '../components/TonyPhoto.astro';
 import ReviewCarousel from '../components/ReviewCarousel.astro';
 import { site } from '../data/site';
 import reviews from '../data/reviews.json';
-// The home page's Google title and description, main heading and opening line (editable from the
-// studio's Rankings page).
+// Everything the home page says and shows (words, photos, links, which reviews), edited in the
+// studio (Website > Pages > Home page): src/data/home.json. The layout itself stays here.
 import home from '../data/home.json';
 
 const cf = (path: string) => `https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/${path}/public`;
 
-const hero = cf('2025-paige-and-connor/colour/_Q9A1313-Edit');
+const hero = home.slides[0]?.src ?? cf('2025-paige-and-connor/colour/_Q9A1313-Edit');
 
 // Opening slideshow: shown whole on a deep olive background, cross-fading every 6 seconds.
-// [path, width, height, alt]
-const slides: [string, number, number, string][] = [
-  [hero, 1500, 1000, 'Bride and groom kissing in front of a large wine barrel'],
-  [cf('_from-website/colour/tay-barn-bronze-nzipp-2026-website'), 3000, 1703, 'Tay and Jesse at The Barn, Waimauku'],
-  [cf('2026-felicity-and-ronan/colour/_Q9A9733'), 2048, 1365, 'Felicity and Ronan at Settlers Country Manor'],
-  [cf('2026-emma-and-corey/colour/_30A4401-Edit'), 2048, 1366, 'Emma and Corey on their wedding day in Hamilton'],
-  [cf('2026-tay-and-jesse/colour/_30A8112-Edit'), 2048, 1638, 'Tay and Jesse among the trees at golden hour'],
-  [cf('2025-chiedza-and-foster/colour/_30A9554'), 2048, 1366, 'Chiedza and Foster at Abel Estate'],
-];
+const slides = home.slides;
 
-// Where to next: three doors into the site.
-const doors = [
-  { label: 'Weddings & prices', href: '/weddings', src: cf('_from-website/mono/chanel-bronze-nzipp-2026-website'), w: 3000, h: 2001, alt: 'Black and white wedding photograph' },
-  { label: 'Love stories', href: '/wedding-galleries', src: cf('2026-mikaela-and-dylan/colour/_Q9A0978'), w: 2048, h: 1366, alt: 'Mikaela and Dylan at The Barn, Waimauku' },
-  { label: 'Your wedding photo guide', href: '/wedding-photo-guide', src: cf('2026-kayla-and-scott/colour/_30A0232'), w: 2048, h: 1366, alt: 'Kayla and Scott on their wedding day in Devonport' },
-];
+// Where to next: doors into the site.
+const doors = home.doors;
 
 const reviewCount = reviews.reviews.length;
 const rating = (reviews.reviews.reduce((t, r) => t + r.rating, 0) / reviewCount).toFixed(1);
@@ -67,7 +55,7 @@ const jsonLd = {
     first
     label="Wedding photographs"
     interval={6}
-    images={slides.map(([src, width, height, alt]) => ({ src, width, height, alt }))}
+    images={slides}
   >
     {/* One main heading for Google: "Auckland wedding photographer" + the headline, styled as before. */}
     <h1 class="hero-h1"><span class="hero-eyebrow">{home.eyebrow}</span> <span class="hero-title">{home.h1}</span></h1>
@@ -75,21 +63,19 @@ const jsonLd = {
 
   <section class="intro wrap" data-reveal>
     <hr class="hairline" />
-    <h2 class="display intro-title">Refined wedding photography, captured naturally</h2>
+    <h2 class="display intro-title">{home.introTitle}</h2>
     <p class="lead">{home.intro}</p>
-    <p>My focus is on creating images that feel natural, effortless, and true to you — without over-direction or anything feeling forced. The result is a collection of photographs that not only look beautiful, but feel genuine and lasting over time.</p>
-    <p>Based in Auckland, available throughout New Zealand.</p>
+    <Fragment set:html={home.introBody} />
     <ul class="proof" data-stagger>
       <li><a href="/testimonials"><span class="stars" aria-hidden="true">★★★★★</span> {rating} from {reviewCount} Google reviews</a></li>
-      <li>NZIPP Iris Awards 2026 · Bronze</li>
-      <li>Featured in My Wedding Guide</li>
+      {home.proof.map((p) => <li>{p}</li>)}
     </ul>
   </section>
 
   <section class="doors wrap" data-stagger>
     {doors.map((d) => (
       <a class="door" href={d.href}>
-        <Img src={d.src} alt={d.alt} width={d.w} height={d.h} sizes="(min-width: 768px) 29vw, 88vw" />
+        <Img src={d.src} alt={d.alt} width={d.width} height={d.height} sizes="(min-width: 768px) 29vw, 88vw" />
         <span>{d.label}</span>
       </a>
     ))}
@@ -99,11 +85,11 @@ const jsonLd = {
     <div class="wrap inner">
       <div class="band-head" data-reveal>
         <div>
-          <p class="eyebrow">Recent weddings</p>
-          <h2 class="display">Love stories</h2>
-          <p class="sub">Each wedding I photograph is different, shaped by the people, the setting, and the moments that unfold naturally throughout the day. These are real weddings of real couples.</p>
+          <p class="eyebrow">{home.stories.eyebrow}</p>
+          <h2 class="display">{home.stories.title}</h2>
+          <p class="sub">{home.stories.text}</p>
         </div>
-        <a class="more" href="/wedding-galleries">All love stories →</a>
+        <a class="more" href="/wedding-galleries">{home.stories.link}</a>
       </div>
       <LoveStories />
     </div>
@@ -111,29 +97,28 @@ const jsonLd = {
 
   <section class="review">
     <div class="wrap" data-reveal>
-      <ReviewCarousel names={['Tayla Johnson', 'Jade McQuoid', 'Leah Doolan', 'Mikaela Ellwood', 'Cerise Brown', 'Josh Stewart', 'Julia Passmore']} />
+      <ReviewCarousel names={home.reviews} />
     </div>
   </section>
 
   <section class="approach wrap">
     <TonyPhoto />
     <div class="approach-text" data-reveal>
-      <p class="eyebrow">Hello, I’m Tony</p>
-      <h2 class="display">My approach</h2>
-      <p>A calm, unobtrusive approach. I understand that most couples don’t want to feel like they’re on display all day. My role is to create space for you to enjoy your wedding, while quietly documenting everything as it happens. When guidance is needed, I’ll step in with a light touch — enough to help you feel comfortable, but never enough to interrupt the natural flow of the day.</p>
-      <p>The focus is always on capturing moments that feel real, relaxed, and timeless.</p>
-      <p><a class="btn" href="/a-guide-to-your-wedding-photos">How I work</a></p>
+      <p class="eyebrow">{home.approach.eyebrow}</p>
+      <h2 class="display">{home.approach.title}</h2>
+      <Fragment set:html={home.approach.body} />
+      {home.approach.button?.label && <p><a class="btn" href={home.approach.button.href}>{home.approach.button.label}</a></p>}
     </div>
   </section>
 
   <section class="cta">
     <div class="wrap cta-inner">
       <div class="cta-text" data-reveal>
-        <h2 class="display">Let’s talk about your day</h2>
-        <p>If you’re planning your wedding and are looking for a photographer who will capture it in a natural, refined way, I’d love to hear about your plans.</p>
-        <p><a class="btn btn--light" href="/contact">Check your date</a></p>
+        <h2 class="display">{home.closing.title}</h2>
+        <Fragment set:html={home.closing.body} />
+        {home.closing.button?.label && <p><a class="btn btn--light" href={home.closing.button.href}>{home.closing.button.label}</a></p>}
       </div>
-      <div data-reveal="photo"><Img class="cta-img" src={cf('2026-tay-and-jesse/colour/_30A8106-Edit')} alt="Tay and Jesse at The Barn, Waimauku" width={2048} height={1638} sizes="(min-width: 900px) 44vw, 88vw" /></div>
+      <div data-reveal="photo"><Img class="cta-img" src={home.closing.image.src} alt={home.closing.image.alt} width={home.closing.image.width} height={home.closing.image.height} sizes="(min-width: 900px) 44vw, 88vw" /></div>
     </div>
   </section>
 </BaseLayout>
@@ -156,7 +141,7 @@ const jsonLd = {
   .intro { max-width: calc(880px + 2 * var(--pad)); margin: 0 auto; padding-block: 72px 64px; text-align: center; }
   .intro-title { font-size: clamp(26px, 2vw + 16px, 40px); margin: 0 0 22px; }
   .intro .lead { font-size: clamp(19px, 0.6vw + 15px, 24px); font-weight: 300; line-height: 1.55; color: var(--ink); }
-  .intro p { color: #444; line-height: 1.8; }
+  .intro :global(p) { color: #444; line-height: 1.8; }
   .proof { list-style: none; margin: 36px 0 0; padding: 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 12px 40px; font-size: 14px; letter-spacing: 0.05em; color: #444; }
   .proof a { color: inherit; text-decoration: none; }
 
@@ -177,12 +162,12 @@ const jsonLd = {
 
   .approach { display: grid; gap: 40px; align-items: center; max-width: calc(1180px + 2 * var(--pad)); margin: 0 auto; padding-block: 80px; }
   .approach h2 { font-size: clamp(30px, 2vw + 18px, 46px); margin: 0 0 22px; }
-  .approach p { line-height: 1.8; color: #333; }
+  .approach :global(p) { line-height: 1.8; color: #333; }
 
   .cta { background: var(--green); color: var(--champagne); padding-block: 72px; }
   .cta-inner { display: grid; gap: 40px; align-items: center; max-width: calc(1240px + 2 * var(--pad)); margin: 0 auto; }
   .cta h2 { color: var(--champagne); font-size: clamp(30px, 2.2vw + 18px, 50px); margin: 0 0 20px; }
-  .cta p { color: var(--cream); line-height: 1.75; }
+  .cta :global(p) { color: var(--cream); line-height: 1.75; }
   .cta :global(.cta-img) { width: 100%; height: auto; border-radius: 48px 0; }
 
   @media (hover: hover) {

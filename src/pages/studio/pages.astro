@@ -25,7 +25,7 @@ const strip = (t: string) => t.replace(/\s*\|\s*Moments In Light\s*$/i, '');
     <input class="pg-search" type="search" placeholder="Search pages…" aria-label="Search pages" />
     <div class="card">
       <ul class="pg-list">
-        <li data-q="home page /"><a class="what" href="/studio/page-edit?id=home"><strong>Home page</strong><small>/ · {strip(home.title)}</small></a><a class="s-btn s-btn--quiet" href="/" target="_blank" rel="noopener">View ↗</a><a class="s-btn" href="/studio/page-edit?id=home">Edit</a></li>
+        <li data-q="home page /"><a class="what" href="/studio/home-edit"><strong>Home page</strong><small>/ · {strip(home.title)}</small></a><a class="s-btn s-btn--quiet" href="/" target="_blank" rel="noopener">View ↗</a><a class="s-btn" href="/studio/home-edit">Edit</a></li>
         {pages.map((p) => (
           <li data-q={`${p.path} ${p.title}`.toLowerCase()}>
             <a class="what" href={p.href}><strong>{strip(p.title)}</strong><small>{p.path}{codeContent.has(p.id) ? ' · only its Google title and description are here; the rest is built into the site' : ''}</small></a>

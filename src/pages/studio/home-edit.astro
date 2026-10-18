@@ -1,0 +1,289 @@
+---
+// Moments Studio > Website > Pages > Home page: every word and photo on the home page, in the
+// order the page shows them (the layout itself is the site's design). Saved to src/data/home.json
+// through functions/api/studio/page.js (id 'home').
+import StudioLayout from '../../layouts/StudioLayout.astro';
+import reviews from '../../data/reviews.json';
+const reviewNames = [...new Set(reviews.reviews.map((r: any) => r.name))];
+const files = import.meta.glob<any>('../../data/pages/*.json', { eager: true });
+const links = ['/weddings', '/wedding-galleries', '/contact', '/blog', '/west-auckland-wedding-venues', ...Object.values(files).map((m: any) => m.default.path).filter((p: string) => p !== '/thanks')].sort();
+---
+<StudioLayout title="Home page" section="pages">
+  <span slot="bar" class="pe-state" aria-live="polite"></span>
+  <a slot="bar" class="s-btn s-btn--quiet" href="/" target="_blank" rel="noopener">View page ↗</a>
+  <button slot="bar" type="button" class="s-btn s-btn--solid" data-save disabled>Save</button>
+  <div class="hw" data-reviews={JSON.stringify(reviewNames)} data-links={JSON.stringify(links)}>
+    <main class="hm">
+      <p class="back"><a href="/studio/pages">← All pages</a> · /</p>
+      <p class="hm-hint">Your home page from top to bottom. Click any words to change them; the layout stays as it is.</p>
+      <div class="fl-toolbar" role="toolbar" aria-label="Text formatting">
+        <button type="button" data-cmd="bold"><b>B</b></button><button type="button" data-cmd="italic"><i>I</i></button><button type="button" data-cmd="link">Link</button><button type="button" data-cmd="p">Text</button><button type="button" data-cmd="ul">• List</button>
+        <small>for the paragraphs below</small>
+      </div>
+
+      <section class="blk hero-blk">
+        <p class="blk-label">Opening slideshow · drag to reorder · the first photo is the one Google and social media show</p>
+        <ul class="gal" data-gal="slides"></ul>
+        <button type="button" class="s-btn s-btn--quiet" data-gadd="slides">+ Add photos</button> <span class="uploading" hidden></span>
+        <div class="over">
+          <input class="e-eyebrow" data-f="eyebrow" aria-label="Small line above the heading" />
+          <input class="e-h1" data-f="h1" aria-label="Main heading" />
+        </div>
+      </section>
+
+      <section class="blk center">
+        <input class="e-h2" data-f="introTitle" aria-label="Intro heading" />
+        <textarea class="e-lead" data-f="intro" rows="2" aria-label="Opening line"></textarea>
+        <div class="rt" data-rt="introBody"></div>
+        <p class="blk-label">Lines under it (your Google reviews line comes first by itself)</p>
+        <ul class="proof" data-proof></ul>
+        <button type="button" class="s-btn s-btn--quiet" data-addproof>+ Add a line</button>
+      </section>
+
+      <section class="blk"><p class="blk-label">Three links into the site</p><div class="doors" data-doors></div></section>
+
+      <section class="blk band">
+        <input class="e-eyebrow dark" data-f="stories.eyebrow" aria-label="Small line" />
+        <input class="e-h2" data-f="stories.title" aria-label="Heading" />
+        <textarea class="e-sub" data-f="stories.text" rows="3" aria-label="Text"></textarea>
+        <input class="e-more" data-f="stories.link" aria-label="Link words" />
+        <p class="blk-label">Your latest love stories show here by themselves.</p>
+      </section>
+
+      <section class="blk"><p class="blk-label">Reviews in the carousel · tick the ones to show</p><div class="rev" data-rev></div></section>
+
+      <section class="blk approach">
+        <div class="tony">Your animated photo</div>
+        <div>
+          <input class="e-eyebrow dark" data-f="approach.eyebrow" aria-label="Small line" />
+          <input class="e-h2 left" data-f="approach.title" aria-label="Heading" />
+          <div class="rt" data-rt="approach.body"></div>
+          <div class="btn-row"><input data-f="approach.button.label" aria-label="Button words" placeholder="Button words" /><select data-f="approach.button.href" data-linkselect></select></div>
+        </div>
+      </section>
+
+      <section class="blk closing">
+        <div>
+          <input class="e-h2 left light" data-f="closing.title" aria-label="Heading" />
+          <div class="rt light" data-rt="closing.body"></div>
+          <div class="btn-row"><input data-f="closing.button.label" aria-label="Button words" placeholder="Button words" /><select data-f="closing.button.href" data-linkselect></select></div>
+        </div>
+        <figure class="ph" data-ph="closing.image"></figure>
+      </section>
+    </main>
+    <aside class="side">
+      <h2>On Google</h2>
+      <label>Google title <small class="cnt" data-cnt="title"></small><input data-f="title" maxlength="120" /></label>
+      <label>Google description <small class="cnt" data-cnt="description"></small><textarea data-f="description" rows="4" maxlength="320"></textarea></label>
+      <div class="serp"><span class="serp-site">Moments In Light</span><span class="serp-url">momentsinlight.co.nz</span><span class="serp-title"></span><span class="serp-desc"></span></div>
+    </aside>
+  </div>
+  <div class="s-toast" role="status"></div>
+</StudioLayout>
+
+<script>
+  import { Editor } from '@tiptap/core';
+  import StarterKit from '@tiptap/starter-kit';
+  import Link from '@tiptap/extension-link';
+  import Sortable from 'sortablejs';
+
+  const $ = <T extends HTMLElement = HTMLElement>(s: string, r: ParentNode = document) => r.querySelector<T>(s)!;
+  const esc = (s: unknown) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
+  const toast = (text: string, error = false) => { const t = $('.s-toast'); t.textContent = text; t.classList.toggle('error', error); t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 5000); };
+  const thumb = (src: string, w = 500) => src.replace(/\/(public(\.webp)?|w=[^/]*)$/, `/w=${w}`);
+  const root = $('.hw');
+  const REVIEWS: string[] = JSON.parse(root.dataset.reviews!);
+  const LINKS: string[] = JSON.parse(root.dataset.links!);
+  let data: any = null, sha = '', dirty = false;
+  const editors = new Map<string, Editor>();
+  let lastEditor: Editor | null = null;
+  const markDirty = () => { dirty = true; $<HTMLButtonElement>('[data-save]').disabled = false; $('.pe-state').textContent = 'Unsaved changes'; };
+  addEventListener('beforeunload', (e) => { if (dirty) { e.preventDefault(); e.returnValue = ''; } });
+  const get = (path: string) => path.split('.').reduce((o, k) => o?.[k], data);
+  const set = (path: string, v: any) => { const ks = path.split('.'); const last = ks.pop()!; const o = ks.reduce((o, k) => (o[k] ??= {}), data); o[last] = v; };
+  async function api(path: string, init?: RequestInit) {
+    const r = await fetch(path, { ...init, headers: { 'content-type': 'application/json' } });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(d.error || `Something went wrong (${r.status}).`);
+    return d;
+  }
+  async function upload(file: File) {
+    let width: number | undefined, height: number | undefined;
+    try { const b = await createImageBitmap(file); width = b.width; height = b.height; b.close(); } catch { /* unknown */ }
+    const name = file.name.replace(/\.[^.]+$/, '').replace(/[^A-Za-z0-9_.-]+/g, '-');
+    const { uploadURL, src } = await api('/api/studio/upload', { method: 'POST', body: JSON.stringify({ id: `pages/home/${name}-${Date.now().toString(36)}` }) });
+    const form = new FormData(); form.append('file', file);
+    const r = await fetch(uploadURL, { method: 'POST', body: form });
+    if (!r.ok) throw new Error(`Upload failed (${r.status}).`);
+    return { src, alt: '', width: width ?? 2048, height: height ?? 1366 };
+  }
+  const describe = async (src: string) => (await api('/api/studio/describe', { method: 'POST', body: JSON.stringify({ src, kind: 'wedding' }) })).description as string;
+  const pick = (multiple = false) => new Promise<File[]>((res) => { const i = document.createElement('input'); i.type = 'file'; i.accept = 'image/*'; i.multiple = multiple; i.onchange = () => res([...(i.files ?? [])]); i.click(); });
+
+  // ---- Drawing ----
+  const galLi = (img: any, n: number) => `<li data-gi="${n}"><img src="${esc(thumb(img.src, 360))}" alt=""><textarea rows="2" maxlength="250" data-galt placeholder="Photo description">${esc(img.alt ?? '')}</textarea><span class="acts"><button type="button" data-gdesc>✨</button><button type="button" class="rm" data-grm>Remove</button></span></li>`;
+  const linkOptions = (cur: string) => [...new Set([cur, ...LINKS])].filter(Boolean).map((l) => `<option${l === cur ? ' selected' : ''}>${esc(l)}</option>`).join('');
+  const photoBox = (img: any, key: string) => `<img src="${esc(thumb(img.src, 700))}" alt=""><textarea rows="2" maxlength="250" data-palt="${key}" placeholder="Photo description">${esc(img.alt ?? '')}</textarea><span class="acts"><button type="button" data-pdesc="${key}">✨ Suggest</button><button type="button" data-prep="${key}">Replace photo</button></span>`;
+  function draw() {
+    $('[data-gal=slides]').innerHTML = data.slides.map(galLi).join('');
+    Sortable.create($('[data-gal=slides]'), { animation: 180, filter: 'textarea, button', preventOnFilter: false, onEnd: () => { readSlides(); markDirty(); } });
+    document.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>('[data-f]').forEach((el) => {
+      if (el instanceof HTMLSelectElement) el.innerHTML = linkOptions(get(el.dataset.f!) ?? '');
+      else el.value = get(el.dataset.f!) ?? '';
+    });
+    $('[data-proof]').innerHTML = data.proof.map((p: string) => `<li><input data-proofline value="${esc(p)}" aria-label="Line"><button type="button" class="rm" data-rmproof>✕</button></li>`).join('');
+    $('[data-doors]').innerHTML = data.doors.map((d: any, n: number) => `<div class="door" data-door="${n}">${photoBox(d, `doors.${n}`)}<input data-dlabel="${n}" value="${esc(d.label)}" aria-label="Words on the card"><select data-dhref="${n}">${linkOptions(d.href)}</select></div>`).join('');
+    $('[data-ph="closing.image"]').innerHTML = photoBox(data.closing.image, 'closing.image');
+    const chosen = new Set(data.reviews);
+    $('[data-rev]').innerHTML = REVIEWS.map((n) => `<label><input type="checkbox" data-revname="${esc(n)}"${chosen.has(n) ? ' checked' : ''}> ${esc(n)}</label>`).join('');
+    document.querySelectorAll<HTMLElement>('[data-rt]').forEach((el) => {
+      const key = el.dataset.rt!;
+      const ed = new Editor({ element: el, extensions: [StarterKit.configure({ heading: false }), Link.configure({ openOnClick: false, HTMLAttributes: { target: null, rel: null } })], content: get(key) ?? '', onUpdate: () => markDirty(), onFocus: ({ editor }) => { lastEditor = editor; } });
+      editors.set(key, ed);
+    });
+    counts();
+  }
+  const imgAt = (key: string) => (key.startsWith('doors.') ? data.doors[Number(key.split('.')[1])] : get(key));
+  function readSlides() {
+    const ul = $('[data-gal=slides]'); const old = data.slides;
+    data.slides = [...ul.querySelectorAll<HTMLElement>('li')].map((li) => ({ ...old[Number(li.dataset.gi)], alt: li.querySelector<HTMLTextAreaElement>('[data-galt]')!.value.trim() }));
+    ul.querySelectorAll<HTMLElement>('li').forEach((li, n) => { li.dataset.gi = String(n); });
+  }
+  function readAll() {
+    readSlides();
+    document.querySelectorAll<HTMLInputElement>('[data-f]').forEach((el) => set(el.dataset.f!, el.value.trim()));
+    editors.forEach((ed, key) => set(key, ed.isEmpty ? '' : ed.getHTML()));
+    data.proof = [...document.querySelectorAll<HTMLInputElement>('[data-proofline]')].map((i) => i.value.trim()).filter(Boolean);
+    document.querySelectorAll<HTMLInputElement>('[data-dlabel]').forEach((i) => { data.doors[Number(i.dataset.dlabel)].label = i.value.trim(); });
+    document.querySelectorAll<HTMLSelectElement>('[data-dhref]').forEach((i) => { data.doors[Number(i.dataset.dhref)].href = i.value; });
+    document.querySelectorAll<HTMLTextAreaElement>('[data-palt]').forEach((t) => { imgAt(t.dataset.palt!).alt = t.value.trim(); });
+    // Reviews: keep the order already chosen, new ticks at the end.
+    const ticked = new Set([...document.querySelectorAll<HTMLInputElement>('[data-revname]:checked')].map((i) => i.dataset.revname!));
+    data.reviews = [...data.reviews.filter((n: string) => ticked.has(n)), ...[...ticked].filter((n) => !data.reviews.includes(n))];
+  }
+  function counts() {
+    for (const [n, lo, hi] of [['title', 30, 60], ['description', 120, 155]] as const) {
+      const v = $<HTMLInputElement>(`[data-f="${n}"]`).value.trim(); const c = $(`[data-cnt="${n}"]`);
+      c.textContent = `${v.length} (aim for ${lo}–${hi})`; c.className = `cnt ${v.length >= lo && v.length <= hi ? 'up' : 'down'}`;
+    }
+    $('.serp-title').textContent = $<HTMLInputElement>('[data-f="title"]').value;
+    $('.serp-desc').textContent = $<HTMLTextAreaElement>('[data-f="description"]').value;
+  }
+
+  // ---- Toolbar ----
+  document.addEventListener('mousedown', (e) => { if ((e.target as HTMLElement).closest('.fl-toolbar button')) e.preventDefault(); });
+  $('.fl-toolbar').addEventListener('click', (e) => {
+    const b = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-cmd]'); if (!b) return;
+    const ed = lastEditor ?? [...editors.values()][0]; if (!ed) return;
+    const c = ed.chain().focus(); const cmd = b.dataset.cmd;
+    if (cmd === 'bold') c.toggleBold().run(); else if (cmd === 'italic') c.toggleItalic().run(); else if (cmd === 'p') c.setParagraph().run(); else if (cmd === 'ul') c.toggleBulletList().run();
+    else if (cmd === 'link') { const href = prompt('Link to (e.g. /contact). Leave empty to remove the link.', ed.getAttributes('link').href ?? ''); if (href === null) return; if (href.trim()) c.extendMarkRange('link').setLink({ href: href.trim() }).run(); else c.extendMarkRange('link').unsetLink().run(); }
+    markDirty();
+  });
+
+  document.addEventListener('input', (e) => { if ((e.target as HTMLElement).closest('.hw input, .hw textarea, .hw select')) { markDirty(); counts(); } });
+  document.addEventListener('change', (e) => { if ((e.target as HTMLElement).closest('.hw select, .hw [type=checkbox]')) markDirty(); });
+  document.addEventListener('click', async (e) => {
+    const t = e.target as HTMLElement;
+    const gd = t.closest<HTMLButtonElement>('[data-gdesc]');
+    if (gd) { readSlides(); const li = gd.closest<HTMLElement>('li')!; gd.disabled = true; try { li.querySelector<HTMLTextAreaElement>('[data-galt]')!.value = await describe(data.slides[Number(li.dataset.gi)].src); markDirty(); } catch (err) { toast((err as Error).message, true); } gd.disabled = false; return; }
+    const gr = t.closest<HTMLButtonElement>('[data-grm]');
+    if (gr) { if (document.querySelectorAll('[data-gal=slides] li').length < 2) { toast('Keep at least one photo.', true); return; } if (confirm('Remove this photo from the slideshow?')) { gr.closest('li')!.remove(); readSlides(); markDirty(); } return; }
+    if (t.closest('[data-gadd]')) {
+      const fs = await pick(true); if (!fs.length) return;
+      readAll(); const st = $('.hero-blk .uploading');
+      for (const [n, f] of fs.entries()) { st.hidden = false; st.textContent = `Uploading ${n + 1} of ${fs.length}…`; try { data.slides.push(await upload(f)); } catch (err) { toast((err as Error).message, true); } }
+      st.hidden = true; editors.forEach((x) => x.destroy()); editors.clear(); draw(); markDirty(); return;
+    }
+    const pd = t.closest<HTMLButtonElement>('[data-pdesc]');
+    if (pd) { pd.disabled = true; try { $<HTMLTextAreaElement>(`[data-palt="${pd.dataset.pdesc}"]`).value = await describe(imgAt(pd.dataset.pdesc!).src); markDirty(); } catch (err) { toast((err as Error).message, true); } pd.disabled = false; return; }
+    const pr = t.closest<HTMLButtonElement>('[data-prep]');
+    if (pr) {
+      const [f] = await pick(); if (!f) return; pr.textContent = 'Uploading…';
+      try { readAll(); const up = await upload(f); Object.assign(imgAt(pr.dataset.prep!), { src: up.src, width: up.width, height: up.height, alt: '' }); editors.forEach((x) => x.destroy()); editors.clear(); draw(); markDirty(); toast('Photo replaced. Give it a description.'); } catch (err) { toast((err as Error).message, true); pr.textContent = 'Replace photo'; }
+      return;
+    }
+    if (t.closest('[data-addproof]')) { $('[data-proof]').insertAdjacentHTML('beforeend', '<li><input data-proofline aria-label="Line"><button type="button" class="rm" data-rmproof>✕</button></li>'); markDirty(); return; }
+    if (t.closest('[data-rmproof]')) { t.closest('li')!.remove(); markDirty(); return; }
+    if (t.closest('[data-save]')) {
+      readAll();
+      if (!data.title || !data.description || !data.h1) { toast('The Google title, description and main heading can’t be empty.', true); return; }
+      const btn = $<HTMLButtonElement>('[data-save]'); btn.disabled = true; btn.textContent = 'Saving…';
+      try { const r = await api('/api/studio/page', { method: 'PUT', body: JSON.stringify({ id: 'home', data, sha, message: 'Studio: update the home page' }) }); sha = r.sha; dirty = false; $('.pe-state').textContent = 'Saved. The website updates in about 2 minutes.'; }
+      catch (err) { btn.disabled = false; toast((err as Error).message, true); }
+      btn.textContent = 'Save';
+    }
+  });
+
+  (async () => {
+    try { const r = await api('/api/studio/page?id=home'); data = r.data; sha = r.sha; } catch (err) { $('.hm-hint').textContent = (err as Error).message; return; }
+    draw(); dirty = false; $<HTMLButtonElement>('[data-save]').disabled = true;
+  })();
+</script>
+
+<style is:global>
+  .hw { display: grid; gap: 22px; max-width: 1280px; margin: 0 auto; padding: 18px clamp(14px, 3vw, 32px) 90px; }
+  @media (min-width: 1100px) { .hw { grid-template-columns: minmax(0, 1fr) 330px; align-items: start; } .hw .side { position: sticky; top: 84px; } }
+  .pe-state { font-size: 13px; color: #888; align-self: center; }
+  .hm { background: var(--white); border-radius: 24px 0; padding: 20px clamp(16px, 4vw, 48px) 40px; min-width: 0; font-family: Raleway, sans-serif; }
+  .hm .back { margin: 0; font-size: 13px; color: #999; } .hm .back a { color: var(--green); }
+  .hm-hint { margin: 4px 0 10px; font-size: 14px; color: #777; }
+  .fl-toolbar { position: sticky; top: 64px; z-index: 5; display: flex; gap: 4px; flex-wrap: wrap; align-items: center; padding: 8px; margin: 0 -8px 10px; background: rgb(255 255 255 / 0.95); border-bottom: 1px solid #f1ebe1; }
+  .fl-toolbar button { border: 1px solid #e6dccb; background: #faf6ee; border-radius: 6px 0; padding: 5px 11px; font: inherit; font-size: 13px; cursor: pointer; }
+  .fl-toolbar small { color: #aaa; font-size: 12px; margin-left: 6px; }
+  .blk { position: relative; padding: 22px 0; border-top: 1px solid #f1ebe1; }
+  .blk-label { margin: 6px 0; font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: #aaa; }
+  .hm input, .hm textarea, .hm select { font: inherit; border: 1px dashed transparent; border-radius: 6px 0; background: transparent; padding: 4px 6px; width: 100%; box-sizing: border-box; color: inherit; }
+  .hm input:hover, .hm textarea:hover, .hm input:focus, .hm textarea:focus { border-color: #ddd3c4; background: #fff; outline: none; }
+  .hm select { border: 1px solid #ddd3c4; background: #fff; font-size: 13px; width: auto; }
+  .center { text-align: center; } .center input, .center textarea { text-align: center; }
+  .e-eyebrow { font-size: 12px; font-weight: 500; letter-spacing: 0.32em; text-transform: uppercase; text-align: center; }
+  .e-eyebrow.dark { color: var(--green); text-align: left; }
+  .e-h1 { font-size: clamp(26px, 3vw, 44px); font-weight: 300; text-align: center; line-height: 1.15; }
+  .e-h2 { font-size: clamp(24px, 2.4vw, 36px); font-weight: 300; color: var(--green); }
+  .e-h2.left { text-align: left; }
+  .e-lead { font-size: 20px; font-weight: 300; line-height: 1.5; resize: vertical; }
+  .e-sub { font-size: 15px; color: #555; resize: vertical; }
+  .e-more { font-size: 14px; color: var(--green); width: auto; }
+  .over { margin-top: 12px; padding: 18px; background: #3b3d27; border-radius: 14px 0; color: #fff; }
+  .over input:hover, .over input:focus { background: rgb(255 255 255 / 0.08); color: #fff; }
+  .rt .ProseMirror { outline: none; line-height: 1.8; color: #444; padding: 4px 6px; border: 1px dashed transparent; border-radius: 6px 0; text-align: left; }
+  .rt .ProseMirror:hover, .rt .ProseMirror:focus { border-color: #ddd3c4; }
+  .center .rt { max-width: 760px; margin: 0 auto; }
+  .rt.light .ProseMirror { color: #e8e4d6; }
+  .gal { list-style: none; margin: 0 0 8px; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+  .gal li { display: flex; flex-direction: column; gap: 4px; cursor: grab; }
+  .gal li:first-child img { outline: 3px solid var(--green); }
+  .gal img { width: 100%; height: 100px; object-fit: cover; border-radius: 8px 0; background: #eee; }
+  .gal textarea, .door textarea, .ph textarea { font-size: 12px !important; border: 1px solid #e6dccb !important; color: #555; }
+  .acts { display: flex; gap: 6px; flex-wrap: wrap; }
+  .acts button { border: 1px solid #e6dccb; background: #fff; border-radius: 6px 0; padding: 3px 9px; font: inherit; font-size: 12px; cursor: pointer; color: var(--green); }
+  .acts .rm, .rm { color: #a8432a; border: 0; background: none; cursor: pointer; }
+  .proof { list-style: none; margin: 0 auto 6px; padding: 0; max-width: 460px; }
+  .proof li { display: flex; gap: 6px; }
+  .proof input { text-align: center; font-size: 14px; letter-spacing: 0.05em; }
+  .doors { display: grid; gap: 16px; } @media (min-width: 760px) { .doors { grid-template-columns: repeat(3, 1fr); } }
+  .door { display: flex; flex-direction: column; gap: 6px; }
+  .door img, .ph img { width: 100%; height: 170px; object-fit: cover; border-radius: 12px 0; background: #eee; }
+  .door input { font-size: 15px; font-weight: 500; text-align: center; }
+  .band { background: #f6f2ea; margin: 0 -48px; padding: 22px 48px; }
+  .rev { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 14px; }
+  .rev label { display: flex; gap: 6px; align-items: center; }
+  .rev input { width: auto; }
+  .approach, .closing { display: grid; gap: 22px; } @media (min-width: 760px) { .approach { grid-template-columns: 240px 1fr; } .closing { grid-template-columns: 1fr 1fr; } }
+  .tony { display: grid; place-items: center; min-height: 200px; background: #f6f2ea; border-radius: 14px 0; color: #aaa; font-size: 13px; }
+  .closing { background: #3b3d27; margin: 0 -48px -40px; padding: 30px 48px; border-radius: 0 0 24px 0; color: #e8e4d6; }
+  .closing .e-h2 { color: #fff; }
+  .closing input:hover, .closing input:focus { background: rgb(255 255 255 / 0.08); color: #fff; }
+  .ph { margin: 0; display: flex; flex-direction: column; gap: 6px; }
+  .btn-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+  .btn-row input { border: 1px solid #ddd3c4 !important; border-radius: 999px; width: auto; min-width: 200px; background: #fff; color: var(--ink); }
+  .uploading { font-size: 13px; color: var(--green); }
+  .side { background: var(--white); border-radius: 24px 0; padding: 18px 20px; display: flex; flex-direction: column; gap: 12px; }
+  .side h2 { margin: 0; font-weight: 300; font-size: 20px; }
+  .side label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: #555; }
+  .side input, .side textarea { font: inherit; font-size: 14px; padding: 8px 10px; border: 1px solid #ddd3c4; border-radius: 8px 0; }
+  .side .cnt.up { color: #5a7d2a; } .side .cnt.down { color: #a8432a; }
+  .serp { display: flex; flex-direction: column; gap: 2px; padding: 12px; border: 1px solid #e8e8e8; border-radius: 10px; font-family: Arial, sans-serif; }
+  .serp-site { font-size: 13px; } .serp-url { font-size: 12px; color: #4d5156; } .serp-title { font-size: 17px; color: #1a0dab; } .serp-desc { font-size: 13px; color: #4d5156; line-height: 1.5; }
+</style>
