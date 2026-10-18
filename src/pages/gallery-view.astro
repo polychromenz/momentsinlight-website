@@ -157,36 +157,59 @@ import { site } from '../data/site';
     if (location.hash === '#photos') $('.gallery').scrollIntoView();
   }
 
-  // ---- The photos: justified rows (nothing cropped), highlights on a row of their own ----
-  const GAP = 6;
+  // ---- The photos: justified rows (nothing cropped). A highlight is shown big with two photos
+  //      stacked beside it (sides alternate), sized so every photo fits whole. ----
+  let GAP = 14;
   const thumbW = (i: Img) => (i.w >= i.h ? Math.min(600, i.w) : Math.round((Math.min(600, i.h) * i.w) / i.h));
   const webW = (i: Img) => (i.w >= i.h ? Math.min(2048, i.w) : Math.round((Math.min(2048, i.h) * i.w) / i.h));
+  const ar = (i: Img) => i.w / i.h;
   function tile(i: Img, w: number, h: number) {
     const n = view.images.indexOf(i);
     return `<button type="button" class="ph" data-n="${n}" style="width:${w}px;height:${h}px" aria-label="Open photo ${n + 1}">
       <img src="${esc(i.thumb)}" srcset="${esc(i.thumb)} ${thumbW(i)}w, ${esc(i.web)} ${webW(i)}w" sizes="${Math.ceil(w)}px" width="${Math.round(w)}" height="${Math.round(h)}" alt="" loading="lazy" decoding="async" /></button>`;
   }
   function rows(list: Img[], width: number) {
-    const target = width < 600 ? 170 : width < 1100 ? 250 : 320;
+    const phone = width < 600;
+    const target = phone ? 200 : width < 1100 ? 300 : 400;
     const out: string[] = [];
     let row: Img[] = [];
+    let side = 0;
+    const line = (items: Img[], h: number, cls = '') => `<div class="row${cls}" style="gap:${GAP}px;margin-bottom:${GAP}px">${items.map((i) => tile(i, h * ar(i), h)).join('')}</div>`;
     const flush = (last: boolean) => {
       if (!row.length) return;
-      const ar = row.reduce((a, i) => a + i.w / i.h, 0);
-      const h = last ? Math.min(target, (width - GAP * (row.length - 1)) / ar) : (width - GAP * (row.length - 1)) / ar;
-      out.push(`<div class="row">${row.map((i) => tile(i, (h * i.w) / i.h, h)).join('')}</div>`);
+      const sum = row.reduce((a, i) => a + ar(i), 0);
+      const full = (width - GAP * (row.length - 1)) / sum;
+      out.push(line(row, last ? Math.min(target, full) : full));
       row = [];
     };
-    for (const i of list) {
-      if (i.hero) {
-        flush(true);
-        const h = Math.min(width / (i.w / i.h), innerHeight * 0.82, i.h);
-        out.push(`<div class="row row--hero">${tile(i, (h * i.w) / i.h, h)}</div>`);
+    for (let n = 0; n < list.length; n++) {
+      const i = list[n];
+      if (!i.hero) {
+        row.push(i);
+        if (row.reduce((a, x) => a + ar(x), 0) * target + GAP * (row.length - 1) >= width) flush(false);
         continue;
       }
-      row.push(i);
-      const ar = row.reduce((a, x) => a + x.w / x.h, 0);
-      if (ar * target + GAP * (row.length - 1) >= width) flush(false);
+      // Two photos to stack beside the highlight: a single waiting photo, then the next ones.
+      const stack: Img[] = [];
+      if (!phone) {
+        if (row.length === 1) stack.push(row.pop()!);
+        else if (row.length > 1) { const sum = row.reduce((a, x) => a + ar(x), 0); out.push(line(row, Math.min((width - GAP * (row.length - 1)) / sum, target * 1.6))); row = []; }
+        while (stack.length < 2 && n + 1 < list.length && !list[n + 1].hero) stack.push(list[++n]);
+      } else flush(true);
+      if (stack.length === 2) {
+        // Highlight width a·H, stack width c where c/b1 + c/b2 + gap = H, and a·H + gap + c = width.
+        const k = 1 / ar(stack[0]) + 1 / ar(stack[1]);
+        const H = Math.min((width - GAP + GAP / k) / (ar(i) + 1 / k), innerHeight * 0.9);
+        const c = (H - GAP) / k;
+        const big = tile(i, ar(i) * H, H);
+        const col = `<div class="stack" style="gap:${GAP}px">${stack.map((s) => tile(s, c, c / ar(s))).join('')}</div>`;
+        out.push(`<div class="row row--block" style="gap:${GAP}px;margin-bottom:${GAP}px;justify-content:center">${side++ % 2 ? col + big : big + col}</div>`);
+      } else {
+        row.push(...stack);
+        flush(true);
+        const h = Math.min(width / ar(i), innerHeight * 0.85, i.h);
+        out.push(line([i], h, ' row--hero'));
+      }
     }
     flush(true);
     return out.join('');
@@ -196,6 +219,7 @@ import { site } from '../data/site';
     // The space inside the side padding, a hair under so rounding never makes a row too wide.
     const cs = getComputedStyle(main);
     const width = Math.floor((main.clientWidth || innerWidth) - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight)) - 1;
+    GAP = width < 600 ? 6 : width < 1100 ? 10 : 14;
     const multi = view.sections.length > 1;
     main.innerHTML = view.sections.map((s) => {
       const list = view.images.filter((i) => i.s === s.id);
@@ -339,11 +363,12 @@ import { site } from '../data/site';
   .g-actions { flex: none; }
   .g-btn { font: inherit; font-size: 12px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; padding: 8px 14px; border: 1px solid var(--green); border-radius: 10px 0; background: var(--white); color: var(--green); cursor: pointer; }
   .g-note { margin: 12px auto 0; max-width: 900px; padding: 10px 16px; background: var(--blush); border-radius: 12px 0; font-size: 14px; text-align: center; }
-  .g-main { padding: 6px clamp(6px, 1.2vw, 16px) 40px; overflow-x: clip; }
+  .g-main { padding: 6px clamp(8px, 3vw, 56px) 40px; overflow-x: clip; }
   .g-sec { scroll-margin-top: 60px; }
   .g-sec h2 { margin: 42px 0 18px; text-align: center; font-weight: 300; font-size: clamp(20px, 2.4vw, 28px); letter-spacing: 0.24em; text-transform: uppercase; }
-  .row { display: flex; gap: 6px; margin-bottom: 6px; }
-  .row--hero { justify-content: center; }
+  .row { display: flex; }
+  .row--hero, .row--block { justify-content: center; }
+  .stack { display: flex; flex-direction: column; flex: none; }
   .ph { padding: 0; border: 0; background: #eeefe9; cursor: zoom-in; flex: none; overflow: hidden; }
   .ph img { display: block; width: 100%; height: 100%; transition: opacity 0.4s var(--ease), transform 0.8s var(--ease); -webkit-user-drag: none; user-select: none; }
   .ph:hover img { opacity: 0.92; }
