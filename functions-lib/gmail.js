@@ -35,7 +35,7 @@ export async function encrypt(env, text) {
   const data = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, await key(env), enc.encode(text));
   return `${b64(iv)}.${b64(data)}`;
 }
-async function decrypt(env, value) {
+export async function decrypt(env, value) {
   const [iv, data] = value.split('.');
   return new TextDecoder().decode(await crypto.subtle.decrypt({ name: 'AES-GCM', iv: unb64(iv) }, await key(env), unb64(data)));
 }

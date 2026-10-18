@@ -1,0 +1,102 @@
+---
+// Moments Studio > Website > SEO > Google Ads (docs/MIL-Ads-SEO-Command-Centre-Spec.md).
+// Phase 1: setting up the Ads Script (scripts/google-ads/sync.js, copied from here with the key
+// filled in) and checking what's come in. Data from functions/api/studio/crm/ads.js.
+import StudioLayout from '../../../layouts/StudioLayout.astro';
+import SeoTabs from '../../../components/studio/SeoTabs.astro';
+import script from '../../../../scripts/google-ads/sync.js?raw';
+---
+<StudioLayout title="Google Ads" section="seo">
+  <main class="ads">
+    <h1>Google Ads</h1>
+    <p class="intro">Where your ad money goes, side by side with how you rank for free, so you only pay where Google won’t show you anyway.</p>
+    <SeoTabs current="ads" />
+
+    <section class="card status-card"><div class="status"><p class="muted">Loading…</p></div></section>
+
+    <section class="card setup">
+      <h2>Connect Google Ads</h2>
+      <ol>
+        <li><button type="button" class="s-btn s-btn--solid" data-key>Make the script</button> <span class="muted">(this makes a new private key, so an old copy of the script stops working)</span></li>
+        <li class="after" hidden>Copy it: <button type="button" class="s-btn" data-copy-script>Copy the script</button></li>
+        <li>In <a href="https://ads.google.com/aw/bulk/scripts" target="_blank" rel="noopener">Google Ads › Tools › Bulk actions › Scripts</a>, click the blue <strong>+</strong> and choose <strong>New script</strong>.</li>
+        <li>Delete what’s in the box, paste, and name it <code>Moments Studio sync</code>.</li>
+        <li>Click <strong>Authorise</strong> (it asks to see your Google Ads account and talk to an outside site: that’s the studio).</li>
+        <li>Click <strong>Run</strong>, then <strong>Run</strong> again to confirm. The first run sends 90 days and takes a minute or two.</li>
+        <li>Back on the Scripts list, set its <strong>Frequency</strong> to <strong>Hourly</strong>.</li>
+      </ol>
+      <p class="muted">For now it only reads your account; nothing in Google Ads is changed.</p>
+      <textarea class="script" readonly hidden></textarea>
+    </section>
+  </main>
+  <div class="s-toast" role="status"></div>
+</StudioLayout>
+
+<script define:vars={{ script }}>
+  window.__adsScript = script;
+</script>
+<script>
+  const $ = <T extends HTMLElement = HTMLElement>(s: string) => document.querySelector<T>(s)!;
+  const esc = (s: unknown) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
+  const money = (c: number) => `$${(c / 100).toLocaleString('en-NZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const when = (d: string) => new Date(d).toLocaleString('en-NZ', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit', timeZone: 'Pacific/Auckland' });
+  function toast(msg: string, error = false) {
+    const t = $('.s-toast'); t.textContent = msg; t.classList.toggle('error', error); t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 4000);
+  }
+  const NICE: Record<string, string> = { SEARCH: 'Search', DISPLAY: 'Display', PERFORMANCE_MAX: 'Performance Max', SMART: 'Smart', VIDEO: 'Video', MULTI_CHANNEL: 'App', DEMAND_GEN: 'Demand Gen' };
+  async function load() {
+    const d = await (await fetch('/api/studio/crm/ads')).json();
+    const s = $('.status');
+    if (!d.last) {
+      s.innerHTML = `<h2>Not connected yet</h2><p class="muted">${d.connected ? 'The script has been made but hasn’t sent anything yet. Paste it into Google Ads and click Run (steps below).' : 'Follow the steps below to connect your Google Ads account.'}</p>`;
+      return;
+    }
+    const t = d.totals;
+    s.innerHTML = `<div class="head"><h2>Connected</h2><span class="muted">Last data ${when(d.last)} · ${d.totals.first} to ${d.totals.last} · ${d.search_terms.toLocaleString('en-NZ')} search terms · Search Console ${d.gsc.n ? `${d.gsc.first} to ${d.gsc.last}` : 'starting'}</span></div>
+      <p class="muted">Last 30 days by campaign (check these against Google Ads; they should match to the cent):</p>
+      <div class="tbl-wrap"><table class="tbl"><thead><tr><th>Campaign</th><th>Type</th><th>Bidding</th><th class="r">Budget/day</th><th class="r">Cost</th><th class="r">Clicks</th><th class="r">Conversions</th></tr></thead><tbody>
+      ${d.campaigns.map((c: any) => `<tr><td>${esc(c.name)} <small class="muted">${esc(String(c.status ?? '').toLowerCase())}</small></td><td>${esc(NICE[c.channel_type] ?? c.channel_type)}${c.partner_network ? ' <small class="warn">+ search partners</small>' : ''}${c.display_network && c.channel_type === 'SEARCH' ? ' <small class="warn">+ display</small>' : ''}</td>
+        <td>${esc(String(c.bidding ?? '').replace(/_/g, ' ').toLowerCase())}</td><td class="r">${money(c.budget_cents ?? 0)}</td><td class="r">${money(c.cost)}</td><td class="r">${c.clicks}</td><td class="r">${Number(c.conversions).toFixed(1)}</td></tr>`).join('')}
+      </tbody></table></div>
+      <p class="muted">Your audit report comes next, from this data.</p>`;
+  }
+  document.addEventListener('click', async (e) => {
+    const t = e.target as HTMLElement;
+    if (t.closest('[data-key]')) {
+      if (!confirm('Make the script with a new key? Any copy already in Google Ads will stop working until you paste the new one.')) return;
+      const d = await (await fetch('/api/studio/crm/ads', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'key' }) })).json();
+      if (!d.secret) return toast(d.error || 'Couldn’t make the key.', true);
+      const ta = $<HTMLTextAreaElement>('.script');
+      ta.value = (window as any).__adsScript.replace('__PASTE_KEY__', d.secret);
+      ta.hidden = false;
+      document.querySelector<HTMLElement>('.after')!.hidden = false;
+      toast('Made. Now copy it.');
+      load();
+    }
+    if (t.closest('[data-copy-script]')) {
+      await navigator.clipboard.writeText($<HTMLTextAreaElement>('.script').value);
+      toast('Copied. Paste it into Google Ads.');
+    }
+  });
+  load();
+</script>
+
+<style is:global>
+  .ads { max-width: 1100px; margin: 0 auto; padding: 24px clamp(14px, 3vw, 32px) 80px; }
+  .ads h1 { margin: 0; font-weight: 300; font-size: 32px; color: var(--ink); }
+  .ads .intro { color: #666; margin: 4px 0 14px; }
+  .ads .card { background: var(--white); border-radius: 24px 0; padding: 18px 22px; margin-bottom: 16px; }
+  .ads h2 { margin: 0 0 8px; font-weight: 300; font-size: 22px; }
+  .ads .head { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; align-items: baseline; }
+  .ads .muted { color: #888; font-size: 14px; }
+  .ads .warn { color: #a8432a; font-weight: 600; }
+  .ads ol { padding-left: 20px; line-height: 2.1; }
+  .ads code { background: var(--champagne); padding: 2px 7px; border-radius: 6px; }
+  .ads .script { width: 100%; height: 220px; font: 12px/1.4 ui-monospace, Consolas, monospace; border: 1px solid #ddd3c4; border-radius: 10px 0; padding: 10px; }
+  .ads .tbl-wrap { overflow-x: auto; }
+  .ads .tbl { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 700px; }
+  .ads .tbl th { text-align: left; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--green); padding: 8px; border-bottom: 1px solid #ece4d7; }
+  .ads .tbl td { padding: 8px; border-bottom: 1px solid #f3eee6; }
+  .ads .tbl .r { text-align: right; }
+</style>

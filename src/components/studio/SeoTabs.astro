@@ -1,6 +1,6 @@
 ---
-// The SEO area's tabs (Website > SEO): Google, Keywords, Rankings, Content ideas, Competitors, Site health.
-interface Props { current: 'google' | 'keywords' | 'rankings' | 'content' | 'competitors' | 'health' }
+// The SEO area's tabs (Website > SEO): Google, Keywords, Rankings, Content ideas, Competitors, Site health, Google Ads.
+interface Props { current: 'google' | 'keywords' | 'rankings' | 'content' | 'competitors' | 'health' | 'ads' }
 const { current } = Astro.props;
 const tabs = [
   ['google', 'Google', '/studio/seo'],
@@ -9,6 +9,7 @@ const tabs = [
   ['content', 'Content ideas', '/studio/seo/content'],
   ['competitors', 'Competitors', '/studio/seo/competitors'],
   ['health', 'Site health', '/studio/seo/health'],
+  ['ads', 'Google Ads', '/studio/seo/ads'],
 ] as const;
 ---
 <nav class="seo-tabs" aria-label="SEO">

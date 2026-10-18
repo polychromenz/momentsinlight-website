@@ -43,6 +43,7 @@ export async function property(env) {
   return p.siteUrl;
 }
 const query = async (env, prop, body) => (await gsc(env, `sites/${encodeURIComponent(prop)}/searchAnalytics/query`, body)).rows ?? [];
+export const gscQuery = query;
 
 /** The last 28 days (Search Console runs ~2 days behind) compared with the 28 before. */
 export async function searchReport(env) {

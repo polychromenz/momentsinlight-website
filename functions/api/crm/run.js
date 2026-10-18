@@ -37,6 +37,7 @@ import { monthlySpeed } from '../../../functions-lib/speed.js';
 import { contactsTimer } from '../../../functions-lib/contacts.js';
 import { weeklyPositions, contentTasks, siteHealth, competitorWatch } from '../../../functions-lib/seo.js';
 import { rankingsTimer } from '../../../functions-lib/rankings.js';
+import { gscSync } from '../../../functions-lib/ads.js';
 
 const reply = (data, status = 200) => new Response(JSON.stringify(data), { status, headers: { 'content-type': 'application/json' } });
 const stops = (step, ev) => (',' + step.stop_on + ',').includes(`,${ev},`);
@@ -174,6 +175,8 @@ export async function onRequestPost({ request, env }) {
   log.health = await siteHealth(env).catch((e) => `error: ${e.message}`);
   log.competitors = await competitorWatch(env).catch((e) => `error: ${e.message}`);
   log.rankings = await rankingsTimer(env).catch((e) => `error: ${e.message}`);
+  // 11. Search Console kept day by day for the Ads view (functions-lib/ads.js).
+  log.gsc = await gscSync(env).catch((e) => `error: ${e.message}`);
 
   return reply({ ok: true, ...log });
 }
