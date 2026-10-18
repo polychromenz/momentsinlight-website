@@ -105,9 +105,12 @@ async function put(id, size, bytes, attempt = 1) {
 
 // ---- The Pic-Time layout, from the gallery's public data files ----
 async function pictimeLayout(link) {
-  const html = await (await fetch(link)).text();
-  const base = html.match(/https?:\/\/[^"'\s]+?\/pictures\/\d+\/\d+\/\d+\/[a-z0-9]{10,}\//)?.[0];
-  const project = html.match(/"projectId":(\d+)/)?.[1];
+  // Either the gallery's data address (…/pictures/46/61/46061971/<id>/gallery.json.txt, for galleries
+  // that ask visitors to sign in), or a link that opens the gallery without signing in.
+  const direct = link.match(/^(https:\/\/[^/]+\/pictures\/\d+\/\d+\/(\d+)\/[a-z0-9]{10,}\/)/);
+  const html = direct ? '' : await (await fetch(link)).text();
+  const base = direct?.[1] ?? html.match(/https?:\/\/[^"'\s]+?\/pictures\/\d+\/\d+\/\d+\/[a-z0-9]{10,}\//)?.[0];
+  const project = direct?.[2] ?? html.match(/"projectId":(\d+)/)?.[1];
   if (!base || !project) throw new Error('Couldn’t read that Pic-Time link. Use the link you send the couple.');
   const g = await (await fetch(base + 'gallery.json.txt')).json();
   const meta = await (await fetch(base + 'gallery_meta.json.txt')).json();
@@ -119,6 +122,7 @@ async function pictimeLayout(link) {
       for (let i = 0; i < s.photos.length; i += 5) ids.push(s.photos[i]);
       return { id: s.id, name: s.nm || 'Photos', prio: s.viewPrio ?? 0, photos: ids.map((n) => ({ n, name: names.get(n) ?? '' })) };
     })
+    .filter((s) => s.photos.length) // e.g. an empty Slideshow scene
     .sort((a, b) => a.prio - b.prio);
   return { project, title: g.title || 'Gallery', date: g.projectDate || null, cover: g.coverId ?? null, big: g.enlargedPhotoIds ?? [], scenes };
 }
