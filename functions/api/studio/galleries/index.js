@@ -4,6 +4,7 @@
 import { json } from '../../../../functions-lib/studio.js';
 import { createGallery, webUrl, gallerySettings } from '../../../../functions-lib/galleries.js';
 import { createLink } from '../../../../functions-lib/gallery-access.js';
+import { PRINT_RELEASE } from '../../gallery/zip.js';
 
 export async function onRequestGet({ env }) {
   const rows = (await env.DB.prepare(`SELECT g.*, (SELECT count(*) FROM gallery_images i WHERE i.gallery_id = g.id) photos,
@@ -13,7 +14,7 @@ export async function onRequestGet({ env }) {
     FROM photo_galleries g ORDER BY COALESCE(g.event_date, substr(g.created_at, 1, 10)) DESC`).all()).results;
   return json({
     today: new Date().toLocaleDateString('en-CA', { timeZone: 'Pacific/Auckland' }),
-    settings: await gallerySettings(env.DB),
+    settings: { print_release: PRINT_RELEASE, ...(await gallerySettings(env.DB)) },
     galleries: rows.map(({ settings, ...g }) => ({ ...g, cover: g.cover ? webUrl(g.id, g.cover, 'thumb') : null })),
   });
 }

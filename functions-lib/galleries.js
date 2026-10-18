@@ -110,7 +110,8 @@ export async function storeFile(env, imageId, size, request) {
     await env.DB.prepare('UPDATE gallery_images SET has_original = 1, bytes = ?2, crc32 = ?3 WHERE id = ?1').bind(imageId, bytes.length, crc32(bytes)).run();
   } else {
     await env.GALLERY_WEB.put(key, bytes, { httpMetadata: { contentType: 'image/jpeg', cacheControl: 'public, max-age=31536000, immutable' } });
-    await env.DB.prepare(`UPDATE gallery_images SET ${size === 'web' ? 'has_web' : 'has_thumb'} = 1 WHERE id = ?1`).bind(imageId).run();
+    if (size === 'web') await env.DB.prepare('UPDATE gallery_images SET has_web = 1, web_bytes = ?2, web_crc = ?3 WHERE id = ?1').bind(imageId, bytes.length, crc32(bytes)).run();
+    else await env.DB.prepare('UPDATE gallery_images SET has_thumb = 1 WHERE id = ?1').bind(imageId).run();
   }
   await env.DB.prepare(`UPDATE gallery_images SET status = 'ready' WHERE id = ?1 AND has_original = 1 AND has_web = 1 AND has_thumb = 1`).bind(imageId).run();
   return { size, bytes: bytes.length };

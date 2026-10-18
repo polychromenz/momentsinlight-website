@@ -30,7 +30,46 @@ function tab(name: string) {
   $$('[data-pane]').forEach((p) => (p.hidden = p.dataset.pane !== name));
   const u = new URL(location.href); u.searchParams.set('tab', name); history.replaceState(null, '', u);
   if (name === 'sharing') loadLinks();
+  if (name === 'lists') loadLists();
 }
+
+// ---- Lists (favourites, lists and selections the couple and guests make) ----
+const KIND: Record<string, string> = { favourites: 'Favourites', custom: 'List', selection_request: 'Selection request' };
+async function loadLists() {
+  const [r, l] = await Promise.all([tryApi(`/api/studio/galleries/lists?gallery_id=${id}`, 'GET'), tryApi(`/api/studio/galleries/links?gallery_id=${id}`, 'GET')]);
+  if (!r || !l) return;
+  const f = $<HTMLFormElement>('[data-request]');
+  $<HTMLSelectElement>('[name="link_id"]', f).innerHTML = l.links.filter((x: any) => ['main_client', 'invited'].includes(x.kind)).map((x: any) => `<option value="${x.id}">${esc(x.name)}</option>`).join('');
+  $<HTMLSelectElement>('[name="purpose"]', f).innerHTML = Object.entries(r.purposes).map(([k, v]) => `<option value="${k}">${esc(v)}</option>`).join('');
+  const thumbOf = (pid: string) => d.images.find((i: any) => i.id === pid)?.thumb;
+  $('.ga-lists').innerHTML = r.lists.map((x: any) => {
+    const names = x.photos.map((p: any) => (p.filename || '').replace(/\.jpe?g$/i, ''));
+    const req = x.kind === 'selection_request';
+    return `<div class="card ga-list" data-list="${x.id}">
+      <div class="top"><span><span class="kind" style="font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--green)">${KIND[x.kind] ?? x.kind}</span> <strong>${esc(x.name)}</strong> <small>${esc(x.owner)}</small></span>
+        <span>${x.photos.length} photo${x.photos.length === 1 ? '' : 's'}${x.status === 'submitted' ? ` · <strong>sent ${day(x.submitted_at)}</strong>` : ''}</span></div>
+      <p class="meta">${[x.purpose ? r.purposes[x.purpose] : '', req && (x.min_count || x.max_count) ? `${x.min_count ?? 0} to ${x.max_count ?? 'any'}` : '', x.deadline ? `by ${day(x.deadline)}` : '', x.instructions].filter(Boolean).map(esc).join(' · ')}</p>
+      ${x.note ? `<p class="note">${esc(x.note)}</p>` : ''}
+      ${x.photos.length ? `<div class="strip">${x.photos.slice(0, 40).map((p: any) => thumbOf(p.id) ? `<img src="${esc(thumbOf(p.id))}" alt="" loading="lazy" title="${esc(p.filename)}" />` : '').join('')}</div>
+      <p class="names">${names.map(esc).join(', ')}</p>` : ''}
+      <div class="btns">${names.length ? `<button type="button" class="s-btn" data-copy="${esc(names.join(' '))}">Copy file names for Lightroom</button>` : ''}
+        ${x.status !== 'open' ? '<button type="button" class="s-btn s-btn--quiet" data-reopen>Reopen so they can change it</button>' : ''}
+        <button type="button" class="s-btn s-btn--quiet" data-del-list>Delete</button></div></div>`;
+  }).join('') || '<div class="card"><p>No favourites or lists yet. They appear here as the couple and guests make them.</p></div>';
+}
+$('[data-request]').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const body = { gallery_id: id, action: 'request', ...Object.fromEntries(new FormData(e.target as HTMLFormElement)) };
+  if (await tryApi('/api/studio/galleries/lists', 'POST', body)) { toast('Added. They’ll see it in their Favourites & lists.'); loadLists(); }
+});
+document.addEventListener('click', async (e) => {
+  const t = e.target as HTMLElement;
+  const card = t.closest<HTMLElement>('[data-list]');
+  if (!card) return;
+  const lid = Number(card.dataset.list);
+  if (t.closest('[data-reopen]') && (await tryApi('/api/studio/galleries/lists', 'POST', { gallery_id: id, action: 'reopen', id: lid }))) { toast('Reopened.'); loadLists(); }
+  if (t.closest('[data-del-list]') && confirm('Delete this list? The photos stay in the gallery.') && (await tryApi('/api/studio/galleries/lists', 'DELETE', { gallery_id: id, id: lid }))) loadLists();
+});
 
 // ---- Loading and the header ----
 async function load() {

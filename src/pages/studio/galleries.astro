@@ -53,6 +53,7 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
         <label>For how many months <input name="extension_months" type="number" min="1" max="120" /></label>
       </div>
       <p class="hint">Each gallery can have its own price (or free) on its Details tab. Paying online comes with a later step.</p>
+      <label>Print release (included in every download) <textarea name="print_release" rows="9"></textarea></label>
       <div class="actions"><button type="button" class="s-btn s-btn--quiet" data-close>Cancel</button><button type="submit" class="s-btn s-btn--solid" value="ok">Save</button></div>
     </form>
   </dialog>
@@ -113,6 +114,7 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
       (f.elements.namedItem('expiry_months') as HTMLInputElement).value = settings.expiry_months;
       (f.elements.namedItem('extension_price') as HTMLInputElement).value = String(settings.extension_price / 100);
       (f.elements.namedItem('extension_months') as HTMLInputElement).value = settings.extension_months;
+      (f.elements.namedItem('print_release') as HTMLTextAreaElement).value = settings.print_release ?? '';
       $<HTMLDialogElement>('[data-defaults-dlg]').showModal();
       return;
     }
@@ -131,7 +133,7 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
     e.preventDefault();
     const f = new FormData(e.target as HTMLFormElement);
     const r = await fetch('/api/studio/galleries/settings', { method: 'PUT', headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ expiry_months: f.get('expiry_months'), extension_price: Math.round(Number(f.get('extension_price')) * 100), extension_months: f.get('extension_months') }) });
+      body: JSON.stringify({ expiry_months: f.get('expiry_months'), extension_price: Math.round(Number(f.get('extension_price')) * 100), extension_months: f.get('extension_months'), print_release: f.get('print_release') }) });
     const d = await r.json().catch(() => ({}));
     if (!r.ok) return toast(d.error || 'Couldn’t save.', true);
     settings = d.settings;
@@ -174,6 +176,7 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
   .gl-form { display: grid; gap: 12px; padding: 22px 24px; }
   .gl-form h2 { margin: 0 0 4px; font-weight: 300; font-size: 24px; }
   .gl-form label { display: grid; gap: 4px; font-size: 13px; font-weight: 600; color: #555; }
+  .gl-form textarea { font: inherit; font-size: 14px; font-weight: 400; padding: 9px 11px; border: 1px solid #ddd3c4; border-radius: 10px 0; line-height: 1.5; }
   .gl-form input, .gl-form select { font: inherit; font-size: 15px; font-weight: 400; padding: 9px 11px; border: 1px solid #ddd3c4; border-radius: 10px 0; background: var(--white); }
   .gl-form .two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
   .gl-form .hint { margin: -4px 0 0; font-size: 12px; color: #888; }

@@ -40,10 +40,24 @@ import { site } from '../data/site';
       <header class="g-bar">
         <a class="g-logo" href="#top" aria-label="Back to the cover"><Image src={site.logo} alt="Moments In Light" widths={[220]} sizes="110px" /></a>
         <nav class="g-sections" aria-label="Sections"></nav>
-        <div class="g-actions"><button type="button" class="g-btn" data-play>Slideshow</button></div>
+        <div class="g-actions">
+          <button type="button" class="g-btn g-btn--fav" data-lists hidden title="Favourites and lists">♥ <span class="fav-n">0</span></button>
+          <button type="button" class="g-btn" data-select hidden>Select</button>
+          <button type="button" class="g-btn" data-dl hidden>Download</button>
+          <button type="button" class="g-btn" data-play>Slideshow</button>
+        </div>
       </header>
       <p class="g-note" hidden></p>
+      <div class="g-filter" hidden></div>
       <main class="g-main"></main>
+      <div class="selbar" hidden>
+        <strong class="sel-n"></strong>
+        <button type="button" class="sb-btn" data-sel-list>Save to list</button>
+        <button type="button" class="sb-btn" data-sel-dl hidden>Download</button>
+        <button type="button" class="sb-btn" data-sel-hide hidden>Hide</button>
+        <button type="button" class="sb-btn" data-sel-unhide hidden>Show again</button>
+        <button type="button" class="sb-btn sb-x" data-sel-done aria-label="Stop selecting">✕</button>
+      </div>
       <footer class="g-foot">
         <p>Photos by <a href="https://www.momentsinlight.co.nz/">Moments In Light</a> · Tony Gorham · {site.phone}</p>
       </footer>
@@ -56,18 +70,33 @@ import { site } from '../data/site';
       <div class="lb-top">
         <span class="lb-count"></span>
         <span class="lb-tools">
+          <button type="button" class="lb-tool lb-fav" data-lb-fav hidden aria-label="Favourite">♡</button>
+          <button type="button" class="lb-tool" data-lb-list hidden>Add to list</button>
+          <button type="button" class="lb-tool" data-lb-hide hidden>Hide</button>
           <button type="button" class="lb-tool" data-lb-play>Slideshow</button>
           <span class="lb-dl"></span>
           <button type="button" class="lb-tool" data-lb-close aria-label="Close">✕</button>
         </span>
       </div>
     </div>
+
+    <dialog class="g-dlg g-dlg--side" data-lists-dlg aria-label="Favourites and lists"><div class="dlg-body"></div></dialog>
+    <dialog class="g-dlg" data-pick-dlg aria-label="Save to a list"><div class="dlg-body"></div></dialog>
+    <dialog class="g-dlg" data-dl-dlg aria-label="Download"><div class="dlg-body"></div></dialog>
+    <dialog class="g-dlg" data-send-dlg aria-label="Send to Tony"><div class="dlg-body"></div></dialog>
+    <div class="g-toast" role="status"></div>
   </body>
 </html>
 
 <script>
-  type Img = { id: string; s: number; w: number; h: number; hero: number; thumb: string; web: string };
-  type View = { gallery: any; cover: any; rights: { downloads: 'none' | 'web' | 'highres'; watermark: boolean }; sections: { id: number; name: string; is_bw: number }[]; images: Img[]; preview?: { status: string; link: string; gallery_id: string } };
+  type Img = { id: string; s: number; w: number; h: number; hero: number; ch?: number; thumb: string; web: string };
+  type List = { id: number; name: string; kind: 'favourites' | 'custom' | 'selection_request'; purpose: string | null; status: string; min: number | null; max: number | null; deadline: string | null; instructions: string; note: string; submitted_at: string | null; ids: string[] };
+  type View = {
+    gallery: any; cover: any; sections: { id: number; name: string; is_bw: number }[]; images: Img[];
+    rights: { downloads: 'none' | 'web' | 'highres'; watermark: boolean; kind: string; lists: boolean; hide: boolean; zip: boolean };
+    lists?: List[]; purposes?: Record<string, string>; me?: { name: string; kind: string };
+    preview?: { status: string; link: string; gallery_id: string };
+  };
   const $ = <T extends HTMLElement = HTMLElement>(s: string, el: ParentNode = document) => el.querySelector<T>(s)!;
   const esc = (s: unknown) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
   const params = new URLSearchParams(location.search);
@@ -80,6 +109,26 @@ import { site } from '../data/site';
   const day = (d: string) => new Date(`${d}T12:00:00Z`).toLocaleDateString('en-NZ', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
   let viewer = '';
   let view: View;
+  // Favourites, lists, select mode and the list being viewed (1d). Nothing of this in the studio preview.
+  let current: Img[] = [];            // the photos on the page now, in order (what the lightbox steps through)
+  let filter = 0;                     // a list being viewed (0 = the whole gallery)
+  let selecting = false;
+  const selected = new Set<string>();
+  const live = () => !!view && !view.preview;
+  const lists = () => view.lists ?? [];
+  const favList = () => lists().find((l) => l.kind === 'favourites');
+  const isFav = (id: string) => !!favList()?.ids.includes(id);
+  function toast(msg: string) {
+    const t = $('.g-toast'); t.textContent = msg; t.classList.add('show');
+    clearTimeout((toast as any).t); (toast as any).t = setTimeout(() => t.classList.remove('show'), 3500);
+  }
+  async function act(body: Record<string, unknown>) {
+    const r = await fetch('/api/gallery/act', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ v: viewer, ...body }) });
+    const d = await r.json().catch(() => ({ error: 'Something went wrong. Please try again.' }));
+    if (!r.ok) { toast(d.error || 'Something went wrong.'); return null; }
+    if (d.lists) view.lists = d.lists;
+    return d;
+  }
 
   // ---- Cover and gate ----
   function namesOf(g: any) {
@@ -141,6 +190,9 @@ import { site } from '../data/site';
     if (!r.ok) return gate('<p>Something went wrong opening the gallery. Please reload the page.</p>');
     view = await r.json();
     showCover(view.gallery, view.cover);
+    $('[data-lists]').hidden = !(live() && view.rights.lists);
+    $('[data-select]').hidden = !(live() && (view.rights.lists || view.rights.zip || view.rights.hide));
+    $('[data-dl]').hidden = !(live() && view.rights.zip);
     gate(`<a class="g-cta" href="#photos">View the gallery</a>`);
     if (view.preview) {
       const p = $('.gv-preview');
@@ -164,8 +216,9 @@ import { site } from '../data/site';
   const webW = (i: Img) => (i.w >= i.h ? Math.min(2048, i.w) : Math.round((Math.min(2048, i.h) * i.w) / i.h));
   const ar = (i: Img) => i.w / i.h;
   function tile(i: Img, w: number, h: number) {
-    const n = view.images.indexOf(i);
-    return `<button type="button" class="ph" data-n="${n}" style="width:${w}px;height:${h}px" aria-label="Open photo ${n + 1}">
+    const n = current.indexOf(i);
+    const tools = live() ? `<span class="ph-tools">${view.rights.lists ? `<span class="pt pt-fav${isFav(i.id) ? ' on' : ''}" data-fav="${i.id}" role="button" tabindex="0" aria-label="Favourite">${isFav(i.id) ? '♥' : '♡'}</span>` : ''}${view.rights.hide ? `<span class="pt" data-hide="${i.id}" role="button" tabindex="0" title="${i.ch ? 'Show it again' : 'Hide it from anyone you share with'}">${i.ch ? '◉' : '⊘'}</span>` : ''}</span>` : '';
+    return `<button type="button" class="ph${i.ch ? ' ph--hidden' : ''}${selected.has(i.id) ? ' sel' : ''}" data-n="${n}" data-id="${i.id}" style="width:${w}px;height:${h}px" aria-label="Open photo ${n + 1}">${selecting ? '<span class="ph-tick" aria-hidden="true">✓</span>' : ''}${i.ch ? '<span class="ph-hid">Hidden</span>' : ''}${tools}
       <img src="${esc(i.thumb)}" srcset="${esc(i.thumb)} ${thumbW(i)}w, ${esc(i.web)} ${webW(i)}w" sizes="${Math.ceil(w)}px" width="${Math.round(w)}" height="${Math.round(h)}" alt="" loading="lazy" decoding="async" />${view.preview ? `<span class="ph-star" data-star="${i.id}" role="button" tabindex="0" title="${i.hero ? 'Make it normal size' : 'Show it big (a highlight)'}">${i.hero ? '⤡' : '⤢'}</span>` : ''}</button>`;
   }
   function rows(list: Img[], width: number) {
@@ -221,11 +274,18 @@ import { site } from '../data/site';
     const width = Math.floor((main.clientWidth || innerWidth) - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight)) - 1;
     GAP = width < 600 ? 6 : width < 1100 ? 10 : 14;
     const multi = view.sections.length > 1;
+    // Viewing one list: only its photos.
+    const fl = filter ? lists().find((l) => l.id === filter) : null;
+    if (filter && !fl) filter = 0;
+    current = fl ? view.images.filter((i) => fl.ids.includes(i.id)) : view.images;
+    drawFilter(fl);
+    drawCounts();
+    main.classList.toggle('selecting', selecting);
     main.innerHTML = view.sections.map((s) => {
-      const list = view.images.filter((i) => i.s === s.id);
+      const list = current.filter((i) => i.s === s.id);
       return list.length ? `<section class="g-sec" id="s${s.id}" data-sec="${s.id}">${multi ? `<h2>${esc(s.name)}</h2>` : ''}${rows(list, width)}</section>` : '';
-    }).join('') || '<p class="muted center">No photos here yet.</p>';
-    const used = view.sections.filter((s) => view.images.some((i) => i.s === s.id));
+    }).join('') || `<p class="muted center">${fl ? 'No photos in this list yet. Tap ♡ on a photo, or use Select to add several.' : 'No photos here yet.'}</p>`;
+    const used = view.sections.filter((s) => current.some((i) => i.s === s.id));
     $('.g-sections').innerHTML = multi ? `<div class="sec-list">${used.map((s) => `<a href="#s${s.id}" data-to="${s.id}">${esc(s.name)}</a>`).join('')}</div><details class="more" hidden><summary>More ▾</summary><div class="more-list"></div></details>` : `<span class="g-title">${esc(view.gallery.name)}</span>`;
     fitNav();
     watch();
@@ -266,9 +326,18 @@ import { site } from '../data/site';
   let at = 0;
   let playing = 0;
   function show(n: number) {
-    const list = view.images;
+    const list = current;
+    if (!list.length) return close();
     at = (n + list.length) % list.length;
     const i = list[at];
+    const fav = $('[data-lb-fav]');
+    fav.hidden = !(live() && view.rights.lists);
+    fav.textContent = isFav(i.id) ? '♥' : '♡';
+    fav.classList.toggle('on', isFav(i.id));
+    $('[data-lb-list]').hidden = !(live() && view.rights.lists);
+    const hide = $('[data-lb-hide]');
+    hide.hidden = !(live() && view.rights.hide);
+    hide.textContent = i.ch ? 'Show again' : 'Hide';
     const img = $<HTMLImageElement>('.lb-img');
     img.src = i.web;
     $('.lb-count').textContent = `${at + 1} / ${list.length}`;
@@ -299,6 +368,7 @@ import { site } from '../data/site';
         .catch(() => alert('Couldn’t save that. Are you still signed in to the studio?'));
       return;
     }
+    if (live() && onClick(t, e)) return;
     const ph = t.closest<HTMLElement>('.ph');
     if (ph) return open(Number(ph.dataset.n));
     if (t.closest('[data-play]')) return play();
@@ -323,6 +393,192 @@ import { site } from '../data/site';
   });
   // Photos can't be dragged out or right-click saved (downloads go through the Download button).
   document.addEventListener('contextmenu', (e) => { if ((e.target as HTMLElement).closest('.ph, .lb-img, .cover-photo')) e.preventDefault(); });
+
+  // ---- Favourites, lists, select mode, hiding and downloads (1d) ----
+  const plural = (n: number, w = 'photo') => `${n} ${w}${n === 1 ? '' : 's'}`;
+  const dlg = (name: string) => $<HTMLDialogElement>(`[data-${name}-dlg]`);
+  function openDlg(name: string, html: string) {
+    const d = dlg(name);
+    $('.dlg-body', d).innerHTML = `<button type="button" class="dlg-x" data-close-dlg aria-label="Close">✕</button>${html}`;
+    if (!d.open) d.showModal();
+  }
+  const closeDlgs = () => document.querySelectorAll<HTMLDialogElement>('.g-dlg[open]').forEach((d) => d.close());
+  function drawCounts() {
+    $('.fav-n').textContent = String(favList()?.ids.length ?? 0);
+    const n = selected.size;
+    const bar = $('.selbar');
+    bar.hidden = !selecting;
+    $('.sel-n').textContent = n ? `${plural(n)} selected` : 'Tap photos to select them';
+    $('[data-sel-dl]').hidden = !view.rights.zip || !n;
+    const picked = view.images.filter((i) => selected.has(i.id));
+    $('[data-sel-hide]').hidden = !view.rights.hide || !picked.some((i) => !i.ch);
+    $('[data-sel-unhide]').hidden = !view.rights.hide || !picked.some((i) => i.ch);
+    ($('[data-sel-list]') as HTMLButtonElement).disabled = !n;
+    ($('[data-select]')).textContent = selecting ? 'Done' : 'Select';
+  }
+  function drawFilter(fl: List | null | undefined) {
+    const f = $('.g-filter');
+    f.hidden = !fl;
+    if (!fl) return;
+    f.innerHTML = `<span>Showing <strong>${esc(fl.name)}</strong> · ${plural(fl.ids.length)}</span>
+      ${view.rights.zip && fl.ids.length ? `<button type="button" class="g-btn" data-dl-list="${fl.id}">Download</button>` : ''}
+      <button type="button" class="g-btn" data-lists>All lists</button><button type="button" class="g-btn" data-show-all>Show every photo</button>`;
+  }
+  function listCard(l: List) {
+    const n = l.ids.length;
+    const locked = l.status !== 'open';
+    const req = l.kind === 'selection_request';
+    const range = req ? [l.min && l.max ? `Choose ${l.min} to ${l.max}` : l.min ? `Choose at least ${l.min}` : l.max ? `Choose up to ${l.max}` : '', l.deadline ? `by ${day(l.deadline)}` : ''].filter(Boolean).join(' ') : '';
+    return `<li class="lc${req ? ' lc--req' : ''}">
+      <div class="lc-top"><strong>${l.kind === 'favourites' ? '♥ ' : ''}${esc(l.name)}</strong><span>${plural(n)}${req && l.max ? ` of ${l.max}` : ''}</span></div>
+      ${range ? `<p class="lc-req">${esc(range)}</p>` : ''}${req && l.instructions ? `<p class="lc-ins">${esc(l.instructions)}</p>` : ''}
+      ${locked ? `<p class="lc-sent">Sent to Tony${l.submitted_at ? ` on ${day(l.submitted_at.slice(0, 10))}` : ''}${l.purpose && view.purposes?.[l.purpose] ? ` (${esc(view.purposes[l.purpose])})` : ''}.</p>` : ''}
+      <div class="lc-btns">
+        <button type="button" data-view-list="${l.id}">View</button>
+        ${view.rights.zip && n ? `<button type="button" data-dl-list="${l.id}">Download</button>` : ''}
+        ${n && !req ? `<button type="button" data-share-list="${l.id}">Share</button>` : ''}
+        ${!locked && n ? `<button type="button" data-send-list="${l.id}">Send to Tony</button>` : ''}
+        ${l.kind === 'custom' && !locked ? `<button type="button" data-rename-list="${l.id}">Rename</button><button type="button" data-del-list="${l.id}">Delete</button>` : ''}
+      </div></li>`;
+  }
+  function listsPanel() {
+    openDlg('lists', `<h2>Favourites &amp; lists</h2>
+      <p class="dlg-hint">Tap ♡ on any photo to make it a favourite. Make lists for anything (“For Mum”, “Album picks”), share them, download them, or send one to Tony.</p>
+      <ul class="lc-list">${lists().map(listCard).join('') || '<li class="muted">No favourites yet.</li>'}</ul>
+      <form class="new-list" data-new-list><input name="name" placeholder="New list name, e.g. For Mum" maxlength="60" required /><button class="g-cta" type="submit">Add list</button></form>`);
+  }
+  let picking: string[] = [];
+  function pickList(ids: string[]) {
+    picking = ids;
+    const open = lists().filter((l) => l.status === 'open');
+    openDlg('pick', `<h2>Save ${plural(ids.length)} to a list</h2>
+      <div class="pick">${open.map((l) => `<button type="button" data-pick="${l.id}">${l.kind === 'favourites' ? '♥ ' : ''}${esc(l.name)} <small>${plural(l.ids.length)}</small></button>`).join('')}</div>
+      <form class="new-list" data-new-list data-with-pick><input name="name" placeholder="Or a new list, e.g. Album picks" maxlength="60" required /><button class="g-cta" type="submit">Make it</button></form>`);
+  }
+  function downloadDlg(what: string, label: string) {
+    const link = (size: string) => `/api/gallery/zip?v=${encodeURIComponent(viewer)}&what=${encodeURIComponent(what)}&size=${size}`;
+    const full = view.rights.downloads === 'highres';
+    const secs = what === 'all' && view.sections.length > 1 ? view.sections.filter((s) => current.some((i) => i.s === s.id)) : [];
+    openDlg('dl', `<h2>Download ${esc(label)}</h2>
+      <div class="dl-opts">${full ? `<a class="g-cta" href="${link('original')}" download>Full size <small>for printing</small></a>` : ''}<a class="g-cta g-cta--quiet" href="${link('web')}" download>Web size <small>for phones and sharing</small></a></div>
+      ${secs.length ? `<p class="dlg-hint">On a slow connection? Download one section at a time:</p><div class="dl-secs">${secs.map((s) => `<a href="/api/gallery/zip?v=${encodeURIComponent(viewer)}&what=section:${s.id}&size=${full ? 'original' : 'web'}" download>${esc(s.name)}</a>`).join('')}</div>` : ''}
+      <p class="dlg-hint">Your photos come as one ZIP file with a print release. A whole gallery can be large and take a while: keep this page open until it finishes.</p>`);
+  }
+  function sendDlg(l: List) {
+    const p = view.purposes ?? {};
+    openDlg('send', `<h2>Send “${esc(l.name)}” to Tony</h2>
+      <p class="dlg-hint">${plural(l.ids.length)}. Once it’s sent the list is locked so Tony sees exactly what you chose; he can reopen it for you.</p>
+      <form class="g-form" data-send="${l.id}">
+        <label>What’s it for? <select name="purpose">${Object.entries(p).map(([k, v]) => `<option value="${k}"${(l.purpose ?? 'album') === k ? ' selected' : ''}>${esc(v)}</option>`).join('')}</select></label>
+        <label>A note for Tony (optional) <textarea name="note" rows="3"></textarea></label>
+        <button class="g-cta" type="submit">Send to Tony</button></form>`);
+  }
+  function refreshAfter() {
+    draw();
+    if (dlg('lists').open) listsPanel();
+    if (!lb.hidden) show(at);
+  }
+  async function setFav(id: string, on: boolean) {
+    if (await act({ action: 'fav', id, on })) { refreshAfter(); toast(on ? 'Added to your favourites.' : 'Taken out of your favourites.'); }
+  }
+  async function setHidden(ids: string[], hidden: boolean) {
+    if (!(await act({ action: 'hide', ids, hidden }))) return;
+    for (const i of view.images) if (ids.includes(i.id)) i.ch = hidden ? 1 : 0;
+    refreshAfter();
+    toast(hidden ? `${plural(ids.length)} hidden. Anyone you share the gallery with won’t see ${ids.length === 1 ? 'it' : 'them'}.` : `${plural(ids.length)} showing again.`);
+  }
+
+  /** Clicks for all of the above. Returns true when handled. */
+  function onClick(t: HTMLElement, e: Event): boolean {
+    const id = (sel: string) => t.closest<HTMLElement>(sel);
+    let x: HTMLElement | null;
+    if ((x = id('[data-fav]'))) { e.stopPropagation(); setFav(x.dataset.fav!, !isFav(x.dataset.fav!)); return true; }
+    if ((x = id('[data-hide]'))) { e.stopPropagation(); const i = view.images.find((y) => y.id === x!.dataset.hide)!; setHidden([i.id], !i.ch); return true; }
+    if (selecting && (x = id('.ph'))) {
+      const pid = x.dataset.id!;
+      selected.has(pid) ? selected.delete(pid) : selected.add(pid);
+      x.classList.toggle('sel', selected.has(pid));
+      drawCounts();
+      return true;
+    }
+    if (id('[data-select]')) { selecting = !selecting; if (!selecting) selected.clear(); draw(); return true; }
+    if (id('[data-sel-done]')) { selecting = false; selected.clear(); draw(); return true; }
+    if (id('[data-sel-list]')) { if (selected.size) pickList([...selected]); return true; }
+    if (id('[data-sel-dl]')) {
+      if (selected.size > 300) toast('That’s a lot of photos: save them to a list, then download the list.');
+      else downloadDlg(`ids:${[...selected].join(',')}`, plural(selected.size));
+      return true;
+    }
+    if (id('[data-sel-hide]')) { setHidden([...selected], true); return true; }
+    if (id('[data-sel-unhide]')) { setHidden([...selected], false); return true; }
+    if (id('[data-lists]')) { listsPanel(); return true; }
+    if (id('[data-dl]')) { downloadDlg('all', 'all your photos'); return true; }
+    if (id('[data-show-all]')) { filter = 0; draw(); return true; }
+    if (id('[data-lb-fav]')) { const i = current[at]; setFav(i.id, !isFav(i.id)); return true; }
+    if (id('[data-lb-list]')) { pickList([current[at].id]); return true; }
+    if (id('[data-lb-hide]')) { const i = current[at]; setHidden([i.id], !i.ch); return true; }
+    if (id('[data-close-dlg]')) { (t.closest('dialog') as HTMLDialogElement).close(); return true; }
+    if ((x = id('[data-view-list]'))) {
+      filter = Number(x.dataset.viewList); closeDlgs(); if (!lb.hidden) close(); draw();
+      $('.gallery').scrollIntoView({ behavior: 'smooth' });
+      return true;
+    }
+    if ((x = id('[data-dl-list]'))) { const l = lists().find((y) => y.id === Number(x!.dataset.dlList))!; downloadDlg(`list:${l.id}`, `“${l.name}”`); return true; }
+    if ((x = id('[data-send-list]'))) { sendDlg(lists().find((y) => y.id === Number(x!.dataset.sendList))!); return true; }
+    if ((x = id('[data-share-list]'))) {
+      act({ action: 'list-share', list_id: Number(x.dataset.shareList) }).then(async (d) => {
+        if (!d) return;
+        try { await navigator.clipboard.writeText(d.url); toast('Link copied. Anyone with it sees only the photos in this list.'); }
+        catch { prompt('Copy this link to share the list:', d.url); }
+      });
+      return true;
+    }
+    if ((x = id('[data-rename-list]'))) {
+      const l = lists().find((y) => y.id === Number(x!.dataset.renameList))!;
+      const name = prompt('List name:', l.name);
+      if (name?.trim()) act({ action: 'list-rename', list_id: l.id, name }).then((d) => d && refreshAfter());
+      return true;
+    }
+    if ((x = id('[data-del-list]'))) {
+      const l = lists().find((y) => y.id === Number(x!.dataset.delList))!;
+      if (confirm(`Delete the list “${l.name}”? The photos stay in the gallery.`)) act({ action: 'list-delete', list_id: l.id }).then((d) => { if (d) { if (filter === l.id) filter = 0; refreshAfter(); } });
+      return true;
+    }
+    if ((x = id('[data-pick]'))) {
+      const l = lists().find((y) => y.id === Number(x!.dataset.pick))!;
+      act({ action: 'list-add', list_id: l.id, ids: picking }).then((d) => {
+        if (!d) return;
+        dlg('pick').close(); toast(`Saved to “${l.name}”.`);
+        if (selecting) { selecting = false; selected.clear(); }
+        refreshAfter();
+      });
+      return true;
+    }
+    return false;
+  }
+  document.addEventListener('submit', (e) => {
+    const f = e.target as HTMLFormElement;
+    if (f.matches('[data-new-list]')) {
+      e.preventDefault();
+      const name = String(new FormData(f).get('name') ?? '').trim();
+      const withPick = f.hasAttribute('data-with-pick');
+      act({ action: 'list-new', name, ids: withPick ? picking : [] }).then((d) => {
+        if (!d) return;
+        if (withPick) { dlg('pick').close(); toast(`Saved to “${name}”.`); if (selecting) { selecting = false; selected.clear(); } }
+        refreshAfter();
+      });
+    }
+    if (f.matches('[data-send]')) {
+      e.preventDefault();
+      const fd = new FormData(f);
+      act({ action: 'list-send', list_id: Number(f.dataset.send), purpose: fd.get('purpose'), note: fd.get('note') }).then((d) => {
+        if (!d) return;
+        dlg('send').close(); toast('Sent. Tony will be in touch.'); refreshAfter();
+      });
+    }
+  });
+  // Clicking the dim area outside a panel closes it.
+  document.querySelectorAll<HTMLDialogElement>('.g-dlg').forEach((d) => d.addEventListener('click', (e) => { if (e.target === d) d.close(); }));
 
   if (!slug) gate('<p>This gallery isn’t available.</p>');
   else if (preview) load();
@@ -396,6 +652,64 @@ import { site } from '../data/site';
     .g-logo { display: none; }
     .g-actions .g-btn { padding: 7px 10px; }
   }
+
+  /* Favourites, lists, select mode, hiding (1d) */
+  .g-btn--fav { color: #a8432a; border-color: #d9b3a6; }
+  .g-actions { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+  .ph-tools { position: absolute; left: 8px; bottom: 8px; display: flex; gap: 6px; opacity: 0; transition: opacity 0.25s; }
+  .ph:hover .ph-tools, .ph-tools:focus-within { opacity: 1; }
+  .pt { width: 34px; height: 34px; display: grid; place-items: center; border-radius: 50%; background: rgb(255 255 255 / 0.9); color: var(--ink); font-size: 17px; cursor: pointer; box-shadow: 0 4px 12px -6px rgb(0 0 0 / 0.5); }
+  .pt-fav.on { color: #c0392b; }
+  .ph:has(.pt-fav.on) .ph-tools { opacity: 1; }
+  .ph:has(.pt-fav.on) .ph-tools .pt:not(.pt-fav) { opacity: 0; }
+  .ph:hover:has(.pt-fav.on) .ph-tools .pt { opacity: 1; }
+  @media (hover: none) { .ph-tools { opacity: 0.9; } }
+  .ph--hidden img { opacity: 0.35; filter: grayscale(0.6); }
+  .ph-hid { position: absolute; top: 8px; left: 8px; z-index: 2; padding: 3px 9px; border-radius: 999px; background: rgb(0 0 0 / 0.6); color: #fff; font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; }
+  .selecting .ph { cursor: pointer; }
+  .selecting .ph-tools, .selecting .ph-star { display: none; }
+  .ph-tick { position: absolute; top: 8px; right: 8px; z-index: 2; width: 28px; height: 28px; border-radius: 50%; border: 2px solid #fff; background: rgb(0 0 0 / 0.25); color: transparent; display: grid; place-items: center; font-size: 15px; font-weight: 700; }
+  .ph.sel .ph-tick { background: var(--green); color: #fff; }
+  .ph.sel img { opacity: 0.8; }
+  .ph.sel { outline: 3px solid var(--green); outline-offset: -3px; }
+  .g-filter { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: center; margin: 14px auto 0; padding: 10px 16px; max-width: 900px; background: var(--griseo); border-radius: 14px 0; font-size: 14px; }
+  .selbar { position: fixed; left: 50%; bottom: 16px; transform: translateX(-50%); z-index: 50; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: center; padding: 10px 14px; max-width: calc(100vw - 24px); background: var(--olive); color: var(--cream); border-radius: 18px 0; box-shadow: 0 16px 34px -18px rgb(0 0 0 / 0.6); font-size: 14px; }
+  .sb-btn { font: inherit; font-size: 13px; font-weight: 600; padding: 7px 12px; border: 1px solid rgb(255 255 255 / 0.35); border-radius: 10px 0; background: transparent; color: var(--cream); cursor: pointer; }
+  .sb-btn:disabled { opacity: 0.45; cursor: default; }
+  .sb-x { border-color: transparent; }
+  .g-dlg { border: 0; padding: 0; border-radius: 22px 0; width: min(520px, calc(100vw - 24px)); max-height: calc(100svh - 40px); color: var(--ink); }
+  .g-dlg::backdrop { background: rgb(0 0 0 / 0.45); }
+  .g-dlg--side { margin-right: 0; margin-top: 0; height: 100svh; max-height: 100svh; border-radius: 0; width: min(440px, 100vw); }
+  .dlg-body { position: relative; padding: 22px 22px 26px; }
+  .dlg-body h2 { margin: 0 34px 8px 0; font-weight: 300; font-size: 24px; color: var(--ink); }
+  .dlg-x { position: absolute; top: 12px; right: 12px; width: 34px; height: 34px; border: 0; border-radius: 50%; background: var(--griseo); cursor: pointer; font-size: 15px; }
+  .dlg-hint { font-size: 14px; color: #666; line-height: 1.6; margin: 0 0 14px; }
+  .lc-list { list-style: none; margin: 0 0 16px; padding: 0; display: grid; gap: 10px; }
+  .lc { padding: 12px 14px; border: 1px solid #e7e4dc; border-radius: 14px 0; }
+  .lc--req { border-color: var(--sage); background: #f7f8f2; }
+  .lc-top { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; }
+  .lc-top span { font-size: 13px; color: #777; white-space: nowrap; }
+  .lc-req { margin: 4px 0 0; font-size: 13px; font-weight: 600; color: var(--green); }
+  .lc-ins, .lc-sent { margin: 4px 0 0; font-size: 13px; color: #666; }
+  .lc-btns { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .lc-btns button, .pick button { font: inherit; font-size: 13px; padding: 6px 11px; border: 1px solid #ddd8cc; border-radius: 9px 0; background: var(--white); cursor: pointer; }
+  .pick { display: grid; gap: 6px; margin-bottom: 14px; }
+  .pick button { text-align: left; font-size: 15px; padding: 10px 12px; display: flex; justify-content: space-between; }
+  .pick small { color: #888; }
+  .new-list { display: flex; gap: 8px; }
+  .new-list input { flex: 1; min-width: 0; font: inherit; font-size: 15px; padding: 10px 12px; border: 1px solid #cfd4c6; border-radius: 10px 0; }
+  .new-list .g-cta { padding: 10px 16px; }
+  .dl-opts { display: grid; gap: 8px; margin: 6px 0 16px; }
+  .dl-opts .g-cta { display: flex; justify-content: space-between; align-items: baseline; text-align: left; }
+  .dl-opts small { font-size: 11px; letter-spacing: 0.06em; text-transform: none; opacity: 0.85; }
+  .g-cta--quiet { background: var(--white) !important; color: var(--green) !important; border: 1px solid var(--green); }
+  .dl-secs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+  .dl-secs a { font-size: 13px; padding: 6px 11px; border: 1px solid #ddd8cc; border-radius: 9px 0; color: var(--ink); text-decoration: none; }
+  .g-form select, .g-form textarea { font: inherit; font-size: 15px; padding: 10px 12px; border: 1px solid #cfd4c6; border-radius: 10px 0; background: var(--white); }
+  .g-toast { position: fixed; left: 50%; bottom: 80px; transform: translate(-50%, 20px); z-index: 200; max-width: min(520px, calc(100vw - 32px)); padding: 12px 18px; border-radius: 14px 0; background: var(--olive); color: var(--champagne); font-size: 14px; opacity: 0; pointer-events: none; transition: opacity 0.3s, transform 0.4s var(--ease); }
+  .g-toast.show { opacity: 1; transform: translate(-50%, 0); }
+  .lb-fav.on { color: #ff8a7a; border-color: #ff8a7a; }
+  @media (max-width: 640px) { .g-actions .g-btn { padding: 7px 9px; font-size: 11px; } }
 
   /* Lightbox */
   .lb-open { overflow: hidden; }
