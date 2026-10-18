@@ -7,6 +7,7 @@
 //   POST /api/lr { action: 'image', gallery_id, section_id, lightroom_id, checksum, filename, width, height, sort_order, taken_at? }
 //        -> { id, needs: ['original', 'web', 'thumb'] } (nothing if it's already up and unchanged)
 //   POST /api/lr { action: 'finish', gallery_id, keep: [lightroom ids] }  -> photos no longer in Lightroom
+//   POST /api/lr { action: 'layout', gallery_id, cover?, heroes? }      cover photo and big photos, by lightroom_id
 //   POST /api/lr { action: 'remove', gallery_id, ids }
 //   PUT  /api/lr/file?id=…&size=original|web|thumb   (body: the JPEG)
 import { json } from '../../../functions-lib/studio.js';
@@ -32,7 +33,7 @@ export async function onRequestPost({ request, env }) {
       if (!set) return json({ error: 'Which collection set?' }, 400);
       let g = await db.prepare(`SELECT id, slug, name, status FROM photo_galleries WHERE json_extract(settings, '$.lr_set') = ?1`).bind(set).first();
       if (!g) {
-        const made = await createGallery(env, { name: d.name, type: TYPES.includes(d.type) ? d.type : 'Wedding', event_date: d.event_date, source: 'lightroom' });
+        const made = await createGallery(env, { name: d.name, type: TYPES.includes(d.type) ? d.type : 'Wedding', event_date: d.event_date, source: d.source === 'pictime' ? 'pictime' : 'lightroom' });
         await db.prepare(`UPDATE photo_galleries SET settings = json_set(settings, '$.lr_set', ?2) WHERE id = ?1`).bind(made.id, set).run();
         await createLink(env, made.id, { kind: 'main_client', name: d.name });
         g = { id: made.id, slug: made.slug, name: d.name, status: 'draft', made: true };
@@ -59,6 +60,15 @@ export async function onRequestPost({ request, env }) {
         .filter((i) => !i.lightroom_id.startsWith('file:') && !keep.has(i.lightroom_id));
       const counts = await db.prepare(`SELECT count(*) n, sum(status = 'ready') ready FROM gallery_images WHERE gallery_id = ?1`).bind(g.id).first();
       return json({ extra: extra.map(({ id, filename }) => ({ id, filename })), photos: counts.n, ready: counts.ready });
+    }
+    if (d.action === 'layout') {
+      // The cover and the big photos (from Pic-Time when a gallery is moved across), by lightroom_id.
+      const idOf = async (lr) => (await db.prepare('SELECT id FROM gallery_images WHERE gallery_id = ?1 AND lightroom_id = ?2').bind(g.id, String(lr)).first())?.id ?? null;
+      const cover = d.cover ? await idOf(d.cover) : null;
+      if (cover) await db.prepare('UPDATE photo_galleries SET cover_image_id = ?2 WHERE id = ?1').bind(g.id, cover).run();
+      const heroes = (await Promise.all((d.heroes ?? []).map(idOf))).filter(Boolean);
+      if (heroes.length) await db.batch(heroes.map((id) => db.prepare('UPDATE gallery_images SET is_hero = 1 WHERE id = ?1').bind(id)));
+      return json({ cover: !!cover, heroes: heroes.length });
     }
     if (d.action === 'remove') return json({ removed: await deleteImages(env, g.id, (d.ids ?? []).map(String)) });
     return json({ error: 'What should happen?' }, 400);
