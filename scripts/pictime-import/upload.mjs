@@ -151,7 +151,7 @@ function unzipAll(folder) {
 // File names as Pic-Time knows them, ignoring export prefixes like FULLSIZE_ and SOCIAL_.
 const norm = (n) => String(n).toLowerCase().replace(/^(fullsize|social)_/, '');
 const bare = (f) => norm(path.basename(f).replace(/\.[^.]+$/, ''));
-const isMono = (s) => /\b(mono|b\s*&?\s*w|black|bw)\b/i.test(s);
+const isMono = (s) => /\b(mono|b\s*[&+]?\s*w|black|bw)\b/i.test(s);
 
 // Folders for one kind of gallery (a couple's folder can hold its practice shoot, sneak peeks and wedding).
 const KIND = /practice|sneak|couple shoot|engagement|pre.?wedding|wedding/;
@@ -185,7 +185,8 @@ function match(layout, files, folder) {
           if (kind) n += title.includes(kind) || (kind === 'wedding' && !/practice|sneak|engagement|couple/.test(title)) ? 4 : -4;
           if (x.includes(want)) n += 2;
         }
-        if (bw === (parts.some(isMono) || bare(f).endsWith('-2'))) n += 1;
+        // Colour or mono matters more than the folder's name (a colour "Prep" folder beats "Preparation B+W").
+        n += bw === (parts.some(isMono) || bare(f).endsWith('-2')) ? 3 : -3;
         return n;
       };
       const pick = options.map((f, i) => ({ f, n: score(f) - i / 1000 })).sort((a, b) => b.n - a.n)[0]?.f;
@@ -216,7 +217,13 @@ async function moveGallery(folder, link) {
   const missing = match(layout, photosIn(folder), folder);
   if (missing.length) log(`  ${missing.length} photo(s) not found in the folder (skipped): ${missing.slice(0, 10).join(', ')}${missing.length > 10 ? '…' : ''}`);
   if (CHECK) {
-    for (const s of layout.scenes) log(`  ${s.name}: ${s.photos.filter((p) => p.file).length} of ${s.photos.length} found${s.photos[0]?.file ? `, e.g. ${path.relative(folder, s.photos.find((p) => p.file).file)}` : ''}`);
+    // Photos whose folder says the other colour (e.g. a colour photo in a B+W section), worth a look.
+    const monoFile = (p) => path.relative(folder, p.file).split(path.sep).slice(0, -1).some(isMono) || (bare(p.file).endsWith('-2') && !norm(p.name).endsWith('-2'));
+    for (const s of layout.scenes) {
+      const got = s.photos.filter((p) => p.file);
+      const odd = got.filter((p) => monoFile(p) !== isMono(s.name)).length;
+      log(`  ${s.name}: ${got.length} of ${s.photos.length} found${got[0] ? `, e.g. ${path.relative(folder, got[0].file)}` : ''}${odd ? `  ⚠ ${odd} from a ${isMono(s.name) ? 'colour' : 'mono'} folder` : ''}`);
+    }
     return;
   }
 
