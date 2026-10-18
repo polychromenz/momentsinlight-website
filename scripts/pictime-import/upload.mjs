@@ -1,14 +1,17 @@
 // Moves galleries from Pic-Time to MIL Galleries, keeping Tony's Pic-Time layout (scene names and
 // order, photo order, the cover and the big photos) and using the full-size photos from Pic-Time's
-// download ZIP. Runs unattended (e.g. overnight) and picks up where it left off if stopped.
+// download ZIP or Tony's own exports. Runs unattended and picks up where it left off if stopped.
 //
-//   node scripts/pictime-import/upload.mjs "D:\Pic-Time moves"
+//   node scripts/pictime-import/upload.mjs "E:\EXPORTS\WEDDINGS"        (add --check to only report what matches)
 //
-// The folder holds one folder per gallery, each with:
-//   - link.txt   the gallery's Pic-Time link (the one you'd send the couple)
-//   - the ZIP from Pic-Time's Download (or the photos already unzipped, in any folders)
-// and, at the top, lightroom-key.txt: the key from Studio > Galleries > Defaults (the same one the
-// Lightroom plugin uses). A folder can also be passed on its own.
+// Speed: 3 megabits a second from 7am to 10pm (so the internet stays usable), no limit overnight.
+// Change with --day-speed=5 or --night-speed=20, or --full for no limit at all.
+//
+// Under the base folder, any folder with a link.txt is a couple's folder: link.txt holds their
+// Pic-Time gallery links (one per line, e.g. practice shoot, sneak peeks, wedding), and the photos
+// are anywhere inside it (full size; Web, Social, Small and Prints folders are skipped, as are ZIPs'
+// contents once unzipped). lightroom-key.txt at the top holds the key from Studio > Galleries >
+// Defaults (the same one the Lightroom plugin uses), and order.txt (optional) the couples to do first.
 //
 // Uploads go through the same route as the Lightroom plugin (functions/api/lr), so a gallery is
 // matched again by its Pic-Time project on a second run, and photos already up are skipped.
@@ -49,9 +52,43 @@ async function api(body, attempt = 1) {
   await new Promise((res) => setTimeout(res, 3000 * attempt));
   return api(body, attempt + 1);
 }
+// ---- Upload speed: gentle in the daytime so the internet stays usable, full speed overnight ----
+const arg = (name) => process.argv.find((a) => a.startsWith(`--${name}=`))?.split('=')[1];
+const DAY_MBPS = Number(arg('day-speed') ?? 3); // megabits a second, 7am to 10pm
+const NIGHT_MBPS = Number(arg('night-speed') ?? 0); // 0 = no limit
+const FULL = process.argv.includes('--full');
+function speedNow() {
+  if (FULL) return 0;
+  const h = new Date().getHours();
+  return h >= 7 && h < 22 ? DAY_MBPS : NIGHT_MBPS;
+}
+let nextSend = 0; // shared by all uploads, so the limit is for the whole run
+async function allowance(bytes) {
+  const mbps = speedNow();
+  if (!mbps) return;
+  const now = Date.now();
+  const start = Math.max(now, nextSend);
+  nextSend = start + (bytes * 8) / (mbps * 1000); // ms
+  if (start > now) await new Promise((res) => setTimeout(res, start - now));
+}
+/** The bytes as a stream that's sent no faster than the limit allows. */
+function paced(bytes) {
+  if (!speedNow()) return bytes;
+  let at = 0;
+  return new ReadableStream({
+    async pull(c) {
+      if (at >= bytes.length) return c.close();
+      const n = Math.min(32 * 1024, bytes.length - at);
+      await allowance(n);
+      c.enqueue(bytes.subarray(at, at + n));
+      at += n;
+    },
+  });
+}
+
 async function put(id, size, bytes, attempt = 1) {
   try {
-    const r = await fetch(`${SITE}/api/lr/file?id=${id}&size=${size}`, { method: 'PUT', headers: { 'content-type': 'image/jpeg', 'x-mil-key': KEY }, body: bytes });
+    const r = await fetch(`${SITE}/api/lr/file?id=${id}&size=${size}`, { method: 'PUT', headers: { 'content-type': 'image/jpeg', 'x-mil-key': KEY }, body: paced(bytes), duplex: 'half' });
     const d = await r.json().catch(() => ({}));
     if (r.ok) return;
     if (r.status < 500 || attempt >= 5) throw new Error(d.error || `Upload failed (${r.status}).`);
@@ -224,7 +261,12 @@ async function moveGallery(folder, link) {
 
 // ---- All of them ----
 if (!CHECK) await api({ action: 'hello' }).catch((e) => stop(`The studio didn’t accept the key: ${e.message}`));
-const folders = galleryFolders(root);
+// order.txt at the top: couples to do first (part of the folder name, one per line), e.g. the
+// weddings at venues Tony is about to email. Everyone else follows.
+const orderFile = path.join(root, 'order.txt');
+const first = fs.existsSync(orderFile) ? fs.readFileSync(orderFile, 'utf8').split(/\r?\n/).map((l) => l.trim().toLowerCase()).filter((l) => l && !l.startsWith('#')) : [];
+const rank = (f) => { const i = first.findIndex((n) => path.basename(f).toLowerCase().includes(n)); return i < 0 ? first.length : i; };
+const folders = galleryFolders(root).sort((a, b) => rank(a) - rank(b));
 log(`Moving ${folders.length} gallery folder(s) from ${root}`);
 for (const f of folders) {
   for (const link of linksIn(f)) {
