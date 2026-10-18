@@ -29,7 +29,7 @@ const keyFile = [path.join(root, 'lightroom-key.txt'), path.join(path.dirname(ro
 const KEY = (process.env.MIL_LR_KEY || (keyFile ? fs.readFileSync(keyFile, 'utf8') : '')).trim();
 if (!KEY && !CHECK) stop(`Put the Lightroom key (Studio > Galleries > Defaults) in ${path.join(root, 'lightroom-key.txt')}`);
 
-const logFile = path.join(root, `upload-log-${new Date().toISOString().slice(0, 10)}.txt`);
+const logFile = path.join(root, `upload-log-${new Date().toLocaleDateString('en-CA')}.txt`);
 function log(...a) {
   const line = `${new Date().toLocaleTimeString('en-NZ')}  ${a.join(' ')}`;
   console.log(line);
@@ -87,8 +87,8 @@ function photosIn(dir) {
   const out = [];
   for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
     const p = path.join(dir, e.name);
-    // Web and Social folders hold smaller copies of the same photos (as in src/studio/gallery-import.ts).
-    if (e.isDirectory()) { if (!/^(web|social)$/i.test(e.name)) out.push(...photosIn(p)); }
+    // Web, Social and Small folders hold smaller copies of the same photos (and Prints may be cropped).
+    if (e.isDirectory()) { if (!/^(web|small|prints?|social.*)$/i.test(e.name)) out.push(...photosIn(p)); }
     else if (/\.jpe?g$/i.test(e.name)) out.push(p);
   }
   return out;
@@ -103,23 +103,45 @@ function unzipAll(folder) {
     fs.writeFileSync(path.join(dest, '.done'), '');
   }
 }
-const bare = (f) => path.basename(f).replace(/\.[^.]+$/, '').toLowerCase();
+// File names as Pic-Time knows them, ignoring export prefixes like FULLSIZE_ and SOCIAL_.
+const norm = (n) => String(n).toLowerCase().replace(/^(fullsize|social)_/, '');
+const bare = (f) => norm(path.basename(f).replace(/\.[^.]+$/, ''));
 const isMono = (s) => /\b(mono|b\s*&?\s*w|black|bw)\b/i.test(s);
 
-/** Each Pic-Time photo matched to a file: same name, in the scene's folder when the ZIP has them. */
-function match(layout, files) {
+// Folders for one kind of gallery (a couple's folder can hold its practice shoot, sneak peeks and wedding).
+const KIND = /practice|sneak|couple shoot|engagement|pre.?wedding|wedding/;
+
+/**
+ * Each Pic-Time photo matched to a file of the same name. When there's more than one, the best
+ * is the one in a folder named like the gallery (Sneak peeks for "… - Sneak Peeks") and the section
+ * (Colour, Mono), and in a mono folder (or the "-2" copy) for a mono section.
+ */
+function match(layout, files, folder) {
   const byName = new Map();
   for (const f of files) (byName.get(bare(f)) ?? byName.set(bare(f), []).get(bare(f))).push(f);
+  const title = layout.title.toLowerCase();
   const used = new Set();
   const missing = [];
   for (const s of layout.scenes) {
     const want = s.name.toLowerCase();
+    const bw = isMono(s.name);
     for (const p of s.photos) {
-      const options = (byName.get(p.name.toLowerCase()) ?? []).filter((f) => !used.has(f));
-      const parts = (f) => path.relative(root, f).toLowerCase().split(path.sep);
-      const pick = options.find((f) => parts(f).includes(want))
-        ?? options.find((f) => isMono(s.name) === parts(f).some((x) => isMono(x)))
-        ?? options[0];
+      const free = (n) => (byName.get(n) ?? []).filter((f) => !used.has(f));
+      // Where colour and mono share a folder, the mono copy is the one exported as "-2".
+      const two = !norm(p.name).endsWith('-2') ? free(`${norm(p.name)}-2`) : [];
+      const options = [...(bw ? two : []), ...free(norm(p.name))];
+      const score = (f) => {
+        const parts = path.relative(folder, f).toLowerCase().split(path.sep).slice(0, -1);
+        let n = 0;
+        for (const x of parts) {
+          const kind = x.match(KIND)?.[0];
+          if (kind) n += title.includes(kind) || (kind === 'wedding' && !/practice|sneak|engagement|couple/.test(title)) ? 4 : -4;
+          if (x.includes(want)) n += 2;
+        }
+        if (bw === (parts.some(isMono) || bare(f).endsWith('-2'))) n += 1;
+        return n;
+      };
+      const pick = options.map((f, i) => ({ f, n: score(f) - i / 1000 })).sort((a, b) => b.n - a.n)[0]?.f;
       if (pick) { used.add(pick); p.file = pick; } else missing.push(`${s.name} / ${p.name}`);
     }
   }
@@ -127,17 +149,24 @@ function match(layout, files) {
 }
 
 // ---- One gallery ----
-async function moveGallery(folder) {
-  const linkFile = ['link.txt', 'pictime.txt'].map((f) => path.join(folder, f)).find((f) => fs.existsSync(f));
-  if (!linkFile) return log(`Skipped ${path.basename(folder)}: no link.txt with the Pic-Time link.`);
-  const link = fs.readFileSync(linkFile, 'utf8').match(/https?:\/\/\S+/)?.[0];
-  if (!link) return log(`Skipped ${path.basename(folder)}: link.txt has no link in it.`);
+const LINK_FILES = ['link.txt', 'links.txt', 'pictime.txt'];
+const linksIn = (folder) => LINK_FILES.map((f) => path.join(folder, f)).filter((f) => fs.existsSync(f))
+  .flatMap((f) => fs.readFileSync(f, 'utf8').match(/https?:\/\/\S+/g) ?? []);
+/** Folders with a link.txt, anywhere under the base folder (e.g. 2025\Feby and Steven). */
+function galleryFolders(dir) {
+  if (linksIn(dir).length) return [dir];
+  return fs.readdirSync(dir, { withFileTypes: true }).filter((e) => e.isDirectory() && !e.name.startsWith('_'))
+    .flatMap((e) => galleryFolders(path.join(dir, e.name)));
+}
+
+/** One Pic-Time gallery, its photos found anywhere in the couple's folder (one folder can hold several galleries). */
+async function moveGallery(folder, link) {
 
   const layout = await pictimeLayout(link);
   const count = layout.scenes.reduce((a, s) => a + s.photos.length, 0);
   log(`${layout.title}: ${layout.scenes.length} sections, ${count} photos in Pic-Time.`);
   unzipAll(folder);
-  const missing = match(layout, photosIn(folder));
+  const missing = match(layout, photosIn(folder), folder);
   if (missing.length) log(`  ${missing.length} photo(s) not found in the folder (skipped): ${missing.slice(0, 10).join(', ')}${missing.length > 10 ? '…' : ''}`);
   if (CHECK) {
     for (const s of layout.scenes) log(`  ${s.name}: ${s.photos.filter((p) => p.file).length} of ${s.photos.length} found${s.photos[0]?.file ? `, e.g. ${path.relative(folder, s.photos.find((p) => p.file).file)}` : ''}`);
@@ -195,10 +224,11 @@ async function moveGallery(folder) {
 
 // ---- All of them ----
 if (!CHECK) await api({ action: 'hello' }).catch((e) => stop(`The studio didn’t accept the key: ${e.message}`));
-const single = ['link.txt', 'pictime.txt'].some((f) => fs.existsSync(path.join(root, f)));
-const folders = single ? [root] : fs.readdirSync(root, { withFileTypes: true }).filter((e) => e.isDirectory() && !e.name.startsWith('_')).map((e) => path.join(root, e.name));
+const folders = galleryFolders(root);
 log(`Moving ${folders.length} gallery folder(s) from ${root}`);
 for (const f of folders) {
-  try { await moveGallery(f); } catch (e) { log(`Problem with ${path.basename(f)}: ${e.message}`); }
+  for (const link of linksIn(f)) {
+    try { await moveGallery(f, link); } catch (e) { log(`Problem with ${path.relative(root, f) || f}: ${e.message}`); }
+  }
 }
 log('All done.');
