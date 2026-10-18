@@ -8,19 +8,25 @@
  * read-only queries (it refuses anything that isn't a plain SELECT), runs them, and sends the rows
  * back. New reports are added in the studio (functions-lib/ads-reports.js) with no change here.
  *
- * The one change it can make: adding a negative keyword to a campaign, only ones you approved
- * in the studio (signed in with your Google account), at most 20 a run, plain words only. It never
- * removes anything, and never touches bids, budgets, ads or keywords. Every request is signed with your key.
+ * The only changes it can make, and only ones you approved in the studio (signed in with your
+ * Google account):
+ *   - add a negative keyword to a campaign (plain words only, at most 20 a run);
+ *   - add an image to a campaign (only your own photos from photos.momentsinlight.co.nz/ads/,
+ *     JPEG under 5 MB, at most 5 a run, never past Google's 20 images).
+ * It never removes anything, and never touches bids, budgets, ads or keywords. Every request is
+ * signed with your key.
  */
 var SITE = 'https://www.momentsinlight.co.nz';
 var KEY = '__PASTE_KEY__';
 var CHUNK = 1000;
 var MAX_CHANGES = 20;
+var MAX_IMAGES = 5;
+var IMAGE_HOME = 'https://photos.momentsinlight.co.nz/ads/';
 
 function main() {
   var state = call('/api/ads/state', {});
   if (!state) return;
-  addApprovedNegatives(state.actions || []);
+  applyApproved(state.actions || []);
   if (!state.export_due) { Logger.log('Nothing to send this hour.'); return; }
   var end = new Date();
   var start = new Date(end.getTime() - (state.days || 30) * 86400000);
@@ -55,12 +61,18 @@ function main() {
   Logger.log('Sent. ' + (errors.length ? errors.length + ' report(s) failed: the studio has the details.' : 'All reports went.'));
 }
 
-// Negative keywords you approved in the studio. Nothing else is ever changed.
-function addApprovedNegatives(actions) {
+// Changes you approved in the studio: negative keywords and images. Nothing else is ever changed.
+function applyApproved(actions) {
   if (!actions.length) return;
-  if (AdsApp.getExecutionInfo().isPreview()) { Logger.log(actions.length + ' approved negative(s) waiting: a preview makes no changes, so click Run.'); return; }
+  if (AdsApp.getExecutionInfo().isPreview()) { Logger.log(actions.length + ' approved change(s) waiting: a preview makes no changes, so click Run.'); return; }
   var results = [];
+  var images = 0;
   actions.slice(0, MAX_CHANGES).forEach(function (a) {
+    if (a.type === 'add_image') {
+      if (images++ >= MAX_IMAGES) return; // the rest go next run
+      results.push(addImage(a));
+      return;
+    }
     var r = { id: a.id, ok: false, error: '' };
     try {
       var p = a.payload || {};
@@ -81,6 +93,38 @@ function addApprovedNegatives(actions) {
     results.push(r);
   });
   call('/api/ads/ingest', { report: 'actions', rows: results });
+}
+
+// One of your photos, made in the studio, added to a campaign's images.
+function addImage(a) {
+  var r = { id: a.id, ok: false, error: '' };
+  try {
+    var p = a.payload || {};
+    var url = String(p.url || '');
+    var campaignId = String(p.campaign_id || '').replace(/[^0-9]/g, '');
+    if (url.indexOf(IMAGE_HOME) !== 0) throw new Error('Not one of your photos, so it was skipped.');
+    if (!campaignId) throw new Error('Which campaign?');
+    var count = 0;
+    var it = search('SELECT campaign_asset.resource_name FROM campaign_asset WHERE campaign.id = ' + campaignId + ' AND campaign_asset.field_type = AD_IMAGE AND campaign_asset.status = ENABLED');
+    while (it.hasNext()) { it.next(); count++; }
+    if (count >= 20) throw new Error('The campaign already has 20 images (Google’s limit). Remove one in Google Ads first.');
+    var res = UrlFetchApp.fetch(url, { muteHttpExceptions: true });
+    if (res.getResponseCode() !== 200) throw new Error('Couldn’t fetch the photo (' + res.getResponseCode() + ').');
+    var bytes = res.getContent();
+    if (bytes.length > 5 * 1048576 || (bytes[0] & 255) !== 0xff || (bytes[1] & 255) !== 0xd8) throw new Error('Not a JPEG under 5 MB.');
+    var made = AdsApp.mutate({ assetOperation: { create: { name: String(p.name || 'Moments in Light').slice(0, 100), type: 'IMAGE', imageAsset: { data: Utilities.base64Encode(bytes) } } } });
+    if (!made.isSuccessful()) throw new Error(made.getErrorMessages().join('; '));
+    var customer = AdsApp.currentAccount().getCustomerId().replace(/-/g, '');
+    var linked = AdsApp.mutate({ campaignAssetOperation: { create: { asset: made.getResourceName(), campaign: 'customers/' + customer + '/campaigns/' + campaignId, fieldType: 'AD_IMAGE' } } });
+    if (!linked.isSuccessful()) throw new Error(linked.getErrorMessages().join('; '));
+    r.ok = true;
+    r.asset = made.getResourceName();
+    Logger.log('Added image ' + p.name);
+  } catch (e) {
+    r.error = String((e && e.message) || e);
+    Logger.log('Couldn’t add image "' + (a.payload && a.payload.name) + '": ' + r.error);
+  }
+  return r;
 }
 
 // Only plain read queries are run.

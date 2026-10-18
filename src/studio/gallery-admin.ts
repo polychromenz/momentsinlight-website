@@ -98,8 +98,8 @@ function thumb(i: any) {
   if (i.status !== 'ready') return `<div class="th wait" data-id="${i.id}" draggable="true">not finished</div>`;
   return `<div class="th${i.is_hero ? ' hero' : ''}${i.hidden ? ' hid' : ''}${selected.has(i.id) ? ' sel' : ''}" data-id="${i.id}" draggable="true" style="width:${w}px" title="${esc(i.filename)}">
     <img src="${esc(i.thumb)}" alt="" loading="lazy" />
-    <span class="marks">${i.is_hero ? '<span class="hero-mark">★</span>' : ''}${cover ? '<span>Cover</span>' : ''}${i.hidden ? '<span>Hidden</span>' : ''}</span>
-    <span class="tools"><button type="button" class="star" data-t="hero" title="${i.is_hero ? 'Not a highlight' : 'Highlight (a row of its own)'}">${i.is_hero ? '☆' : '★'}</button><button type="button" data-t="cover" title="Use as the cover">◎</button><button type="button" data-t="hide" title="${i.hidden ? 'Show' : 'Hide'}">${i.hidden ? '◉' : '⊘'}</button></span></div>`;
+    <span class="marks">${i.is_hero ? '<span class="hero-mark">★</span>' : ''}${cover ? '<span>Cover</span>' : ''}${i.hidden ? '<span>Hidden</span>' : ''}${d.picks?.[i.id] ? `<span class="ad-mark" title="${d.picks[i.id] === 'added' ? 'In Google Ads' : 'Picked for Google Ads'}">Ad</span>` : ''}</span>
+    <span class="tools"><button type="button" class="star" data-t="hero" title="${i.is_hero ? 'Not a highlight' : 'Highlight (a row of its own)'}">${i.is_hero ? '☆' : '★'}</button><button type="button" data-t="cover" title="Use as the cover">◎</button><button type="button" data-t="hide" title="${i.hidden ? 'Show' : 'Hide'}">${i.hidden ? '◉' : '⊘'}</button><button type="button" class="ad-t" data-t="ad" title="${d.ads_blocked ? esc(d.ads_blocked) : d.picks?.[i.id] ? 'Not for Google Ads' : 'Use in Google Ads (only you see this)'}"${d.ads_blocked && !d.picks?.[i.id] ? ' disabled' : ''}>Ad</button></span></div>`;
 }
 function drawPhotos() {
   const secs = sorted();
@@ -284,6 +284,8 @@ function fillDetails() {
   const f = $<HTMLFormElement>('[data-details]');
   const set = (n: string, v: unknown) => { const el = f.elements.namedItem(n) as HTMLInputElement; if (el) el.value = String(v ?? ''); };
   $<HTMLSelectElement>('[name="type"]', f).innerHTML = d.types.map((t: string) => `<option>${t}</option>`).join('');
+  $<HTMLSelectElement>('[name="job_id"]', f).innerHTML = '<option value="">Not linked</option>' + (d.jobs ?? []).map((j: any) => `<option value="${j.id}">${esc(j.title)}${j.event_date ? ` (${j.event_date.slice(0, 4)})` : ''}${j.ads_ok ? '' : ' · no ads'}</option>`).join('');
+  set('job_id', g.job_id ?? '');
   for (const k of ['name', 'type', 'spouse_a', 'spouse_b', 'family_name', 'event_date', 'venue', 'description', 'slug', 'expires_at']) set(k, g[k]);
   set('ext_mode', g.extension_price === null ? 'default' : g.extension_price === 0 ? 'free' : 'custom');
   set('ext_price', g.extension_price ? g.extension_price / 100 : '');
@@ -300,6 +302,9 @@ $('[data-details]').addEventListener('submit', async (e) => {
   const f = new FormData(e.target as HTMLFormElement);
   const body: Record<string, unknown> = { id };
   for (const k of ['name', 'type', 'spouse_a', 'spouse_b', 'family_name', 'event_date', 'venue', 'description', 'slug', 'expires_at']) body[k] = f.get(k);
+  const job = (d.jobs ?? []).find((j: any) => String(j.id) === f.get('job_id'));
+  body.job_id = job ? job.id : null;
+  body.client_id = job ? job.client_id : null;
   const mode = f.get('ext_mode');
   body.extension_price = mode === 'default' ? null : mode === 'free' ? 0 : Math.round(Number(f.get('ext_price')) * 100);
   if (await tryApi('/api/studio/galleries/gallery', 'PUT', body)) { toast('Saved.'); load(); }
@@ -358,6 +363,11 @@ document.addEventListener('click', async (e) => {
     const i = d.images.find((x: any) => x.id === iid);
     if (tool.dataset.t === 'hero') return patch([iid], { is_hero: i.is_hero ? 0 : 1 });
     if (tool.dataset.t === 'hide') return patch([iid], { hidden: i.hidden ? 0 : 1 });
+    if (tool.dataset.t === 'ad') {
+      const r = await tryApi('/api/studio/ads/picks', 'POST', { action: 'toggle', gallery_id: id, image_id: iid });
+      if (r) { d.picks = d.picks ?? {}; if (r.picked) d.picks[iid] = 'picked'; else delete d.picks[iid]; drawPhotos(); toast(r.picked ? 'Picked for Google Ads. Approve its crop in Website › SEO › Google Ads.' : 'Unpicked.'); }
+      return;
+    }
     if (tool.dataset.t === 'cover' && (await tryApi('/api/studio/galleries/gallery', 'PUT', { id, cover_image_id: iid }))) { d.gallery.cover_image_id = iid; drawPhotos(); toast('Cover chosen.'); }
     return;
   }

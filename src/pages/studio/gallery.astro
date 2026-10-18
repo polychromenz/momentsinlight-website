@@ -59,6 +59,7 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
         <div class="two"><label>Name <input name="name" required /></label><label>Type <select name="type"></select></label></div>
         <div class="three"><label>Partner 1 <input name="spouse_a" /></label><label>Partner 2 <input name="spouse_b" /></label><label>New family name <input name="family_name" /></label></div>
         <div class="two"><label>Date <input name="event_date" type="date" /></label><label>Venue <input name="venue" /></label></div>
+        <label>Client <select name="job_id"><option value="">Not linked</option></select> <small class="hint">Their client page says whether their photos can go in ads.</small></label>
         <label>A few words (optional, shown under the names) <textarea name="description" rows="2"></textarea></label>
         <label>Address <span class="addr"><span class="addr-base"></span><input name="slug" /></span></label>
         <fieldset>
@@ -186,6 +187,9 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
   .th:hover .tools { opacity: 1; }
   .th .tools button { width: 26px; height: 26px; padding: 0; border: 0; border-radius: 50%; background: rgb(255 255 255 / 0.9); cursor: pointer; font-size: 13px; line-height: 26px; }
   .th.hero .marks .hero-mark { background: var(--gold); }
+  .th .marks .ad-mark { background: #1a73e8; }
+  .th .tools .ad-t { font-size: 10px; font-weight: 700; }
+  .th .tools .ad-t:disabled { opacity: 0.4; cursor: not-allowed; }
   .th.wait { display: grid; place-items: center; width: 120px; font-size: 11px; color: #888; }
 
   /* Add photos */

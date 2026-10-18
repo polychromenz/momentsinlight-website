@@ -32,6 +32,13 @@ import script from '../../../../scripts/google-ads/sync.js?raw';
       <ul class="neg-list"></ul>
     </section>
 
+    <section class="card picks-card">
+      <h2>Ad picks</h2>
+      <p class="muted">Photos you’ve marked <strong>Ad</strong> in your galleries. Check the suggested crop (move it with the arrows, or zoom), add a square one if you want, then <strong>Approve</strong>: the script adds them to <span class="pk-camp">your Search campaign</span> on its next hourly run.</p>
+      <p class="pk-count muted"></p>
+      <div class="pk-list"><p class="muted">Loading…</p></div>
+    </section>
+
     <section class="card setup">
       <h2>Connect Google Ads</h2>
       <ol>
@@ -53,6 +60,9 @@ import script from '../../../../scripts/google-ads/sync.js?raw';
 
 <script define:vars={{ script }}>
   window.__adsScript = script;
+</script>
+<script>
+  import '../../../studio/ad-picks.ts';
 </script>
 <script>
   const $ = <T extends HTMLElement = HTMLElement>(s: string) => document.querySelector<T>(s)!;
@@ -189,6 +199,22 @@ import script from '../../../../scripts/google-ads/sync.js?raw';
   .ads .neg-form select { flex: 0 1 auto; max-width: 100%; }
   .ads .neg-list { list-style: none; padding: 0; margin: 0; font-size: 14px; line-height: 1.6; }
   .ads .neg-list li { padding: 6px 0; border-bottom: 1px solid #f3eee6; }
-  .ads .st-done { color: var(--green); font-weight: 600; }
+  .ads .st-done, .ads .st-added { color: var(--green); font-weight: 600; }
+  .ads .pk-list { display: grid; gap: 16px; }
+  .ads .pk { display: grid; grid-template-columns: minmax(0, 340px) 1fr; gap: 16px; align-items: start; border-top: 1px solid #f3eee6; padding-top: 14px; }
+  .ads .pk-img { position: relative; overflow: hidden; border-radius: 6px; background: #eee; }
+  .ads .pk-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .ads .pk-frame { position: absolute; border: 2px solid #fff; pointer-events: none; }
+  .ads .pk-wide { box-shadow: 0 0 0 999px rgb(0 0 0 / 0.45); }
+  .ads .pk-square { border-style: dashed; border-color: #ffd54f; }
+  .ads .pk-frame span { position: absolute; left: 4px; top: 2px; font-size: 11px; color: #fff; text-shadow: 0 1px 2px #000; }
+  .ads .pk-tools { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 8px; }
+  .ads .pk-tools .nudge { display: inline-flex; gap: 4px; }
+  .ads .pk-tools .nudge button, .ads .pk-tools .seg button { min-width: 34px; height: 34px; border: 1px solid #ddd3c4; background: var(--white); border-radius: 8px; cursor: pointer; font-size: 16px; }
+  .ads .pk-tools .seg button { padding: 0 12px; font-size: 13px; }
+  .ads .pk-tools .seg button.on { background: var(--green); color: #fff; border-color: var(--green); }
+  .ads .pk-act { margin-left: auto; }
+  .ads .pk-st { margin: 6px 0; font-size: 14px; }
+  @media (max-width: 640px) { .ads .pk { grid-template-columns: 1fr; } .ads .pk-act { margin-left: 0; } }
   .ads .st-failed { color: #a8432a; font-weight: 600; }
 </style>

@@ -49,8 +49,12 @@ export async function scriptState(env) {
   // Asked for from the studio (Send everything on the next run), or a day since the last export.
   const force = await env.DB.prepare("SELECT 1 FROM settings WHERE key = 'ads_force'").first();
   const due = first || !!force || Date.now() - Date.parse(last.at) > 20 * 3600_000;
-  const actions = (await env.DB.prepare(`SELECT id, type, payload FROM ads_action WHERE status = 'pending' AND type = 'add_negative' ORDER BY id LIMIT 20`).all()).results
-    .map((a) => { const p = JSON.parse(a.payload); return { id: a.id, type: a.type, payload: { campaign_id: p.campaign_id, text: p.text, match: p.match } }; });
+  const actions = (await env.DB.prepare(`SELECT id, type, payload FROM ads_action WHERE status = 'pending' AND type IN ('add_negative', 'add_image') ORDER BY id LIMIT 20`).all()).results
+    .map((a) => {
+      const p = JSON.parse(a.payload);
+      // Only what the script needs (it checks these again).
+      return { id: a.id, type: a.type, payload: a.type === 'add_image' ? { campaign_id: p.campaign_id, url: p.url, name: p.name } : { campaign_id: p.campaign_id, text: p.text, match: p.match } };
+    });
   return { export_due: due, days: first ? 90 : 30, actions, reports: due ? await reportsFor(env.DB) : [] };
 }
 
@@ -126,11 +130,21 @@ export async function ingest(env, report, rows) {
     const kind = report.slice(7);
     stmts = rows.map((r) => db.prepare('INSERT OR REPLACE INTO ads_entity (kind, id, data, updated_at) VALUES (?1, ?2, ?3, ?4)').bind(kind, String(r.id), JSON.stringify(r), now));
   } else if (report === 'actions') {
-    // What happened to the approved changes: [{ id, ok, error }].
-    stmts = rows.map((r) => db.prepare(`UPDATE ads_action SET status = ?2, applied_at = ?3, error = ?4 WHERE id = ?1 AND status = 'pending'`)
-      .bind(Number(r.id), r.ok ? 'done' : 'failed', now, r.ok ? null : String(r.error ?? '').slice(0, 300)));
+    // What happened to the approved changes: [{ id, ok, error, asset? }].
+    stmts = rows.map((r) => db.prepare(`UPDATE ads_action SET status = ?2, applied_at = ?3, error = ?4, payload = json_set(payload, '$.asset', ?5) WHERE id = ?1 AND status = 'pending'`)
+      .bind(Number(r.id), r.ok ? 'done' : 'failed', now, r.ok ? null : String(r.error ?? '').slice(0, 300), r.asset ? String(r.asset).slice(0, 200) : null));
+    // Ad picks: note the Google asset, and the pick is added once all its files are in (or failed if one wasn't).
+    for (const r of rows) {
+      const a = await db.prepare(`SELECT payload FROM ads_action WHERE id = ?1 AND type = 'add_image'`).bind(Number(r.id)).first();
+      if (!a) continue;
+      const p = JSON.parse(a.payload);
+      if (r.ok) stmts.push(db.prepare(`UPDATE photo_picks SET ${p.kind === 'square' ? 'asset_square' : 'asset_wide'} = ?2 WHERE id = ?1`).bind(Number(p.pick_id), String(r.asset ?? '')));
+      else stmts.push(db.prepare(`UPDATE photo_picks SET status = 'failed', error = ?2 WHERE id = ?1`).bind(Number(p.pick_id), String(r.error ?? '').slice(0, 300)));
+    }
     // Fetch the account again on the next run, so the studio's lists show the change.
     if (rows.some((r) => r.ok)) stmts.push(db.prepare("INSERT INTO settings (key, value, updated_at) VALUES ('ads_force', '1', ?1) ON CONFLICT (key) DO UPDATE SET updated_at = ?1").bind(now));
+    stmts.push(db.prepare(`UPDATE photo_picks SET status = 'added', added_at = ?1 WHERE status = 'approved' AND NOT EXISTS (
+      SELECT 1 FROM ads_action a WHERE a.type = 'add_image' AND json_extract(a.payload, '$.pick_id') = photo_picks.id AND a.status <> 'done')`).bind(now));
   } else if (report === 'done') {
     await db.prepare("DELETE FROM settings WHERE key = 'ads_force'").run();
     // The end of an export: lists that were sent in full replace what was there.

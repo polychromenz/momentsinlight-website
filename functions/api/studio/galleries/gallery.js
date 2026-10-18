@@ -1,15 +1,24 @@
 // One client gallery in the studio.
-//   GET  /api/studio/galleries/gallery?id=…    -> { gallery, sections, images }
+//   GET  /api/studio/galleries/gallery?id=…    -> { gallery, sections, images, picks, ads_blocked, jobs }
+//        picks: image ids marked for Google Ads; ads_blocked: why not (the client's contract); jobs: to link a client
 //   PUT  /api/studio/galleries/gallery { id, ...fields }   name, type, event_date, venue, spouse_a/b,
 //        family_name, description, expires_at, extension_price, cover_image_id, client_id, job_id, slug
 //   POST /api/studio/galleries/gallery { id, action: 'online' | 'offline' }
 import { json } from '../../../../functions-lib/studio.js';
 import { galleryDetail, setOnline, slugify, TYPES } from '../../../../functions-lib/galleries.js';
 import { deleteGallery, linkUrl } from '../../../../functions-lib/gallery-access.js';
+import { adsBlocked } from '../../../../functions-lib/picks.js';
 
 export async function onRequestGet({ request, env }) {
   const d = await galleryDetail(env, new URL(request.url).searchParams.get('id') ?? '');
-  return d ? json({ ...d, url: linkUrl(d.gallery.slug), types: TYPES }) : json({ error: 'That gallery doesn’t exist.' }, 404);
+  if (!d) return json({ error: 'That gallery doesn’t exist.' }, 404);
+  const [picks, blocked, jobs] = await Promise.all([
+    env.DB.prepare(`SELECT image_id, status FROM photo_picks WHERE gallery_id = ?1 AND purpose = 'ads'`).bind(d.gallery.id).all(),
+    adsBlocked(env.DB, d.gallery.id),
+    env.DB.prepare(`SELECT j.id, j.client_id, j.title, j.event_date, c.ads_ok FROM jobs j JOIN clients c ON c.id = j.client_id
+      WHERE j.stage IN ('booked', 'completed') ORDER BY COALESCE(j.event_date, j.created_at) DESC`).all(),
+  ]);
+  return json({ ...d, url: linkUrl(d.gallery.slug), types: TYPES, picks: Object.fromEntries(picks.results.map((p) => [p.image_id, p.status])), ads_blocked: blocked, jobs: jobs.results });
 }
 
 const TEXT = { name: 120, venue: 120, spouse_a: 60, spouse_b: 60, family_name: 80, description: 2000, seo_title: 120, seo_description: 320 };
