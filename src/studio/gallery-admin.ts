@@ -103,8 +103,7 @@ function thumb(i: any) {
 }
 function drawPhotos() {
   const secs = sorted();
-  // The section order: names to drag (click one to jump to it).
-  $('.sec-order').innerHTML = secs.length > 1 ? `<span class="lbl">Section order</span>${secs.map((s: any) => `<button type="button" class="chip" draggable="true" data-chip="${s.id}" title="Drag to reorder; click to go to it">${esc(s.name)}</button>`).join('')}` : '';
+  $('.sec-order').hidden = secs.length < 2;
   $('.ga-sections').innerHTML = secs.map((s: any, n: number) => {
     const list = inSection(s.id);
     return `<div class="ga-sec${s.hidden ? ' hidden-sec' : ''}" data-sec="${s.id}">
@@ -132,40 +131,56 @@ async function patch(ids: string[], set: Record<string, unknown>) {
   drawPhotos();
 }
 
-// Dragging section names in the order row.
-let draggingSec = 0;
-document.addEventListener('dragstart', (e) => {
-  const chip = (e.target as HTMLElement).closest<HTMLElement>('[data-chip]');
-  if (!chip) return;
-  draggingSec = Number(chip.dataset.chip);
-  e.dataTransfer!.effectAllowed = 'move';
-  e.dataTransfer!.setData('text/plain', 'section');
-});
-document.addEventListener('dragover', (e) => {
-  if (!draggingSec) return;
-  const chip = (e.target as HTMLElement).closest<HTMLElement>('[data-chip]');
-  if (!chip) return;
+// Reorder sections: a pop-up list with drag handles (pointer events, so mouse and touch both work).
+function orderDialog() {
+  const dlg = $<HTMLDialogElement>('[data-order-dlg]');
+  $('.order-list', dlg).innerHTML = sorted().map((s: any) => `<li data-oid="${s.id}"><span class="grip" aria-hidden="true">⋮⋮</span><span class="oname">${esc(s.name)}</span><small>${inSection(s.id).length}</small>
+    <span class="omove"><button type="button" data-omove="-1" aria-label="Move up">↑</button><button type="button" data-omove="1" aria-label="Move down">↓</button></span></li>`).join('');
+  dlg.showModal();
+}
+let grabbed: HTMLElement | null = null;
+document.addEventListener('pointerdown', (e) => {
+  const grip = (e.target as HTMLElement).closest<HTMLElement>('.order-list .grip, .order-list .oname');
+  if (!grip) return;
+  grabbed = grip.closest('li');
+  grabbed!.classList.add('dragging');
+  (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
   e.preventDefault();
-  $$('.chip.drop-before, .chip.drop-after').forEach((x) => x.classList.remove('drop-before', 'drop-after'));
-  if (Number(chip.dataset.chip) === draggingSec) return;
-  const r = chip.getBoundingClientRect();
-  chip.classList.add(e.clientX < r.left + r.width / 2 ? 'drop-before' : 'drop-after');
 });
-document.addEventListener('drop', async (e) => {
-  if (!draggingSec) return;
-  e.preventDefault();
-  const mark = document.querySelector<HTMLElement>('.chip.drop-before, .chip.drop-after');
-  const moving = draggingSec;
-  draggingSec = 0;
-  if (!mark) return;
-  const order = sorted().map((x: any) => x.id).filter((x: number) => x !== moving);
-  order.splice(order.indexOf(Number(mark.dataset.chip)) + (mark.classList.contains('drop-after') ? 1 : 0), 0, moving);
-  if (await tryApi('/api/studio/galleries/sections', 'PUT', { gallery_id: id, order })) {
-    order.forEach((sid: number, k: number) => (d.sections.find((x: any) => x.id === sid).sort_order = k));
-    drawPhotos();
+document.addEventListener('pointermove', (e) => {
+  if (!grabbed) return;
+  const list = grabbed.parentElement!;
+  const items = [...list.children].filter((x) => x !== grabbed) as HTMLElement[];
+  const after = items.find((x) => { const r = x.getBoundingClientRect(); return e.clientY < r.top + r.height / 2; });
+  if (after) list.insertBefore(grabbed, after); else list.appendChild(grabbed);
+  // Keep scrolling when dragging near the edges of a long list.
+  const box = list.closest('.order-box')!.getBoundingClientRect();
+  if (e.clientY < box.top + 40) list.closest('.order-box')!.scrollBy(0, -12);
+  if (e.clientY > box.bottom - 40) list.closest('.order-box')!.scrollBy(0, 12);
+});
+const drop = () => { grabbed?.classList.remove('dragging'); grabbed = null; };
+document.addEventListener('pointerup', drop);
+document.addEventListener('pointercancel', drop);
+document.addEventListener('click', async (e) => {
+  const t = e.target as HTMLElement;
+  if (t.closest('[data-order-open]')) return orderDialog();
+  const mv = t.closest<HTMLElement>('[data-omove]');
+  if (mv) {
+    const li = mv.closest('li')!;
+    if (mv.dataset.omove === '-1' && li.previousElementSibling) li.parentElement!.insertBefore(li, li.previousElementSibling);
+    if (mv.dataset.omove === '1' && li.nextElementSibling) li.parentElement!.insertBefore(li.nextElementSibling, li);
+    return;
+  }
+  if (t.closest('[data-order-save]')) {
+    const order = $$('.order-list li').map((li) => Number(li.dataset.oid));
+    if (await tryApi('/api/studio/galleries/sections', 'PUT', { gallery_id: id, order })) {
+      order.forEach((sid: number, k: number) => (d.sections.find((x: any) => x.id === sid).sort_order = k));
+      $<HTMLDialogElement>('[data-order-dlg]').close();
+      drawPhotos();
+      toast('Section order saved.');
+    }
   }
 });
-document.addEventListener('dragend', () => { draggingSec = 0; $$('.chip.drop-before, .chip.drop-after').forEach((x) => x.classList.remove('drop-before', 'drop-after')); });
 
 // Dragging photos (the selection, if the dragged photo is in it).
 let dragging: string[] = [];
@@ -333,8 +348,6 @@ $('[data-link-form]').addEventListener('submit', async (e) => {
 // ---- Clicks ----
 document.addEventListener('click', async (e) => {
   const t = e.target as HTMLElement;
-  const chip = t.closest<HTMLElement>('[data-chip]');
-  if (chip) return document.querySelector(`.ga-sec[data-sec="${chip.dataset.chip}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   const tb = t.closest<HTMLElement>('[data-tab]');
   if (tb) return tab(tb.dataset.tab!);
 

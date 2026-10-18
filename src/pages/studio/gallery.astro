@@ -36,7 +36,7 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
         <button type="button" class="s-btn s-btn--quiet" data-sel="none">Clear</button>
       </div>
       <p class="hint">Click photos to select them (Shift-click for a run); drag to reorder or move them into another section. ★ = a highlight, shown large on a row of its own. Hidden photos are kept but nobody sees them.</p>
-      <div class="sec-order"></div>
+      <div class="sec-order"><button type="button" class="s-btn" data-order-open>Reorder sections</button></div>
       <div class="ga-sections"></div>
       <button type="button" class="s-btn" data-add-section>Add a section</button>
     </section>
@@ -101,6 +101,12 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
     </section>
   </main>
 
+  <dialog class="ga-dlg" data-order-dlg>
+    <h2>Reorder sections</h2>
+    <p class="hint" style="margin:4px 0 12px">Drag by the ⋮⋮ handle (or use the arrows), then Save.</p>
+    <div class="order-box"><ul class="order-list"></ul></div>
+    <div class="actions" style="display:flex;justify-content:flex-end;gap:8px;margin-top:14px"><button type="button" class="s-btn s-btn--quiet" data-close>Cancel</button><button type="button" class="s-btn s-btn--solid" data-order-save>Save order</button></div>
+  </dialog>
   <dialog class="ga-dlg" data-link-dlg>
     <form method="dialog" class="ga-form" data-link-form>
       <h2>Link</h2>
@@ -147,12 +153,15 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
   .ga-selbar .s-btn--danger { color: #f3c4b6; }
   .sel-move { font-size: 14px; display: inline-flex; gap: 6px; align-items: center; }
   .sel-move select { font-size: 14px; padding: 5px 8px; }
-  .sec-order { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 0 0 14px; }
-  .sec-order .lbl { font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--green); margin-right: 4px; }
-  .sec-order .chip { font: inherit; font-size: 14px; padding: 6px 12px; border: 1px solid #ddd3c4; border-radius: 999px; background: var(--white); cursor: grab; }
-  .sec-order .chip:active { cursor: grabbing; }
-  .sec-order .chip.drop-before { box-shadow: -4px 0 0 -1px #c0392b; }
-  .sec-order .chip.drop-after { box-shadow: 4px 0 0 -1px #c0392b; }
+  .sec-order { margin: 0 0 14px; }
+  .order-box { max-height: min(60vh, 560px); overflow-y: auto; }
+  .order-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; user-select: none; }
+  .order-list li { display: flex; align-items: center; gap: 10px; padding: 9px 10px; background: var(--white); border: 1px solid #e2dacd; border-radius: 10px 0; font-size: 15px; }
+  .order-list li.dragging { box-shadow: 0 10px 24px -12px rgb(0 0 0 / 0.45); border-color: var(--green); background: #f7f8f2; }
+  .order-list .grip { cursor: grab; color: #999; font-size: 18px; letter-spacing: -3px; padding: 0 6px; touch-action: none; }
+  .order-list .oname { flex: 1; cursor: grab; touch-action: none; }
+  .order-list small { color: #999; }
+  .order-list .omove button { font: inherit; font-size: 13px; padding: 3px 8px; border: 1px solid #e2dacd; border-radius: 6px; background: var(--white); cursor: pointer; }
   .ga-sec { scroll-margin-top: 80px; background: var(--white); border-radius: 24px 0; padding: 14px 16px 16px; margin-bottom: 16px; }
   .ga-sec.hidden-sec { opacity: 0.6; }
   .sec-head { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 10px; }
