@@ -45,7 +45,9 @@ export async function scriptRequest(request, env) {
 export async function scriptState(env) {
   const last = await env.DB.prepare(`SELECT max(run_at) at FROM ads_import_log WHERE ok = 1 AND report = 'done'`).first();
   const first = !last?.at;
-  const due = first || Date.now() - Date.parse(last.at) > 20 * 3600_000;
+  // Asked for from the studio (Send everything on the next run), or a day since the last export.
+  const force = await env.DB.prepare("SELECT 1 FROM settings WHERE key = 'ads_force'").first();
+  const due = first || !!force || Date.now() - Date.parse(last.at) > 20 * 3600_000;
   const actions = (await env.DB.prepare(`SELECT id, type, payload FROM ads_action WHERE status = 'pending' ORDER BY id LIMIT 50`).all()).results
     .map((a) => ({ ...a, payload: JSON.parse(a.payload) }));
   return { export_due: due, days: first ? 90 : 30, actions };
@@ -80,6 +82,7 @@ export async function ingest(env, report, rows) {
     const kind = report.slice(7);
     stmts = rows.map((r) => db.prepare('INSERT OR REPLACE INTO ads_entity (kind, id, data, updated_at) VALUES (?1, ?2, ?3, ?4)').bind(kind, String(r.id), JSON.stringify(r), now));
   } else if (report === 'done') {
+    await db.prepare("DELETE FROM settings WHERE key = 'ads_force'").run();
     // The end of an export: lists that were sent in full replace what was there.
     for (const kind of rows.map(String)) await db.prepare('DELETE FROM ads_entity WHERE kind = ?1 AND updated_at < ?2').bind(kind, new Date(Date.now() - 6 * 3600_000).toISOString()).run();
   } else throw new Error(`Unknown report ${report}`);

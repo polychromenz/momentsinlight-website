@@ -61,7 +61,7 @@ import script from '../../../../scripts/google-ads/sync.js?raw';
       ${d.campaigns.map((c: any) => `<tr><td>${esc(c.name)} <small class="muted">${esc(String(c.status ?? '').toLowerCase())}</small></td><td>${esc(NICE[c.channel_type] ?? c.channel_type)}${c.partner_network ? ' <small class="warn">+ search partners</small>' : ''}${c.display_network && c.channel_type === 'SEARCH' ? ' <small class="warn">+ display</small>' : ''}</td>
         <td>${esc(String(c.bidding ?? '').replace(/_/g, ' ').toLowerCase())}</td><td class="r">${money(c.budget_cents ?? 0)}</td><td class="r">${money(c.cost)}</td><td class="r">${c.clicks}</td><td class="r">${Number(c.conversions).toFixed(1)}</td></tr>`).join('')}
       </tbody></table></div>
-      <p class="muted">Your audit report comes next, from this data.</p>`;
+      <p class="muted"><button type="button" class="s-btn s-btn--quiet" data-refresh>Send everything on the next run</button> (after updating the script; then click Run in Google Ads)</p>`;
   }
   document.addEventListener('click', async (e) => {
     const t = e.target as HTMLElement;
@@ -75,6 +75,11 @@ import script from '../../../../scripts/google-ads/sync.js?raw';
       document.querySelector<HTMLElement>('.after')!.hidden = false;
       toast('Made. Now copy it.');
       load();
+    }
+    if (t.closest('[data-refresh]')) {
+      await fetch('/api/studio/crm/ads', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'refresh' }) });
+      toast('Done. The next run sends everything: click Run in Google Ads.');
+      return;
     }
     if (t.closest('[data-current]')) {
       const d = await (await fetch('/api/studio/crm/ads', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'current' }) })).json();

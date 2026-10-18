@@ -25,6 +25,8 @@ export async function onRequestGet({ env }) {
 export async function onRequestPost({ request, env }) {
   const d = await request.json().catch(() => ({}));
   if (d.action === 'key') return json({ secret: await newSyncSecret(env) });
+  // Send everything on the script's next run (e.g. after updating the script).
+  if (d.action === 'refresh') { await env.DB.prepare("INSERT INTO settings (key, value, updated_at) VALUES ('ads_force', '1', ?1) ON CONFLICT (key) DO UPDATE SET updated_at = ?1").bind(new Date().toISOString()).run(); return json({ ok: true }); }
   // The latest script with the key already in use (after the script itself has been updated).
   if (d.action === 'current') { const secret = await currentSyncSecret(env); return secret ? json({ secret }) : json({ error: 'Make the script first.' }, 400); }
   return json({ error: 'What should happen?' }, 400);
