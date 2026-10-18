@@ -5,10 +5,11 @@
 //   POST /api/studio/galleries/gallery { id, action: 'online' | 'offline' }
 import { json } from '../../../../functions-lib/studio.js';
 import { galleryDetail, setOnline, slugify, TYPES } from '../../../../functions-lib/galleries.js';
+import { deleteGallery, linkUrl } from '../../../../functions-lib/gallery-access.js';
 
 export async function onRequestGet({ request, env }) {
   const d = await galleryDetail(env, new URL(request.url).searchParams.get('id') ?? '');
-  return d ? json(d) : json({ error: 'That gallery doesn’t exist.' }, 404);
+  return d ? json({ ...d, url: linkUrl(d.gallery.slug), types: TYPES }) : json({ error: 'That gallery doesn’t exist.' }, 404);
 }
 
 const TEXT = { name: 120, venue: 120, spouse_a: 60, spouse_b: 60, family_name: 80, description: 2000, seo_title: 120, seo_description: 320 };
@@ -34,6 +35,16 @@ export async function onRequestPut({ request, env }) {
   if (!sets.length) return json({ ok: true });
   put('updated_at', new Date().toISOString());
   await env.DB.prepare(`UPDATE photo_galleries SET ${sets.join(', ')} WHERE id = ?1`).bind(g.id, ...vals).run();
+  return json({ ok: true });
+}
+
+// DELETE /api/studio/galleries/gallery { id, confirm: <the gallery's name> }   (everything, files too)
+export async function onRequestDelete({ request, env }) {
+  const d = await request.json().catch(() => ({}));
+  const g = await env.DB.prepare('SELECT id, name FROM photo_galleries WHERE id = ?1').bind(String(d.id ?? '')).first();
+  if (!g) return json({ error: 'That gallery doesn’t exist.' }, 404);
+  if (String(d.confirm ?? '').trim().toLowerCase() !== g.name.trim().toLowerCase()) return json({ error: 'Type the gallery’s name to delete it.' }, 400);
+  await deleteGallery(env, g.id);
   return json({ ok: true });
 }
 

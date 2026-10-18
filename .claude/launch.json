@@ -6,6 +6,11 @@
       "runtimeExecutable": "C:\\Program Files\\nodejs\\npm.cmd",
       "runtimeArgs": ["run", "dev"],
       "port": 4321
+    },
+    {
+      "name": "wrangler-local",
+      "url": "http://127.0.0.1:8789",
+      "port": 8789
     }
   ]
 }

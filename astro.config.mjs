@@ -12,6 +12,6 @@ export default defineConfig({
   // can draw anything (they're small: ~20KB uncompressed).
   build: { format: 'file', inlineStylesheets: 'always' },
   // The studio (the private post editor), pages being tested, client pages and the thank-you page stay out of the sitemap.
-  integrations: [sitemap({ filter: (page) => !page.includes('/studio') && !page.includes('/newcontact') && !/\/(quote|contract|invoice|portal|questionnaire|thanks|links)\/?$/.test(page) })],
+  integrations: [sitemap({ filter: (page) => !page.includes('/studio') && !page.includes('/newcontact') && !page.includes('/gallery-view') && !/\/(quote|contract|invoice|portal|questionnaire|thanks|links)\/?$/.test(page) })],
   markdown: { rehypePlugins: [rehypeImages] },
 });

@@ -1,0 +1,370 @@
+---
+// The client gallery (MIL Galleries 1c). One page for every gallery: functions/_middleware.js
+// serves it at galleries.momentsinlight.co.nz/{slug} and momentsinlight.co.nz/g/{slug} (studio
+// previews add ?preview=1). Everything shown comes from /api/gallery (functions-lib/gallery-access.js),
+// limited by the visitor's link. Photos are laid out in justified rows so nothing is cropped;
+// highlights get a row of their own.
+import '@fontsource/raleway/300.css';
+import '@fontsource/raleway/400.css';
+import '@fontsource/raleway/500.css';
+import '@fontsource/raleway/600.css';
+import '../styles/global.css';
+import { Image } from 'astro:assets';
+import { site } from '../data/site';
+---
+<!doctype html>
+<html lang="en-NZ">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>Gallery · Moments In Light</title>
+    <link rel="icon" href="/favicon.ico" sizes="any" />
+    <link rel="preconnect" href="https://photos.momentsinlight.co.nz" />
+  </head>
+  <body class="gv">
+    <div class="gv-preview" hidden></div>
+    <section class="cover" aria-live="polite">
+      <a class="cover-logo" href="https://www.momentsinlight.co.nz/" aria-label="Moments In Light">
+        <Image src={site.logo} alt="Moments In Light" widths={[220, 400]} sizes="160px" loading="eager" />
+      </a>
+      <div class="cover-photo"></div>
+      <div class="cover-text">
+        <h1 class="names">&nbsp;</h1>
+        <p class="when"></p>
+        <div class="gate"><p class="muted">Opening your gallery…</p></div>
+      </div>
+    </section>
+
+    <div class="gallery" hidden>
+      <header class="g-bar">
+        <a class="g-logo" href="#top" aria-label="Back to the cover"><Image src={site.logo} alt="Moments In Light" widths={[220]} sizes="110px" /></a>
+        <nav class="g-sections" aria-label="Sections"></nav>
+        <div class="g-actions"><button type="button" class="g-btn" data-play>Slideshow</button></div>
+      </header>
+      <p class="g-note" hidden></p>
+      <main class="g-main"></main>
+      <footer class="g-foot">
+        <p>Photos by <a href="https://www.momentsinlight.co.nz/">Moments In Light</a> · Tony Gorham · {site.phone}</p>
+      </footer>
+    </div>
+
+    <div class="lb" hidden role="dialog" aria-modal="true" aria-label="Photo">
+      <img class="lb-img" alt="" />
+      <button type="button" class="lb-btn lb-prev" aria-label="Previous photo">‹</button>
+      <button type="button" class="lb-btn lb-next" aria-label="Next photo">›</button>
+      <div class="lb-top">
+        <span class="lb-count"></span>
+        <span class="lb-tools">
+          <button type="button" class="lb-tool" data-lb-play>Slideshow</button>
+          <span class="lb-dl"></span>
+          <button type="button" class="lb-tool" data-lb-close aria-label="Close">✕</button>
+        </span>
+      </div>
+    </div>
+  </body>
+</html>
+
+<script>
+  type Img = { id: string; s: number; w: number; h: number; hero: number; thumb: string; web: string };
+  type View = { gallery: any; cover: any; rights: { downloads: 'none' | 'web' | 'highres'; watermark: boolean }; sections: { id: number; name: string; is_bw: number }[]; images: Img[]; preview?: { status: string; link: string } };
+  const $ = <T extends HTMLElement = HTMLElement>(s: string, el: ParentNode = document) => el.querySelector<T>(s)!;
+  const esc = (s: unknown) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
+  const params = new URLSearchParams(location.search);
+  const parts = location.pathname.split('/').filter(Boolean);
+  const slug = decodeURIComponent((parts[0] === 'g' ? parts[1] : parts[0]) ?? '');
+  const preview = params.get('preview') === '1';
+  const store = `mil-gallery-${slug}`;
+  const saved = () => { try { return localStorage.getItem(store) ?? ''; } catch { return ''; } };
+  const save = (v: string) => { try { v ? localStorage.setItem(store, v) : localStorage.removeItem(store); } catch {} };
+  const day = (d: string) => new Date(`${d}T12:00:00Z`).toLocaleDateString('en-NZ', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
+  let viewer = '';
+  let view: View;
+
+  // ---- Cover and gate ----
+  function namesOf(g: any) {
+    if (g.spouse_a && g.spouse_b) return `${g.spouse_a} <span class="amp">&amp;</span> ${g.spouse_b}`;
+    return esc(g.name);
+  }
+  function showCover(g: any, cover: any) {
+    if (!g) return;
+    document.title = `${g.name} · Moments In Light`;
+    $('.names').innerHTML = namesOf(g);
+    $('.when').textContent = [g.event_date ? day(g.event_date) : '', g.venue].filter(Boolean).join(' · ');
+    $('.cover-photo').innerHTML = cover ? `<img src="${esc(cover.web)}" alt="" width="${cover.w}" height="${cover.h}" fetchpriority="high" />` : '';
+  }
+  function gate(html: string) { $('.gate').innerHTML = html; }
+
+  async function enter(extra: Record<string, unknown> = {}) {
+    const r = await fetch('/api/gallery/enter', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ slug, key: params.get('k') || undefined, viewer: saved() || undefined, ...extra }) });
+    const d = await r.json().catch(() => ({ status: 'error' }));
+    showCover(d.gallery, d.cover);
+    if (d.status === 'in') {
+      viewer = d.viewer; save(viewer);
+      // The link's key isn't left in the address bar, so a copied address doesn't share the couple's access.
+      if (params.has('k')) { params.delete('k'); history.replaceState(null, '', location.pathname + (params.size ? `?${params}` : '')); }
+      return load();
+    }
+    if (d.status === 'gone') return gate('<p>This gallery isn’t available. If you were expecting to see photos here, please <a href="https://www.momentsinlight.co.nz/contact">get in touch with Tony</a>.</p>');
+    if (d.status === 'expired') return gate(`<p>This gallery was online until ${d.gallery?.expires_at ? day(d.gallery.expires_at) : 'recently'}.</p><p>To bring it back online, please <a href="https://www.momentsinlight.co.nz/contact">get in touch with Tony</a>.</p>`);
+    if (d.status === 'email') {
+      gate(`<form class="g-form" data-email>
+        <p>Please add your name and email to see the photos.</p>
+        <label>Your name <input name="name" autocomplete="name" required /></label>
+        <label>Email <input name="email" type="email" autocomplete="email" required /></label>
+        <label class="check"><input type="checkbox" name="consent" /> Send me the occasional offer from Moments In Light (you can stop any time)</label>
+        ${d.error ? `<p class="err">${esc(d.error)}</p>` : ''}
+        <button class="g-cta" type="submit">View the gallery</button></form>`);
+      $<HTMLFormElement>('[data-email]').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const f = new FormData(e.target as HTMLFormElement);
+        enter({ key: d.key, name: f.get('name'), email: f.get('email'), consent: !!f.get('consent') });
+      });
+      return;
+    }
+    // A private gallery: the visitor needs their link or a code.
+    save('');
+    gate(`<form class="g-form g-form--code" data-code>
+      <p>This gallery is private. Open it with the link you were sent, or enter your access code.</p>
+      <div class="row"><input name="code" aria-label="Access code" placeholder="Access code" autocomplete="off" required /><button class="g-cta" type="submit">Open</button></div>
+      ${d.error ? `<p class="err">${esc(d.error)}</p>` : ''}</form>`);
+    $<HTMLFormElement>('[data-code]').addEventListener('submit', (e) => {
+      e.preventDefault();
+      params.delete('k');
+      enter({ key: undefined, viewer: undefined, code: new FormData(e.target as HTMLFormElement).get('code') });
+    });
+  }
+
+  async function load() {
+    const r = await fetch(preview ? `/api/studio/galleries/preview?slug=${encodeURIComponent(slug)}${params.get('link') ? `&link=${params.get('link')}` : ''}` : `/api/gallery/view?v=${viewer}`);
+    if (r.status === 401 && !preview) { save(''); viewer = ''; return enter(); }
+    if (!r.ok) return gate('<p>Something went wrong opening the gallery. Please reload the page.</p>');
+    view = await r.json();
+    showCover(view.gallery, view.cover);
+    gate(`<a class="g-cta" href="#photos">View the gallery</a>`);
+    if (view.preview) {
+      const p = $('.gv-preview');
+      p.hidden = false;
+      p.innerHTML = `Preview${view.preview.link ? ` as “${esc(view.preview.link)}”` : ''}${view.preview.status !== 'online' ? ` · this gallery is <strong>${esc(view.preview.status)}</strong>, so clients can’t see it yet` : ''}${view.rights.watermark ? ' · this link’s visitors see your monogram on each photo' : ''}`;
+    }
+    const exp = view.gallery.expires_at;
+    if (exp && !preview) {
+      const days = Math.round((Date.parse(`${exp}T12:00:00Z`) - Date.now()) / 86400000);
+      if (days <= 30) { const n = $('.g-note'); n.hidden = false; n.textContent = `This gallery is online until ${day(exp)}. Download your favourites before then.`; }
+    }
+    draw();
+    $('.gallery').hidden = false;
+    if (location.hash === '#photos') $('.gallery').scrollIntoView();
+  }
+
+  // ---- The photos: justified rows (nothing cropped), highlights on a row of their own ----
+  const GAP = 6;
+  const thumbW = (i: Img) => (i.w >= i.h ? Math.min(600, i.w) : Math.round((Math.min(600, i.h) * i.w) / i.h));
+  const webW = (i: Img) => (i.w >= i.h ? Math.min(2048, i.w) : Math.round((Math.min(2048, i.h) * i.w) / i.h));
+  function tile(i: Img, w: number, h: number) {
+    const n = view.images.indexOf(i);
+    return `<button type="button" class="ph" data-n="${n}" style="width:${w}px;height:${h}px" aria-label="Open photo ${n + 1}">
+      <img src="${esc(i.thumb)}" srcset="${esc(i.thumb)} ${thumbW(i)}w, ${esc(i.web)} ${webW(i)}w" sizes="${Math.ceil(w)}px" width="${Math.round(w)}" height="${Math.round(h)}" alt="" loading="lazy" decoding="async" /></button>`;
+  }
+  function rows(list: Img[], width: number) {
+    const target = width < 600 ? 170 : width < 1100 ? 250 : 320;
+    const out: string[] = [];
+    let row: Img[] = [];
+    const flush = (last: boolean) => {
+      if (!row.length) return;
+      const ar = row.reduce((a, i) => a + i.w / i.h, 0);
+      const h = last ? Math.min(target, (width - GAP * (row.length - 1)) / ar) : (width - GAP * (row.length - 1)) / ar;
+      out.push(`<div class="row">${row.map((i) => tile(i, (h * i.w) / i.h, h)).join('')}</div>`);
+      row = [];
+    };
+    for (const i of list) {
+      if (i.hero) {
+        flush(true);
+        const h = Math.min(width / (i.w / i.h), innerHeight * 0.82, i.h);
+        out.push(`<div class="row row--hero">${tile(i, (h * i.w) / i.h, h)}</div>`);
+        continue;
+      }
+      row.push(i);
+      const ar = row.reduce((a, x) => a + x.w / x.h, 0);
+      if (ar * target + GAP * (row.length - 1) >= width) flush(false);
+    }
+    flush(true);
+    return out.join('');
+  }
+  function draw() {
+    const main = $('.g-main');
+    const width = main.clientWidth || innerWidth - 24;
+    const multi = view.sections.length > 1;
+    main.innerHTML = view.sections.map((s) => {
+      const list = view.images.filter((i) => i.s === s.id);
+      return list.length ? `<section class="g-sec" id="s${s.id}" data-sec="${s.id}">${multi ? `<h2>${esc(s.name)}</h2>` : ''}${rows(list, width)}</section>` : '';
+    }).join('') || '<p class="muted center">No photos here yet.</p>';
+    const used = view.sections.filter((s) => view.images.some((i) => i.s === s.id));
+    $('.g-sections').innerHTML = multi ? `<div class="sec-list">${used.map((s) => `<a href="#s${s.id}" data-to="${s.id}">${esc(s.name)}</a>`).join('')}</div><details class="more" hidden><summary>More ▾</summary><div class="more-list"></div></details>` : `<span class="g-title">${esc(view.gallery.name)}</span>`;
+    fitNav();
+    watch();
+  }
+  // Sections that don't fit in the bar go under "More".
+  function fitNav() {
+    const list = document.querySelector<HTMLElement>('.sec-list');
+    if (!list) return;
+    const more = $<HTMLDetailsElement>('.more');
+    const links = [...list.children] as HTMLElement[];
+    links.forEach((a) => (a.hidden = false));
+    more.hidden = true;
+    $('.more-list').innerHTML = '';
+    if (list.scrollWidth <= list.clientWidth + 1) return;
+    more.hidden = false;
+    for (let n = links.length - 1; n > 0 && list.scrollWidth > list.clientWidth + 1; n--) links[n].hidden = true;
+    $('.more-list').innerHTML = links.filter((a) => a.hidden).map((a) => a.outerHTML.replace(' hidden=""', '')).join('');
+  }
+  let spy: IntersectionObserver | undefined;
+  function watch() {
+    spy?.disconnect();
+    spy = new IntersectionObserver((es) => {
+      for (const e of es) if (e.isIntersecting) document.querySelectorAll('[data-to]').forEach((a) => a.classList.toggle('on', a.getAttribute('data-to') === (e.target as HTMLElement).dataset.sec));
+    }, { rootMargin: '-45% 0px -50% 0px' });
+    document.querySelectorAll('.g-sec').forEach((s) => spy!.observe(s));
+  }
+  let resizeT = 0;
+  let lastW = innerWidth;
+  addEventListener('resize', () => {
+    if (!view || innerWidth === lastW) return;
+    lastW = innerWidth;
+    clearTimeout(resizeT);
+    resizeT = window.setTimeout(draw, 150);
+  });
+
+  // ---- Lightbox and slideshow ----
+  const lb = $('.lb');
+  let at = 0;
+  let playing = 0;
+  function show(n: number) {
+    const list = view.images;
+    at = (n + list.length) % list.length;
+    const i = list[at];
+    const img = $<HTMLImageElement>('.lb-img');
+    img.src = i.web;
+    $('.lb-count').textContent = `${at + 1} / ${list.length}`;
+    const dl = (size: string, label: string) => `<a class="lb-tool" href="/api/gallery/download?v=${viewer}&id=${i.id}&size=${size}" download>${label}</a>`;
+    $('.lb-dl').innerHTML = preview || view.rights.downloads === 'none' ? '' : view.rights.downloads === 'highres' && !view.rights.watermark ? dl('original', 'Download') + dl('web', 'Web size') : dl('web', 'Download');
+    // Load the next one ahead.
+    const next = list[(at + 1) % list.length];
+    if (next) new Image().src = next.web;
+  }
+  function open(n: number) { lb.hidden = false; document.body.classList.add('lb-open'); show(n); }
+  function close() { lb.hidden = true; document.body.classList.remove('lb-open'); stop(); }
+  function play() { if (lb.hidden) open(0); playing = window.setInterval(() => show(at + 1), 4000); $('[data-lb-play]').textContent = 'Pause'; }
+  function stop() { clearInterval(playing); playing = 0; $('[data-lb-play]').textContent = 'Slideshow'; }
+
+  document.addEventListener('click', (e) => {
+    const t = e.target as HTMLElement;
+    const ph = t.closest<HTMLElement>('.ph');
+    if (ph) return open(Number(ph.dataset.n));
+    if (t.closest('[data-play]')) return play();
+    if (t.closest('[data-lb-play]')) return playing ? stop() : play();
+    if (t.closest('[data-lb-close]') || t === lb) return close();
+    if (t.closest('.lb-prev')) { stop(); return show(at - 1); }
+    if (t.closest('.lb-next')) { stop(); return show(at + 1); }
+    if (t.closest('.more-list a')) (t.closest('details') as HTMLDetailsElement).open = false;
+  });
+  document.addEventListener('keydown', (e) => {
+    if (lb.hidden) return;
+    if (e.key === 'Escape') close();
+    else if (e.key === 'ArrowRight') { stop(); show(at + 1); }
+    else if (e.key === 'ArrowLeft') { stop(); show(at - 1); }
+    else if (e.key === ' ') { e.preventDefault(); playing ? stop() : play(); }
+  });
+  let touchX = 0;
+  lb.addEventListener('touchstart', (e) => { touchX = e.touches[0].clientX; }, { passive: true });
+  lb.addEventListener('touchend', (e) => {
+    const dx = e.changedTouches[0].clientX - touchX;
+    if (Math.abs(dx) > 50) { stop(); show(at + (dx < 0 ? 1 : -1)); }
+  });
+  // Photos can't be dragged out or right-click saved (downloads go through the Download button).
+  document.addEventListener('contextmenu', (e) => { if ((e.target as HTMLElement).closest('.ph, .lb-img, .cover-photo')) e.preventDefault(); });
+
+  if (!slug) gate('<p>This gallery isn’t available.</p>');
+  else if (preview) load();
+  else enter();
+</script>
+
+<style is:global>
+  .gv { margin: 0; background: var(--white); color: var(--ink); font-family: var(--font); }
+  .gv .muted { color: #777; }
+  .gv .center { text-align: center; }
+  .gv-preview { position: sticky; top: 0; z-index: 60; padding: 8px 16px; background: var(--olive); color: var(--cream); font-size: 13px; text-align: center; }
+  .gv [hidden] { display: none !important; }
+
+  /* Cover: the logo, the cover photo in full (never cropped), names in spaced capitals, the date. */
+  .cover { min-height: 100svh; display: flex; flex-direction: column; align-items: center; gap: clamp(14px, 3vh, 28px); padding: clamp(16px, 3vh, 32px) 16px clamp(28px, 5vh, 56px); background: var(--griseo); box-sizing: border-box; }
+  .cover-logo { line-height: 0; }
+  .cover-logo img { height: clamp(46px, 7vh, 72px); width: auto; }
+  .cover-photo { flex: 1 1 auto; min-height: 0; display: flex; align-items: center; justify-content: center; width: 100%; }
+  .cover-photo img { max-width: min(100%, 1400px); max-height: 62svh; width: auto; height: auto; display: block; box-shadow: 0 24px 50px -30px rgb(0 0 0 / 0.5); animation: gv-in 1.2s var(--ease) both; }
+  .cover-text { text-align: center; max-width: 640px; }
+  .names { margin: 0; font-weight: 300; font-size: clamp(24px, 4.2vw, 44px); letter-spacing: 0.32em; text-transform: uppercase; line-height: 1.35; padding-left: 0.32em; }
+  .names .amp { letter-spacing: 0; text-transform: none; font-size: 0.8em; color: var(--green); }
+  .when { margin: 8px 0 18px; font-size: 13px; font-weight: 600; letter-spacing: 0.22em; text-transform: uppercase; color: var(--green); }
+  .gate p { margin: 0 0 12px; line-height: 1.6; }
+  .gate a { color: var(--green); }
+  .g-cta { display: inline-block; padding: 13px 30px; border: 0; border-radius: 14px 0; background: var(--green); color: var(--white) !important; font: inherit; font-size: 13px; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; text-decoration: none; cursor: pointer; transition: border-radius 0.4s var(--ease), background-color 0.3s var(--ease); }
+  .g-cta:hover { border-radius: 0 14px; background: var(--green-dark); }
+  .g-form { display: grid; gap: 12px; text-align: left; max-width: 420px; margin: 0 auto; }
+  .g-form label { display: grid; gap: 4px; font-size: 13px; font-weight: 600; color: #555; }
+  .g-form input:not([type='checkbox']) { font: inherit; font-size: 16px; padding: 11px 13px; border: 1px solid #cfd4c6; border-radius: 10px 0; background: var(--white); }
+  .g-form .check { display: flex; gap: 8px; align-items: flex-start; font-weight: 400; }
+  .g-form .row { display: flex; gap: 8px; }
+  .g-form .row input { flex: 1; min-width: 0; text-transform: none; }
+  .g-form .err { color: #a8432a; margin: 0; }
+  .g-form button { justify-self: start; }
+  .g-form--code { text-align: center; }
+
+  /* The gallery */
+  .g-bar { position: sticky; top: 0; z-index: 30; display: flex; align-items: center; gap: 14px; padding: 8px clamp(10px, 2vw, 24px); background: rgb(255 255 255 / 0.96); backdrop-filter: blur(6px); border-bottom: 1px solid #ecebe6; }
+  .gv-preview:not([hidden]) ~ .gallery .g-bar { top: 34px; }
+  .g-logo { line-height: 0; flex: none; }
+  .g-logo img { height: 34px; width: auto; }
+  .g-sections { flex: 1; min-width: 0; display: flex; align-items: center; gap: 4px; }
+  .sec-list { display: flex; gap: 2px; overflow: hidden; flex: 0 1 auto; min-width: 0; }
+  .g-sections a { padding: 8px 10px; font-size: 12px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: #666; text-decoration: none; white-space: nowrap; border-bottom: 2px solid transparent; }
+  .g-sections a.on, .g-sections a:hover { color: var(--ink); border-bottom-color: var(--green); opacity: 1; }
+  .g-title { font-size: 12px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: #555; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .more { position: relative; flex: none; }
+  .more summary { list-style: none; cursor: pointer; padding: 8px 10px; font-size: 12px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: #666; }
+  .more summary::-webkit-details-marker { display: none; }
+  .more-list { position: absolute; right: 0; top: 100%; display: grid; min-width: 200px; padding: 6px; background: var(--white); border-radius: 12px 0; box-shadow: 0 16px 34px -18px rgb(0 0 0 / 0.45); }
+  .g-actions { flex: none; }
+  .g-btn { font: inherit; font-size: 12px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; padding: 8px 14px; border: 1px solid var(--green); border-radius: 10px 0; background: var(--white); color: var(--green); cursor: pointer; }
+  .g-note { margin: 12px auto 0; max-width: 900px; padding: 10px 16px; background: var(--blush); border-radius: 12px 0; font-size: 14px; text-align: center; }
+  .g-main { padding: 6px clamp(6px, 1.2vw, 16px) 40px; }
+  .g-sec { scroll-margin-top: 60px; }
+  .g-sec h2 { margin: 42px 0 18px; text-align: center; font-weight: 300; font-size: clamp(20px, 2.4vw, 28px); letter-spacing: 0.24em; text-transform: uppercase; }
+  .row { display: flex; gap: 6px; margin-bottom: 6px; }
+  .row--hero { justify-content: center; }
+  .ph { padding: 0; border: 0; background: #eeefe9; cursor: zoom-in; flex: none; overflow: hidden; }
+  .ph img { display: block; width: 100%; height: 100%; transition: opacity 0.4s var(--ease), transform 0.8s var(--ease); -webkit-user-drag: none; user-select: none; }
+  .ph:hover img { opacity: 0.92; }
+  .g-foot { text-align: center; font-size: 13px; color: #888; padding: 20px 16px 40px; }
+  .g-foot a { color: var(--green); }
+  @media (max-width: 640px) {
+    .g-logo { display: none; }
+    .g-actions .g-btn { padding: 7px 10px; }
+  }
+
+  /* Lightbox */
+  .lb-open { overflow: hidden; }
+  .lb { position: fixed; inset: 0; z-index: 100; background: #121210; display: flex; align-items: center; justify-content: center; animation: gv-fade 0.3s var(--ease) both; }
+  .lb-img { max-width: 100vw; max-height: 100svh; object-fit: contain; user-select: none; -webkit-user-drag: none; }
+  .lb-btn { position: absolute; top: 50%; transform: translateY(-50%); width: 56px; height: 90px; border: 0; background: transparent; color: rgb(255 255 255 / 0.75); font-size: 46px; cursor: pointer; }
+  .lb-btn:hover { color: #fff; }
+  .lb-prev { left: 4px; } .lb-next { right: 4px; }
+  .lb-top { position: absolute; top: 0; left: 0; right: 0; display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 10px 14px; background: linear-gradient(rgb(0 0 0 / 0.45), transparent); color: #ddd; font-size: 13px; }
+  .lb-tools { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
+  .lb-tool { font: inherit; font-size: 12px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; padding: 7px 12px; border: 1px solid rgb(255 255 255 / 0.35); border-radius: 10px 0; background: transparent; color: #eee; cursor: pointer; text-decoration: none; }
+  .lb-tool:hover { background: rgb(255 255 255 / 0.12); opacity: 1; }
+  @media (max-width: 640px) { .lb-btn { display: none; } }
+  @keyframes gv-in { from { opacity: 0; transform: translateY(12px); } }
+  @keyframes gv-fade { from { opacity: 0; } }
+  @media (prefers-reduced-motion: reduce) { .gv * { animation: none !important; } }
+</style>

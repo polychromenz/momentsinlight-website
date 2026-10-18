@@ -1,0 +1,198 @@
+---
+// Moments Studio > Galleries > one gallery (MIL Galleries 1b/1c).
+//   Photos: sections and photos; drag to reorder (also between sections), highlight (a row of its
+//           own in the gallery), cover, hide, move, delete; rename / B+W / hide / reorder sections.
+//   Add photos: a Pic-Time download (folder per section) or photos into one section (src/studio/gallery-import.ts).
+//   Details: names, date, type, address, online/offline, expiry and the price to keep it longer.
+//   Sharing: links for the couple, invited people and guests (code, sections, downloads, watermark, email first, expiry).
+// Script: src/studio/gallery-admin.ts. Data: functions/api/studio/galleries/*.
+import StudioLayout from '../../layouts/StudioLayout.astro';
+---
+<StudioLayout title="Gallery" section="galleries">
+  <a slot="bar" class="s-btn s-btn--quiet" href="/studio/galleries">All galleries</a>
+  <a slot="bar" class="s-btn s-btn--quiet" data-preview target="_blank" rel="noopener">Preview</a>
+  <button slot="bar" type="button" class="s-btn s-btn--solid" data-online hidden>Put online</button>
+  <main class="ga">
+    <div class="ga-head">
+      <div><h1>…</h1><p class="ga-sub"></p></div>
+      <div class="ga-tabs" role="tablist">
+        <button type="button" role="tab" data-tab="photos" class="on">Photos</button>
+        <button type="button" role="tab" data-tab="add">Add photos</button>
+        <button type="button" role="tab" data-tab="details">Details</button>
+        <button type="button" role="tab" data-tab="sharing">Sharing</button>
+      </div>
+    </div>
+
+    <section class="pane" data-pane="photos">
+      <div class="ga-selbar" hidden>
+        <strong class="sel-n"></strong>
+        <button type="button" class="s-btn s-btn--quiet" data-sel="hero">Highlight</button>
+        <button type="button" class="s-btn s-btn--quiet" data-sel="unhero">Not a highlight</button>
+        <button type="button" class="s-btn s-btn--quiet" data-sel="hide">Hide</button>
+        <button type="button" class="s-btn s-btn--quiet" data-sel="show">Show</button>
+        <label class="sel-move">Move to <select data-move></select></label>
+        <button type="button" class="s-btn s-btn--danger" data-sel="delete">Delete</button>
+        <button type="button" class="s-btn s-btn--quiet" data-sel="none">Clear</button>
+      </div>
+      <p class="hint">Click photos to select them (Shift-click for a run); drag to reorder or move them into another section. ★ = a highlight, shown large on a row of its own. Hidden photos are kept but nobody sees them.</p>
+      <div class="ga-sections"></div>
+      <button type="button" class="s-btn" data-add-section>Add a section</button>
+    </section>
+
+    <section class="pane" data-pane="add" hidden>
+      <div class="card">
+        <h2>Bring in a Pic-Time download</h2>
+        <p>Unzip the download first, then choose its folder. Each folder inside becomes a section, in name order (folders ending in <em>B+W</em>, <em>BW</em> or <em>Mono</em> are marked black and white). Photos already here are skipped, so you can run it again if it stops.</p>
+        <label class="s-btn s-btn--solid pick">Choose a folder… <input type="file" data-folder webkitdirectory multiple hidden /></label>
+      </div>
+      <div class="card">
+        <h2>Add a few photos</h2>
+        <p>Into one section: <select data-into></select> <label class="s-btn pick">Choose photos… <input type="file" data-files accept="image/jpeg" multiple hidden /></label></p>
+      </div>
+      <div class="card ga-plan" hidden></div>
+    </section>
+
+    <section class="pane" data-pane="details" hidden>
+      <form class="card ga-form" data-details>
+        <div class="two"><label>Name <input name="name" required /></label><label>Type <select name="type"></select></label></div>
+        <div class="three"><label>Partner 1 <input name="spouse_a" /></label><label>Partner 2 <input name="spouse_b" /></label><label>New family name <input name="family_name" /></label></div>
+        <div class="two"><label>Date <input name="event_date" type="date" /></label><label>Venue <input name="venue" /></label></div>
+        <label>A few words (optional, shown under the names) <textarea name="description" rows="2"></textarea></label>
+        <label>Address <span class="addr"><span class="addr-base"></span><input name="slug" /></span></label>
+        <fieldset>
+          <legend>Online</legend>
+          <p class="state"></p>
+          <div class="two"><label>Online until <input name="expires_at" type="date" /></label>
+          <label>To keep it longer <select name="ext_mode"><option value="default">The default price</option><option value="free">Free</option><option value="custom">A special price</option></select></label></div>
+          <label class="ext-custom" hidden>Special price (NZ$) <input name="ext_price" type="number" min="0" step="1" /></label>
+          <p class="hint">Galleries go offline (not deleted) after this date. Leave it empty to keep it online until you take it offline.</p>
+        </fieldset>
+        <div class="actions"><button type="button" class="s-btn" data-offline hidden>Take offline</button><button type="submit" class="s-btn s-btn--solid">Save</button></div>
+      </form>
+      <div class="card danger">
+        <h2>Delete this gallery</h2>
+        <p>Deletes every photo (all sizes) and its links. This can’t be undone.</p>
+        <button type="button" class="s-btn s-btn--danger" data-delete>Delete gallery…</button>
+      </div>
+    </section>
+
+    <section class="pane" data-pane="sharing" hidden>
+      <div class="card">
+        <p>Each link has its own rights. Send the couple their link; for guests, share a guest link or its access code (people with a code go to <a class="code-url" target="_blank" rel="noopener"></a>). Sending from the studio comes later; for now, copy the link.</p>
+        <div class="add-links"><button type="button" class="s-btn" data-new-link="guest">Add a guest link</button><button type="button" class="s-btn" data-new-link="invited">Add an invited person</button><button type="button" class="s-btn" data-new-link="main_client">Add another client link</button></div>
+      </div>
+      <div class="ga-links"></div>
+    </section>
+  </main>
+
+  <dialog class="ga-dlg" data-link-dlg>
+    <form method="dialog" class="ga-form" data-link-form>
+      <h2>Link</h2>
+      <div class="two"><label>Name <input name="name" /></label><label>Email (optional) <input name="email" type="email" /></label></div>
+      <label>Access code (optional) <span class="row"><input name="access_code" autocomplete="off" /><button type="button" class="s-btn s-btn--quiet" data-gen>Make one</button></span></label>
+      <fieldset><legend>Sections they see</legend><div class="secs"></div></fieldset>
+      <div class="two"><label>Downloads <select name="downloads"><option value="highres">Full size and web size</option><option value="web">Web size only</option><option value="none">No downloads</option></select></label>
+      <label>Link works until (optional) <input name="expires_at" type="date" /></label></div>
+      <label class="check"><input type="checkbox" name="watermark" /> Your monogram on every photo (downloads are web size)</label>
+      <label class="check"><input type="checkbox" name="require_email" /> Ask for their name and email first</label>
+      <p class="err" hidden></p>
+      <div class="actions"><button type="button" class="s-btn s-btn--danger" data-del-link>Remove link</button><span></span><button type="button" class="s-btn s-btn--quiet" data-close>Cancel</button><button type="submit" class="s-btn s-btn--solid">Save</button></div>
+    </form>
+  </dialog>
+  <div class="s-toast" role="status"></div>
+</StudioLayout>
+
+<script>
+  import '../../studio/gallery-admin';
+</script>
+
+<style is:global>
+  .ga { max-width: 1300px; margin: 0 auto; padding: 22px clamp(14px, 3vw, 32px) 90px; }
+  .ga-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; flex-wrap: wrap; margin-bottom: 16px; }
+  .ga h1 { margin: 0; font-weight: 300; font-size: 32px; color: var(--ink); }
+  .ga-sub { margin: 2px 0 0; color: #888; font-size: 14px; }
+  .ga .st { font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: 999px; white-space: nowrap; }
+  .ga .st--online { background: #e6ecd9; color: #3e4229; } .ga .st--draft { background: #efe4dc; color: #7a4b2a; }
+  .ga .st--offline { background: #eee; color: #666; } .ga .st--expired { background: #f6e3dc; color: #8a3a22; }
+  .ga-tabs { display: flex; gap: 6px; flex-wrap: wrap; }
+  .ga-tabs button { padding: 8px 16px; border: 1px solid #ddd3c4; border-radius: 999px; background: var(--white); font: inherit; font-size: 14px; cursor: pointer; }
+  .ga-tabs button.on { background: var(--green); border-color: var(--green); color: var(--white); }
+  .ga .card { background: var(--white); border-radius: 24px 0; padding: 18px 22px; margin-bottom: 16px; }
+  .ga .card h2 { margin: 0 0 8px; font-weight: 300; font-size: 22px; }
+  .ga .card p { margin: 0 0 12px; line-height: 1.6; }
+  .ga .hint { font-size: 13px; color: #888; margin: 0 0 12px; }
+  .ga .pick { cursor: pointer; }
+  .ga select, .ga input, .ga textarea { font: inherit; font-size: 15px; padding: 8px 10px; border: 1px solid #ddd3c4; border-radius: 10px 0; background: var(--white); }
+
+  /* Photos */
+  .ga-selbar { position: sticky; top: 64px; z-index: 20; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 8px 12px; margin-bottom: 12px; background: var(--olive); color: var(--cream); border-radius: 16px 0; }
+  .ga-selbar .s-btn { padding: 6px 12px; color: var(--cream); border-color: transparent; }
+  .ga-selbar .s-btn:hover { background: rgb(255 255 255 / 0.12); }
+  .ga-selbar .s-btn--danger { color: #f3c4b6; }
+  .sel-move { font-size: 14px; display: inline-flex; gap: 6px; align-items: center; }
+  .sel-move select { font-size: 14px; padding: 5px 8px; }
+  .ga-sec { background: var(--white); border-radius: 24px 0; padding: 14px 16px 16px; margin-bottom: 16px; }
+  .ga-sec.hidden-sec { opacity: 0.6; }
+  .sec-head { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 10px; }
+  .sec-head .sec-name { font-size: 18px; font-weight: 400; border-color: transparent; padding: 4px 8px; min-width: 0; width: 18ch; }
+  .sec-head .sec-name:hover, .sec-head .sec-name:focus { border-color: #ddd3c4; }
+  .sec-head small { color: #888; }
+  .sec-head .sp { flex: 1; }
+  .sec-head label { font-size: 13px; display: inline-flex; gap: 4px; align-items: center; color: #555; }
+  .sec-head button { font: inherit; font-size: 13px; padding: 5px 9px; border: 1px solid #e2dacd; border-radius: 8px 0; background: var(--white); cursor: pointer; }
+  .thumbs { display: flex; flex-wrap: wrap; gap: 6px; min-height: 60px; padding: 2px; border-radius: 10px 0; }
+  .thumbs.over { outline: 2px dashed var(--sage); }
+  .th { position: relative; height: 120px; flex: none; background: var(--griseo); cursor: pointer; border-radius: 4px; overflow: hidden; outline-offset: 2px; }
+  .th img { height: 100%; width: auto; display: block; pointer-events: none; }
+  .th.sel { outline: 3px solid var(--green); }
+  .th.hid img { opacity: 0.3; }
+  .th.drop-before { box-shadow: -5px 0 0 -1px #c0392b; }
+  .th.drop-after { box-shadow: 5px 0 0 -1px #c0392b; }
+  .th .marks { position: absolute; left: 4px; top: 4px; display: flex; gap: 3px; }
+  .th .marks span { font-size: 11px; font-weight: 600; padding: 1px 6px; border-radius: 999px; background: rgb(0 0 0 / 0.55); color: #fff; }
+  .th .tools { position: absolute; right: 3px; bottom: 3px; display: flex; gap: 3px; opacity: 0; transition: opacity 0.2s; }
+  .th:hover .tools, .th.hero .tools .star { opacity: 1; }
+  .th:hover .tools { opacity: 1; }
+  .th .tools button { width: 26px; height: 26px; padding: 0; border: 0; border-radius: 50%; background: rgb(255 255 255 / 0.9); cursor: pointer; font-size: 13px; line-height: 26px; }
+  .th.hero .marks .hero-mark { background: var(--gold); }
+  .th.wait { display: grid; place-items: center; width: 120px; font-size: 11px; color: #888; }
+
+  /* Add photos */
+  .ga-plan table { width: 100%; border-collapse: collapse; font-size: 14px; margin-bottom: 12px; }
+  .ga-plan th { text-align: left; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--green); padding: 6px 8px; border-bottom: 1px solid #ece4d7; }
+  .ga-plan td { padding: 6px 8px; border-bottom: 1px solid #f3eee6; }
+  .bar { height: 10px; background: var(--griseo); border-radius: 99px; overflow: hidden; margin: 10px 0; }
+  .bar span { display: block; height: 100%; background: var(--green); width: 0; transition: width 0.4s; }
+  .ga-plan .fails { color: #a8432a; font-size: 13px; }
+
+  /* Details and links */
+  .ga-form { display: grid; gap: 12px; }
+  .ga-form label { display: grid; gap: 4px; font-size: 13px; font-weight: 600; color: #555; }
+  .ga-form .two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .ga-form .three { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+  @media (max-width: 700px) { .ga-form .two, .ga-form .three { grid-template-columns: 1fr; } }
+  .ga-form fieldset { border: 1px solid #ece4d7; border-radius: 14px 0; padding: 10px 14px 12px; display: grid; gap: 10px; }
+  .ga-form legend { font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--green); padding: 0 6px; }
+  .ga-form .check { display: flex; gap: 8px; align-items: center; font-weight: 400; color: #333; font-size: 14px; }
+  .ga-form .row { display: flex; gap: 8px; }
+  .ga-form .row input { flex: 1; }
+  .ga-form .actions { display: flex; gap: 8px; justify-content: flex-end; align-items: center; }
+  .ga-form .actions span { flex: 1; }
+  .ga-form .err { color: #a8432a; margin: 0; }
+  .ga-form .state { margin: 0; }
+  .addr { display: flex; align-items: center; border: 1px solid #ddd3c4; border-radius: 10px 0; background: var(--white); overflow: hidden; }
+  .addr-base { padding: 0 2px 0 10px; color: #888; font-weight: 400; font-size: 14px; white-space: nowrap; }
+  .addr input { border: 0; flex: 1; min-width: 0; padding-left: 0; }
+  .secs { display: flex; flex-wrap: wrap; gap: 6px 16px; }
+  .danger h2 { color: #8c1d18; }
+  .add-links { display: flex; gap: 8px; flex-wrap: wrap; }
+  .ga-link { display: grid; gap: 6px; }
+  .ga-link .top { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; align-items: baseline; }
+  .ga-link .kind { font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--green); }
+  .ga-link .url { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .ga-link code { font-size: 13px; background: var(--champagne); padding: 6px 10px; border-radius: 8px 0; word-break: break-all; }
+  .ga-link .facts { font-size: 13px; color: #777; }
+  .ga-dlg { border: 0; border-radius: 24px 0; padding: 22px 24px; width: min(620px, calc(100vw - 24px)); }
+  .ga-dlg::backdrop { background: rgb(0 0 0 / 0.35); }
+  .ga-dlg h2 { margin: 0; font-weight: 300; font-size: 24px; }
+</style>

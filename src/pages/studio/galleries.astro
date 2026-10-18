@@ -1,0 +1,182 @@
+---
+// Moments Studio > Galleries: every client gallery (MIL Galleries 1b) with its cover, photos,
+// status and expiry; search and filters; a new gallery; the defaults (months online, price to keep
+// a gallery longer). Data from functions/api/studio/galleries/index.js.
+import StudioLayout from '../../layouts/StudioLayout.astro';
+---
+<StudioLayout title="Galleries" section="galleries">
+  <button slot="bar" type="button" class="s-btn s-btn--quiet" data-defaults>Defaults</button>
+  <button slot="bar" type="button" class="s-btn s-btn--solid" data-new>New gallery</button>
+  <main class="gl">
+    <div class="gl-head">
+      <h1>Galleries</h1>
+      <div class="totals"></div>
+    </div>
+    <div class="gl-tools">
+      <div class="filter" role="group" aria-label="Show">
+        <button type="button" data-show="all" class="on">All</button>
+        <button type="button" data-show="online">Online</button>
+        <button type="button" data-show="draft">Drafts</button>
+        <button type="button" data-show="offline">Offline</button>
+      </div>
+      <select class="type" aria-label="Type"><option value="">Every type</option><option>Wedding</option><option>Portraits</option><option>Headshots</option><option>Events</option></select>
+      <input class="search" type="search" placeholder="Search…" aria-label="Search galleries" />
+    </div>
+    <ul class="gl-grid"><li class="muted">Loading…</li></ul>
+  </main>
+
+  <dialog class="gl-dlg" data-new-dlg>
+    <form method="dialog" class="gl-form">
+      <h2>New gallery</h2>
+      <label>Name <input name="name" required placeholder="e.g. Josh & Paul" /></label>
+      <div class="two">
+        <label>Type <select name="type"><option>Wedding</option><option>Portraits</option><option>Headshots</option><option>Events</option></select></label>
+        <label>Date <input name="event_date" type="date" /></label>
+      </div>
+      <div class="two">
+        <label>Partner 1 <input name="spouse_a" /></label>
+        <label>Partner 2 <input name="spouse_b" /></label>
+      </div>
+      <label>Venue <input name="venue" /></label>
+      <p class="err" hidden></p>
+      <div class="actions"><button type="button" class="s-btn s-btn--quiet" data-close>Cancel</button><button type="submit" class="s-btn s-btn--solid" value="ok">Create</button></div>
+    </form>
+  </dialog>
+
+  <dialog class="gl-dlg" data-defaults-dlg>
+    <form method="dialog" class="gl-form">
+      <h2>Gallery defaults</h2>
+      <label>Months online after a gallery goes online <input name="expiry_months" type="number" min="0" max="120" /></label>
+      <p class="hint">0 = galleries stay online until you take them offline.</p>
+      <div class="two">
+        <label>Price to keep a gallery longer (NZ$) <input name="extension_price" type="number" min="0" step="1" /></label>
+        <label>For how many months <input name="extension_months" type="number" min="1" max="120" /></label>
+      </div>
+      <p class="hint">Each gallery can have its own price (or free) on its Details tab. Paying online comes with a later step.</p>
+      <div class="actions"><button type="button" class="s-btn s-btn--quiet" data-close>Cancel</button><button type="submit" class="s-btn s-btn--solid" value="ok">Save</button></div>
+    </form>
+  </dialog>
+  <div class="s-toast" role="status"></div>
+</StudioLayout>
+
+<script>
+  const $ = <T extends HTMLElement = HTMLElement>(s: string) => document.querySelector<T>(s)!;
+  const esc = (s: unknown) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
+  const day = (d: string) => new Date(`${d.slice(0, 10)}T12:00:00Z`).toLocaleDateString('en-NZ', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' });
+  const gb = (b: number) => (b > 1e9 ? `${(b / 1e9).toFixed(1)} GB` : `${Math.round(b / 1e6)} MB`);
+  let all: any[] = [];
+  let today = '';
+  let settings: any = {};
+  let show = 'all';
+  function toast(msg: string, error = false) {
+    const t = $('.s-toast'); t.textContent = msg; t.classList.toggle('error', error); t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 4000);
+  }
+  const status = (g: any) => (g.status === 'online' && g.expires_at && g.expires_at < today ? 'expired' : g.status);
+  const label: Record<string, string> = { online: 'Online', draft: 'Draft', offline: 'Offline', expired: 'Expired' };
+
+  function draw() {
+    const q = $<HTMLInputElement>('.search').value.trim().toLowerCase();
+    const type = $<HTMLSelectElement>('.type').value;
+    const list = all.filter((g) => (show === 'all' || g.status === show) && (!type || g.type === type) && (!q || [g.name, g.venue, g.spouse_a, g.spouse_b, g.slug].join(' ').toLowerCase().includes(q)));
+    $('.gl-grid').innerHTML = list.map((g) => {
+      const st = status(g);
+      return `<li><a class="gl-card" href="/studio/gallery?id=${g.id}">
+        <span class="gl-cover">${g.cover ? `<img src="${esc(g.cover)}" alt="" loading="lazy" />` : '<span>No photos yet</span>'}</span>
+        <span class="gl-body">
+          <span class="gl-top"><strong>${esc(g.name)}</strong><span class="st st--${st}">${label[st]}</span></span>
+          <small>${esc(g.type)}${g.event_date ? ` · ${day(g.event_date)}` : ''}${g.venue ? ` · ${esc(g.venue)}` : ''}</small>
+          <small>${g.photos} photo${g.photos === 1 ? '' : 's'}${g.ready < g.photos ? ` (${g.photos - g.ready} still uploading)` : ''}${g.bytes ? ` · ${gb(g.bytes)}` : ''}${g.status === 'online' && g.expires_at ? ` · online until ${day(g.expires_at)}` : ''}</small>
+        </span></a></li>`;
+    }).join('') || '<li class="muted">No galleries here yet.</li>';
+    const online = all.filter((g) => status(g) === 'online');
+    $('.totals').innerHTML = `<div><span>Online</span><strong>${online.length}</strong></div>
+      <div><span>Photos</span><strong>${all.reduce((a, g) => a + g.photos, 0).toLocaleString('en-NZ')}</strong></div>
+      <div><span>Stored</span><strong>${gb(all.reduce((a, g) => a + g.bytes, 0))}</strong></div>`;
+  }
+
+  async function load() {
+    const r = await fetch('/api/studio/galleries');
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) { $('.gl-grid').innerHTML = `<li>${esc(d.error || 'Couldn’t load galleries.')}</li>`; return; }
+    all = d.galleries; today = d.today; settings = d.settings;
+    draw();
+  }
+
+  document.addEventListener('click', (e) => {
+    const t = e.target as HTMLElement;
+    const b = t.closest<HTMLButtonElement>('[data-show]');
+    if (b) { show = b.dataset.show!; document.querySelectorAll('[data-show]').forEach((x) => x.classList.toggle('on', x === b)); draw(); return; }
+    if (t.closest('[data-new]')) { $<HTMLDialogElement>('[data-new-dlg]').showModal(); return; }
+    if (t.closest('[data-defaults]')) {
+      const f = $<HTMLFormElement>('[data-defaults-dlg] form');
+      (f.elements.namedItem('expiry_months') as HTMLInputElement).value = settings.expiry_months;
+      (f.elements.namedItem('extension_price') as HTMLInputElement).value = String(settings.extension_price / 100);
+      (f.elements.namedItem('extension_months') as HTMLInputElement).value = settings.extension_months;
+      $<HTMLDialogElement>('[data-defaults-dlg]').showModal();
+      return;
+    }
+    if (t.closest('[data-close]')) (t.closest('dialog') as HTMLDialogElement).close();
+  });
+  $('[data-new-dlg] form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const f = e.target as HTMLFormElement;
+    const body = Object.fromEntries(new FormData(f));
+    const r = await fetch('/api/studio/galleries', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) { const p = $('[data-new-dlg] .err'); p.hidden = false; p.textContent = d.error || 'Couldn’t create it.'; return; }
+    location.href = `/studio/gallery?id=${d.id}&tab=photos`;
+  });
+  $('[data-defaults-dlg] form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const f = new FormData(e.target as HTMLFormElement);
+    const r = await fetch('/api/studio/galleries/settings', { method: 'PUT', headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ expiry_months: f.get('expiry_months'), extension_price: Math.round(Number(f.get('extension_price')) * 100), extension_months: f.get('extension_months') }) });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) return toast(d.error || 'Couldn’t save.', true);
+    settings = d.settings;
+    $<HTMLDialogElement>('[data-defaults-dlg]').close();
+    toast('Saved.');
+  });
+  $('.search').addEventListener('input', draw);
+  $('.type').addEventListener('change', draw);
+  load();
+</script>
+
+<style is:global>
+  .gl { max-width: 1200px; margin: 0 auto; padding: 24px clamp(14px, 3vw, 32px) 80px; }
+  .gl-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; flex-wrap: wrap; margin-bottom: 14px; }
+  .gl h1 { margin: 0; font-weight: 300; font-size: 32px; color: var(--ink); }
+  .gl .totals { display: flex; gap: 22px; }
+  .gl .totals div { display: flex; flex-direction: column; align-items: flex-end; }
+  .gl .totals span { font-size: 11px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--green); }
+  .gl .totals strong { font-size: 24px; font-weight: 300; color: var(--ink); }
+  .gl-tools { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; align-items: center; }
+  .gl .filter { display: flex; gap: 6px; flex-wrap: wrap; }
+  .gl .filter button { padding: 7px 14px; border: 1px solid #ddd3c4; border-radius: 999px; background: var(--white); font: inherit; font-size: 14px; cursor: pointer; }
+  .gl .filter button.on { background: var(--green); border-color: var(--green); color: var(--white); }
+  .gl .search, .gl .type { font: inherit; font-size: 14px; padding: 8px 12px; border: 1px solid #ddd3c4; border-radius: 10px 0; background: var(--white); }
+  .gl .search { margin-left: auto; min-width: 220px; }
+  .gl-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; }
+  .gl-card { display: flex; flex-direction: column; height: 100%; background: var(--white); border-radius: 22px 0; overflow: hidden; text-decoration: none; color: var(--ink); transition: transform 0.4s var(--ease), box-shadow 0.4s var(--ease); }
+  .gl-card:hover { transform: translateY(-3px); box-shadow: 0 18px 34px -24px rgb(0 0 0 / 0.5); opacity: 1; }
+  .gl-cover { aspect-ratio: 3 / 2; background: var(--griseo); display: flex; align-items: center; justify-content: center; color: #999; font-size: 13px; }
+  .gl-cover img { max-width: 100%; max-height: 100%; display: block; }
+  .gl-body { display: grid; gap: 3px; padding: 12px 16px 16px; }
+  .gl-top { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+  .gl-body small { color: #888; font-size: 13px; }
+  .gl .st { font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: 999px; white-space: nowrap; }
+  .st--online { background: #e6ecd9; color: #3e4229; } .st--draft { background: #efe4dc; color: #7a4b2a; }
+  .st--offline { background: #eee; color: #666; } .st--expired { background: #f6e3dc; color: #8a3a22; }
+  .gl .muted { color: #888; }
+  .gl-dlg { border: 0; border-radius: 24px 0; padding: 0; width: min(520px, calc(100vw - 24px)); }
+  .gl-dlg::backdrop { background: rgb(0 0 0 / 0.35); }
+  .gl-form { display: grid; gap: 12px; padding: 22px 24px; }
+  .gl-form h2 { margin: 0 0 4px; font-weight: 300; font-size: 24px; }
+  .gl-form label { display: grid; gap: 4px; font-size: 13px; font-weight: 600; color: #555; }
+  .gl-form input, .gl-form select { font: inherit; font-size: 15px; font-weight: 400; padding: 9px 11px; border: 1px solid #ddd3c4; border-radius: 10px 0; background: var(--white); }
+  .gl-form .two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .gl-form .hint { margin: -4px 0 0; font-size: 12px; color: #888; }
+  .gl-form .err { color: #a8432a; margin: 0; }
+  .gl-form .actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 4px; }
+</style>
