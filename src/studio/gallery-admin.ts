@@ -140,6 +140,12 @@ function fillInto() {
 let current: { files: File[]; into?: string } | null = null;
 let busy = false;
 let stop = false;
+const skippedNote = (list: string[]) => {
+  const web = list.find((x) => /web-size copies/.test(x));
+  const other = list.filter((x) => x !== web).length;
+  const bits = [other ? (other === 1 ? '1 file that isn’t a JPEG' : `${other} files that aren’t JPEGs`) : '', web ?? ''].filter(Boolean);
+  return bits.length ? `<p class="hint">Skipped ${bits.join(' and ')}.</p>` : '';
+};
 function showPlan(p: Plan) {
   const box = $('.ga-plan');
   box.hidden = false;
@@ -148,7 +154,7 @@ function showPlan(p: Plan) {
   box.innerHTML = `<h2>Ready to add</h2>
     <table><thead><tr><th>Section</th><th>Photos</th><th>Already here</th><th></th></tr></thead><tbody>
     ${p.sections.map((s) => `<tr><td>${esc(s.name)}</td><td>${s.files}</td><td>${s.done}</td><td>${s.is_bw ? 'B+W' : ''}</td></tr>`).join('')}</tbody></table>
-    ${p.skipped.length ? `<p class="hint">Skipped ${p.skipped.length === 1 ? '1 file that isn’t a JPEG' : `${p.skipped.length} files that aren’t JPEGs`}.</p>` : ''}
+    ${skippedNote(p.skipped)}
     <p>${todo ? `${todo} photo${todo === 1 ? '' : 's'} to send (${mb.toLocaleString('en-NZ')} MB).` : 'Everything here is already in the gallery.'}</p>
     <div class="bar"><span></span></div><p class="prog hint"></p><div class="fails"></div>
     ${todo ? '<button type="button" class="s-btn s-btn--solid" data-start>Start</button> <button type="button" class="s-btn" data-stop hidden>Stop</button>' : ''}`;
