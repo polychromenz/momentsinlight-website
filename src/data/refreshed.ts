@@ -14,6 +14,8 @@ export type RefreshOptions = {
   steps?: boolean;
   /** Start a new section at each smaller heading (###) as well. */
   splitOnH3?: boolean;
+  /** Centre the opening text under the heading (short pages, like Thanks). */
+  centre?: boolean;
   /** A heading for a page that has none of its own. */
   heading?: string;
   /** Words on the cards' hover shade. */
@@ -122,6 +124,7 @@ export const refreshed: Record<string, RefreshOptions> = {
   },
   '/thanks': {
     heading: 'Thank you',
+    centre: true,
     buttons: [{ label: 'Love stories', href: '/wedding-galleries' }, { label: 'Back to the home page', href: '/', outline: true }],
     closing: false,
   },

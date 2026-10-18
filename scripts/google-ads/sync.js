@@ -7,15 +7,20 @@
  * All the code it will ever run is below. Each run it asks the studio which reports to fetch:
  * read-only queries (it refuses anything that isn't a plain SELECT), runs them, and sends the rows
  * back. New reports are added in the studio (functions-lib/ads-reports.js) with no change here.
- * It changes nothing in Google Ads. Every request is signed with your key.
+ *
+ * The one change it can make: adding a negative keyword to a campaign, only ones you approved
+ * in the studio (signed in with your Google account), at most 20 a run, plain words only. It never
+ * removes anything, and never touches bids, budgets, ads or keywords. Every request is signed with your key.
  */
 var SITE = 'https://www.momentsinlight.co.nz';
 var KEY = '__PASTE_KEY__';
 var CHUNK = 1000;
+var MAX_CHANGES = 20;
 
 function main() {
   var state = call('/api/ads/state', {});
   if (!state) return;
+  addApprovedNegatives(state.actions || []);
   if (!state.export_due) { Logger.log('Nothing to send this hour.'); return; }
   var end = new Date();
   var start = new Date(end.getTime() - (state.days || 30) * 86400000);
@@ -48,6 +53,34 @@ function main() {
   full.script_error = 1;
   call('/api/ads/ingest', { report: 'done', rows: Object.keys(full) });
   Logger.log('Sent. ' + (errors.length ? errors.length + ' report(s) failed: the studio has the details.' : 'All reports went.'));
+}
+
+// Negative keywords you approved in the studio. Nothing else is ever changed.
+function addApprovedNegatives(actions) {
+  if (!actions.length) return;
+  if (AdsApp.getExecutionInfo().isPreview()) { Logger.log(actions.length + ' approved negative(s) waiting: a preview makes no changes, so click Run.'); return; }
+  var results = [];
+  actions.slice(0, MAX_CHANGES).forEach(function (a) {
+    var r = { id: a.id, ok: false, error: '' };
+    try {
+      var p = a.payload || {};
+      var text = String(p.text || '');
+      if (a.type !== 'add_negative') throw new Error('Not a change this script makes.');
+      if (!/^[a-z0-9][a-z0-9 '&.-]{0,79}$/i.test(text)) throw new Error('Plain words only.');
+      var kw = p.match === 'EXACT' ? '[' + text + ']' : p.match === 'PHRASE' ? '"' + text + '"' : p.match === 'BROAD' ? text : null;
+      if (!kw) throw new Error('Unknown match type.');
+      var it = AdsApp.campaigns().withIds([Number(String(p.campaign_id).replace(/[^0-9]/g, ''))]).get();
+      if (!it.hasNext()) throw new Error('Campaign not found.');
+      it.next().createNegativeKeyword(kw);
+      r.ok = true;
+      Logger.log('Added negative ' + kw);
+    } catch (e) {
+      r.error = String((e && e.message) || e);
+      Logger.log('Couldn\'t add negative "' + (a.payload && a.payload.text) + '": ' + r.error);
+    }
+    results.push(r);
+  });
+  call('/api/ads/ingest', { report: 'actions', rows: results });
 }
 
 // Only plain read queries are run.

@@ -4,6 +4,7 @@
 // warning if the Ads Script has stopped sending. Also a task on his list. Data from functions-lib/ads.js.
 import { nzNow } from './schedules.js';
 import { alertTony } from './crm.js';
+import { blockSuggestions } from './ads.js';
 
 const money = (c) => `$${(c / 100).toLocaleString('en-NZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const day = (iso, n) => { const d = new Date(`${iso}T12:00:00Z`); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
@@ -16,15 +17,13 @@ export async function adsWeekNumbers(env, today) {
     FROM ads_campaign_daily WHERE date BETWEEN ?1 AND ?2`).bind(a, b).first();
   const [week, prev, terms, keywords, last] = await Promise.all([
     sum(start, end), sum(pStart, pEnd),
-    // Searches that cost money and brought nothing, other than your own keywords (those show under keywords).
-    db.prepare(`SELECT search_term, SUM(cost_cents) cost, SUM(clicks) clicks FROM ads_search_term_daily WHERE date BETWEEN ?1 AND ?2
-      AND search_term NOT IN (SELECT lower(json_extract(data, '$.text')) FROM ads_entity WHERE kind = 'keyword' AND json_extract(data, '$.negative') = 0)
-      GROUP BY search_term HAVING SUM(conversions) = 0 AND SUM(cost_cents) >= 300 ORDER BY cost DESC LIMIT 12`).bind(start, end).all(),
+    // Searches that cost money and brought nothing, other than your own keywords and ones already blocked.
+    blockSuggestions(db, start, 300, end),
     db.prepare(`SELECT text, match_type, SUM(cost_cents) cost, SUM(clicks) clicks FROM ads_keyword_daily WHERE date >= ?1 AND status = 'ENABLED'
       GROUP BY text, match_type HAVING SUM(conversions) = 0 AND SUM(cost_cents) >= 3000 ORDER BY cost DESC LIMIT 8`).bind(since30).all(),
     db.prepare(`SELECT max(run_at) at FROM ads_import_log WHERE report = 'done'`).first(),
   ]);
-  return { start, end, week, prev, terms: terms.results, keywords: keywords.results, last: last?.at ?? null };
+  return { start, end, week, prev, terms: terms.slice(0, 12), keywords: keywords.results, last: last?.at ?? null };
 }
 
 export async function adsWeekly(env) {
@@ -50,7 +49,7 @@ export async function adsWeekly(env) {
     ['Cost per enquiry', `${per(n.week)} (the week before: ${per(n.prev)})`],
     ['Searches to block?', n.terms.length ? n.terms.map((t) => `${t.search_term}: ${money(t.cost)}, ${t.clicks} click${t.clicks === 1 ? '' : 's'}`).join('\n') : 'None: every search that cost $3+ brought an enquiry or is already blocked.'],
     ['Keywords to look at', n.keywords.length ? n.keywords.map((k) => `${k.text} (${String(k.match_type).toLowerCase()}): ${money(k.cost)} in 30 days, no enquiries`).join('\n') : 'None costing $30+ without enquiries.'],
-    ['What to do', 'Add any searches that aren’t for you as negative keywords (Campaigns > Weddings > Audiences, keywords and content > Keywords > Negative search keywords). Ask Claude if anything looks odd.'],
+    ['What to do', 'Block any searches that aren’t for you: Studio > Website > SEO > Google Ads > Block searches, then Approve. The script adds them within the hour. Ask Claude if anything looks odd.'],
   ];
   await alertTony(env, `Google Ads this week: ${money(n.week.cost)} spent, ${Math.round(n.week.conv * 10) / 10} enquiries`, rows, 'https://www.momentsinlight.co.nz/studio/seo/ads');
   await db.prepare(`INSERT INTO tasks (title, notes, due_date, created_at) VALUES (?1, ?2, ?3, ?4)`)

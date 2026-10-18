@@ -14,6 +14,24 @@ import script from '../../../../scripts/google-ads/sync.js?raw';
 
     <section class="card status-card"><div class="status"><p class="muted">Loading…</p></div></section>
 
+    <section class="card block-card" hidden>
+      <h2>Block searches</h2>
+      <p class="muted">Searches in the last 30 days that cost money and brought no enquiry, not yet blocked. Approve a block and the script adds it as a negative keyword on its next hourly run. Nothing changes in Google Ads until you approve it.</p>
+      <form class="neg-form" autocomplete="off">
+        <input name="text" placeholder="Word or search to block, e.g. affordable" aria-label="Negative keyword" maxlength="80" required />
+        <select name="match" aria-label="Match type">
+          <option value="BROAD">Any search with all these words</option>
+          <option value="PHRASE" selected>Searches containing this phrase</option>
+          <option value="EXACT">Only this exact search</option>
+        </select>
+        <select name="campaign_id" aria-label="Campaign"></select>
+        <button type="submit" class="s-btn s-btn--solid">Approve block</button>
+      </form>
+      <div class="tbl-wrap"><table class="tbl block-tbl"><thead><tr><th>Search</th><th>Campaign</th><th class="r">Cost</th><th class="r">Clicks</th><th></th></tr></thead><tbody></tbody></table></div>
+      <h3>Approved blocks</h3>
+      <ul class="neg-list"></ul>
+    </section>
+
     <section class="card setup">
       <h2>Connect Google Ads</h2>
       <ol>
@@ -26,7 +44,7 @@ import script from '../../../../scripts/google-ads/sync.js?raw';
         <li>Click <strong>Run</strong>, then <strong>Run</strong> again to confirm. The first run sends 90 days and takes a minute or two.</li>
         <li>Back on the Scripts list, set its <strong>Frequency</strong> to <strong>Hourly</strong>.</li>
       </ol>
-      <p class="muted">For now it only reads your account; nothing in Google Ads is changed.</p>
+      <p class="muted">It reads your account. The only change it makes is adding negative keywords you approve above; it never removes anything or touches bids, budgets or ads.</p>
       <textarea class="script" readonly hidden></textarea>
     </section>
   </main>
@@ -45,6 +63,38 @@ import script from '../../../../scripts/google-ads/sync.js?raw';
     const t = $('.s-toast'); t.textContent = msg; t.classList.toggle('error', error); t.classList.add('show');
     setTimeout(() => t.classList.remove('show'), 4000);
   }
+  const MATCH: Record<string, string> = { BROAD: 'all these words', PHRASE: 'phrase', EXACT: 'exact search' };
+  const STATUS: Record<string, string> = { pending: 'waiting for the next run', done: 'added', failed: 'couldn’t be added', cancelled: 'cancelled' };
+  function renderBlocks(d: any) {
+    const card = $('.block-card');
+    const search = d.campaigns.filter((c: any) => c.channel_type === 'SEARCH');
+    card.hidden = !search.length;
+    if (!search.length) return;
+    const sel = $<HTMLSelectElement>('.neg-form select[name="campaign_id"]');
+    const was = sel.value;
+    sel.innerHTML = search.map((c: any) => `<option value="${esc(c.campaign_id)}">${esc(c.name)}${c.status === 'ENABLED' ? '' : ' (' + esc(String(c.status).toLowerCase()) + ')'}</option>`).join('');
+    if (was) sel.value = was;
+    $('.block-tbl tbody').innerHTML = d.block.length ? d.block.map((t: any) => `<tr><td>${esc(t.search_term)}</td><td>${esc(t.campaign ?? '')}</td><td class="r">${money(t.cost)}</td><td class="r">${t.clicks}</td>
+      <td class="r"><button type="button" class="s-btn s-btn--quiet" data-block="${esc(t.search_term)}" data-campaign="${esc(t.campaign_id)}">Block…</button></td></tr>`).join('')
+      : '<tr><td colspan="5" class="muted">None: every search that cost $2 or more brought an enquiry or is already blocked.</td></tr>';
+    $('.neg-list').innerHTML = d.negatives.length ? d.negatives.map((a: any) => `<li><strong>${esc(a.payload.text)}</strong> <span class="muted">(${MATCH[a.payload.match] ?? a.payload.match}) in ${esc(a.payload.campaign)} · approved ${when(a.created_at)}${a.payload.by && a.payload.by !== 'local' ? ' by ' + esc(a.payload.by) : ''}</span>
+      · <span class="st-${a.status}">${STATUS[a.status] ?? a.status}${a.applied_at ? ' ' + when(a.applied_at) : ''}</span>${a.error ? ` <small class="warn">${esc(a.error)}</small>` : ''}
+      ${a.status === 'pending' ? ` <button type="button" class="s-btn s-btn--quiet" data-cancel="${a.id}">Cancel</button>` : ''}</li>`).join('') : '<li class="muted">None yet.</li>';
+  }
+  async function approve(body: Record<string, unknown>) {
+    const r = await fetch('/api/studio/crm/ads', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'negative', ...body }) });
+    const d = await r.json().catch(() => ({}));
+    if (r.status === 409 && confirm(`${d.error} Block it anyway?`)) return approve({ ...body, anyway: true });
+    if (!r.ok) { toast(d.error || 'Couldn’t approve that.', true); return false; }
+    toast('Approved. The script adds it on its next run (within the hour).');
+    return true;
+  }
+  $<HTMLFormElement>('.neg-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const f = e.target as HTMLFormElement;
+    const body = Object.fromEntries(new FormData(f));
+    if (await approve(body)) { f.reset(); load(); }
+  });
   const NICE: Record<string, string> = { SEARCH: 'Search', DISPLAY: 'Display', PERFORMANCE_MAX: 'Performance Max', SMART: 'Smart', VIDEO: 'Video', MULTI_CHANNEL: 'App', DEMAND_GEN: 'Demand Gen' };
   async function load() {
     const d = await (await fetch('/api/studio/crm/ads')).json();
@@ -54,7 +104,7 @@ import script from '../../../../scripts/google-ads/sync.js?raw';
       s.innerHTML = `<h2>Not connected yet</h2><p class="muted">${d.connected ? 'The script has been made but hasn’t sent anything yet. Paste it into Google Ads and click Run (steps below).' : 'Follow the steps below to connect your Google Ads account.'}</p>`;
       return;
     }
-    const t = d.totals;
+    renderBlocks(d);
     s.innerHTML = `<div class="head"><h2>Connected</h2><span class="muted">Last data ${when(d.last)} · ${d.totals.first} to ${d.totals.last} · ${d.search_terms.toLocaleString('en-NZ')} search terms · Search Console ${d.gsc.n ? `${d.gsc.first} to ${d.gsc.last}` : 'starting'}</span></div>
       <p class="muted">Last 30 days by campaign (check these against Google Ads; they should match to the cent):</p>
       <div class="tbl-wrap"><table class="tbl"><thead><tr><th>Campaign</th><th>Type</th><th>Bidding</th><th class="r">Budget/day</th><th class="r">Cost</th><th class="r">Clicks</th><th class="r">Conversions</th></tr></thead><tbody>
@@ -75,6 +125,25 @@ import script from '../../../../scripts/google-ads/sync.js?raw';
       document.querySelector<HTMLElement>('.after')!.hidden = false;
       toast('Made. Now copy it.');
       load();
+    }
+    const blk = t.closest<HTMLElement>('[data-block]');
+    if (blk) {
+      const f = $<HTMLFormElement>('.neg-form');
+      (f.elements.namedItem('text') as HTMLInputElement).value = blk.dataset.block!;
+      (f.elements.namedItem('campaign_id') as HTMLSelectElement).value = blk.dataset.campaign!;
+      (f.elements.namedItem('match') as HTMLSelectElement).value = 'EXACT';
+      f.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      (f.elements.namedItem('text') as HTMLInputElement).focus();
+      toast('Trim it to the word that makes it wrong (e.g. “affordable”) for a wider block, then Approve.');
+      return;
+    }
+    const cancel = t.closest<HTMLElement>('[data-cancel]');
+    if (cancel) {
+      const r = await fetch('/api/studio/crm/ads', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'cancel', id: Number(cancel.dataset.cancel) }) });
+      const d = await r.json().catch(() => ({}));
+      toast(r.ok ? 'Cancelled.' : d.error || 'Couldn’t cancel.', !r.ok);
+      load();
+      return;
     }
     if (t.closest('[data-refresh]')) {
       await fetch('/api/studio/crm/ads', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'refresh' }) });
@@ -113,4 +182,13 @@ import script from '../../../../scripts/google-ads/sync.js?raw';
   .ads .tbl th { text-align: left; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--green); padding: 8px; border-bottom: 1px solid #ece4d7; }
   .ads .tbl td { padding: 8px; border-bottom: 1px solid #f3eee6; }
   .ads .tbl .r { text-align: right; }
+  .ads h3 { margin: 18px 0 6px; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--green); font-weight: 600; }
+  .ads .neg-form { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0 14px; }
+  .ads .neg-form input, .ads .neg-form select { font: inherit; font-size: 14px; padding: 8px 10px; border: 1px solid #ddd3c4; border-radius: 10px 0; background: var(--white); }
+  .ads .neg-form input { flex: 1 1 220px; min-width: 0; }
+  .ads .neg-form select { flex: 0 1 auto; max-width: 100%; }
+  .ads .neg-list { list-style: none; padding: 0; margin: 0; font-size: 14px; line-height: 1.6; }
+  .ads .neg-list li { padding: 6px 0; border-bottom: 1px solid #f3eee6; }
+  .ads .st-done { color: var(--green); font-weight: 600; }
+  .ads .st-failed { color: #a8432a; font-weight: 600; }
 </style>

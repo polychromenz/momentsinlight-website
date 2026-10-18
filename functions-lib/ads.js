@@ -42,17 +42,60 @@ export async function scriptRequest(request, env) {
   return diff === 0 ? body : null;
 }
 
-/** What the script should do this run: export (and how many days), and later, actions to apply. */
+/** What the script should do this run: export (and how many days), and negatives Tony approved in the studio. */
 export async function scriptState(env) {
   const last = await env.DB.prepare(`SELECT max(run_at) at FROM ads_import_log WHERE ok = 1 AND report = 'done'`).first();
   const first = !last?.at;
   // Asked for from the studio (Send everything on the next run), or a day since the last export.
   const force = await env.DB.prepare("SELECT 1 FROM settings WHERE key = 'ads_force'").first();
   const due = first || !!force || Date.now() - Date.parse(last.at) > 20 * 3600_000;
-  const actions = (await env.DB.prepare(`SELECT id, type, payload FROM ads_action WHERE status = 'pending' ORDER BY id LIMIT 50`).all()).results
-    .map((a) => ({ ...a, payload: JSON.parse(a.payload) }));
+  const actions = (await env.DB.prepare(`SELECT id, type, payload FROM ads_action WHERE status = 'pending' AND type = 'add_negative' ORDER BY id LIMIT 20`).all()).results
+    .map((a) => { const p = JSON.parse(a.payload); return { id: a.id, type: a.type, payload: { campaign_id: p.campaign_id, text: p.text, match: p.match } }; });
   return { export_due: due, days: first ? 90 : 30, actions, reports: due ? await reportsFor(env.DB) : [] };
 }
+
+// ---- Negative keywords: what's blocked, and searches worth blocking ----
+const words = (s) => s.split(/\s+/).filter(Boolean);
+const cleanKw = (s) => String(s ?? '').toLowerCase().replace(/[+"[\]]/g, '').trim();
+/** Whether a negative keyword stops a search, by Google's rules for each match type. */
+export function negativeBlocks(neg, search) {
+  const q = cleanKw(search), t = cleanKw(neg.text);
+  if (neg.match === 'EXACT') return q === t;
+  if (neg.match === 'PHRASE') return ` ${q} `.includes(` ${t} `);
+  const qw = words(q);
+  return words(t).every((w) => qw.includes(w));
+}
+/** A campaign's negatives: its own, its ad groups', its shared lists', and ones approved but not yet added. */
+export async function campaignNegatives(db, campaignId) {
+  const id = String(campaignId);
+  const rows = (await db.prepare(`SELECT json_extract(data, '$.text') text, json_extract(data, '$.match') AS "match" FROM ads_entity
+      WHERE (kind = 'campaign_negative' AND json_extract(data, '$.campaign_id') = ?1)
+        OR (kind = 'keyword' AND json_extract(data, '$.negative') = 1 AND json_extract(data, '$.campaign_id') = ?1)
+        OR (kind = 'shared_negative' AND json_extract(data, '$.list') IN (SELECT json_extract(data, '$.list') FROM ads_entity WHERE kind = 'shared_list_use' AND json_extract(data, '$.campaign_id') = ?1))
+    UNION ALL SELECT json_extract(payload, '$.text'), json_extract(payload, '$.match') FROM ads_action
+      WHERE type = 'add_negative' AND status IN ('pending', 'done') AND json_extract(payload, '$.campaign_id') = ?1`).bind(id).all()).results;
+  return rows.filter((r) => r.text);
+}
+/** Searches since a date that cost money and brought no enquiry, aren't one of your keywords, and aren't blocked yet. */
+export async function blockSuggestions(db, since, minCents = 200, until = '9999-12-31') {
+  const terms = (await db.prepare(`SELECT t.campaign_id, c.name campaign, t.search_term, SUM(t.cost_cents) cost, SUM(t.clicks) clicks, SUM(t.impressions) impressions
+      FROM ads_search_term_daily t LEFT JOIN ads_campaign c ON c.campaign_id = t.campaign_id
+      WHERE t.date BETWEEN ?1 AND ?2 GROUP BY t.campaign_id, t.search_term HAVING SUM(t.conversions) = 0 AND SUM(t.cost_cents) >= ?3
+      ORDER BY cost DESC LIMIT 200`).bind(since, until, minCents).all()).results;
+  const mine = new Set((await db.prepare(`SELECT lower(json_extract(data, '$.text')) t FROM ads_entity WHERE kind = 'keyword' AND json_extract(data, '$.negative') = 0`).all()).results.map((r) => r.t));
+  const negs = new Map();
+  const out = [];
+  for (const t of terms) {
+    if (mine.has(t.search_term)) continue;
+    if (!negs.has(t.campaign_id)) negs.set(t.campaign_id, await campaignNegatives(db, t.campaign_id));
+    if (negs.get(t.campaign_id).some((n) => negativeBlocks(n, t.search_term))) continue;
+    out.push(t);
+  }
+  return out;
+}
+
+/** What a negative keyword may look like: plain words only (the script checks this again). */
+export const NEGATIVE_OK = /^[a-z0-9][a-z0-9 '&.-]{0,79}$/i;
 
 const cents = (micros) => Math.round(Number(micros || 0) / 10_000);
 const num = (v) => (v === null || v === undefined || v === '' || v === '--' ? null : Number(String(v).replace(/[^0-9.-]/g, '')));
@@ -82,6 +125,12 @@ export async function ingest(env, report, rows) {
   } else if (report.startsWith('entity:')) {
     const kind = report.slice(7);
     stmts = rows.map((r) => db.prepare('INSERT OR REPLACE INTO ads_entity (kind, id, data, updated_at) VALUES (?1, ?2, ?3, ?4)').bind(kind, String(r.id), JSON.stringify(r), now));
+  } else if (report === 'actions') {
+    // What happened to the approved changes: [{ id, ok, error }].
+    stmts = rows.map((r) => db.prepare(`UPDATE ads_action SET status = ?2, applied_at = ?3, error = ?4 WHERE id = ?1 AND status = 'pending'`)
+      .bind(Number(r.id), r.ok ? 'done' : 'failed', now, r.ok ? null : String(r.error ?? '').slice(0, 300)));
+    // Fetch the account again on the next run, so the studio's lists show the change.
+    if (rows.some((r) => r.ok)) stmts.push(db.prepare("INSERT INTO settings (key, value, updated_at) VALUES ('ads_force', '1', ?1) ON CONFLICT (key) DO UPDATE SET updated_at = ?1").bind(now));
   } else if (report === 'done') {
     await db.prepare("DELETE FROM settings WHERE key = 'ads_force'").run();
     // The end of an export: lists that were sent in full replace what was there.

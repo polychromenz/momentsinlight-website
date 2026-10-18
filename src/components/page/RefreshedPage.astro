@@ -180,7 +180,7 @@ const eager = () => { const e = firstPhoto; firstPhoto = false; return e; };
         <section class="intro intro--after wrap">
           <hr class="hairline rise" />
           {it.lead && <p class="lead rise" set:html={it.lead} />}
-          {strip(it.body) && <div class="prose body rise" set:html={cardify(it.body)} />}
+          {strip(it.body) && <div class:list={['prose body rise', { centre: o.centre }]} set:html={cardify(it.body)} />}
         </section>
       </>
     );
@@ -190,7 +190,7 @@ const eager = () => { const e = firstPhoto; firstPhoto = false; return e; };
         <h1 class="display rise">{it.heading}</h1>
         <hr class="hairline rise" />
         {it.lead && <p class="lead rise" set:html={it.lead} />}
-        {strip(it.body) && <div class="prose body rise" set:html={cardify(it.body)} />}
+        {strip(it.body) && <div class:list={['prose body rise', { centre: o.centre }]} set:html={cardify(it.body)} />}
       </section>
     );
     if (it.kind === 'buttons') return (
@@ -277,6 +277,7 @@ const eager = () => { const e = firstPhoto; firstPhoto = false; return e; };
   .intro .hairline { margin-bottom: 28px; }
   .lead { font-size: clamp(19px, 0.6vw + 15px, 23px); font-weight: 300; line-height: 1.6; color: var(--ink); }
   .body { text-align: left; margin-top: 26px; }
+  .body.centre { text-align: center; }
   .rise { animation: rise 1.3s var(--ease) both; }
   .rise:nth-child(2) { animation-delay: 0.1s; }
   .rise:nth-child(3) { animation-delay: 0.2s; }
