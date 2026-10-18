@@ -152,8 +152,8 @@ import { site } from '../data/site';
       const days = Math.round((Date.parse(`${exp}T12:00:00Z`) - Date.now()) / 86400000);
       if (days <= 30) { const n = $('.g-note'); n.hidden = false; n.textContent = `This gallery is online until ${day(exp)}. Download your favourites before then.`; }
     }
-    draw();
     $('.gallery').hidden = false;
+    draw();
     if (location.hash === '#photos') $('.gallery').scrollIntoView();
   }
 
@@ -193,7 +193,9 @@ import { site } from '../data/site';
   }
   function draw() {
     const main = $('.g-main');
-    const width = main.clientWidth || innerWidth - 24;
+    // The space inside the side padding, a hair under so rounding never makes a row too wide.
+    const cs = getComputedStyle(main);
+    const width = Math.floor((main.clientWidth || innerWidth) - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight)) - 1;
     const multi = view.sections.length > 1;
     main.innerHTML = view.sections.map((s) => {
       const list = view.images.filter((i) => i.s === s.id);
@@ -337,7 +339,7 @@ import { site } from '../data/site';
   .g-actions { flex: none; }
   .g-btn { font: inherit; font-size: 12px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; padding: 8px 14px; border: 1px solid var(--green); border-radius: 10px 0; background: var(--white); color: var(--green); cursor: pointer; }
   .g-note { margin: 12px auto 0; max-width: 900px; padding: 10px 16px; background: var(--blush); border-radius: 12px 0; font-size: 14px; text-align: center; }
-  .g-main { padding: 6px clamp(6px, 1.2vw, 16px) 40px; }
+  .g-main { padding: 6px clamp(6px, 1.2vw, 16px) 40px; overflow-x: clip; }
   .g-sec { scroll-margin-top: 60px; }
   .g-sec h2 { margin: 42px 0 18px; text-align: center; font-weight: 300; font-size: clamp(20px, 2.4vw, 28px); letter-spacing: 0.24em; text-transform: uppercase; }
   .row { display: flex; gap: 6px; margin-bottom: 6px; }
