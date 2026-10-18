@@ -1,0 +1,103 @@
+---
+// Moments Studio > Website > Pages > a page in the refreshed design: written like a blog post.
+// The page flows down the middle as it reads on the site (words, photos beside them, slideshows),
+// with Google's title and description in the side panel. Script: src/studio/page-flow.ts.
+import StudioLayout from '../../layouts/StudioLayout.astro';
+---
+<StudioLayout title="Edit page" section="pages">
+  <span slot="bar" class="pe-state" aria-live="polite"></span>
+  <button slot="bar" type="button" class="s-btn s-btn--quiet" data-phone>Phone view</button>
+  <a slot="bar" class="s-btn s-btn--quiet pe-view" target="_blank" rel="noopener">View page ↗</a>
+  <button slot="bar" type="button" class="s-btn s-btn--solid" data-save disabled>Save</button>
+  <div class="fl-wrap">
+    <main class="fl">
+      <p class="pe-back"><a href="/studio/pages">← All pages</a> · <span class="pe-path"></span></p>
+      <h1 class="pe-title">Opening…</h1>
+      <div class="fl-toolbar" role="toolbar" aria-label="Text formatting">
+        <button type="button" data-cmd="bold" title="Bold"><b>B</b></button>
+        <button type="button" data-cmd="italic" title="Italic"><i>I</i></button>
+        <button type="button" data-cmd="h1" title="Page heading">Heading</button>
+        <button type="button" data-cmd="h2" title="Section heading">Subheading</button>
+        <button type="button" data-cmd="h3" title="Small heading">Small heading</button>
+        <button type="button" data-cmd="p" title="Normal text">Text</button>
+        <button type="button" data-cmd="ul" title="List">• List</button>
+        <button type="button" data-cmd="link" title="Link">Link</button>
+      </div>
+      <div class="flow"></div>
+    </main>
+    <aside class="side" aria-label="Page settings">
+      <h2>On Google</h2>
+      <label>Google title <small class="cnt" data-cnt="title"></small><input name="title" maxlength="120" /></label>
+      <label>Google description <small class="cnt" data-cnt="description"></small><textarea name="description" rows="4" maxlength="320"></textarea></label>
+      <div class="serp"><span class="serp-site">Moments In Light</span><span class="serp-url"></span><span class="serp-title"></span><span class="serp-desc"></span></div>
+      <p class="hint">The page’s first heading is its main heading. Each Subheading starts a new section on the site; two or more Small headings together are shown side by side as cards.</p>
+      <p class="hint">The closing band, buttons and reviews at the end of the page are part of its design; ask Claude to change them.</p>
+    </aside>
+  </div>
+  <div class="s-toast" role="status"></div>
+</StudioLayout>
+
+<script>
+  import { startFlow } from '../../studio/page-flow';
+  startFlow();
+</script>
+
+<style is:global>
+  .fl-wrap { display: grid; gap: 22px; max-width: 1280px; margin: 0 auto; padding: 18px clamp(14px, 3vw, 32px) 90px; }
+  @media (min-width: 1100px) { .fl-wrap { grid-template-columns: minmax(0, 1fr) 340px; align-items: start; } .side { position: sticky; top: 84px; } }
+  .pe-state { font-size: 13px; color: #888; align-self: center; }
+  [data-phone].on { background: var(--green); color: var(--white); }
+  .fl { background: var(--white); border-radius: 24px 0; padding: 22px clamp(16px, 4vw, 56px) 40px; min-width: 0; transition: max-width 0.4s var(--ease); }
+  body.fl-phone .fl { max-width: 420px; margin: 0 auto; }
+  .pe-back { margin: 0 0 4px; font-size: 13px; color: #999; } .pe-back a { color: var(--green); }
+  .pe-title { margin: 0 0 12px; font-size: 13px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--green); }
+  .fl-toolbar { position: sticky; top: 64px; z-index: 5; display: flex; gap: 4px; flex-wrap: wrap; padding: 8px; margin: 0 -8px 10px; background: rgb(255 255 255 / 0.95); border-bottom: 1px solid #f1ebe1; }
+  .fl-toolbar button { border: 1px solid #e6dccb; background: #faf6ee; border-radius: 6px 0; padding: 5px 11px; font: inherit; font-size: 13px; cursor: pointer; color: #444; }
+  .fl-toolbar button:hover { border-color: var(--green); }
+  /* The page as it reads on the site */
+  .flow { font-family: Raleway, sans-serif; color: var(--ink); }
+  .part { position: relative; padding: 18px 0; border-radius: 10px 0; }
+  .part:hover { box-shadow: 0 0 0 1px #efe7da; }
+  .part-ctl { position: absolute; top: 6px; right: 6px; display: none; gap: 2px; z-index: 3; }
+  .part:hover .part-ctl, .part:focus-within .part-ctl { display: flex; }
+  .part-ctl button { border: 1px solid #e6dccb; background: var(--white); border-radius: 6px; width: 28px; height: 26px; cursor: pointer; font-size: 13px; }
+  .part-ctl .rm { color: #a8432a; }
+  .part-label { margin: 0 0 8px; font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: #aaa; }
+  .fl-text .ProseMirror { outline: none; font-size: 17px; line-height: 1.75; min-height: 2em; }
+  .fl-text .ProseMirror h1 { font-size: clamp(28px, 3vw, 40px); font-weight: 300; color: var(--green); margin: 0 0 0.5em; line-height: 1.2; }
+  .fl-text .ProseMirror h2 { font-size: clamp(23px, 2.2vw, 30px); font-weight: 300; color: var(--green); margin: 1em 0 0.4em; line-height: 1.25; }
+  .fl-text .ProseMirror h3 { font-size: 19px; font-weight: 500; color: var(--green); margin: 0.9em 0 0.3em; }
+  .fl-text .ProseMirror p { margin: 0 0 0.9em; color: #444; }
+  .fl-text .ProseMirror a { color: var(--green); }
+  .fl-text .ProseMirror ul { padding-left: 1.3em; }
+  .fl-text .ProseMirror p.is-editor-empty:first-child::before { content: attr(data-placeholder); color: #bbb; float: left; height: 0; pointer-events: none; }
+  .fl-photo { margin: 0 0 12px; }
+  .fl-photo img { display: block; width: 100%; max-height: 520px; object-fit: contain; background: #f6f2ea; border-radius: 14px 0; }
+  .fl-photo.beside { float: right; width: min(42%, 360px); margin: 0 0 12px 24px; }
+  body.fl-phone .fl-photo.beside { float: none; width: 100%; margin: 0 0 12px; }
+  .fl-photo figcaption { display: flex; flex-direction: column; gap: 4px; margin-top: 6px; }
+  .fl-photo textarea, .fl-gal textarea { font: inherit; font-size: 13px; padding: 6px 8px; border: 1px solid #e6dccb; border-radius: 6px 0; width: 100%; box-sizing: border-box; color: #555; }
+  .acts { display: flex; gap: 6px; flex-wrap: wrap; }
+  .acts button, .add-beside, .inserter button { border: 1px solid #e6dccb; background: var(--white); border-radius: 6px 0; padding: 3px 9px; font: inherit; font-size: 12px; cursor: pointer; color: var(--green); }
+  .acts .rm { color: #a8432a; }
+  .clear { clear: both; }
+  .fl-gal { list-style: none; margin: 0 0 8px; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+  .fl-gal li { display: flex; flex-direction: column; gap: 4px; cursor: grab; }
+  .fl-gal img { width: 100%; height: 110px; object-fit: cover; border-radius: 8px 0; background: #eee; }
+  .fl-button { display: flex; gap: 8px; margin: 8px 0; flex-wrap: wrap; }
+  .fl-button input { font: inherit; font-size: 14px; padding: 8px 12px; border: 1px solid #ddd3c4; border-radius: 999px; }
+  .fl-button input:first-child { background: var(--green); color: var(--white); border-color: var(--green); min-width: 240px; }
+  .locked { margin: 8px 0; padding: 10px 14px; background: #f6f2ea; border-radius: 10px 0; font-size: 13px; color: #888; font-style: italic; }
+  .inserter { display: flex; gap: 6px; align-items: center; justify-content: center; height: 14px; opacity: 0; transition: opacity 0.2s, height 0.2s; overflow: hidden; font-size: 12px; color: #aaa; }
+  .inserter:hover, .inserter:focus-within, .flow > .inserter:last-child, .flow:has(.part:only-of-type) .inserter { opacity: 1; height: 34px; }
+  .uploading { font-size: 13px; color: var(--green); }
+  .side { background: var(--white); border-radius: 24px 0; padding: 18px 20px; display: flex; flex-direction: column; gap: 12px; }
+  .side h2 { margin: 0; font-weight: 300; font-size: 20px; color: var(--ink); }
+  .side label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: #555; }
+  .side input, .side textarea { font: inherit; font-size: 14px; padding: 8px 10px; border: 1px solid #ddd3c4; border-radius: 8px 0; width: 100%; box-sizing: border-box; }
+  .side .cnt.up { color: #5a7d2a; } .side .cnt.down { color: #a8432a; }
+  .side .hint { margin: 0; font-size: 12px; color: #888; line-height: 1.5; }
+  .serp { display: flex; flex-direction: column; gap: 2px; padding: 12px; border: 1px solid #e8e8e8; border-radius: 10px; font-family: Arial, sans-serif; }
+  .serp-site { font-size: 13px; color: #202124; } .serp-url { font-size: 12px; color: #4d5156; }
+  .serp-title { font-size: 17px; color: #1a0dab; margin-top: 3px; } .serp-desc { font-size: 13px; line-height: 1.5; color: #4d5156; }
+</style>

@@ -3,12 +3,14 @@
 // editor. Pages built into the site's code are listed too, with what can and can't be changed.
 import StudioLayout from '../../layouts/StudioLayout.astro';
 import home from '../../data/home.json';
+import { refreshed } from '../../data/refreshed';
 
 const files = import.meta.glob<any>('../../data/pages/*.json', { eager: true });
 // Pages whose content is built in code (only their Google title and description come from here).
 const codeContent = new Set(['wedding-galleries']);
 const pages = Object.entries(files)
   .map(([f, m]) => ({ id: f.split('/').pop()!.replace(/\.json$/, ''), path: m.default.path as string, title: m.default.title as string }))
+  .map((p) => ({ ...p, href: refreshed[p.path] ? `/studio/page-write?id=${p.id}` : `/studio/page-edit?id=${p.id}` }))
   .filter((p) => !['/thanks'].includes(p.path))
   .sort((a, b) => a.path.localeCompare(b.path));
 const strip = (t: string) => t.replace(/\s*\|\s*Moments In Light\s*$/i, '');
@@ -23,9 +25,9 @@ const strip = (t: string) => t.replace(/\s*\|\s*Moments In Light\s*$/i, '');
         <li data-q="home page /"><a class="what" href="/studio/page-edit?id=home"><strong>Home page</strong><small>/ · {strip(home.title)}</small></a><a class="s-btn s-btn--quiet" href="/" target="_blank" rel="noopener">View ↗</a><a class="s-btn" href="/studio/page-edit?id=home">Edit</a></li>
         {pages.map((p) => (
           <li data-q={`${p.path} ${p.title}`.toLowerCase()}>
-            <a class="what" href={`/studio/page-edit?id=${p.id}`}><strong>{strip(p.title)}</strong><small>{p.path}{codeContent.has(p.id) ? ' · only its Google title and description are here; the rest is built into the site' : ''}</small></a>
+            <a class="what" href={p.href}><strong>{strip(p.title)}</strong><small>{p.path}{codeContent.has(p.id) ? ' · only its Google title and description are here; the rest is built into the site' : ''}</small></a>
             <a class="s-btn s-btn--quiet" href={p.path} target="_blank" rel="noopener">View ↗</a>
-            <a class="s-btn" href={`/studio/page-edit?id=${p.id}`}>Edit</a>
+            <a class="s-btn" href={p.href}>Edit</a>
           </li>
         ))}
       </ul>
