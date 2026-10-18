@@ -5,6 +5,7 @@
 //   node scripts/pictime-import/upload.mjs "E:\EXPORTS\WEDDINGS"        (add --check to only report what matches)
 //
 // Speed: 3 megabits a second from 7am to 10pm (so the internet stays usable), no limit overnight.
+// The couples in order.txt go at full speed day and night (or --priority-speed=10).
 // Change with --day-speed=5 or --night-speed=20, or --full for no limit at all.
 //
 // Under the base folder, any folder with a link.txt is a couple's folder: link.txt holds their
@@ -57,8 +58,11 @@ const arg = (name) => process.argv.find((a) => a.startsWith(`--${name}=`))?.spli
 const DAY_MBPS = Number(arg('day-speed') ?? 3); // megabits a second, 7am to 10pm
 const NIGHT_MBPS = Number(arg('night-speed') ?? 0); // 0 = no limit
 const FULL = process.argv.includes('--full');
+const PRIORITY_MBPS = Number(arg('priority-speed') ?? 0); // the couples in order.txt, day and night
+let priority = false; // set while one of the order.txt couples is uploading
 function speedNow() {
   if (FULL) return 0;
+  if (priority) return PRIORITY_MBPS;
   const h = new Date().getHours();
   return h >= 7 && h < 22 ? DAY_MBPS : NIGHT_MBPS;
 }
@@ -269,6 +273,8 @@ const rank = (f) => { const i = first.findIndex((n) => path.basename(f).toLowerC
 const folders = galleryFolders(root).sort((a, b) => rank(a) - rank(b));
 log(`Moving ${folders.length} gallery folder(s) from ${root}`);
 for (const f of folders) {
+  priority = rank(f) < first.length;
+  if (priority) log(`${path.basename(f)} is in order.txt, so it goes at full speed.`);
   for (const link of linksIn(f)) {
     try { await moveGallery(f, link); } catch (e) { log(`Problem with ${path.relative(root, f) || f}: ${e.message}`); }
   }
