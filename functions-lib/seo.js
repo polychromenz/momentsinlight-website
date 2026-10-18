@@ -142,7 +142,7 @@ export async function contentStatus(env) {
   const thisMonth = posts.filter((p) => !p.draft && p.date.slice(0, 7) === nz.date.slice(0, 7)).length;
   // Weddings 2 weeks to 6 months ago with no post that mentions the couple's names.
   const jobs = (await env.DB.prepare(`SELECT j.id, j.title, j.partner_name, j.event_date, j.venue, c.first_name FROM jobs j JOIN clients c ON c.id = j.client_id
-    WHERE j.job_type = 'Wedding' AND j.stage IN ('booked', 'completed') AND j.event_date BETWEEN ?1 AND ?2 ORDER BY j.event_date`)
+    WHERE j.job_type = 'Wedding' AND j.stage IN ('booked', 'completed') AND j.hold = 0 AND j.event_date BETWEEN ?1 AND ?2 ORDER BY j.event_date`)
     .bind(iso(new Date(Date.now() - 365 * DAY)), iso(new Date(Date.now() - 14 * DAY))).all()).results;
   // Studio Ninja weddings (read from Gmail): signed contracts matched to their enquiry for the date and venue.
   try {

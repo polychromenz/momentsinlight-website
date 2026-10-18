@@ -8,10 +8,10 @@ const PART = 90_000;                         // base64 characters per stored pie
 
 const fileName = (id) => `doc-${id}`;
 
-/** All documents, with the templates that attach each one. */
+/** The library's documents (not those belonging to one job), with the templates that attach each one. */
 export async function listDocuments(db) {
   const [docs, templates] = await Promise.all([
-    db.prepare('SELECT id, name, type, size, created_at, updated_at FROM documents ORDER BY name COLLATE NOCASE').all(),
+    db.prepare('SELECT id, name, type, size, created_at, updated_at FROM documents WHERE job_id IS NULL ORDER BY name COLLATE NOCASE').all(),
     db.prepare('SELECT key, name, attachments FROM templates').all(),
   ]);
   return docs.results.map((d) => ({

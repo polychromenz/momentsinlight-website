@@ -3,8 +3,9 @@
 //   POST /api/studio/crm/sn-gmail                        run the survey (read only)
 //   POST /api/studio/crm/sn-gmail { action: 'read', kind }   read the next batch of that kind
 //   POST /api/studio/crm/sn-gmail { action: 'clear' }    empty what was read (after testing)
+//   POST /api/studio/crm/sn-gmail { action: 'contracts' }  file the next few signed contract PDFs on imported jobs
 import { json } from '../../../../functions-lib/studio.js';
-import { survey, readBatch, progress, KINDS } from '../../../../functions-lib/sn-gmail.js';
+import { survey, readBatch, progress, KINDS, attachContracts } from '../../../../functions-lib/sn-gmail.js';
 
 export async function onRequestGet({ env }) {
   const row = await env.DB.prepare(`SELECT value FROM settings WHERE key = 'sn_survey'`).first();
@@ -18,6 +19,7 @@ export async function onRequestPost({ request, env }) {
       if (!KINDS[d.kind]) return json({ error: 'Which kind?' }, 400);
       return json(await readBatch(env, d.kind));
     }
+    if (d.action === 'contracts') return json(await attachContracts(env));
     if (d.action === 'clear') {
       await env.DB.prepare('DELETE FROM sn_gmail').run();
       return json({ ok: true });

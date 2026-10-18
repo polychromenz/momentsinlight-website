@@ -20,16 +20,18 @@ export async function onRequestGet({ request, env }) {
     return new Response(Uint8Array.from(atob(f.base64), (c) => c.charCodeAt(0)), { headers: { 'content-type': u.type, 'content-disposition': `inline; filename="${u.name.replace(/"/g, '')}"`, 'cache-control': 'private, no-store' } });
   }
   try {
-    const [t, galleries, shared, docs, uploads] = await Promise.all([
+    const [t, galleries, shared, docs, uploads, own] = await Promise.all([
       portalToken(env.DB, jobId),
       env.DB.prepare('SELECT id, title, url, note FROM galleries WHERE job_id = ?1 ORDER BY id').bind(jobId).all(),
       env.DB.prepare('SELECT document_id FROM job_documents WHERE job_id = ?1').bind(jobId).all(),
       listDocuments(env.DB),
       env.DB.prepare('SELECT u.id, u.name, u.size, u.created_at, u.questionnaire_id FROM uploads u WHERE u.job_id = ?1 ORDER BY u.id').bind(jobId).all(),
+      // This couple's own documents (e.g. their signed Studio Ninja contract), listed first.
+      env.DB.prepare('SELECT id, name, size FROM documents WHERE job_id = ?1 ORDER BY name').bind(jobId).all(),
     ]);
     const on = new Set(shared.results.map((r) => r.document_id));
     return json({ link: portalLink(t), path: `/portal?t=${t}`, galleries: galleries.results,
-      documents: docs.map(({ id, name, size }) => ({ id, name, size, shared: on.has(id) })), uploads: uploads.results });
+      documents: [...own.results.map(({ id, name, size }) => ({ id, name, size, own: true, shared: on.has(id) })), ...docs.map(({ id, name, size }) => ({ id, name, size, shared: on.has(id) }))], uploads: uploads.results });
   } catch (e) {
     return json({ error: e.message }, 400);
   }

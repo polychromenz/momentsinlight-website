@@ -25,6 +25,7 @@
 //      the site health check. Rankings (functions-lib/rankings.js): Monday's Google check, and
 //      collecting results as they finish.
 // Ready-to-send emails and to-dos need nothing here: they appear on Today when due.
+// Jobs on hold (jobs.hold: the Studio Ninja import until switch-over) are skipped by every step.
 import { sendStep } from '../../../functions-lib/crm-send.js';
 import { thread, connection } from '../../../functions-lib/gmail.js';
 import { alertTony } from '../../../functions-lib/crm.js';
@@ -55,7 +56,7 @@ export async function onRequestPost({ request, env }) {
       `SELECT j.id, j.client_id, j.replied_at,
          (SELECT gmail_thread_id FROM messages m WHERE m.job_id = j.id AND m.gmail_thread_id IS NOT NULL ORDER BY m.sent_at DESC LIMIT 1) AS t,
          EXISTS (SELECT 1 FROM steps s WHERE s.job_id = j.id AND s.status = 'scheduled' AND (',' || s.stop_on || ',') LIKE '%,reply,%') AS waiting
-       FROM jobs j WHERE j.stage IN ('lead', 'booked') AND t IS NOT NULL
+       FROM jobs j WHERE j.stage IN ('lead', 'booked') AND j.hold = 0 AND t IS NOT NULL
        ORDER BY waiting DESC, j.mail_checked_at IS NOT NULL, j.mail_checked_at LIMIT 10`,
     ).all();
     for (const job of jobs.results) {
@@ -89,7 +90,7 @@ export async function onRequestPost({ request, env }) {
   // 2. Automatic emails that are due.
   const due = await db.prepare(
     `SELECT s.*, j.stage, j.replied_at, j.title AS job_title FROM steps s JOIN jobs j ON j.id = s.job_id
-     WHERE s.status = 'scheduled' AND s.kind = 'auto_email' AND s.due_at <= ?1 ORDER BY s.due_at LIMIT 20`,
+     WHERE s.status = 'scheduled' AND s.kind = 'auto_email' AND s.due_at <= ?1 AND j.hold = 0 ORDER BY s.due_at LIMIT 20`,
   ).bind(now).all();
   for (const step of due.results) {
     // Stop conditions.
@@ -116,7 +117,7 @@ export async function onRequestPost({ request, env }) {
   // 4. Invoices due to be sent (the deposit goes when the contract is signed; later ones 2 weeks
   //    before they're due). Claimed first so none goes twice; a failure retries in an hour.
   log.invoices = 0; log.reminders = 0;
-  const toSend = await db.prepare(`SELECT * FROM invoices WHERE status = 'scheduled' AND send_at <= ?1 ORDER BY send_at LIMIT 20`).bind(now).all();
+  const toSend = await db.prepare(`SELECT * FROM invoices WHERE status = 'scheduled' AND send_at <= ?1 AND job_id NOT IN (SELECT id FROM jobs WHERE hold = 1) ORDER BY send_at LIMIT 20`).bind(now).all();
   for (const inv of toSend.results) {
     const claim = await db.prepare(`UPDATE invoices SET status = 'sent' WHERE id = ?1 AND status = 'scheduled'`).bind(inv.id).run();
     if (!claim.meta.changes) continue;
@@ -132,7 +133,7 @@ export async function onRequestPost({ request, env }) {
   // 5. Reminders for unpaid invoices: on the due date (if it was sent before then), and 3 days late.
   const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Pacific/Auckland' });
   const threeAgo = new Date(Date.now() - 3 * 86400_000).toLocaleDateString('en-CA', { timeZone: 'Pacific/Auckland' });
-  const unpaid = await db.prepare(`SELECT * FROM invoices WHERE status = 'sent' AND reminders < 2 AND due_date <= ?1 LIMIT 40`).bind(today).all();
+  const unpaid = await db.prepare(`SELECT * FROM invoices WHERE status = 'sent' AND reminders < 2 AND due_date <= ?1 AND job_id NOT IN (SELECT id FROM jobs WHERE hold = 1) LIMIT 40`).bind(today).all();
   for (const inv of unpaid.results) {
     const sentDay = inv.sent_at ? new Date(inv.sent_at).toLocaleDateString('en-CA', { timeZone: 'Pacific/Auckland' }) : today;
     const onDue = inv.reminders === 0 && inv.due_date === today && sentDay < today;
@@ -153,7 +154,7 @@ export async function onRequestPost({ request, env }) {
   // 6. Google Calendar catch-up (a few at a time).
   log.calendar = 0;
   if (await calendarReady(db)) {
-    const stale = await db.prepare('SELECT id FROM jobs WHERE gcal_synced_at IS NULL OR gcal_synced_at < updated_at ORDER BY updated_at DESC LIMIT 15').all();
+    const stale = await db.prepare('SELECT id FROM jobs WHERE hold = 0 AND (gcal_synced_at IS NULL OR gcal_synced_at < updated_at) ORDER BY updated_at DESC LIMIT 15').all();
     for (const { id } of stale.results) {
       try { await syncJob(env, id); log.calendar++; await noteSync(db); } catch (e) { console.error('crm run: calendar', id, e.message); log.calendar_error = e.message; await noteSync(db, e.message); break; }
     }

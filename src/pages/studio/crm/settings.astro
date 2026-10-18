@@ -669,7 +669,10 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
       <h3 class="sn-h">Step 2: read the enquiries and bookings</h3>
       <p class="hint">Reads the "New lead", "quote accepted" and "contract" emails into a holding area (35 at a time, it keeps going by itself). Nothing is added to your clients yet; that's the import, after you've checked the report. You can remove what was read at any time.</p>
       <p class="sn-progress">${snProgress(d.progress)}</p>
-      <div class="actions" style="justify-content:flex-start"><button type="button" class="s-btn s-btn--solid" data-sn-read>Read the Studio Ninja emails</button><button type="button" class="s-btn s-btn--quiet" data-sn-clear>Remove what was read</button></div>`;
+      <div class="actions" style="justify-content:flex-start"><button type="button" class="s-btn s-btn--solid" data-sn-read>Read the Studio Ninja emails</button><button type="button" class="s-btn s-btn--quiet" data-sn-clear>Remove what was read</button></div>
+      <h3 class="sn-h">Step 3: signed contracts</h3>
+      <p class="hint">After the import: files the signed contract PDF from each “contract signed” email on the couple’s job (and in their portal). Safe to run again; it skips ones already filed.</p>
+      <div class="actions" style="justify-content:flex-start"><button type="button" class="s-btn s-btn--solid" data-sn-contracts>Attach signed contracts</button></div>`;
   }
   const SN_KINDS: Record<string, string> = { lead: 'Enquiries', quote_accepted: 'Quotes accepted', contract_signed: 'Contracts' };
   const snProgress = (p: any) => (p ? Object.entries(SN_KINDS).map(([k, label]) => `${label}: <strong>${p[k]?.n ?? 0}</strong>${p[k]?.first ? ` <small>(${p[k].first.slice(0, 10)} to ${p[k].last.slice(0, 10)})</small>` : ''}`).join(' · ') : '');
@@ -692,6 +695,23 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
       $('.sn-progress').innerHTML = snProgress(g.progress);
       rb.disabled = false; rb.textContent = 'Read the Studio Ninja emails';
       toast('Done. Tell Claude, and it will add them to the dry-run report.');
+      return;
+    }
+    const cb = t.closest<HTMLButtonElement>('[data-sn-contracts]');
+    if (cb) {
+      cb.disabled = true;
+      let total = 0; const failed: string[] = [];
+      for (let i = 0; i < 20; i++) {
+        cb.textContent = `Attaching… ${total} so far`;
+        const r = await fetch('/api/studio/crm/sn-gmail', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'contracts' }) });
+        const d = await r.json().catch(() => ({ error: `Something went wrong (${r.status}).` }));
+        if (!r.ok) { toast(d.error, true); break; }
+        total += d.done; failed.push(...(d.failed ?? []));
+        if (d.note) { toast(d.note); break; }
+        if (!d.left || !d.done) break;
+      }
+      cb.disabled = false; cb.textContent = 'Attach signed contracts';
+      toast(failed.length ? `Attached ${total}; ${failed.length} didn’t: ${failed.slice(0, 3).join('; ')}` : `Attached ${total} signed contract${total === 1 ? '' : 's'}.`, !!failed.length);
       return;
     }
     if (t.closest('[data-sn-clear]')) {

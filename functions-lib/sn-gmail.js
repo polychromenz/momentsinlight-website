@@ -161,3 +161,46 @@ export async function progress(env) {
   const rows = (await env.DB.prepare('SELECT kind, count(*) n, min(received_at) first, max(received_at) last FROM sn_gmail GROUP BY kind').all()).results;
   return Object.fromEntries(Object.keys(KINDS).map((k) => [k, rows.find((r) => r.kind === k) ?? { n: 0 }]));
 }
+
+// ---- Step 3: signed contracts for the import ----
+// Each "contract signed" email has the signed PDF attached. The import (settings 'sn_import':
+// { batch, contracts: [{ message_id, job_id }] }) lists which job each belongs to; this files the
+// PDF as that job's own document, shared in their portal. A few at a time; safe to repeat.
+import { storeFile } from './documents.js';
+
+function pdfPart(part) {
+  if (!part) return null;
+  if (/\.pdf$/i.test(part.filename ?? '') && part.body?.attachmentId) return part;
+  for (const p of part.parts ?? []) { const hit = pdfPart(p); if (hit) return hit; }
+  return null;
+}
+
+export async function attachContracts(env, max = 12) {
+  const row = await env.DB.prepare(`SELECT value FROM settings WHERE key = 'sn_import'`).first();
+  const imp = row ? JSON.parse(row.value) : null;
+  if (!imp?.contracts?.length) return { done: 0, left: 0, note: 'Nothing imported yet.' };
+  const have = new Set((await env.DB.prepare(`SELECT name, job_id FROM documents WHERE import_batch = ?1`).bind(imp.batch).all()).results.map((d) => `${d.job_id}:${d.name}`));
+  const todo = [];
+  for (const c of imp.contracts) if (!have.has(`${c.job_id}:${c.name}`)) todo.push(c);
+  let done = 0;
+  const failed = [];
+  for (const c of todo.slice(0, max)) {
+    try {
+      const m = await full(env, c.message_id);
+      const part = pdfPart(m.payload);
+      if (!part) { failed.push(`${c.name}: no PDF in the email`); continue; }
+      const a = await gmail(env, `messages/${c.message_id}/attachments/${part.body.attachmentId}`);
+      const b64 = a.data.replace(/-/g, '+').replace(/_/g, '/');
+      const padded = b64 + '='.repeat((4 - (b64.length % 4)) % 4);
+      const now = new Date().toISOString();
+      const doc = await env.DB.prepare(`INSERT INTO documents (name, type, size, job_id, import_batch, created_at, updated_at) VALUES (?1, 'application/pdf', ?2, ?3, ?4, ?5, ?5) RETURNING id`)
+        .bind(c.name, a.size ?? Math.floor((padded.length * 3) / 4), c.job_id, imp.batch, now).first();
+      await storeFile(env.DB, doc.id, 'application/pdf', padded);
+      await env.DB.prepare('INSERT OR IGNORE INTO job_documents (job_id, document_id) VALUES (?1, ?2)').bind(c.job_id, doc.id).run();
+      done++;
+    } catch (e) {
+      failed.push(`${c.name}: ${e.message}`);
+    }
+  }
+  return { done, left: Math.max(0, todo.length - done - failed.length), failed };
+}
