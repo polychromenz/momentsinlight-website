@@ -1,0 +1,84 @@
+---
+// Moments Studio > Website > Pages > a page: its Google title and description, its words (each
+// text block, edited as it is so its styling stays), photos (description, replace) and galleries
+// (add, remove, reorder, describe), and button labels. The home page has its own few fields.
+// Script: src/studio/page-editor.ts; saved through functions/api/studio/page.js.
+import StudioLayout from '../../layouts/StudioLayout.astro';
+---
+<StudioLayout title="Edit page" section="pages">
+  <a slot="bar" class="s-btn s-btn--quiet pe-view" target="_blank" rel="noopener">View page ↗</a>
+  <span slot="bar" class="pe-state"></span>
+  <button slot="bar" type="button" class="s-btn s-btn--solid" data-save disabled>Save</button>
+  <main class="pe">
+    <p class="pe-back"><a href="/studio/pages">← All pages</a></p>
+    <h1 class="pe-title">Loading…</h1>
+    <p class="pe-path muted"></p>
+
+    <section class="card">
+      <h2>On Google</h2>
+      <label>Google title <small class="cnt" data-cnt="title"></small><input name="title" maxlength="120" /></label>
+      <label>Google description <small class="cnt" data-cnt="description"></small><textarea name="description" rows="3" maxlength="320"></textarea></label>
+      <div class="serp"><span class="serp-site">Moments In Light</span><span class="serp-url"></span><span class="serp-title"></span><span class="serp-desc"></span></div>
+    </section>
+
+    <section class="card home-only" hidden>
+      <h2>Top of the page</h2>
+      <label>Small line above the heading <input name="eyebrow" maxlength="80" /></label>
+      <label>Main heading <input name="h1" maxlength="150" /></label>
+      <label>Opening line <textarea name="intro" rows="3" maxlength="400"></textarea></label>
+      <p class="hint">The rest of the home page (photos, sections, reviews) is built into the site’s design; ask Claude to change it.</p>
+    </section>
+
+    <div class="pe-sections"></div>
+  </main>
+  <dialog class="pe-link"><form method="dialog"><label>Link to <input name="href" placeholder="/contact or https://…" /></label><div class="row"><button value="cancel" class="s-btn s-btn--quiet">Cancel</button><button value="remove" class="s-btn s-btn--quiet">Remove link</button><button value="ok" class="s-btn s-btn--solid">Add link</button></div></form></dialog>
+  <div class="s-toast" role="status"></div>
+</StudioLayout>
+
+<script>
+  import '../../studio/page-editor';
+</script>
+
+<style is:global>
+  .pe { max-width: 920px; margin: 0 auto; padding: 18px clamp(14px, 3vw, 32px) 90px; }
+  .pe-back { margin: 0 0 6px; font-size: 14px; } .pe-back a { color: var(--green); }
+  .pe-title { margin: 0; font-weight: 300; font-size: 30px; color: var(--ink); }
+  .pe-path { margin: 2px 0 16px; font-size: 14px; }
+  .pe .muted { color: #999; }
+  .pe-state { font-size: 13px; color: #888; align-self: center; }
+  .pe .card { background: var(--white); border-radius: 24px 0; padding: 18px 22px; margin-bottom: 14px; display: flex; flex-direction: column; gap: 12px; }
+  .pe .card h2 { margin: 0; font-weight: 300; font-size: 20px; color: var(--ink); }
+  .pe .card h3 { margin: 0; font-size: 11px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--green); }
+  .pe label { display: flex; flex-direction: column; gap: 5px; font-size: 13px; color: #555; }
+  .pe input, .pe textarea { font: inherit; font-size: 15px; padding: 9px 11px; border: 1px solid #ddd3c4; border-radius: 8px 0; background: var(--white); width: 100%; box-sizing: border-box; }
+  .pe .cnt.up { color: #5a7d2a; } .pe .cnt.down { color: #a8432a; }
+  .pe .hint { margin: 0; font-size: 13px; color: #888; }
+  .serp { display: flex; flex-direction: column; gap: 2px; padding: 12px 14px; border: 1px solid #e8e8e8; border-radius: 10px; font-family: Arial, sans-serif; background: #fff; }
+  .serp-site { font-size: 14px; color: #202124; } .serp-url { font-size: 12px; color: #4d5156; }
+  .serp-title { font-size: 19px; color: #1a0dab; margin-top: 4px; } .serp-desc { font-size: 14px; line-height: 1.5; color: #4d5156; }
+  .tb { display: flex; gap: 4px; flex-wrap: wrap; }
+  .tb button { border: 1px solid #e6dccb; background: #faf6ee; border-radius: 6px 0; padding: 4px 10px; font: inherit; font-size: 13px; cursor: pointer; color: #444; }
+  .tb button:hover { border-color: var(--green); }
+  .rich { min-height: 80px; padding: 12px 14px; border: 1px solid #ddd3c4; border-radius: 8px 0; background: #fff; font-size: 16px; line-height: 1.6; color: var(--ink); outline: none; }
+  .rich:focus { border-color: var(--green); box-shadow: 0 0 0 3px rgb(90 94 59 / 0.12); }
+  .rich h1, .rich h2, .rich h3 { color: var(--green); font-weight: 400; margin: 0.6em 0 0.3em; line-height: 1.25; }
+  .rich h1 { font-size: 26px; } .rich h2 { font-size: 21px; } .rich h3 { font-size: 17px; }
+  .rich p { margin: 0 0 0.8em; } .rich a { color: var(--green); }
+  .photo-row { display: flex; gap: 14px; align-items: flex-start; }
+  .photo-row img { width: 160px; height: 120px; object-fit: cover; border-radius: 8px 0; flex: none; background: #eee; }
+  .photo-row .fields { flex: 1; display: flex; flex-direction: column; gap: 6px; }
+  .photo-row .acts { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .gal { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
+  .gal li { display: flex; flex-direction: column; gap: 6px; background: #faf6ee; border-radius: 10px 0; padding: 8px; cursor: grab; }
+  .gal img { width: 100%; height: 130px; object-fit: cover; border-radius: 6px 0; background: #eee; }
+  .gal textarea { font-size: 13px; padding: 6px 8px; }
+  .gal .acts { display: flex; justify-content: space-between; align-items: center; }
+  .gal .rm, .rm-x { border: 0; background: none; color: #a8432a; cursor: pointer; font: inherit; font-size: 13px; }
+  .other { font-size: 13px; color: #999; font-style: italic; }
+  .two { display: grid; gap: 10px; } @media (min-width: 640px) { .two { grid-template-columns: 1fr 1fr; } }
+  .pe-link { border: 0; border-radius: 18px 0; padding: 20px; width: min(440px, 92vw); }
+  .pe-link::backdrop { background: rgb(20 20 15 / 0.4); }
+  .pe-link .row { display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px; }
+  .uploading { font-size: 13px; color: var(--green); }
+  @media (max-width: 600px) { .photo-row { flex-direction: column; } .photo-row img { width: 100%; height: 180px; } }
+</style>

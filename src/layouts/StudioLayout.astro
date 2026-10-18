@@ -8,12 +8,12 @@ import '@fontsource/raleway/500.css';
 import '@fontsource/raleway/600.css';
 import '../styles/global.css';
 
-type Section = 'dashboard' | 'clients' | 'calendar' | 'contacts' | 'blog' | 'reviews' | 'stats' | 'seo' | 'rankings' | 'payments' | 'settings';
+type Section = 'dashboard' | 'clients' | 'calendar' | 'contacts' | 'blog' | 'pages' | 'reviews' | 'stats' | 'seo' | 'rankings' | 'payments' | 'settings';
 interface Props { title: string; section?: Section }
 const { title, section } = Astro.props;
 type Item = [Section, string, string];
 // The website's pages sit together under "Website" (a small menu that opens).
-const website: Item[] = [['blog', 'Blog', '/studio/blog'], ['seo', 'SEO', '/studio/seo'], ['stats', 'Stats', '/studio/stats'], ['reviews', 'Reviews', '/studio/reviews']];
+const website: Item[] = [['blog', 'Blog', '/studio/blog'], ['pages', 'Pages', '/studio/pages'], ['seo', 'SEO', '/studio/seo'], ['stats', 'Stats', '/studio/stats'], ['reviews', 'Reviews', '/studio/reviews']];
 const menu: (Item | ['website', string, Item[]])[] = [
   ['dashboard', 'Dashboard', '/studio'],
   ['clients', 'Clients', '/studio/crm'],
