@@ -84,7 +84,8 @@ export async function registerImage(env, galleryId, input) {
   if (input.lightroom_id) {
     const have = await db.prepare('SELECT id FROM gallery_images WHERE gallery_id = ?1 AND lightroom_id = ?2').bind(galleryId, String(input.lightroom_id)).first();
     if (have) {
-      await db.prepare('UPDATE gallery_images SET section_id = ?2, sort_order = ?3, filename = ?4, width = ?5, height = ?6, checksum = ?7 WHERE id = ?1')
+      // Width and height from the uploaded JPEG win over what the sender says (see storeFile).
+      await db.prepare('UPDATE gallery_images SET section_id = ?2, sort_order = ?3, filename = ?4, width = CASE WHEN has_original = 1 THEN width ELSE ?5 END, height = CASE WHEN has_original = 1 THEN height ELSE ?6 END, checksum = ?7 WHERE id = ?1')
         .bind(have.id, input.section_id ?? null, Number(input.sort_order ?? 0), String(input.filename ?? '').slice(0, 200), input.width ?? null, input.height ?? null, input.checksum ?? null).run();
       return { id: have.id, existing: true };
     }
@@ -95,6 +96,28 @@ export async function registerImage(env, galleryId, input) {
     .bind(id, galleryId, input.section_id ?? null, String(input.filename ?? '').slice(0, 200), input.width ?? null, input.height ?? null, Number(input.sort_order ?? 0),
       input.lightroom_id ? String(input.lightroom_id) : null, input.checksum ?? null, input.taken_at ?? null, new Date().toISOString()).run();
   return { id, existing: false };
+}
+
+/** Width and height from a JPEG's frame header (SOF), allowing for EXIF rotation. */
+export function jpegSize(b) {
+  let i = 2, orientation = 1;
+  while (i + 9 < b.length && b[i] === 0xff) {
+    const marker = b[i + 1];
+    const len = (b[i + 2] << 8) | b[i + 3];
+    if (marker === 0xe1 && b[i + 4] === 0x45 && b[i + 5] === 0x78) { // APP1 "Exif": find the orientation tag
+      const t = i + 10, le = b[t] === 0x49;
+      const u16 = (p) => (le ? b[p] | (b[p + 1] << 8) : (b[p] << 8) | b[p + 1]);
+      const u32 = (p) => (le ? (b[p] | (b[p + 1] << 8) | (b[p + 2] << 16) | (b[p + 3] << 24)) >>> 0 : ((b[p] << 24) | (b[p + 1] << 16) | (b[p + 2] << 8) | b[p + 3]) >>> 0);
+      const ifd = t + u32(t + 4);
+      for (let k = 0, n = u16(ifd); k < n; k++) if (u16(ifd + 2 + k * 12) === 0x0112) orientation = u16(ifd + 2 + k * 12 + 8);
+    }
+    if (marker >= 0xc0 && marker <= 0xcf && ![0xc4, 0xc8, 0xcc].includes(marker)) {
+      const h = (b[i + 5] << 8) | b[i + 6], w = (b[i + 7] << 8) | b[i + 8];
+      return orientation >= 5 ? { width: h, height: w } : { width: w, height: h };
+    }
+    i += 2 + len;
+  }
+  return null;
 }
 
 /** Store one size of an image (the request body is the JPEG). */
@@ -108,6 +131,9 @@ export async function storeFile(env, imageId, size, request) {
   if (size === 'original') {
     await env.GALLERY_FILES.put(key, bytes, { httpMetadata: { contentType: 'image/jpeg' } });
     await env.DB.prepare('UPDATE gallery_images SET has_original = 1, bytes = ?2, crc32 = ?3 WHERE id = ?1').bind(imageId, bytes.length, crc32(bytes)).run();
+    // The photo's real width and height (as it's shown, after cropping), from the JPEG itself.
+    const dims = jpegSize(bytes);
+    if (dims) await env.DB.prepare('UPDATE gallery_images SET width = ?2, height = ?3 WHERE id = ?1').bind(imageId, dims.width, dims.height).run();
   } else {
     await env.GALLERY_WEB.put(key, bytes, { httpMetadata: { contentType: 'image/jpeg', cacheControl: 'public, max-age=31536000, immutable' } });
     if (size === 'web') await env.DB.prepare('UPDATE gallery_images SET has_web = 1, web_bytes = ?2, web_crc = ?3 WHERE id = ?1').bind(imageId, bytes.length, crc32(bytes)).run();

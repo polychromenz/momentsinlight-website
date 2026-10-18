@@ -54,6 +54,13 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
       </div>
       <p class="hint">Each gallery can have its own price (or free) on its Details tab. Paying online comes with a later step.</p>
       <label>Print release (included in every download) <textarea name="print_release" rows="9"></textarea></label>
+      <div class="lr-key">
+        <strong>Lightroom plugin key</strong>
+        <p class="hint">The MIL Galleries plugin uses this to send photos. Making a new key stops the old one working.</p>
+        <button type="button" class="s-btn" data-lr-key>Make a Lightroom key</button>
+        <div class="lr-key-out" hidden><code></code> <button type="button" class="s-btn s-btn--quiet" data-lr-copy>Copy</button>
+          <p class="hint">Paste it into Lightroom: File › Plug-in Manager › MIL Galleries › Key. It’s only shown now.</p></div>
+      </div>
       <div class="actions"><button type="button" class="s-btn s-btn--quiet" data-close>Cancel</button><button type="submit" class="s-btn s-btn--solid" value="ok">Save</button></div>
     </form>
   </dialog>
@@ -119,6 +126,16 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
       return;
     }
     if (t.closest('[data-close]')) (t.closest('dialog') as HTMLDialogElement).close();
+    if (t.closest('[data-lr-key]')) {
+      if (!confirm('Make a new Lightroom key? The plugin will need the new one (the old key stops working).')) return;
+      fetch('/api/studio/galleries/settings', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'lr-key' }) })
+        .then((r) => r.json()).then((d) => {
+          if (!d.key) return toast(d.error || 'Couldn’t make a key.', true);
+          $('.lr-key-out code').textContent = d.key;
+          $('.lr-key-out').hidden = false;
+        });
+    }
+    if (t.closest('[data-lr-copy]')) navigator.clipboard.writeText($('.lr-key-out code').textContent ?? '').then(() => toast('Copied.'));
   });
   $('[data-new-dlg] form').addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -176,6 +193,8 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
   .gl-form { display: grid; gap: 12px; padding: 22px 24px; }
   .gl-form h2 { margin: 0 0 4px; font-weight: 300; font-size: 24px; }
   .gl-form label { display: grid; gap: 4px; font-size: 13px; font-weight: 600; color: #555; }
+  .lr-key { display: grid; gap: 6px; justify-items: start; padding: 12px 0 0; border-top: 1px solid #ece4d7; }
+  .lr-key code { font-size: 13px; background: var(--champagne); padding: 6px 10px; border-radius: 8px 0; word-break: break-all; }
   .gl-form textarea { font: inherit; font-size: 14px; font-weight: 400; padding: 9px 11px; border: 1px solid #ddd3c4; border-radius: 10px 0; line-height: 1.5; }
   .gl-form input, .gl-form select { font: inherit; font-size: 15px; font-weight: 400; padding: 9px 11px; border: 1px solid #ddd3c4; border-radius: 10px 0; background: var(--white); }
   .gl-form .two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }

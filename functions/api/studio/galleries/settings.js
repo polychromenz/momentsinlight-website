@@ -15,3 +15,16 @@ export async function onRequestPut({ request, env }) {
   await env.DB.prepare(`INSERT INTO settings (key, value, updated_at) VALUES ('galleries', ?1, ?2) ON CONFLICT (key) DO UPDATE SET value = ?1, updated_at = ?2`).bind(JSON.stringify(s), now).run();
   return json({ ok: true, settings: s });
 }
+
+// POST /api/studio/galleries/settings { action: 'lr-key' }  -> { key } a new key for the Lightroom plugin
+// (shown once; only its SHA-256 is kept, so the old key stops working).
+export async function onRequestPost({ request, env }) {
+  const d = await request.json().catch(() => ({}));
+  if (d.action !== 'lr-key') return json({ error: 'What should happen?' }, 400);
+  const abc = 'abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  const key = `mil_${[...crypto.getRandomValues(new Uint8Array(36))].map((b) => abc[b % abc.length]).join('')}`;
+  const hash = [...new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(key)))].map((b) => b.toString(16).padStart(2, '0')).join('');
+  const now = new Date().toISOString();
+  await env.DB.prepare(`INSERT INTO settings (key, value, updated_at) VALUES ('lr_key', ?1, ?2) ON CONFLICT (key) DO UPDATE SET value = ?1, updated_at = ?2`).bind(JSON.stringify({ hash, at: now }), now).run();
+  return json({ key });
+}
