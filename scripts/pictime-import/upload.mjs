@@ -23,10 +23,11 @@ const sharp = createRequire(import.meta.url)('sharp');
 const SITE = process.env.MIL_SITE || 'https://www.momentsinlight.co.nz';
 const PARALLEL = 3;
 
-const root = path.resolve(process.argv[2] || '.');
+const CHECK = process.argv.includes('--check');
+const root = path.resolve(process.argv.slice(2).find((a) => !a.startsWith('--')) || '.');
 const keyFile = [path.join(root, 'lightroom-key.txt'), path.join(path.dirname(root), 'lightroom-key.txt')].find((f) => fs.existsSync(f));
 const KEY = (process.env.MIL_LR_KEY || (keyFile ? fs.readFileSync(keyFile, 'utf8') : '')).trim();
-if (!KEY) stop(`Put the Lightroom key (Studio > Galleries > Defaults) in ${path.join(root, 'lightroom-key.txt')}`);
+if (!KEY && !CHECK) stop(`Put the Lightroom key (Studio > Galleries > Defaults) in ${path.join(root, 'lightroom-key.txt')}`);
 
 const logFile = path.join(root, `upload-log-${new Date().toISOString().slice(0, 10)}.txt`);
 function log(...a) {
@@ -86,7 +87,8 @@ function photosIn(dir) {
   const out = [];
   for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
     const p = path.join(dir, e.name);
-    if (e.isDirectory()) out.push(...photosIn(p));
+    // Web and Social folders hold smaller copies of the same photos (as in src/studio/gallery-import.ts).
+    if (e.isDirectory()) { if (!/^(web|social)$/i.test(e.name)) out.push(...photosIn(p)); }
     else if (/\.jpe?g$/i.test(e.name)) out.push(p);
   }
   return out;
@@ -137,6 +139,10 @@ async function moveGallery(folder) {
   unzipAll(folder);
   const missing = match(layout, photosIn(folder));
   if (missing.length) log(`  ${missing.length} photo(s) not found in the folder (skipped): ${missing.slice(0, 10).join(', ')}${missing.length > 10 ? '…' : ''}`);
+  if (CHECK) {
+    for (const s of layout.scenes) log(`  ${s.name}: ${s.photos.filter((p) => p.file).length} of ${s.photos.length} found${s.photos[0]?.file ? `, e.g. ${path.relative(folder, s.photos.find((p) => p.file).file)}` : ''}`);
+    return;
+  }
 
   const g = await api({ action: 'gallery', set_id: `pt:${layout.project}`, name: layout.title, type: 'Wedding', event_date: layout.date, source: 'pictime' });
   log(`  ${g.made ? 'Made' : 'Adding to'} the gallery: ${g.studio}`);
@@ -188,7 +194,7 @@ async function moveGallery(folder) {
 }
 
 // ---- All of them ----
-await api({ action: 'hello' }).catch((e) => stop(`The studio didn’t accept the key: ${e.message}`));
+if (!CHECK) await api({ action: 'hello' }).catch((e) => stop(`The studio didn’t accept the key: ${e.message}`));
 const single = ['link.txt', 'pictime.txt'].some((f) => fs.existsSync(path.join(root, f)));
 const folders = single ? [root] : fs.readdirSync(root, { withFileTypes: true }).filter((e) => e.isDirectory() && !e.name.startsWith('_')).map((e) => path.join(root, e.name));
 log(`Moving ${folders.length} gallery folder(s) from ${root}`);
