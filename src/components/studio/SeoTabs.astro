@@ -1,9 +1,10 @@
 ---
-// The SEO area's tabs (Website > SEO): Google, Rankings, Content ideas, Competitors, Site health.
-interface Props { current: 'google' | 'rankings' | 'content' | 'competitors' | 'health' }
+// The SEO area's tabs (Website > SEO): Google, Keywords, Rankings, Content ideas, Competitors, Site health.
+interface Props { current: 'google' | 'keywords' | 'rankings' | 'content' | 'competitors' | 'health' }
 const { current } = Astro.props;
 const tabs = [
   ['google', 'Google', '/studio/seo'],
+  ['keywords', 'Keywords', '/studio/seo/keywords'],
   ['rankings', 'Rankings', '/studio/rankings'],
   ['content', 'Content ideas', '/studio/seo/content'],
   ['competitors', 'Competitors', '/studio/seo/competitors'],

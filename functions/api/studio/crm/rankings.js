@@ -8,10 +8,12 @@
 //                                  { action: 'suggest', keyword, key, target, pages? }  a before-and-after for one fix
 //                                  { action: 'apply', items }               save the (edited) suggestion
 //                                  { action: 'level', keyword, level }      main | supporting | low
+//                                  { action: 'volumes', extra? }            searches a month for the tracked searches (and extra)
 import { json } from '../../../../functions-lib/studio.js';
-import { rankingsReport, postRun, collect, serpReady, compareTop, setTarget, setLevel } from '../../../../functions-lib/rankings.js';
+import { rankingsReport, postRun, collect, serpReady, compareTop, setTarget, setLevel, fetchVolumes } from '../../../../functions-lib/rankings.js';
 import { suggestFix, toChanges } from '../../../../functions-lib/rankings-fix.js';
 import { saveFixes } from '../../../../functions-lib/seo-fix.js';
+import { seoSettings } from '../../../../functions-lib/seo.js';
 
 export async function onRequestGet({ env }) {
   try {
@@ -34,6 +36,7 @@ export async function onRequestPost({ request, env }) {
     if (d.action === 'target') { await setTarget(env.DB, text(d.keyword, 100), text(d.page, 300)); return json({ ok: true }); }
     if (d.action === 'compare') return json(await compareTop(env, text(d.keyword, 100)));
     if (d.action === 'suggest') return json(await suggestFix(env, { keyword: text(d.keyword, 100), key: text(d.key, 40), target: text(d.target, 300) || '/', pages: Array.isArray(d.pages) ? d.pages.map((p) => text(p, 300)) : [], keep: Array.isArray(d.keep) ? d.keep.map((k) => text(k, 100)).slice(0, 10) : [] }));
+    if (d.action === 'volumes') { const { keywords = [] } = await seoSettings(env.DB); return json(await fetchVolumes(env, [...keywords, ...(Array.isArray(d.extra) ? d.extra : [])])); }
     if (d.action === 'level') { await setLevel(env.DB, text(d.keyword, 100), text(d.level, 20)); return json({ ok: true }); }
     if (d.action === 'apply') {
       const changes = toChanges(Array.isArray(d.items) ? d.items.slice(0, 20) : []);

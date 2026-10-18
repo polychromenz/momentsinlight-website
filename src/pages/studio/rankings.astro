@@ -6,7 +6,7 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
 import SeoTabs from '../../components/studio/SeoTabs.astro';
 ---
 <StudioLayout title="Rankings" section="rankings">
-  <button slot="bar" type="button" class="s-btn s-btn--quiet" data-track-new>+ Track a search</button>
+  <a slot="bar" class="s-btn s-btn--quiet" href="/studio/seo/keywords">Manage keywords</a>
   <button slot="bar" type="button" class="s-btn s-btn--solid" data-check>Check rankings now</button>
   <main class="rk">
     <h1>Rankings and fixes</h1>
@@ -29,12 +29,6 @@ import SeoTabs from '../../components/studio/SeoTabs.astro';
     </section>
     <p class="rk-status"></p>
     <div class="rk-list"><p class="muted">Loading…</p></div>
-    <section class="card ideas-card">
-      <h2>Find new searches</h2>
-      <p class="hint">What people type into Google, from Google's own suggestions. + tracks one (it appears above, with its fixes). Give it a page of its own, or a low priority, if it isn't what a page is mainly about.</p>
-      <form class="ideas-form"><input name="seeds" value="wedding photographer west auckland, kumeu wedding, auckland wedding venues, elopement auckland" aria-label="Start from" /><button type="submit" class="s-btn">Get ideas</button></form>
-      <ul class="ideas"></ul>
-    </section>
   </main>
   <dialog class="sugg" aria-label="Suggested fix">
     <div class="sugg-in">
@@ -248,7 +242,6 @@ import SeoTabs from '../../components/studio/SeoTabs.astro';
         <ul class="fixes">${fixes.map(fixHtml).join('') || '<li class="muted">Nothing to fix on this page. Links from other sites and fresh blog posts are what move it now.</li>'}</ul>
         ${done.length ? `<details class="passed"><summary>${done.length} checks pass</summary><ul class="fixes">${done.map(fixHtml).join('')}</ul></details>` : ''}
         ${top}
-        <p class="untrack"><button type="button" class="s-btn s-btn--quiet" data-untrack="${esc(k.keyword)}">Stop tracking this search</button></p>
       </div></article>`;
   }
 
@@ -283,7 +276,7 @@ import SeoTabs from '../../components/studio/SeoTabs.astro';
     if (!ok) { toast(d.error || 'Couldn’t add it.', true); return false; }
     open.add(kw.toLowerCase()); toast(`Tracking “${kw}”. Set its priority and page below.`); await load(); return true;
   }
-  document.querySelector<HTMLFormElement>('.ideas-form')!.addEventListener('submit', async (e) => {
+  document.querySelector<HTMLFormElement>('.ideas-form')?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const seeds = (document.querySelector<HTMLInputElement>('.ideas-form [name=seeds]')!.value).split(',').map((x) => x.trim()).filter(Boolean);
     const list = document.querySelector('.ideas')!;

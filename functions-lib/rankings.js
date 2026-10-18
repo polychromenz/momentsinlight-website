@@ -194,6 +194,8 @@ export async function rankingsReport(env) {
   const contacts = (await db.prepare(`SELECT id, business, type, our_page, link_found, link_page FROM contacts`).all()).results;
   const tasks = (await db.prepare(`SELECT id, ref, status FROM tasks WHERE ref LIKE 'seo:%'`).all()).results;
   const spendRow = await db.prepare(`SELECT value FROM settings WHERE key = 'serp_spend'`).first();
+  const volRow = await db.prepare(`SELECT value FROM settings WHERE key = 'kw_volumes'`).first();
+  const volumes = volRow ? JSON.parse(volRow.value) : { v: {} };
   const compareRow = await db.prepare(`SELECT value FROM settings WHERE key = 'serp_compare'`).first();
   const compare = compareRow ? JSON.parse(compareRow.value) : {};
 
@@ -299,7 +301,7 @@ export async function rankingsReport(env) {
   return {
     ready: serpReady(env), location: LOCATION, pending, error: lastErr && lastErr.run === runs[0] ? lastErr.error : null,
     spend: spendRow ? JSON.parse(spendRow.value) : null,
-    keywords: out, pages: pages.map((x) => x.path).sort(), pageKeywords,
+    keywords: out, pages: pages.map((x) => x.path).sort(), pageKeywords, volumes,
   };
 }
 
@@ -363,4 +365,21 @@ export async function competitorKeywords(env, c) {
   ]);
   await addSpend(db, d.cost);
   return { count: rows.length };
+}
+
+// ---- Searches a month (Google Ads numbers for New Zealand, via DataForSEO; about US$0.08 a time) ----
+export async function fetchVolumes(env, keywords) {
+  if (!serpReady(env)) throw new Error('DataForSEO isn’t set up yet.');
+  const list = [...new Set(keywords.map((k) => String(k).toLowerCase().trim()).filter((k) => k && k.length <= 80 && k.split(' ').length <= 10))].slice(0, 1000);
+  if (!list.length) return { count: 0 };
+  const d = await dfs(env, 'keywords_data/google_ads/search_volume/live', [{ keywords: list, location_name: 'New Zealand', language_code: 'en' }]);
+  const task = d.tasks?.[0];
+  if (task?.status_code >= 40000) throw new Error(`DataForSEO: ${task.status_message}`);
+  const row = await env.DB.prepare(`SELECT value FROM settings WHERE key = 'kw_volumes'`).first();
+  const v = row ? JSON.parse(row.value) : { v: {} };
+  for (const r of task?.result ?? []) v.v[String(r.keyword).toLowerCase()] = r.search_volume ?? null;
+  v.at = new Date().toISOString();
+  await env.DB.prepare(`INSERT INTO settings (key, value, updated_at) VALUES ('kw_volumes', ?1, ?2) ON CONFLICT (key) DO UPDATE SET value = ?1, updated_at = ?2`).bind(JSON.stringify(v), v.at).run();
+  await addSpend(env.DB, d.cost);
+  return { count: (task?.result ?? []).length };
 }

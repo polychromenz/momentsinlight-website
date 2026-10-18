@@ -1,0 +1,136 @@
+---
+// Moments Studio > Website > SEO > Keywords: every search you track in one table, with its
+// priority, the page that should rank for it, searches a month and your Google position; add,
+// remove and change them here, and find new ones. Data from functions/api/studio/crm/rankings.js
+// (and /seo for tracking and ideas).
+import StudioLayout from '../../../layouts/StudioLayout.astro';
+import SeoTabs from '../../../components/studio/SeoTabs.astro';
+---
+<StudioLayout title="Keywords" section="seo">
+  <button slot="bar" type="button" class="s-btn s-btn--quiet" data-volumes>Get searches a month</button>
+  <main class="kw">
+    <h1>Keywords</h1>
+    <p class="intro">The searches you want to be found for. Give each one the page that should rank for it and a priority: a <b>Main</b> search owns its page’s Google title and heading, so other searches can’t change them.</p>
+    <SeoTabs current="keywords" />
+    <form class="kw-add"><input name="kw" placeholder="Add a search, as people type it (e.g. kumeu wedding photographer)" aria-label="Add a search" /><button type="submit" class="s-btn s-btn--solid">Add</button></form>
+    <p class="kw-status"></p>
+    <div class="card"><table class="tbl"><thead><tr><th>Search</th><th>Priority</th><th>Page that should rank</th><th class="r">Searches a month</th><th class="r">Google (phone)</th><th></th></tr></thead><tbody><tr><td colspan="6" class="muted">Loading…</td></tr></tbody></table></div>
+
+    <section class="card ideas-card">
+      <h2>Find new searches</h2>
+      <p class="hint">What people type into Google, from Google's own suggestions. + adds one to your list above.</p>
+      <form class="ideas-form"><input name="seeds" value="wedding photographer west auckland, kumeu wedding, auckland wedding venues, elopement auckland" aria-label="Start from" /><button type="submit" class="s-btn">Get ideas</button></form>
+      <ul class="ideas"></ul>
+    </section>
+  </main>
+  <div class="s-toast" role="status"></div>
+</StudioLayout>
+
+<script>
+  const $ = <T extends HTMLElement = HTMLElement>(s: string) => document.querySelector<T>(s)!;
+  const esc = (s: unknown) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
+  const toast = (text: string, error = false) => { const t = $('.s-toast'); t.textContent = text; t.classList.toggle('error', error); t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 4500); };
+  const call = async (url: string, body: any) => { const r = await fetch(url, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) }); return { ok: r.ok, d: await r.json().catch(() => ({})) }; };
+  const rk = (b: any) => call('/api/studio/crm/rankings', b);
+  const seo = (b: any) => call('/api/studio/crm/seo', b);
+  const LEVELS: Record<string, number> = { main: 3, supporting: 2, low: 1 };
+  let data: any = null;
+
+  function draw() {
+    const vol = data.volumes?.v ?? {};
+    const rows = [...data.keywords].sort((a: any, b: any) => LEVELS[b.level] - LEVELS[a.level] || (vol[b.keyword] ?? -1) - (vol[a.keyword] ?? -1) || a.keyword.localeCompare(b.keyword));
+    $('tbody').innerHTML = rows.map((k: any) => {
+      const pos = k.rank?.mobile?.position;
+      const v = vol[k.keyword];
+      return `<tr class="lvl-${k.level}">
+        <td><strong>${esc(k.keyword)}</strong>${k.sharing?.length ? `<br><small class="muted">shares its page with ${k.sharing.length} other${k.sharing.length === 1 ? '' : 's'}</small>` : ''}</td>
+        <td><select data-level="${esc(k.keyword)}">${[['main', 'Main'], ['supporting', 'Supporting'], ['low', 'Low']].map(([val, l]) => `<option value="${val}"${k.level === val ? ' selected' : ''}>${l}</option>`).join('')}</select></td>
+        <td><select data-target="${esc(k.keyword)}"><option value="">${k.target_how === 'chosen' ? 'Choose automatically' : k.target ? `Automatic: ${esc(k.target)}` : 'No page yet (choose one)'}</option>${data.pages.map((p: string) => `<option value="${esc(p)}"${k.target_how === 'chosen' && p === k.target ? ' selected' : ''}>${esc(p)}</option>`).join('')}</select></td>
+        <td class="r">${v == null ? (k.keyword in vol ? '<small class="muted">too few</small>' : '–') : v.toLocaleString('en-NZ')}</td>
+        <td class="r">${pos ? `#${pos}` : k.rank?.run ? '<small class="muted">not top 20</small>' : '–'}</td>
+        <td class="r"><button type="button" class="rm" data-rm="${esc(k.keyword)}" title="Stop tracking">✕</button></td></tr>`;
+    }).join('') || '<tr><td colspan="6" class="muted">No searches yet. Add one above.</td></tr>';
+    const at = data.volumes?.at;
+    $('.kw-status').innerHTML = `${data.keywords.length} searches · ${data.keywords.filter((k: any) => k.level === 'main').length} main${at ? ` · searches a month from Google, ${new Date(at).toLocaleDateString('en-NZ', { day: 'numeric', month: 'short' })}` : ' · click “Get searches a month” for how many people search each one'}`;
+  }
+  async function load() {
+    const r = await fetch('/api/studio/crm/rankings');
+    data = await r.json().catch(() => null);
+    if (!r.ok || !data) { $('tbody').innerHTML = `<tr><td colspan="6">${esc(data?.error || 'Couldn’t load.')}</td></tr>`; return; }
+    draw();
+  }
+  async function add(kw: string) {
+    const { ok, d } = await seo({ action: 'track', keywords: [kw] });
+    if (!ok) { toast(d.error || 'Couldn’t add it.', true); return false; }
+    toast(`Added “${kw}”. Choose its page and priority.`); await load(); return true;
+  }
+
+  $<HTMLFormElement>('.kw-add').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const inp = $<HTMLInputElement>('.kw-add [name=kw]');
+    const kw = inp.value.trim().toLowerCase();
+    if (kw && await add(kw)) inp.value = '';
+  });
+  $<HTMLFormElement>('.ideas-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const seeds = $<HTMLInputElement>('.ideas-form [name=seeds]').value.split(',').map((x) => x.trim()).filter(Boolean);
+    $('.ideas').innerHTML = '<li class="muted">Asking Google…</li>';
+    const { d } = await seo({ action: 'ideas', seeds });
+    const have = new Set((data?.keywords ?? []).map((k: any) => k.keyword));
+    $('.ideas').innerHTML = (d.ideas ?? []).map((i: any) => `<li>${esc(i.idea)} ${have.has(i.idea) ? '<small class="up">tracking</small>' : `<button type="button" class="add" data-add="${esc(i.idea)}" title="Add to your searches">+</button>`}</li>`).join('') || '<li class="muted">No ideas came back.</li>';
+  });
+  document.addEventListener('change', async (e) => {
+    const el = e.target as HTMLSelectElement;
+    if (el.dataset.level) { await rk({ action: 'level', keyword: el.dataset.level, level: el.value }); toast(el.value === 'main' ? 'Main: its page’s title and heading are protected for it.' : 'Saved.'); load(); }
+    if (el.dataset.target !== undefined && el.matches('[data-target]')) { await rk({ action: 'target', keyword: el.dataset.target, page: el.value }); toast('Saved.'); load(); }
+  });
+  document.addEventListener('click', async (e) => {
+    const t = e.target as HTMLElement;
+    const a = t.closest<HTMLButtonElement>('[data-add]');
+    if (a) { if (await add(a.dataset.add!)) a.outerHTML = '<small class="up">tracking</small>'; return; }
+    const rm = t.closest<HTMLButtonElement>('[data-rm]');
+    if (rm) {
+      if (!confirm(`Stop tracking “${rm.dataset.rm}”?`)) return;
+      const keywords = data.keywords.map((k: any) => k.keyword).filter((k: string) => k !== rm.dataset.rm);
+      const { ok, d } = await seo({ action: 'settings', keywords });
+      toast(ok ? 'Removed.' : d.error || 'Couldn’t change it.', !ok); load(); return;
+    }
+    const vb = t.closest<HTMLButtonElement>('[data-volumes]');
+    if (vb) {
+      vb.disabled = true; vb.textContent = 'Asking Google…';
+      const { ok, d } = await rk({ action: 'volumes' });
+      vb.disabled = false; vb.textContent = 'Get searches a month';
+      toast(ok ? `Got numbers for ${d.count} searches.` : d.error || 'Couldn’t get them.', !ok);
+      load();
+    }
+  });
+  load();
+</script>
+
+<style>
+  .kw { max-width: 1100px; margin: 0 auto; padding: 24px clamp(14px, 3vw, 32px) 80px; }
+  h1 { margin: 0 0 4px; font-weight: 300; font-size: 32px; color: var(--ink); }
+  .intro { margin: 0 0 16px; color: #666; font-size: 15px; }
+  .kw-add { display: flex; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
+  .kw-add input, .ideas-form input { flex: 1 1 320px; font: inherit; font-size: 15px; padding: 9px 12px; border: 1px solid #ddd3c4; border-radius: 10px 0; background: var(--white); }
+  .kw-status { margin: 0 0 10px; font-size: 13px; color: #777; }
+  .card { background: var(--white); border-radius: 24px 0; padding: 8px 18px; overflow-x: auto; animation: s-rise 0.6s var(--ease) both; }
+  .tbl { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 760px; }
+  .tbl th { text-align: left; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--green); font-weight: 600; padding: 10px 8px; border-bottom: 1px solid #ece4d7; }
+  .tbl td { padding: 9px 8px; border-bottom: 1px solid #f3eee6; vertical-align: middle; }
+  .tbl tbody tr:nth-child(even) td { background: #faf6ee; }
+  .tbl tr.lvl-main td:first-child { box-shadow: inset 3px 0 0 #2f3f86; }
+  .tbl tr.lvl-low td { color: #888; }
+  .tbl .r { text-align: right; white-space: nowrap; }
+  .tbl select { font: inherit; font-size: 13px; padding: 5px 6px; border: 1px solid #ddd3c4; border-radius: 6px 0; background: var(--white); max-width: 240px; }
+  .tbl td:first-child { min-width: 230px; }
+  .rm { border: 0; background: none; color: #a8432a; cursor: pointer; font-size: 15px; }
+  .muted { color: #999; } .up { color: #5a7d2a; }
+  .ideas-card { margin-top: 18px; padding: 18px 22px; }
+  .ideas-card h2 { margin: 0 0 6px; font-weight: 300; font-size: 22px; color: var(--ink); }
+  .hint { margin: 0 0 10px; font-size: 13px; color: #777; }
+  .ideas-form { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+  .ideas { list-style: none; margin: 0; padding: 0; columns: 2 260px; font-size: 14px; }
+  .ideas li { padding: 4px 0; break-inside: avoid; }
+  .add { border: 1px solid #ddd3c4; background: var(--white); border-radius: 50%; width: 22px; height: 22px; font-size: 13px; line-height: 1; cursor: pointer; color: var(--green); }
+</style>
