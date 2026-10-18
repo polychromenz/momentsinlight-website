@@ -64,6 +64,8 @@ function thumb(i: any) {
 }
 function drawPhotos() {
   const secs = sorted();
+  // The section order: names to drag (click one to jump to it).
+  $('.sec-order').innerHTML = secs.length > 1 ? `<span class="lbl">Section order</span>${secs.map((s: any) => `<button type="button" class="chip" draggable="true" data-chip="${s.id}" title="Drag to reorder; click to go to it">${esc(s.name)}</button>`).join('')}` : '';
   $('.ga-sections').innerHTML = secs.map((s: any, n: number) => {
     const list = inSection(s.id);
     return `<div class="ga-sec${s.hidden ? ' hidden-sec' : ''}" data-sec="${s.id}">
@@ -90,6 +92,41 @@ async function patch(ids: string[], set: Record<string, unknown>) {
   for (const i of d.images) if (ids.includes(i.id)) Object.assign(i, set);
   drawPhotos();
 }
+
+// Dragging section names in the order row.
+let draggingSec = 0;
+document.addEventListener('dragstart', (e) => {
+  const chip = (e.target as HTMLElement).closest<HTMLElement>('[data-chip]');
+  if (!chip) return;
+  draggingSec = Number(chip.dataset.chip);
+  e.dataTransfer!.effectAllowed = 'move';
+  e.dataTransfer!.setData('text/plain', 'section');
+});
+document.addEventListener('dragover', (e) => {
+  if (!draggingSec) return;
+  const chip = (e.target as HTMLElement).closest<HTMLElement>('[data-chip]');
+  if (!chip) return;
+  e.preventDefault();
+  $$('.chip.drop-before, .chip.drop-after').forEach((x) => x.classList.remove('drop-before', 'drop-after'));
+  if (Number(chip.dataset.chip) === draggingSec) return;
+  const r = chip.getBoundingClientRect();
+  chip.classList.add(e.clientX < r.left + r.width / 2 ? 'drop-before' : 'drop-after');
+});
+document.addEventListener('drop', async (e) => {
+  if (!draggingSec) return;
+  e.preventDefault();
+  const mark = document.querySelector<HTMLElement>('.chip.drop-before, .chip.drop-after');
+  const moving = draggingSec;
+  draggingSec = 0;
+  if (!mark) return;
+  const order = sorted().map((x: any) => x.id).filter((x: number) => x !== moving);
+  order.splice(order.indexOf(Number(mark.dataset.chip)) + (mark.classList.contains('drop-after') ? 1 : 0), 0, moving);
+  if (await tryApi('/api/studio/galleries/sections', 'PUT', { gallery_id: id, order })) {
+    order.forEach((sid: number, k: number) => (d.sections.find((x: any) => x.id === sid).sort_order = k));
+    drawPhotos();
+  }
+});
+document.addEventListener('dragend', () => { draggingSec = 0; $$('.chip.drop-before, .chip.drop-after').forEach((x) => x.classList.remove('drop-before', 'drop-after')); });
 
 // Dragging photos (the selection, if the dragged photo is in it).
 let dragging: string[] = [];
@@ -257,6 +294,8 @@ $('[data-link-form]').addEventListener('submit', async (e) => {
 // ---- Clicks ----
 document.addEventListener('click', async (e) => {
   const t = e.target as HTMLElement;
+  const chip = t.closest<HTMLElement>('[data-chip]');
+  if (chip) return document.querySelector(`.ga-sec[data-sec="${chip.dataset.chip}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   const tb = t.closest<HTMLElement>('[data-tab]');
   if (tb) return tab(tb.dataset.tab!);
 

@@ -35,6 +35,7 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
         <button type="button" class="s-btn s-btn--quiet" data-sel="none">Clear</button>
       </div>
       <p class="hint">Click photos to select them (Shift-click for a run); drag to reorder or move them into another section. ★ = a highlight, shown large on a row of its own. Hidden photos are kept but nobody sees them.</p>
+      <div class="sec-order"></div>
       <div class="ga-sections"></div>
       <button type="button" class="s-btn" data-add-section>Add a section</button>
     </section>
@@ -131,7 +132,13 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
   .ga-selbar .s-btn--danger { color: #f3c4b6; }
   .sel-move { font-size: 14px; display: inline-flex; gap: 6px; align-items: center; }
   .sel-move select { font-size: 14px; padding: 5px 8px; }
-  .ga-sec { background: var(--white); border-radius: 24px 0; padding: 14px 16px 16px; margin-bottom: 16px; }
+  .sec-order { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 0 0 14px; }
+  .sec-order .lbl { font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--green); margin-right: 4px; }
+  .sec-order .chip { font: inherit; font-size: 14px; padding: 6px 12px; border: 1px solid #ddd3c4; border-radius: 999px; background: var(--white); cursor: grab; }
+  .sec-order .chip:active { cursor: grabbing; }
+  .sec-order .chip.drop-before { box-shadow: -4px 0 0 -1px #c0392b; }
+  .sec-order .chip.drop-after { box-shadow: 4px 0 0 -1px #c0392b; }
+  .ga-sec { scroll-margin-top: 80px; background: var(--white); border-radius: 24px 0; padding: 14px 16px 16px; margin-bottom: 16px; }
   .ga-sec.hidden-sec { opacity: 0.6; }
   .sec-head { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 10px; }
   .sec-head .sec-name { font-size: 18px; font-weight: 400; border-color: transparent; padding: 4px 8px; min-width: 0; width: 18ch; }
