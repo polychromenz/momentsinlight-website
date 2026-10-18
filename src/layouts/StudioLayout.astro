@@ -13,7 +13,7 @@ interface Props { title: string; section?: Section }
 const { title, section } = Astro.props;
 type Item = [Section, string, string];
 // The website's pages sit together under "Website" (a small menu that opens).
-const website: Item[] = [['blog', 'Blog', '/studio/blog'], ['seo', 'SEO', '/studio/seo'], ['rankings', 'Rankings', '/studio/rankings'], ['stats', 'Stats', '/studio/stats'], ['reviews', 'Reviews', '/studio/reviews']];
+const website: Item[] = [['blog', 'Blog', '/studio/blog'], ['seo', 'SEO', '/studio/seo'], ['stats', 'Stats', '/studio/stats'], ['reviews', 'Reviews', '/studio/reviews']];
 const menu: (Item | ['website', string, Item[]])[] = [
   ['dashboard', 'Dashboard', '/studio'],
   ['clients', 'Clients', '/studio/crm'],
@@ -23,7 +23,7 @@ const menu: (Item | ['website', string, Item[]])[] = [
   ['website', 'Website', website],
   ['settings', 'Settings', '/studio/crm/settings'],
 ];
-const inWebsite = website.some(([k]) => k === section);
+const inWebsite = website.some(([k]) => k === section) || section === 'rankings';
 ---
 <!doctype html>
 <html lang="en-NZ">

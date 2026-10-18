@@ -1,0 +1,22 @@
+---
+// The SEO area's tabs (Website > SEO): Google, Rankings, Content ideas, Competitors, Site health.
+interface Props { current: 'google' | 'rankings' | 'content' | 'competitors' | 'health' }
+const { current } = Astro.props;
+const tabs = [
+  ['google', 'Google', '/studio/seo'],
+  ['rankings', 'Rankings', '/studio/rankings'],
+  ['content', 'Content ideas', '/studio/seo/content'],
+  ['competitors', 'Competitors', '/studio/seo/competitors'],
+  ['health', 'Site health', '/studio/seo/health'],
+] as const;
+---
+<nav class="seo-tabs" aria-label="SEO">
+  {tabs.map(([k, label, href]) => <a href={href} aria-current={k === current ? 'page' : undefined}>{label}</a>)}
+</nav>
+
+<style>
+  .seo-tabs { display: flex; gap: 4px; flex-wrap: wrap; margin: 0 0 18px; padding: 4px; background: var(--white); border-radius: 14px 0; width: fit-content; max-width: 100%; }
+  .seo-tabs a { padding: 8px 14px; border-radius: 10px 0; font-size: 14px; color: #555; text-decoration: none; white-space: nowrap; transition: background-color 0.3s var(--ease), color 0.3s var(--ease); }
+  .seo-tabs a:hover { background: rgb(90 94 59 / 0.08); }
+  .seo-tabs a[aria-current='page'] { background: var(--green); color: var(--white); }
+</style>

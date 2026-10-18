@@ -3,12 +3,15 @@
 // desktop, from Auckland), who is above you, and the fix list for the page that should rank.
 // Most important first. Data from functions/api/studio/crm/rankings.js.
 import StudioLayout from '../../layouts/StudioLayout.astro';
+import SeoTabs from '../../components/studio/SeoTabs.astro';
 ---
 <StudioLayout title="Rankings" section="rankings">
+  <button slot="bar" type="button" class="s-btn s-btn--quiet" data-track-new>+ Track a search</button>
   <button slot="bar" type="button" class="s-btn s-btn--solid" data-check>Check rankings now</button>
   <main class="rk">
     <h1>Rankings and fixes</h1>
     <p class="intro">Your searches, most worth working on first. For each one: where you are on Google, who is above you, and what to change. Fix something, and next week's check shows whether it moved.</p>
+    <SeoTabs current="rankings" />
     <section class="card setup" hidden>
       <h2>Set up Google rankings</h2>
       <p>The fix lists below work already. For your real positions on Google (and who's above you), the studio uses DataForSEO: pay as you go, about 10 US cents a month for your searches.</p>
@@ -26,6 +29,12 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
     </section>
     <p class="rk-status"></p>
     <div class="rk-list"><p class="muted">Loading…</p></div>
+    <section class="card ideas-card">
+      <h2>Find new searches</h2>
+      <p class="hint">What people type into Google, from Google's own suggestions. + tracks one (it appears above, with its fixes). Give it a page of its own, or a low priority, if it isn't what a page is mainly about.</p>
+      <form class="ideas-form"><input name="seeds" value="wedding photographer west auckland, kumeu wedding, auckland wedding venues, elopement auckland" aria-label="Start from" /><button type="submit" class="s-btn">Get ideas</button></form>
+      <ul class="ideas"></ul>
+    </section>
   </main>
   <dialog class="sugg" aria-label="Suggested fix">
     <div class="sugg-in">
@@ -239,6 +248,7 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
         <ul class="fixes">${fixes.map(fixHtml).join('') || '<li class="muted">Nothing to fix on this page. Links from other sites and fresh blog posts are what move it now.</li>'}</ul>
         ${done.length ? `<details class="passed"><summary>${done.length} checks pass</summary><ul class="fixes">${done.map(fixHtml).join('')}</ul></details>` : ''}
         ${top}
+        <p class="untrack"><button type="button" class="s-btn s-btn--quiet" data-untrack="${esc(k.keyword)}">Stop tracking this search</button></p>
       </div></article>`;
   }
 
@@ -266,8 +276,35 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
     refreshItem(n);
     drawWarnings();
   });
+  const seoApi = async (body: any) => { const r = await fetch('/api/studio/crm/seo', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) }); return { ok: r.ok, d: await r.json().catch(() => ({})) }; };
+  const trackedNow = () => new Set<string>((data?.keywords ?? []).map((k: any) => k.keyword));
+  async function track(kw: string) {
+    const { ok, d } = await seoApi({ action: 'track', keywords: [kw] });
+    if (!ok) { toast(d.error || 'Couldn’t add it.', true); return false; }
+    open.add(kw.toLowerCase()); toast(`Tracking “${kw}”. Set its priority and page below.`); await load(); return true;
+  }
+  document.querySelector<HTMLFormElement>('.ideas-form')!.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const seeds = (document.querySelector<HTMLInputElement>('.ideas-form [name=seeds]')!.value).split(',').map((x) => x.trim()).filter(Boolean);
+    const list = document.querySelector('.ideas')!;
+    list.innerHTML = '<li class="muted">Asking Google…</li>';
+    const { d } = await seoApi({ action: 'ideas', seeds });
+    const have = trackedNow();
+    list.innerHTML = (d.ideas ?? []).map((i: any) => `<li>${esc(i.idea)} ${have.has(i.idea) ? '<small class="up">tracking</small>' : `<button type="button" class="add" data-track-idea="${esc(i.idea)}" title="Track this search">+</button>`}</li>`).join('') || '<li class="muted">No ideas came back.</li>';
+  });
   document.addEventListener('click', async (e) => {
     const t = e.target as HTMLElement;
+    if (t.closest('[data-track-new]')) { const kw = prompt('The search to track, as people type it (e.g. kumeu wedding photographer):')?.trim(); if (kw) await track(kw); return; }
+    const ti = t.closest<HTMLButtonElement>('[data-track-idea]');
+    if (ti) { if (await track(ti.dataset.trackIdea!)) ti.outerHTML = '<small class="up">tracking</small>'; return; }
+    const ut = t.closest<HTMLButtonElement>('[data-untrack]');
+    if (ut) {
+      if (!confirm(`Stop tracking “${ut.dataset.untrack}”?`)) return;
+      const keywords = [...trackedNow()].filter((k) => k !== ut.dataset.untrack);
+      const { ok, d } = await seoApi({ action: 'settings', keywords });
+      toast(ok ? 'Stopped tracking it.' : d.error || 'Couldn’t change it.', !ok);
+      load(); return;
+    }
     const sb = t.closest<HTMLButtonElement>('[data-suggest]');
     if (sb) { open.add(sb.dataset.kw!); await openSuggest(sb.dataset.kw!, sb.dataset.suggest!); return; }
     if (t.closest('[data-sugg-close]')) { dlg().close(); return; }
@@ -371,6 +408,14 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
   .fix { display: flex; gap: 12px; padding: 10px 0; border-top: 1px solid #f1ebe1; font-size: 14px; }
   .fix .mark { flex: 0 0 22px; height: 22px; display: grid; place-items: center; border-radius: 50%; font-size: 12px; font-weight: 700; }
   .fix.info .mark { background: #eef0f7; color: #2f3f86; font-style: italic; font-family: Georgia, serif; }
+  .ideas-card { margin-top: 18px; }
+  .ideas-form { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+  .ideas-form input { flex: 1 1 320px; font: inherit; font-size: 14px; padding: 9px 11px; border: 1px solid #ddd3c4; border-radius: 10px 0; }
+  .ideas { list-style: none; margin: 0; padding: 0; columns: 2 260px; font-size: 14px; }
+  .ideas li { padding: 4px 0; break-inside: avoid; }
+  .ideas .add { border: 1px solid #ddd3c4; background: var(--white); border-radius: 50%; width: 22px; height: 22px; font-size: 13px; line-height: 1; cursor: pointer; color: var(--green); }
+  .untrack { margin: 14px 0 0; text-align: right; } .untrack .s-btn { color: #a8432a; font-size: 13px; }
+  .rk .hint { margin: 0 0 10px; font-size: 13px; color: #777; }
   .sharing { margin: 2px 0 8px; font-size: 13px; color: #666; } .sharing small { color: #999; }
   .lvl { font-size: 10px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; padding: 3px 9px; border-radius: 999px; }
   .lvl.main { background: #2f3f86; color: #fff; } .lvl.low { background: #eee; color: #888; }

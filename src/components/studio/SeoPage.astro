@@ -1,0 +1,433 @@
+---
+// Moments Studio > Website > SEO, one tab at a time (the Rankings tab is its own page):
+//   google       Google searches (Search Console)
+//   content      blog goal, weddings not yet blogged, venue page ideas from enquiries
+//   competitors  competitors' new pages and the searches they rank for
+//   health       the monthly site health check, with Fix
+// Data from functions/api/studio/crm/seo.js.
+import StudioLayout from '../../layouts/StudioLayout.astro';
+import SeoTabs from './SeoTabs.astro';
+interface Props { view: 'google' | 'content' | 'competitors' | 'health' }
+const { view } = Astro.props;
+const heads = {
+  google: ['SEO', 'How people find you on Google: your own Search Console numbers.'],
+  content: ['Content ideas', 'What to write next: your blog goal, weddings not on the blog yet, and venues couples ask about.'],
+  competitors: ['Competitors', 'Other photographers you keep an eye on: their new pages and the searches they rank for.'],
+  health: ['Site health', 'Every page checked for Google titles and descriptions, photo descriptions, headings and broken links.'],
+};
+---
+<StudioLayout title={heads[view][0]} section="seo">
+  <main class="seo">
+    <h1>{heads[view][0]}</h1>
+    <p class="intro">{heads[view][1]}</p>
+    <SeoTabs current={view} />
+
+    {view === 'google' && <section class="card" id="search">
+      <div class="card-head"><h2>Google searches</h2><small class="range"></small></div>
+      <div class="search-body"><p class="muted">Loading…</p></div>
+    </section>}
+
+    {view === 'content' && <div class="two-col">
+      <section class="card" id="venues">
+        <h2>Venue page ideas</h2>
+        <p class="hint">Venues couples mention in enquiries. The ones without a page on your site are your best new pages.</p>
+        <ul class="list venues"><li class="muted">Loading…</li></ul>
+      </section>
+      <section class="card" id="content">
+        <div class="card-head"><h2>Blog</h2><button type="button" class="s-btn s-btn--quiet" data-goal>Change goal</button></div>
+        <div class="content-body"><p class="muted">Loading…</p></div>
+      </section>
+    </div>}
+
+    {view === 'competitors' && <section class="card" id="competitors">
+      <div class="card-head"><h2>Competitors</h2><span><button type="button" class="s-btn s-btn--quiet" data-comp-kw-all>Get everyone's keywords</button> <a class="s-btn s-btn--quiet" href="/studio/contacts?add=Competitor">+ Add a competitor</a></span></div>
+      <p class="hint">Other photographers you want to keep an eye on. Every Monday the studio reads the list of pages their site gives Google, and shows what's new: blog posts, venue pages, new services.</p>
+      <div class="comp-body"><p class="muted">Loading…</p></div>
+    </section>}
+
+    {view === 'health' && <section class="card" id="health">
+      <div class="card-head"><h2>Site health check</h2><button type="button" class="s-btn s-btn--quiet" data-health>Run it now</button></div>
+      <p class="hint">Every page checked for Google titles and descriptions, photos without descriptions, headings and broken links. Runs by itself on the 2nd of each month.</p>
+      <div class="health-body"><p class="muted">Loading…</p></div>
+      <div class="fix-bar" hidden><span class="fix-count"></span><button type="button" class="s-btn s-btn--solid" data-fix-save>Save changes</button></div>
+    </section>}
+  </main>
+  <div class="s-toast" role="status"></div>
+</StudioLayout>
+
+<script>
+  const $ = <T extends HTMLElement = HTMLElement>(s: string) => document.querySelector<T>(s)!;
+  const esc = (s: unknown) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
+  const num = (n: number) => Number(n).toLocaleString('en-NZ');
+  const toast = (text: string, error = false) => { const t = $('.s-toast'); t.textContent = text; t.classList.toggle('error', error); t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 4000); };
+  const api = async (part: string) => { const r = await fetch(`/api/studio/crm/seo?part=${part}`); return { ok: r.ok, d: await r.json().catch(() => ({})) }; };
+  const post = async (body: any) => { const r = await fetch('/api/studio/crm/seo', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) }); return { ok: r.ok, d: await r.json().catch(() => ({})) }; };
+  let settings: any = { keywords: [] };
+  // New drafts in the post editor, filled in.
+  const draftVenue = (name: string) => '/studio/edit?' + new URLSearchParams({ title: `${name} Wedding Photography: A Photographer’s Guide`, kind: 'Info', venue: name, seoTitle: `${name} Wedding Photographer`.slice(0, 60), description: `Planning a wedding at ${name}? A local photographer’s guide to the venue, the best photo spots, timing and real weddings there.`, outline: 'venue' });
+  const draftWedding = (j: any) => '/studio/edit?' + new URLSearchParams({ title: j.couple, kind: 'Wedding', venue: j.venue || '' });
+  // Competitor searches: sortable.
+  let kgData: any[] = [];
+  let compTracked: Set<string> = new Set();
+  let kgSort = { key: '', desc: true };
+  let tracked: Set<string> = new Set();
+  const pos = (p: number | null) => (p == null ? '<span class="muted">not ranking</span>' : `<b class="${p <= 3 ? 'top' : p <= 10 ? 'p1' : 'p2'}">${p.toFixed(1)}</b>`);
+  const change = (now: number | null, before: number | null) => (now == null || before == null || Math.abs(now - before) < 0.5 ? '' : now < before ? `<span class="up">▲ ${(before - now).toFixed(1)}</span>` : `<span class="down">▼ ${(now - before).toFixed(1)}</span>`);
+
+  async function loadSearch() {
+    const { ok, d } = await api('search');
+    const body = $('.search-body');
+    if (d.connect === 'gmail') { body.innerHTML = '<p>Connect Gmail on the Clients page first; Search Console connects at the same time.</p>'; return; }
+    if (d.connect === 'reconnect') { body.innerHTML = '<p class="note">To see your Google searches, the studio needs read-only access to Google Search Console. <a href="/api/studio/crm/gmail-connect">Reconnect Google</a> and allow it (you may also need to switch on the “Google Search Console API” in your Google Cloud project, like the Calendar one).</p>'; return; }
+    if (!ok) { body.innerHTML = `<p class="note">${esc(d.error)}</p>`; return; }
+    $('.range').textContent = `${d.range.start} to ${d.range.end}, compared with the 4 weeks before`;
+    const tile = (label: string, now: number, before: number, fmt = num, lowerBetter = false) => {
+      const diff = before ? Math.round(((now - before) / before) * 100) : 0;
+      const good = lowerBetter ? diff < 0 : diff > 0;
+      return `<div class="tile"><span>${label}</span><strong>${fmt(now)}</strong>${before ? `<small class="${good ? 'up' : diff ? 'down' : ''}">${diff > 0 ? '▲' : diff < 0 ? '▼' : '='} ${Math.abs(diff)}%</small>` : ''}</div>`;
+    };
+    const row = (q: any) => `<tr><td>${esc(q.query)} ${tracked.has(q.query) ? '' : `<button type="button" class="add" data-track="${esc(q.query)}" title="Track this search">+</button>`}</td><td>${num(q.clicks)}</td><td>${num(q.impressions)}</td><td>${pos(q.position)} ${change(q.position, q.before)}</td></tr>`;
+    body.innerHTML = `<div class="tiles">${tile('Clicks from Google', d.totals.clicks, d.before.clicks)}${tile('Times shown', d.totals.impressions, d.before.impressions)}${tile('Average position', +d.totals.position.toFixed(1), +d.before.position.toFixed(1), (n) => n.toFixed(1), true)}</div>
+      <h3>Almost on page 1</h3><p class="hint">Searches where you show on page 2 (positions 8–20) and people are looking. A little work on the page that ranks (its title, a blog post, a link from a venue) can move these onto page 1.</p>
+      <table class="tbl"><thead><tr><th>Search</th><th>Clicks</th><th>Shown</th><th>Position</th></tr></thead><tbody>${d.opportunities.map(row).join('') || '<tr><td colspan="4" class="muted">None right now.</td></tr>'}</tbody></table>
+      <h3>Top searches</h3>
+      <table class="tbl"><thead><tr><th>Search</th><th>Clicks</th><th>Shown</th><th>Position</th></tr></thead><tbody>${d.queries.slice(0, 25).map(row).join('')}</tbody></table>
+      <h3>Top pages</h3>
+      <table class="tbl"><thead><tr><th>Page</th><th>Clicks</th><th>Shown</th><th>Position</th></tr></thead><tbody>${d.pages.slice(0, 15).map((p: any) => `<tr><td><a href="https://www.momentsinlight.co.nz${esc(p.page)}" target="_blank" rel="noopener">${esc(p.page)}</a></td><td>${num(p.clicks)}</td><td>${num(p.impressions)}</td><td>${pos(p.position)}</td></tr>`).join('')}</tbody></table>`;
+  }
+
+  async function loadTracked() {
+    const { d } = await api('tracked');
+    tracked = new Set(d.keywords.map((k: any) => k.keyword));
+    if (document.querySelector('.tracked-table')) $('.tracked-table tbody').innerHTML = d.keywords.map((k: any) => {
+      const h = k.history; const now = h.at(-1); const ago = h.length > 4 ? h[h.length - 5] : h[0];
+      const pts = h.filter((x: any) => x.position != null);
+      const max = Math.max(20, ...pts.map((x: any) => x.position));
+      const spark = pts.length > 1 ? `<svg viewBox="0 0 100 24" class="spark"><polyline points="${pts.map((x: any, i: number) => `${(i / (pts.length - 1)) * 100},${(x.position / max) * 22 + 1}`).join(' ')}"/></svg>` : '<span class="muted">from Monday</span>';
+      return `<tr><td>${esc(k.keyword)}</td><td>${now ? pos(now.position) : '<span class="muted">–</span>'}</td><td>${ago && h.length > 1 ? pos(ago.position) : '–'}</td><td>${spark}</td><td>${now ? num(now.clicks) : '–'}</td><td><button type="button" class="rm" data-untrack="${esc(k.keyword)}" title="Stop tracking">✕</button></td></tr>`;
+    }).join('') || '<tr><td colspan="6" class="muted">None yet.</td></tr>';
+  }
+
+  async function saveKeywords(keywords: string[]) {
+    const { ok, d } = await post({ action: 'settings', keywords });
+    if (!ok) { toast(d.error || 'Couldn’t save.', true); return; }
+    settings.keywords = keywords; await loadTracked(); loadSearch();
+  }
+
+  async function loadVenues() {
+    const { d } = await api('venues');
+    $('.venues').innerHTML = (d.venues ?? []).map((v: any) => `<li><span class="what"><strong>${esc(v.name)}</strong><br><small>${v.count} enquiries · last ${new Date(v.last).toLocaleDateString('en-NZ', { month: 'short', year: 'numeric' })}</small></span>${v.hasPage ? '<span class="chip ok">Has a page</span>' : `<a class="chip idea" href="${esc(draftVenue(v.name))}" title="Start a draft blog post about this venue">Page idea · Draft a post</a>`}</li>`).join('') || '<li class="muted">Not enough enquiries yet.</li>';
+  }
+
+  async function loadContent() {
+    const { d } = await api('content');
+    settings.posts_goal = d.posts_goal;
+    const pct = d.posts_goal ? Math.min(100, Math.round((d.this_month / d.posts_goal) * 100)) : 100;
+    $('.content-body').innerHTML = `<p class="goal"><strong>${d.this_month}</strong> of ${d.posts_goal} posts this month</p><div class="bar"><span style="width:${pct}%"></span></div>
+      <h3>Weddings not on the blog yet</h3>
+      <ul class="list">${(d.not_blogged ?? []).map((j: any) => `<li><span class="what">${j.id ? `<a href="/studio/crm/job?id=${j.id}">${esc(j.couple)}</a>` : `<strong>${esc(j.couple)}</strong>`}<br><small>Wedding ${new Date(`${j.event_date}T12:00:00Z`).toLocaleDateString('en-NZ', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' })}${j.venue ? ` · ${esc(j.venue)}` : ''}</small></span><a class="s-btn s-btn--quiet" href="${esc(draftWedding(j))}">Write it</a></li>`).join('') || '<li class="muted">All caught up.</li>'}</ul>`;
+  }
+
+  // ---- Site health: fixing things here ----
+  let healthSummary: any = null;
+  const fixes = new Map<string, any>(); // "path|src" or "path|page" -> the change
+  const updateBar = () => {
+    const n = [...fixes.values()].filter((c) => (c.src ? c.alt?.trim() : c.title?.trim() || c.description?.trim())).length;
+    $('.fix-bar').hidden = !n;
+    $('.fix-count').textContent = `${n} change${n === 1 ? '' : 's'} ready to save`;
+  };
+  const thumb = (src: string) => src.replace(/\/(public(\.webp)?|w=[^/]*)$/, '/w=240');
+  const kindFor = (path: string) => (/portrait/.test(path) ? 'portrait' : /family/.test(path) ? 'family' : /blog\/(how|tips|wedding-|finding|confetti|engagement|invites|planning|crafting|the-magic|vintage|choosing|discover|we-are)/.test(path) ? 'article' : 'wedding');
+  const fixBtn = (path: string, what: 'photos' | 'page') => `<button type="button" class="fix-btn" data-fix="${what}" data-path="${esc(path)}">Fix</button>`;
+  async function openFix(btn: HTMLButtonElement) {
+    const li = btn.closest('li')!;
+    const existing = li.querySelector('.fix-panel');
+    if (existing) { existing.remove(); return; }
+    const path = btn.dataset.path!;
+    const what = btn.dataset.fix;
+    const photos = what === 'photos' ? (healthSummary.noAlt.find((x: any) => x.path === path)?.photos ?? []) : [];
+    const panel = document.createElement('div');
+    panel.className = 'fix-panel';
+    panel.innerHTML = '<p class="muted">Loading…</p>';
+    li.append(panel);
+    if (what === 'photos' && !photos.length) { panel.innerHTML = '<p class="muted">Click “Run it now” first, so the check notes which photos these are.</p>'; return; }
+    const { ok, d } = await post({ action: 'fix_info', path, photos });
+    if (!ok) { panel.innerHTML = `<p class="note">${esc(d.error || 'Couldn’t open it.')}</p>`; return; }
+    if (what === 'photos') {
+      panel.innerHTML = d.photos.map((p: any) => `<div class="fix-photo" data-src="${esc(p.src)}"><img src="${esc(thumb(p.src))}" alt="" loading="lazy">
+        ${p.editable ? `<div class="fix-fields"><textarea rows="2" maxlength="250" placeholder="What’s in the photo, in a sentence" data-alt>${esc(fixes.get(`${path}|${p.src}`)?.alt ?? p.alt)}</textarea>
+        <div class="fix-actions"><button type="button" class="s-btn s-btn--quiet" data-suggest>✨ Suggest</button>${p.post ? `<small class="muted">In “${esc(p.post)}”</small>` : ''}</div></div>` : `<p class="muted">${esc(p.why)}</p>`}</div>`).join('')
+        + (d.photos.filter((p: any) => p.editable).length > 1 ? '<button type="button" class="s-btn s-btn--quiet" data-suggest-all>✨ Suggest them all</button>' : '');
+    } else {
+      const p = d.page;
+      const c = fixes.get(`${path}|page`) ?? {};
+      panel.innerHTML = p.editable ? `<label>Google title <small class="cnt"></small><input data-title maxlength="120" value="${esc(c.title ?? p.title)}"></label>
+        <label>Google description <small class="cnt"></small><textarea data-desc rows="3" maxlength="320">${esc(c.description ?? p.description)}</textarea></label>
+        ${p.editor ? `<a class="s-btn s-btn--quiet" href="${esc(p.editor)}">Open in the post editor</a>` : ''}` : `<p class="muted">${esc(p.why)}</p>`;
+      panel.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>('[data-title], [data-desc]').forEach((el) => count(el));
+    }
+    panel.dataset.path = path;
+  }
+  function count(el: HTMLInputElement | HTMLTextAreaElement) {
+    const n = el.value.trim().length;
+    const [lo, hi] = el.matches('[data-title]') ? [30, 60] : [120, 155];
+    const c = el.closest('label')!.querySelector('.cnt')!;
+    c.textContent = `${n} (aim for ${lo}–${hi})`;
+    c.className = `cnt ${n >= lo && n <= hi ? 'up' : 'down'}`;
+  }
+  async function suggest(row: HTMLElement) {
+    const btn = row.querySelector<HTMLButtonElement>('[data-suggest]')!;
+    const path = row.closest<HTMLElement>('.fix-panel')!.dataset.path!;
+    btn.disabled = true; btn.textContent = 'Looking…';
+    const r = await fetch('/api/studio/describe', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ src: row.dataset.src, kind: kindFor(path) }) });
+    const d = await r.json().catch(() => ({}));
+    btn.disabled = false; btn.textContent = '✨ Suggest';
+    if (!r.ok) { toast(d.error || 'No suggestion came back.', true); return; }
+    const ta = row.querySelector<HTMLTextAreaElement>('[data-alt]')!;
+    ta.value = d.description;
+    fixes.set(`${path}|${row.dataset.src}`, { path, src: row.dataset.src, alt: ta.value });
+    updateBar();
+  }
+  document.addEventListener('input', (e) => {
+    const el = e.target as HTMLElement;
+    const panel = el.closest<HTMLElement>('.fix-panel');
+    if (!panel) return;
+    const path = panel.dataset.path!;
+    if (el.matches('[data-alt]')) {
+      const src = el.closest<HTMLElement>('.fix-photo')!.dataset.src!;
+      fixes.set(`${path}|${src}`, { path, src, alt: (el as HTMLTextAreaElement).value });
+    } else if (el.matches('[data-title], [data-desc]')) {
+      count(el as HTMLInputElement);
+      fixes.set(`${path}|page`, { path, title: panel.querySelector<HTMLInputElement>('[data-title]')!.value, description: panel.querySelector<HTMLTextAreaElement>('[data-desc]')!.value });
+    }
+    updateBar();
+  });
+
+  async function loadHealth() {
+    const { d } = await api('health');
+    const b = $('.health-body');
+    if (d.none) { b.innerHTML = '<p class="muted">Not run yet. Click “Run it now”.</p>'; return; }
+    if (!d.finished) { b.innerHTML = `<p>Checking… ${d.done} of ${d.pages.length} pages.</p>`; return; }
+    const s = d.summary;
+    healthSummary = s;
+    const sec = (title: string, items: string[], good: string) => `<details${items.length ? ' open' : ''}><summary>${items.length ? `<b class="down">${items.length}</b>` : '<b class="up">✓</b>'} ${title}</summary>${items.length ? `<ul>${items.slice(0, 40).map((i) => `<li>${i}</li>`).join('')}</ul>` : `<p class="muted">${good}</p>`}</details>`;
+    const link = (p: string) => `<a href="https://www.momentsinlight.co.nz${esc(p)}" target="_blank" rel="noopener">${esc(p)}</a>`;
+    b.innerHTML = `<p class="hint">${s.pages} pages checked, ${new Date(d.started).toLocaleDateString('en-NZ', { day: 'numeric', month: 'long' })}.</p>
+      ${sec('Broken links', s.broken.map((x: any) => `${esc(x.link)} <small>(on ${x.from.map(link).join(', ')})</small>`), 'No broken links.')}
+      ${sec('Pages without a good Google description', s.noDesc.map((p: string) => `${link(p)} ${fixBtn(p, 'page')}`), 'Every page has one.')}
+      ${sec('Google titles too short or too long', s.shortTitles.map((x: any) => `${link(x.path)} <small>“${esc(x.title)}” (${x.title.length})</small> ${fixBtn(x.path, 'page')}`), 'All good.')}
+      ${sec('Same title on more than one page', s.dupTitles.flatMap((x: any) => x.pages.map((p: string) => `${link(p)} <small>“${esc(x.title)}”, also on ${x.pages.length - 1} other page${x.pages.length > 2 ? 's' : ''}</small> ${fixBtn(p, 'page')}`)), 'All different.')}
+      ${sec('Photos without a description', s.noAlt.map((x: any) => `${link(x.path)} <small>${x.count} of ${x.of}</small> ${fixBtn(x.path, 'photos')}`), 'Every photo has one.')}
+      ${sec('Pages without exactly one main heading', s.h1.map((x: any) => `${link(x.path)} <small>${x.h1} headings</small>`), 'All good.')}`;
+  }
+
+  const vol = (v: number | null) => (v == null ? '–' : num(v));
+  function kgBody() {
+    const val = (g: any, k: string) => (k === 'keyword' ? g.keyword : k === 'volume' ? g.volume ?? -1 : k === 'count' ? g.who.length : Math.min(...g.who.map((w: any) => w.position ?? 99)));
+    const rows = [...kgData];
+    if (kgSort.key) rows.sort((a, b) => { const x = val(a, kgSort.key), y = val(b, kgSort.key); const c = typeof x === 'string' ? x.localeCompare(y) : x - y; return kgSort.desc ? -c : c; });
+    const trackBtn = (k: string) => (compTracked.has(k) ? '<small class="up">tracking</small>' : `<button type="button" class="add" data-track="${esc(k)}" title="Track this search">+</button>`);
+    return rows.map((g: any) => `<tr><td>${esc(g.keyword)}</td><td>${vol(g.volume)}</td><td title="${esc(g.who.map((w: any) => `${w.business} #${w.position}`).join(', '))}">${g.who.length}</td><td>#${Math.min(...g.who.map((w: any) => w.position ?? 99))}</td><td>${trackBtn(g.keyword)}</td></tr>`).join('');
+  }
+  async function loadCompetitors() {
+    const { d } = await api('competitors');
+    const b = $('.comp-body');
+    const list = d.competitors ?? [];
+    if (!list.length) { b.innerHTML = '<p class="muted">None yet. Add a competitor as a contact (type Competitor) with their website.</p>'; return; }
+    const names = Object.fromEntries(list.map((c: any) => [c.id, c.business]));
+    const short = (u: string) => { try { return decodeURIComponent(new URL(u).pathname); } catch { return u; } };
+    const gaps = d.venue_gaps ?? [];
+    const tracked = new Set<string>(d.tracked ?? []);
+    compTracked = tracked;
+    const trackBtn = (k: string) => (tracked.has(k) ? '<small class="up">tracking</small>' : `<button type="button" class="add" data-track="${esc(k)}" title="Track this search">+</button>`);
+    kgData = d.keyword_gaps ?? [];
+    const kg = kgData;
+    const th = (key: string, label: string) => `<th><button type="button" class="sort${kgSort.key === key ? ' on' : ''}" data-sort="${key}">${label}${kgSort.key === key ? (kgSort.desc ? ' ▼' : ' ▲') : ''}</button></th>`;
+    const gapHtml = kg.length ? `<h3>Searches your competitors rank for</h3><p class="hint">From the competitors whose keywords you've fetched; the ones several of them are on page 1–2 for come first. Their own business names are left out. + adds a search to the ones you track (and to your Rankings fix lists).</p>
+      <table class="tbl kg-table"><thead><tr>${th('keyword', 'Search')}${th('volume', 'Searches a month')}${th('count', 'Competitors')}${th('best', 'Best position')}<th></th></tr></thead><tbody>${kgBody()}</tbody></table>
+      <button type="button" class="s-btn s-btn--quiet" data-track-all>Track the top 10 of these</button>` : '';
+    const kwHtml = (c: any) => c.keywords?.length ? `<details class="ckw"><summary>${c.keywords.length} searches they rank for (${new Date(c.keywords[0].fetched_at).toLocaleDateString('en-NZ', { day: 'numeric', month: 'short' })})</summary><table class="tbl"><thead><tr><th>Search</th><th>Searches a month</th><th>Their position</th><th></th></tr></thead><tbody>${c.keywords.map((k: any) => `<tr><td>${esc(k.keyword)}${k.brand ? ' <small class="muted">(their name)</small>' : ''}</td><td>${vol(k.volume)}</td><td><a href="${esc(k.url)}" target="_blank" rel="noopener">#${k.position}</a></td><td>${k.brand ? '' : trackBtn(k.keyword)}</td></tr>`).join('')}</tbody></table></details>` : '';
+    b.innerHTML = gapHtml + `${gaps.length ? `<h3>Venues they have pages about and you don't</h3><ul class="list">${gaps.map((g: any) => `<li><span class="what"><strong>${esc(g.name)}</strong>${g.enquiries ? ` <small>· ${g.enquiries} of your enquiries</small>` : ''}<br><small>${g.pages.map((p: any) => `<a href="${esc(p.url)}" target="_blank" rel="noopener">${esc(names[p.contact_id])}</a>${p.count > 1 ? ` (${p.count} pages)` : ''}`).join(', ')}</small></span><a class="chip idea" href="${esc(draftVenue(g.name))}" title="Start a draft blog post about this venue">Page idea · Draft a post</a></li>`).join('')}</ul>` : ''}
+      ${list.map((c: any) => `<details class="comp"${c.new_pages.length ? ' open' : ''}><summary><strong>${esc(c.business)}</strong>${c.website ? ` <a class="site-link" href="${esc(/^https?:/.test(c.website) ? c.website : `https://${c.website}`)}" target="_blank" rel="noopener" title="Open their website">${esc(c.website.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, ''))} ↗</a>` : ''} <small>${c.watch_error ? `<span class="down">${esc(c.watch_error)}</span>` : c.watch_checked_at ? `${num(c.pages)} pages · ${c.new_pages.length ? `<b class="down">${c.new_pages.length} new</b> in 3 months` : 'nothing new'} · checked ${new Date(c.watch_checked_at).toLocaleDateString('en-NZ', { day: 'numeric', month: 'short' })}` : 'not checked yet'}</small>
+        <button type="button" class="s-btn s-btn--quiet" data-comp="${c.id}">Check pages</button> <button type="button" class="s-btn s-btn--quiet" data-comp-kw="${c.id}">${c.keywords?.length ? 'Refresh keywords' : 'Keywords they rank for'}</button> <button type="button" class="s-btn s-btn--quiet danger" data-comp-rm="${c.id}" data-name="${esc(c.business)}">Remove</button></summary>
+        ${kwHtml(c)}
+        ${c.new_pages.length ? `<ul>${c.new_pages.map((p: any) => `<li><a href="${esc(p.url)}" target="_blank" rel="noopener">${esc(p.name)}</a> <small>${esc(short(p.url))} · found ${new Date(p.first_seen).toLocaleDateString('en-NZ', { day: 'numeric', month: 'short' })}</small></li>`).join('')}</ul>` : `<p class="muted">${c.website ? (c.watch_checked_at ? 'No new pages lately. (The first check just notes what is there.)' : 'Click Check pages for the first look.') : `<a href="/studio/contacts/contact?id=${c.id}">Add their website</a> first.`}</p>`}</details>`).join('')}`;
+  }
+
+  document.addEventListener('click', async (e) => {
+    const t = e.target as HTMLElement;
+    const fb = t.closest<HTMLButtonElement>('[data-fix]');
+    if (fb) { e.preventDefault(); await openFix(fb); return; }
+    const sg = t.closest<HTMLButtonElement>('[data-suggest]');
+    if (sg) { await suggest(sg.closest<HTMLElement>('.fix-photo')!); return; }
+    const sa = t.closest<HTMLButtonElement>('[data-suggest-all]');
+    if (sa) {
+      sa.disabled = true;
+      const rows = [...sa.closest<HTMLElement>('.fix-panel')!.querySelectorAll<HTMLElement>('.fix-photo')].filter((r) => r.querySelector('[data-alt]') && !(r.querySelector<HTMLTextAreaElement>('[data-alt]')!.value.trim()));
+      for (const r of rows) await suggest(r);
+      sa.disabled = false; return;
+    }
+    if (t.closest('[data-fix-save]')) {
+      const btn = t.closest<HTMLButtonElement>('[data-fix-save]')!;
+      const changes = [...fixes.values()].filter((c) => (c.src ? c.alt?.trim() : c.title?.trim() || c.description?.trim()));
+      if (!changes.length) return;
+      btn.disabled = true; btn.textContent = 'Saving…';
+      const { ok, d } = await post({ action: 'fix_save', changes });
+      btn.disabled = false; btn.textContent = 'Save changes';
+      if (!ok) { toast(d.error || 'Couldn’t save.', true); return; }
+      fixes.clear(); updateBar();
+      toast(`Saved ${[d.photos && `${d.photos} photo description${d.photos === 1 ? '' : 's'}`, d.pages && `${d.pages} page${d.pages === 1 ? '' : 's'}`].filter(Boolean).join(' and ')}. The website updates in about 2 minutes.`);
+      await loadHealth(); return;
+    }
+    const sb = t.closest<HTMLButtonElement>('[data-sort]');
+    if (sb) {
+      const k = sb.dataset.sort!;
+      // First click: biggest first (A–Z for searches, best first for position); click again to flip.
+      kgSort = kgSort.key === k ? { key: k, desc: !kgSort.desc } : { key: k, desc: k === 'volume' || k === 'count' };
+      $('.kg-table tbody').innerHTML = kgBody();
+      document.querySelectorAll<HTMLButtonElement>('.kg-table [data-sort]').forEach((b) => { const on = b.dataset.sort === kgSort.key; b.classList.toggle('on', on); b.textContent = b.textContent!.replace(/ [▲▼]$/, '') + (on ? (kgSort.desc ? ' ▼' : ' ▲') : ''); });
+      return;
+    }
+    const rm = t.closest<HTMLButtonElement>('[data-comp-rm]');
+    if (rm) {
+      e.preventDefault();
+      if (!confirm(`Remove ${rm.dataset.name} from your competitors? This also forgets their pages and keywords.`)) return;
+      const { ok, d } = await post({ action: 'competitor_remove', id: Number(rm.dataset.compRm) });
+      toast(ok ? 'Removed.' : d.error || 'Couldn’t remove it.', !ok);
+      await loadCompetitors(); return;
+    }
+    const kb = t.closest<HTMLButtonElement>('[data-comp-kw]');
+    if (kb) {
+      e.preventDefault(); kb.disabled = true; kb.textContent = 'Asking DataForSEO…';
+      const { ok, d } = await post({ action: 'competitor_keywords', id: Number(kb.dataset.compKw) });
+      toast(ok ? `Found ${d.count} searches.` : d.error || 'Couldn’t get them.', !ok);
+      await loadCompetitors(); return;
+    }
+    const ka = t.closest<HTMLButtonElement>('[data-comp-kw-all]');
+    if (ka) {
+      const ids = [...document.querySelectorAll<HTMLButtonElement>('[data-comp-kw]')].map((x) => Number(x.dataset.compKw));
+      if (!confirm(`Fetch the keywords for all ${ids.length} competitors? About US${(ids.length * 0.02).toFixed(2)} from your DataForSEO credit.`)) return;
+      ka.disabled = true;
+      for (const [i, id] of ids.entries()) {
+        ka.textContent = `Fetching ${i + 1} of ${ids.length}…`;
+        const { ok, d } = await post({ action: 'competitor_keywords', id });
+        if (!ok && /set up|login/i.test(d.error || '')) { toast(d.error, true); break; }
+      }
+      ka.disabled = false; ka.textContent = "Get everyone's keywords";
+      await loadCompetitors(); return;
+    }
+    if (t.closest('[data-track-all]')) {
+      const { d } = await api('competitors');
+      const top = (d.keyword_gaps ?? []).slice(0, 10).map((g: any) => g.keyword);
+      const r = await post({ action: 'track', keywords: top });
+      toast(r.ok ? `Tracking ${top.length} more searches.` : r.d.error || 'Couldn’t add them.', !r.ok);
+      await loadTracked(); loadCompetitors(); return;
+    }
+    const cb = t.closest<HTMLButtonElement>('[data-comp]');
+    if (cb) {
+      e.preventDefault(); cb.disabled = true; cb.textContent = 'Checking…';
+      const { ok, d } = await post({ action: 'competitor', id: Number(cb.dataset.comp) });
+      toast(ok ? (d.first ? `Found ${d.pages} pages. From now on, new ones show here.` : `Checked ${d.pages} pages.`) : d.error || 'Couldn’t check it.', !ok);
+      await loadCompetitors(); return;
+    }
+    const tr = t.closest<HTMLButtonElement>('[data-track]');
+    if (tr) { e.preventDefault(); const r = await post({ action: 'track', keywords: [tr.dataset.track] }); if (!r.ok) { toast(r.d.error || 'Couldn’t add it.', true); return; } tr.outerHTML = '<small class="up">tracking</small>'; toast('Tracking it. It’s on your Rankings page too.'); await loadTracked(); return; }
+    const un = t.closest<HTMLButtonElement>('[data-untrack]');
+    if (un) { if (confirm(`Stop tracking “${un.dataset.untrack}”?`)) await saveKeywords([...tracked].filter((k) => k !== un.dataset.untrack)); return; }
+    if (t.closest('[data-track-add]')) { const k = prompt('The search to track, as people type it (e.g. kumeu wedding photographer):'); if (k) await saveKeywords([...tracked, k]); return; }
+    if (t.closest('[data-goal]')) { const g = prompt('How many blog posts a month?', String(settings.posts_goal ?? 2)); if (g !== null) { await post({ action: 'settings', posts_goal: Number(g) }); loadContent(); } return; }
+    const hb = t.closest<HTMLButtonElement>('[data-health]');
+    if (hb) {
+      hb.disabled = true;
+      let { d } = await post({ action: 'health', start: true });
+      while (d.result && !/finished|error/.test(d.result)) { hb.textContent = d.result.replace('checked', 'Checked'); ({ d } = await post({ action: 'health' })); }
+      hb.disabled = false; hb.textContent = 'Run it now';
+      await loadHealth();
+    }
+  });
+  document.querySelector<HTMLFormElement>('.ideas-form')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const seeds = (($<HTMLFormElement>('.ideas-form').elements.namedItem('seeds') as HTMLInputElement).value).split(',').map((s) => s.trim()).filter(Boolean);
+    $('.ideas').innerHTML = '<li class="muted">Asking Google…</li>';
+    const { d } = await post({ action: 'ideas', seeds });
+    $('.ideas').innerHTML = (d.ideas ?? []).map((i: any) => `<li>${esc(i.idea)} ${tracked.has(i.idea) ? '<small class="up">tracking</small>' : `<button type="button" class="add" data-track="${esc(i.idea)}" title="Track this search">+</button>`}</li>`).join('') || '<li class="muted">No ideas came back.</li>';
+  });
+  const on = (sel: string) => !!document.querySelector(sel);
+  if (on('#search')) loadTracked().then(loadSearch);
+  if (on('#venues')) loadVenues();
+  if (on('#content')) loadContent();
+  if (on('#health')) loadHealth();
+  if (on('#competitors')) loadCompetitors();
+</script>
+
+<style is:global>
+  .seo { max-width: 1150px; margin: 0 auto; padding: 24px clamp(14px, 3vw, 32px) 80px; }
+  .seo h1 { margin: 0 0 4px; font-weight: 300; font-size: 32px; color: var(--ink); }
+  .seo .intro { margin: 0 0 18px; color: #666; font-size: 15px; }
+  .seo .card { background: var(--white); border-radius: 24px 0; padding: 20px 24px; margin-bottom: 16px; min-width: 0; overflow-x: auto; }
+  @media (max-width: 600px) { .seo .card { padding: 16px 14px; } .seo .tbl { font-size: 13px; } .seo .tbl th, .seo .tbl td { padding: 6px 5px; } }
+  .seo details.comp summary { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .seo details.comp summary small { flex: 1; color: #888; }
+  .seo .tbl tbody tr:nth-child(even) td { background: #faf6ee; }
+  .seo .tbl th .sort { border: 0; background: none; padding: 0; font: inherit; color: inherit; letter-spacing: inherit; text-transform: inherit; cursor: pointer; }
+  .seo .tbl th .sort.on { color: var(--green); }
+  .seo a.chip { text-decoration: none; white-space: nowrap; }
+  .seo a.chip.idea:hover { background: var(--green); color: var(--white); }
+  .seo .s-btn.danger { color: #a8432a; }
+  .seo details.ckw { margin: 4px 0 8px; }
+  .seo .site-link { font-size: 13px; color: var(--green); }
+  .seo .fix-btn { margin-left: 6px; border: 1px solid #ddd3c4; background: var(--white); border-radius: 8px 0; padding: 1px 9px; font: inherit; font-size: 12px; color: var(--green); cursor: pointer; }
+  .seo .fix-btn:hover { background: var(--green); color: var(--white); }
+  .seo .fix-panel { margin: 8px 0 12px; padding: 12px; background: #faf6ee; border-radius: 14px 0; display: flex; flex-direction: column; gap: 10px; }
+  .seo .fix-panel label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: #555; }
+  .seo .fix-panel input, .seo .fix-panel textarea { font: inherit; font-size: 14px; padding: 8px 10px; border: 1px solid #ddd3c4; border-radius: 8px 0; background: var(--white); width: 100%; box-sizing: border-box; }
+  .seo .fix-photo { display: flex; gap: 12px; align-items: flex-start; }
+  .seo .fix-photo img { width: 120px; height: 90px; object-fit: cover; border-radius: 8px 0; flex: none; background: #eee; }
+  .seo .fix-fields { flex: 1; display: flex; flex-direction: column; gap: 6px; }
+  .seo .fix-actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .seo .fix-bar { position: sticky; bottom: 12px; display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-top: 12px; padding: 10px 14px; background: var(--white); border: 1px solid #ddd3c4; border-radius: 14px 0; box-shadow: 0 10px 28px -16px rgb(0 0 0 / 0.4); }
+  .seo .fix-bar[hidden] { display: none; }
+  @media (max-width: 600px) { .seo .fix-photo { flex-direction: column; } .seo .fix-photo img { width: 100%; height: 160px; } } .seo details.ckw summary { font-size: 13px; color: var(--green); }
+  .seo .card-head > span { display: flex; gap: 6px; flex-wrap: wrap; }
+  .seo .card h2 { margin: 0 0 8px; font-weight: 300; font-size: 22px; color: var(--ink); }
+  .seo .card h3 { margin: 22px 0 6px; font-size: 12px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--green); }
+  .seo .card-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .seo .card-head small { color: #888; }
+  .seo .hint { margin: 0 0 10px; font-size: 13px; color: #777; }
+  .seo .muted { color: #999; }
+  .seo .note { padding: 12px 14px; background: #fff4d6; color: #5c4400; border-radius: 12px 0; font-size: 14px; }
+  .seo .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-top: 8px; }
+  .seo .tile { background: var(--champagne); border-radius: 18px 0; padding: 14px 16px; display: flex; flex-direction: column; gap: 2px; }
+  .seo .tile span { font-size: 11px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--green); }
+  .seo .tile strong { font-size: 28px; font-weight: 300; color: var(--ink); }
+  .seo .tile small { font-size: 13px; }
+  .seo .up { color: #5a7d2a; } .seo .down { color: #a8432a; }
+  .seo .tbl { width: 100%; border-collapse: collapse; font-size: 14px; }
+  .seo .tbl th { text-align: right; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: #888; font-weight: 600; padding: 6px 8px; border-bottom: 1px solid #ece4d7; }
+  .seo .tbl td { text-align: right; padding: 7px 8px; border-bottom: 1px solid #f3eee6; }
+  .seo .tbl th:first-child, .seo .tbl td:first-child { text-align: left; }
+  .seo .tbl a { color: var(--ink); }
+  .seo b.top { color: #3e6b1f; } .seo b.p1 { color: var(--green); } .seo b.p2 { color: #b07d1a; }
+  .seo .add, .seo .rm { border: 1px solid #ddd3c4; background: var(--white); border-radius: 50%; width: 22px; height: 22px; font-size: 13px; line-height: 1; cursor: pointer; color: var(--green); }
+  .seo .rm { color: #a8432a; }
+  .seo .spark { width: 100px; height: 24px; } .seo .spark polyline { fill: none; stroke: var(--green); stroke-width: 2; }
+  .seo .ideas-form { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+  .seo .ideas-form input { flex: 1 1 320px; font: inherit; font-size: 14px; padding: 9px 11px; border: 1px solid #ddd3c4; border-radius: 10px 0; }
+  .seo .ideas { list-style: none; margin: 0; padding: 0; columns: 2 260px; font-size: 14px; }
+  .seo .ideas li { padding: 4px 0; break-inside: avoid; }
+  .seo .two-col { display: grid; gap: 16px; }
+  @media (min-width: 900px) { .seo .two-col { grid-template-columns: 1fr 1fr; } .seo .two-col .card { margin-bottom: 0; } .seo .two-col { margin-bottom: 16px; } }
+  .seo .list { list-style: none; margin: 0; padding: 0; }
+  .seo .list li { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px solid #f1ebe1; font-size: 14px; }
+  .seo .list li:last-child { border-bottom: 0; }
+  .seo .what { flex: 1; } .seo .what small { color: #888; }
+  .seo .chip { font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: 999px; }
+  .seo .chip.ok { background: #e6ecd9; color: #3e4229; } .seo .chip.idea { background: #f6ecd6; color: #7a5a14; }
+  .seo .goal { margin: 4px 0 6px; font-size: 15px; } .seo .goal strong { font-size: 26px; font-weight: 300; }
+  .seo .bar { height: 10px; background: #f3eee6; border-radius: 6px 0; overflow: hidden; }
+  .seo .bar span { display: block; height: 100%; background: var(--green); }
+  .seo details { border-top: 1px solid #f1ebe1; padding: 8px 0; font-size: 14px; }
+  .seo details summary { cursor: pointer; }
+  .seo details ul { margin: 6px 0; padding-left: 20px; }
+  .seo details li { margin: 3px 0; } .seo details small { color: #888; }
+</style>
