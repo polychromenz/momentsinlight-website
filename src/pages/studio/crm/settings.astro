@@ -114,7 +114,7 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
     </section>
 
     <section class="pane" data-pane="payments" hidden>
-      <form class="card pay-form" autocomplete="off">
+      <form class="card pay-form payments-form" autocomplete="off">
         <p class="hint">How clients pay their invoices. These details show on every invoice (the page and the PDF).</p>
         <p class="pay-stripe"></p>
         <div class="two"><label>Account name<input name="account_name" /></label><label>Bank<input name="bank_name" placeholder="e.g. ANZ" /></label></div>
@@ -643,7 +643,7 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
   });
 
   // ---- Payments ----
-  const payForm = $<HTMLFormElement>('.pay-form');
+  const payForm = $<HTMLFormElement>('.payments-form');
   function renderPayments() {
     for (const [k, v] of Object.entries(data.payments)) { const el = payForm.elements.namedItem(k) as HTMLInputElement | null; if (el) el.value = v ?? ''; }
     const st = data.stripe;
