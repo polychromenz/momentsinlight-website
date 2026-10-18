@@ -12,19 +12,25 @@
  * Google account):
  *   - add a negative keyword to a campaign (plain words only, at most 20 a run);
  *   - add an image to a campaign (only your own photos from photos.momentsinlight.co.nz/ads/,
- *     JPEG under 5 MB, at most 5 a run, never past Google's 20 images).
- * It never removes anything, and never touches bids, budgets, ads or keywords. Every request is
+ *     JPEG under 5 MB, at most 5 a run, never past Google's 20 images);
+ *   - take an image off a campaign, only to make room for a new one you approved, at most 2 a run
+ *     (the studio only asks for weak images that have had 30 days and 100 views, never your top 3
+ *     or the last square, and at most 2 a week). The image stays in your asset library.
+ * It never deletes anything, and never touches bids, budgets, ads or keywords. Every request is
  * signed with your key.
  */
+// The studio's Google Ads page compares this with the latest copy. Change it whenever this file changes.
+var VERSION = '2026-10-19.3';
 var SITE = 'https://www.momentsinlight.co.nz';
 var KEY = '__PASTE_KEY__';
 var CHUNK = 1000;
 var MAX_CHANGES = 20;
 var MAX_IMAGES = 5;
+var MAX_SWAPS = 2;
 var IMAGE_HOME = 'https://photos.momentsinlight.co.nz/ads/';
 
 function main() {
-  var state = call('/api/ads/state', {});
+  var state = call('/api/ads/state', { version: VERSION });
   if (!state) return;
   applyApproved(state.actions || []);
   if (!state.export_due) { Logger.log('Nothing to send this hour.'); return; }
@@ -67,7 +73,13 @@ function applyApproved(actions) {
   if (AdsApp.getExecutionInfo().isPreview()) { Logger.log(actions.length + ' approved change(s) waiting: a preview makes no changes, so click Run.'); return; }
   var results = [];
   var images = 0;
+  var swaps = 0;
   actions.slice(0, MAX_CHANGES).forEach(function (a) {
+    if (a.type === 'remove_image') {
+      if (swaps++ >= MAX_SWAPS) return; // the rest go next run
+      results.push(removeImage(a));
+      return;
+    }
     if (a.type === 'add_image') {
       if (images++ >= MAX_IMAGES) return; // the rest go next run
       results.push(addImage(a));
@@ -93,6 +105,27 @@ function applyApproved(actions) {
     results.push(r);
   });
   call('/api/ads/ingest', { report: 'actions', rows: results });
+}
+
+// A weak image taken off a campaign to make room for one you approved (it stays in your library).
+function removeImage(a) {
+  var r = { id: a.id, ok: false, error: '' };
+  try {
+    var p = a.payload || {};
+    var campaignId = String(p.campaign_id || '').replace(/[^0-9]/g, '');
+    var assetId = String(p.asset_id || '').replace(/[^0-9]/g, '');
+    if (!campaignId || !assetId) throw new Error('Which image?');
+    var it = search('SELECT campaign_asset.resource_name FROM campaign_asset WHERE campaign.id = ' + campaignId + ' AND asset.id = ' + assetId + ' AND campaign_asset.field_type = AD_IMAGE AND campaign_asset.status = ENABLED');
+    if (!it.hasNext()) throw new Error('That image isn’t on the campaign any more.');
+    var res = AdsApp.mutate({ campaignAssetOperation: { remove: it.next().campaignAsset.resourceName } });
+    if (!res.isSuccessful()) throw new Error(res.getErrorMessages().join('; '));
+    r.ok = true;
+    Logger.log('Took image ' + assetId + ' off the campaign (still in your library).');
+  } catch (e) {
+    r.error = String((e && e.message) || e);
+    Logger.log('Couldn’t take image ' + (a.payload && a.payload.asset_id) + ' off: ' + r.error);
+  }
+  return r;
 }
 
 // One of your photos, made in the studio, added to a campaign's images.

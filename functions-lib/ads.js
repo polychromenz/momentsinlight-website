@@ -49,11 +49,15 @@ export async function scriptState(env) {
   // Asked for from the studio (Send everything on the next run), or a day since the last export.
   const force = await env.DB.prepare("SELECT 1 FROM settings WHERE key = 'ads_force'").first();
   const due = first || !!force || Date.now() - Date.parse(last.at) > 20 * 3600_000;
-  const actions = (await env.DB.prepare(`SELECT id, type, payload FROM ads_action WHERE status = 'pending' AND type IN ('add_negative', 'add_image') ORDER BY id LIMIT 20`).all()).results
+  const actions = (await env.DB.prepare(`SELECT id, type, payload FROM ads_action WHERE status = 'pending' AND type IN ('add_negative', 'remove_image', 'add_image')
+      ORDER BY type = 'add_image', id LIMIT 20`).all()).results
     .map((a) => {
       const p = JSON.parse(a.payload);
-      // Only what the script needs (it checks these again).
-      return { id: a.id, type: a.type, payload: a.type === 'add_image' ? { campaign_id: p.campaign_id, url: p.url, name: p.name } : { campaign_id: p.campaign_id, text: p.text, match: p.match } };
+      // Only what the script needs (it checks these again). Swaps out come before new images in.
+      const payload = a.type === 'add_image' ? { campaign_id: p.campaign_id, url: p.url, name: p.name }
+        : a.type === 'remove_image' ? { campaign_id: p.campaign_id, asset_id: p.asset_id }
+        : { campaign_id: p.campaign_id, text: p.text, match: p.match };
+      return { id: a.id, type: a.type, payload };
     });
   return { export_due: due, days: first ? 90 : 30, actions, reports: due ? await reportsFor(env.DB) : [] };
 }
@@ -129,6 +133,9 @@ export async function ingest(env, report, rows) {
   } else if (report.startsWith('entity:')) {
     const kind = report.slice(7);
     stmts = rows.map((r) => db.prepare('INSERT OR REPLACE INTO ads_entity (kind, id, data, updated_at) VALUES (?1, ?2, ?3, ?4)').bind(kind, String(r.id), JSON.stringify(r), now));
+    // How long each campaign image has been live (an image needs a fair go before it's swapped out).
+    if (kind === 'image') stmts.push(...rows.filter((r) => r.level === 'campaign' && r.owner && r.asset_id)
+      .map((r) => db.prepare('INSERT OR IGNORE INTO ads_image_seen (campaign_id, asset_id, first_seen) VALUES (?1, ?2, ?3)').bind(String(r.owner), String(r.asset_id), now.slice(0, 10))));
   } else if (report === 'actions') {
     // What happened to the approved changes: [{ id, ok, error, asset? }].
     stmts = rows.map((r) => db.prepare(`UPDATE ads_action SET status = ?2, applied_at = ?3, error = ?4, payload = json_set(payload, '$.asset', ?5) WHERE id = ?1 AND status = 'pending'`)

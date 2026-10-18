@@ -8,7 +8,7 @@
 //   POST /api/studio/ads/picks { action: 'remove', id }    forget a pick (doesn't change Google Ads)
 import { json } from '../../../../functions-lib/studio.js';
 import { fileKey } from '../../../../functions-lib/galleries.js';
-import { listPicks, adsBlocked, adsCampaign, campaignImageCount, pickFileKey, pickFileUrl, SIZES } from '../../../../functions-lib/picks.js';
+import { listPicks, adsBlocked, adsCampaign, campaignImageCount, planSwaps, pickFileKey, pickFileUrl, SIZES } from '../../../../functions-lib/picks.js';
 
 export async function onRequestGet({ request, env }) {
   const image = new URL(request.url).searchParams.get('image');
@@ -60,14 +60,19 @@ export async function onRequestPost({ request, env }) {
     const kinds = ['wide', ...(p.crop_square ? ['square'] : [])];
     for (const k of kinds) if (!(await env.GALLERY_WEB.head(pickFileKey(p.id, k)))) return json({ error: `The ${k} file wasn’t made. Try Approve again.` }, 400);
     const count = await campaignImageCount(db, campaign.campaign_id);
-    if (count.now + count.waiting + kinds.length > count.limit) return json({ error: `The campaign has ${count.now} images${count.waiting ? ` (and ${count.waiting} waiting)` : ''}; Google allows ${count.limit}. Remove one in Google Ads first.` }, 400);
+    // Full? Swap out the weakest images that have had a fair go (planSwaps has Tony's rules).
+    const over = count.now - count.leaving + count.waiting + kinds.length - count.limit;
+    const plan = over > 0 ? await planSwaps(db, campaign.campaign_id, over) : { swaps: [] };
+    if (over > 0 && plan.swaps.length < over) return json({ error: `The campaign is full (Google allows ${count.limit} images). ${plan.reason} Remove one in Google Ads, or try again later.` }, 400);
     const v = now.slice(11, 19).replace(/:/g, '');
     await db.batch([
       db.prepare(`UPDATE photo_picks SET status = 'approved', approved_at = ?2, error = NULL WHERE id = ?1`).bind(p.id, now),
+      ...plan.swaps.map((s) => db.prepare(`INSERT INTO ads_action (type, payload, status, created_at) VALUES ('remove_image', ?1, 'pending', ?2)`)
+        .bind(JSON.stringify({ campaign_id: campaign.campaign_id, campaign: campaign.name, asset_id: String(s.asset_id), name: s.name ?? '', views: s.views, clicks: s.clicks, for_pick: p.id }), now)),
       ...kinds.map((k) => db.prepare(`INSERT INTO ads_action (type, payload, status, created_at) VALUES ('add_image', ?1, 'pending', ?2)`)
         .bind(JSON.stringify({ campaign_id: campaign.campaign_id, campaign: campaign.name, url: pickFileUrl(p.id, k, v), name: `MIL pick ${p.id} ${k}`, pick_id: p.id, kind: k }), now)),
     ]);
-    return json({ ok: true });
+    return json({ ok: true, swapped: plan.swaps.length });
   }
   if (d.action === 'remove') {
     await db.batch([

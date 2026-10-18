@@ -111,7 +111,7 @@ async function approve(p: any, btn: HTMLButtonElement) {
     const r = await post({ action: 'approve', id: p.id });
     const d = await r.json().catch(() => ({}));
     if (!r.ok) throw new Error(d.error || 'Couldn’t approve it.');
-    toast('Approved. The script adds it within the hour.');
+    toast(d.swapped ? `Approved. Within the hour the script swaps out ${d.swapped} weak image${d.swapped > 1 ? 's' : ''} and adds this one.` : 'Approved. The script adds it within the hour.');
   } catch (err) {
     toast((err as Error).message, true);
   }

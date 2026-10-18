@@ -18,7 +18,9 @@ function signedInAs(request) {
 export async function onRequestGet({ env }) {
   const db = env.DB;
   const since = new Date(Date.now() - 30 * 86400_000).toISOString().slice(0, 10);
-  const [key, last, imports, campaigns, totals, terms, gsc, block, actions] = await Promise.all([
+  const [script, key, last, imports, campaigns, totals, terms, gsc, block, actions] = await Promise.all([
+    // The copy in Google Ads: its version and when it last checked in (every hour when it's set to Hourly).
+    db.prepare(`SELECT value, updated_at FROM settings WHERE key = 'ads_script'`).first(),
     db.prepare(`SELECT updated_at FROM settings WHERE key = 'ads_sync'`).first(),
     db.prepare(`SELECT max(run_at) at FROM ads_import_log WHERE ok = 1`).first(),
     db.prepare(`SELECT run_at, report, rows_received, ok, error FROM ads_import_log ORDER BY id DESC LIMIT 12`).all(),
@@ -31,7 +33,7 @@ export async function onRequestGet({ env }) {
     blockSuggestions(db, since),
     db.prepare(`SELECT id, payload, status, created_at, applied_at, error FROM ads_action WHERE type = 'add_negative' ORDER BY id DESC LIMIT 40`).all(),
   ]);
-  return json({ connected: !!key, key_made: key?.updated_at ?? null, last: last?.at ?? null, imports: imports.results, campaigns: campaigns.results, totals, search_terms: terms.n, gsc,
+  return json({ script: script ? { ...JSON.parse(script.value), seen: script.updated_at } : null, connected: !!key, key_made: key?.updated_at ?? null, last: last?.at ?? null, imports: imports.results, campaigns: campaigns.results, totals, search_terms: terms.n, gsc,
     block: block.slice(0, 40), negatives: actions.results.map((a) => ({ ...a, payload: JSON.parse(a.payload) })) });
 }
 

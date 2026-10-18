@@ -11,6 +11,9 @@ import '../styles/global.css';
 type Section = 'dashboard' | 'clients' | 'galleries' | 'calendar' | 'contacts' | 'blog' | 'pages' | 'reviews' | 'stats' | 'seo' | 'rankings' | 'payments' | 'settings';
 interface Props { title: string; section?: Section }
 const { title, section } = Astro.props;
+// Which build this is (Cloudflare Pages gives the commit), shown at the bottom of every studio page.
+const built = new Date().toLocaleString('en-NZ', { timeZone: 'Pacific/Auckland', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' });
+const version = `${built} · ${(process.env.CF_PAGES_COMMIT_SHA ?? 'local').slice(0, 7)}`;
 type Item = [Section, string, string];
 // The website's pages sit together under "Website" (a small menu that opens).
 const website: Item[] = [['blog', 'Blog', '/studio/blog'], ['pages', 'Pages', '/studio/pages'], ['seo', 'SEO', '/studio/seo'], ['stats', 'Stats', '/studio/stats'], ['reviews', 'Reviews', '/studio/reviews']];
@@ -47,6 +50,7 @@ const inWebsite = website.some(([k]) => k === section) || section === 'rankings'
       <div class="studio-actions"><slot name="bar" /></div>
     </header>
     <slot />
+    <p class="studio-version">Moments Studio, updated {version}</p>
     <script>
       // The Website menu closes when you click elsewhere.
       document.addEventListener('click', (e) => {
@@ -105,6 +109,7 @@ const inWebsite = website.some(([k]) => k === section) || section === 'rankings'
   .studio-nav a:hover { background: rgb(90 94 59 / 0.08); opacity: 1; }
   .studio-nav a[aria-current='page'] { background: var(--green); color: var(--white); }
   .studio-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-left: auto; }
+  .studio-version { text-align: center; color: #aaa; font-size: 12px; margin: 40px 0 20px; }
   .studio-actions:empty { display: none; }
   @media (max-width: 760px) { .studio-nav { order: 3; flex-basis: 100%; margin: 0 -6px; } .studio-nav { position: relative; } .nav-group { position: static; } .nav-menu { left: 6px; right: 6px; top: calc(100% + 4px); flex-direction: row; flex-wrap: wrap; } }
   .studio-brand span { font-weight: 600; color: var(--green); }

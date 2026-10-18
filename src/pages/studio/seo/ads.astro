@@ -115,7 +115,13 @@ import script from '../../../../scripts/google-ads/sync.js?raw';
       return;
     }
     renderBlocks(d);
+    // Is the copy in Google Ads the latest, and is it running every hour?
+    const latest = ((window as any).__adsScript.match(/var VERSION = '([^']+)'/) ?? [])[1] ?? '';
+    const have = d.script?.version ?? 'before versions';
+    const quiet = !d.script?.seen || Date.now() - Date.parse(d.script.seen) > 2.5 * 3600_000;
+    const scriptLine = `<p class="${have === latest && !quiet ? 'ok-line' : 'warn-line'}">Script in Google Ads: <strong>${esc(have)}</strong>${have === latest ? ' (the latest)' : ` · the latest is <strong>${esc(latest)}</strong>: click <em>Copy the latest script</em> below, paste it over the old one in Google Ads and Save`}${d.script?.seen ? ` · last checked in ${when(d.script.seen)}` : ''}${quiet ? ' · <strong>not running every hour</strong>: set its Frequency to Hourly in Google Ads (Tools › Bulk actions › Scripts)' : ''}</p>`;
     s.innerHTML = `<div class="head"><h2>Connected</h2><span class="muted">Last data ${when(d.last)} · ${d.totals.first} to ${d.totals.last} · ${d.search_terms.toLocaleString('en-NZ')} search terms · Search Console ${d.gsc.n ? `${d.gsc.first} to ${d.gsc.last}` : 'starting'}</span></div>
+      ${scriptLine}
       <p class="muted">Last 30 days by campaign (check these against Google Ads; they should match to the cent):</p>
       <div class="tbl-wrap"><table class="tbl"><thead><tr><th>Campaign</th><th>Type</th><th>Bidding</th><th class="r">Budget/day</th><th class="r">Cost</th><th class="r">Clicks</th><th class="r">Conversions</th></tr></thead><tbody>
       ${d.campaigns.map((c: any) => `<tr><td>${esc(c.name)} <small class="muted">${esc(String(c.status ?? '').toLowerCase())}</small></td><td>${esc(NICE[c.channel_type] ?? c.channel_type)}${c.partner_network ? ' <small class="warn">+ search partners</small>' : ''}${c.display_network && c.channel_type === 'SEARCH' ? ' <small class="warn">+ display</small>' : ''}</td>
@@ -184,6 +190,9 @@ import script from '../../../../scripts/google-ads/sync.js?raw';
   .ads .head { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; align-items: baseline; }
   .ads .muted { color: #888; font-size: 14px; }
   .ads .warn { color: #a8432a; font-weight: 600; }
+  .ads .ok-line, .ads .warn-line { margin: 8px 0; padding: 8px 12px; border-radius: 10px 0; font-size: 14px; }
+  .ads .ok-line { background: #eef5ea; color: #2e5b1f; }
+  .ads .warn-line { background: #fbeee9; color: #8a3a22; }
   .ads ol { padding-left: 20px; line-height: 2.1; }
   .ads code { background: var(--champagne); padding: 2px 7px; border-radius: 6px; }
   .ads .script { width: 100%; height: 220px; font: 12px/1.4 ui-monospace, Consolas, monospace; border: 1px solid #ddd3c4; border-radius: 10px 0; padding: 10px; }

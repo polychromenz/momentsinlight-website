@@ -15,15 +15,17 @@ export async function adsWeekNumbers(env, today) {
   const end = day(today, -1), start = day(today, -7), pEnd = day(today, -8), pStart = day(today, -14), since30 = day(today, -30);
   const sum = (a, b) => db.prepare(`SELECT COALESCE(SUM(cost_cents), 0) cost, COALESCE(SUM(clicks), 0) clicks, COALESCE(SUM(impressions), 0) impr, COALESCE(SUM(conversions), 0) conv
     FROM ads_campaign_daily WHERE date BETWEEN ?1 AND ?2`).bind(a, b).first();
-  const [week, prev, terms, keywords, last] = await Promise.all([
+  const [week, prev, terms, keywords, last, changes] = await Promise.all([
     sum(start, end), sum(pStart, pEnd),
     // Searches that cost money and brought nothing, other than your own keywords and ones already blocked.
     blockSuggestions(db, start, 300, end),
     db.prepare(`SELECT text, match_type, SUM(cost_cents) cost, SUM(clicks) clicks FROM ads_keyword_daily WHERE date >= ?1 AND status = 'ENABLED'
       GROUP BY text, match_type HAVING SUM(conversions) = 0 AND SUM(cost_cents) >= 3000 ORDER BY cost DESC LIMIT 8`).bind(since30).all(),
     db.prepare(`SELECT max(run_at) at FROM ads_import_log WHERE report = 'done'`).first(),
+    // Images the script added or swapped out (Ad picks), and approved changes it couldn't make.
+    db.prepare(`SELECT type, status, payload, error FROM ads_action WHERE type IN ('add_image', 'remove_image') AND applied_at >= ?1 ORDER BY id`).bind(`${start}T00:00:00`).all(),
   ]);
-  return { start, end, week, prev, terms: terms.slice(0, 12), keywords: keywords.results, last: last?.at ?? null };
+  return { start, end, week, prev, terms: terms.slice(0, 12), keywords: keywords.results, last: last?.at ?? null, changes: changes.results.map((c) => ({ ...c, payload: JSON.parse(c.payload) })) };
 }
 
 export async function adsWeekly(env) {
@@ -49,6 +51,8 @@ export async function adsWeekly(env) {
     ['Cost per enquiry', `${per(n.week)} (the week before: ${per(n.prev)})`],
     ['Searches to block?', n.terms.length ? n.terms.map((t) => `${t.search_term}: ${money(t.cost)}, ${t.clicks} click${t.clicks === 1 ? '' : 's'}`).join('\n') : 'None: every search that cost $3+ brought an enquiry or is already blocked.'],
     ['Keywords to look at', n.keywords.length ? n.keywords.map((k) => `${k.text} (${String(k.match_type).toLowerCase()}): ${money(k.cost)} in 30 days, no enquiries`).join('\n') : 'None costing $30+ without enquiries.'],
+    ...(n.changes.length ? [['Ad images', n.changes.map((c) => c.status !== 'done' ? `Couldn’t ${c.type === 'add_image' ? 'add' : 'swap out'} ${c.payload.name || 'an image'}: ${c.error}`
+      : c.type === 'add_image' ? `Added ${c.payload.name}` : `Swapped out ${c.payload.name || `image ${c.payload.asset_id}`} (${c.payload.views ?? '?'} views, ${c.payload.clicks ?? '?'} clicks in 30 days; still in your library)`).join('\n')]] : []),
     ['What to do', 'Block any searches that aren’t for you: Studio > Website > SEO > Google Ads > Block searches, then Approve. The script adds them within the hour. Ask Claude if anything looks odd.'],
   ];
   await alertTony(env, `Google Ads this week: ${money(n.week.cost)} spent, ${Math.round(n.week.conv * 10) / 10} enquiries`, rows, 'https://www.momentsinlight.co.nz/studio/seo/ads');
