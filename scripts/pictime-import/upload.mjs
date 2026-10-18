@@ -227,7 +227,11 @@ async function moveGallery(folder, link) {
     return;
   }
 
-  const g = await api({ action: 'gallery', set_id: `pt:${layout.project}`, name: layout.title, type: 'Wedding', event_date: layout.date, source: 'pictime' });
+  // A practice shoot often has the same name as the wedding in Pic-Time; say which it is.
+  const files = layout.scenes.flatMap((s) => s.photos.filter((p) => p.file).map((p) => p.file));
+  const practice = files.length && files.filter((f) => /practice/i.test(path.relative(folder, f))).length > files.length / 2;
+  const name = practice && !/practice/i.test(layout.title) ? `${layout.title} – Practice shoot` : layout.title;
+  const g = await api({ action: 'gallery', set_id: `pt:${layout.project}`, name, type: practice ? 'Portraits' : 'Wedding', event_date: layout.date, source: 'pictime' });
   log(`  ${g.made ? 'Made' : 'Adding to'} the gallery: ${g.studio}`);
   const jobs = [];
   for (const [order, s] of layout.scenes.entries()) {
