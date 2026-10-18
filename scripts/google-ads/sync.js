@@ -188,6 +188,42 @@ function exportAll(days) {
     send('entity:pmax_search_term', rows);
     sentKinds.push('pmax_search_term');
   });
+  // Image assets (on the account, campaigns and ad groups), with how often each was shown.
+  function imageRow(level, r, owner) {
+    return { id: level + '~' + owner + '~' + v(r, 'asset.id'), level: level, owner: owner, asset_id: v(r, 'asset.id'), name: v(r, 'asset.name'),
+      url: v(r, 'asset.imageAsset.fullSize.url'), width: v(r, 'asset.imageAsset.fullSize.widthPixels'), height: v(r, 'asset.imageAsset.fullSize.heightPixels'),
+      field: v(r, level === 'account' ? 'customerAsset.fieldType' : level === 'campaign' ? 'campaignAsset.fieldType' : 'adGroupAsset.fieldType'),
+      status: v(r, level === 'account' ? 'customerAsset.status' : level === 'campaign' ? 'campaignAsset.status' : 'adGroupAsset.status'),
+      impressions: v(r, 'metrics.impressions'), clicks: v(r, 'metrics.clicks') };
+  }
+  run('image', function () {
+    var rows = [];
+    rows = rows.concat(rowsOf('SELECT asset.id, asset.name, asset.image_asset.full_size.url, asset.image_asset.full_size.width_pixels, asset.image_asset.full_size.height_pixels, ' +
+      'customer_asset.field_type, customer_asset.status, metrics.impressions, metrics.clicks FROM customer_asset WHERE asset.type = IMAGE AND ' + range,
+      function (r) { return imageRow('account', r, 'account'); }));
+    rows = rows.concat(rowsOf('SELECT campaign.id, asset.id, asset.name, asset.image_asset.full_size.url, asset.image_asset.full_size.width_pixels, asset.image_asset.full_size.height_pixels, ' +
+      'campaign_asset.field_type, campaign_asset.status, metrics.impressions, metrics.clicks FROM campaign_asset WHERE asset.type = IMAGE AND ' + range,
+      function (r) { return imageRow('campaign', r, v(r, 'campaign.id')); }));
+    rows = rows.concat(rowsOf('SELECT ad_group.id, asset.id, asset.name, asset.image_asset.full_size.url, asset.image_asset.full_size.width_pixels, asset.image_asset.full_size.height_pixels, ' +
+      'ad_group_asset.field_type, ad_group_asset.status, metrics.impressions, metrics.clicks FROM ad_group_asset WHERE asset.type = IMAGE AND ' + range,
+      function (r) { return imageRow('ad_group', r, v(r, 'adGroup.id')); }));
+    // Images linked but not shown in the period don't come back with metrics: list those too.
+    var seen = {};
+    rows.forEach(function (x) { seen[x.id] = 1; });
+    var lists = [['account', 'customer_asset', 'customerAsset', null], ['campaign', 'campaign_asset', 'campaignAsset', 'campaign.id'], ['ad_group', 'ad_group_asset', 'adGroupAsset', 'ad_group.id']];
+    lists.forEach(function (l) {
+      var q = 'SELECT ' + (l[3] ? l[3] + ', ' : '') + 'asset.id, asset.name, asset.image_asset.full_size.url, asset.image_asset.full_size.width_pixels, asset.image_asset.full_size.height_pixels, ' +
+        l[1] + '.field_type, ' + l[1] + '.status FROM ' + l[1] + ' WHERE asset.type = IMAGE';
+      rowsOf(q, function (r) {
+        var owner = l[3] ? v(r, l[3] === 'campaign.id' ? 'campaign.id' : 'adGroup.id') : 'account';
+        var x = imageRow(l[0], r, owner);
+        if (!seen[x.id]) { x.impressions = 0; x.clicks = 0; rows.push(x); seen[x.id] = 1; }
+        return null;
+      });
+    });
+    send('entity:image', rows);
+    sentKinds.push('image');
+  });
   // Place names for the location ids used above.
   run('geo_names', function () {
     var ids = {};
