@@ -1,0 +1,65 @@
+---
+// Moments Studio > Clients > Spam: enquiries the form's spam check caught (functions-lib/spam.js),
+// with why. "Not spam" makes one a lead as if it had just been sent (automatic reply, alert).
+// Data from functions/api/studio/crm/spam.js.
+import StudioLayout from '../../../layouts/StudioLayout.astro';
+---
+<StudioLayout title="Spam" section="clients">
+  <a slot="bar" class="s-btn s-btn--quiet" href="/studio/crm">Back to clients</a>
+  <main class="sp">
+    <h1>Spam</h1>
+    <p class="hint">Enquiries from your website form that looked like sales pitches or bots. They didn’t alert you, get an automatic reply or count as leads. If a real one is here, click <strong>Not spam</strong>: it becomes a lead as if it had just arrived.</p>
+    <ul class="sp-list"><li class="muted">Loading…</li></ul>
+  </main>
+  <div class="s-toast" role="status"></div>
+</StudioLayout>
+
+<script>
+  const $ = <T extends HTMLElement = HTMLElement>(s: string) => document.querySelector<T>(s)!;
+  const esc = (s: unknown) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
+  const when = (d: string) => new Date(d).toLocaleString('en-NZ', { day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit', timeZone: 'Pacific/Auckland' });
+  function toast(msg: string, error = false) {
+    const t = $('.s-toast'); t.textContent = msg; t.classList.toggle('error', error); t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 4000);
+  }
+  async function load() {
+    const r = await fetch('/api/studio/crm/spam');
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) { $('.sp-list').innerHTML = `<li>${esc(d.error || 'Couldn’t load.')}</li>`; return; }
+    $('.sp-list').innerHTML = d.spam.map((s: any) => `<li class="card${s.released_at ? ' released' : ''}" data-id="${s.id}">
+      <div class="top"><strong>${esc(`${s.data.first} ${s.data.last}`)}</strong> <small>${esc(s.data.email)} · ${esc(s.data.service)} · ${when(s.created_at)}</small></div>
+      <p class="why">${esc(s.reason)}</p>
+      <p class="msg">${esc(s.data.message || '(no message)')}</p>
+      <div class="actions">${s.released_at ? `<a class="s-btn s-btn--quiet" href="/studio/crm/job?id=${s.job_id}">Released: open the lead</a>` : '<button type="button" class="s-btn" data-release>Not spam</button><button type="button" class="s-btn s-btn--quiet" data-delete>Delete</button>'}</div></li>`).join('')
+      || '<li class="muted">Nothing caught yet.</li>';
+  }
+  document.addEventListener('click', async (e) => {
+    const t = e.target as HTMLElement;
+    const li = t.closest<HTMLElement>('[data-id]');
+    const action = t.closest('[data-release]') ? 'release' : t.closest('[data-delete]') ? 'delete' : '';
+    if (!li || !action) return;
+    if (action === 'release' && !confirm('Make this a lead? It gets the usual automatic reply and you get the new-enquiry alert.')) return;
+    if (action === 'delete' && !confirm('Delete this enquiry for good?')) return;
+    (t as HTMLButtonElement).disabled = true;
+    const r = await fetch('/api/studio/crm/spam', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ id: Number(li.dataset.id), action }) });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) { toast(d.error || 'Something went wrong.', true); (t as HTMLButtonElement).disabled = false; return; }
+    toast(action === 'release' ? 'Now a lead.' : 'Deleted.');
+    load();
+  });
+  load();
+</script>
+
+<style is:global>
+  .sp { max-width: 900px; margin: 0 auto; padding: 24px clamp(14px, 3vw, 32px) 80px; }
+  .sp h1 { margin: 0 0 6px; font-weight: 300; font-size: 32px; color: var(--ink); }
+  .sp .hint { color: #777; font-size: 14px; margin: 0 0 18px; }
+  .sp-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+  .sp .card { background: var(--white); border-radius: 22px 0; padding: 14px 18px; }
+  .sp .card.released { opacity: 0.6; }
+  .sp .top small { color: #888; }
+  .sp .why { margin: 4px 0 8px; font-size: 13px; color: #8a3a22; }
+  .sp .msg { margin: 0 0 10px; white-space: pre-wrap; font-size: 14px; color: #444; max-height: 9.5em; overflow: auto; }
+  .sp .actions { display: flex; gap: 8px; }
+  .sp .muted { color: #888; }
+</style>

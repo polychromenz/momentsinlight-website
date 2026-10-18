@@ -60,6 +60,8 @@ const sources: [string, string][] = [
   <!-- Left empty by people; bots fill it in. -->
   <div class="hp" aria-hidden="true">
     <label>Website <input name="website" type="text" tabindex="-1" autocomplete="off" /></label>
+    <!-- How long the page was open before sending (people take longer than a few seconds). -->
+    <input name="t" type="hidden" />
   </div>
   <div class="cf-turnstile" data-sitekey={siteKey} data-size="flexible"></div>
   <p class="msg" role="alert" hidden></p>
@@ -100,6 +102,7 @@ const sources: [string, string][] = [
       show('Just a moment, the spam check is still finishing. Please try again in a second.');
       return;
     }
+    form.querySelector<HTMLInputElement>('[name="t"]')!.value = String(Math.round(performance.now()));
     button.disabled = true;
     button.textContent = 'Sending…';
     try {

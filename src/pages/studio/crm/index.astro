@@ -30,6 +30,7 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
           <div class="tabs" role="group" aria-label="Show">
             <button type="button" data-stage="lead" class="on">Leads</button>
             <button type="button" data-stage="booked">Booked</button>
+            <a class="spam-link" href="/studio/crm/spam" hidden>Spam</a>
           </div>
         </div>
         <table class="jobs"><thead><tr><th>Name</th><th>Type</th><th>Date</th><th>Venue</th><th>Enquired</th></tr></thead><tbody></tbody></table>
@@ -201,6 +202,14 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
     }
   });
   load();
+  // Enquiries the spam check caught in the last 30 days (the link shows once there are any).
+  fetch('/api/studio/crm/spam').then((r) => r.json()).then((d) => {
+    const since = new Date(Date.now() - 30 * 86400000).toISOString();
+    const n = (d.spam ?? []).filter((s: any) => !s.released_at && s.created_at > since).length;
+    const a = document.querySelector<HTMLAnchorElement>('.spam-link')!;
+    a.hidden = !(d.spam ?? []).length;
+    a.textContent = n ? `Spam (${n})` : 'Spam';
+  }).catch(() => {});
 </script>
 
 <style is:global>
@@ -244,7 +253,8 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
   .crm .due { font-size: 13px; color: #777; }
   .crm .list-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 8px; }
   .crm .list-head h2 { margin: 0; }
-  .crm .tabs { display: flex; gap: 6px; }
+  .crm .tabs { display: flex; gap: 6px; align-items: center; }
+  .crm .spam-link { margin-left: 6px; font-size: 13px; color: #888; }
   .crm .tabs button { padding: 7px 14px; border: 1px solid #ddd3c4; border-radius: 999px; background: var(--white); font: inherit; font-size: 14px; cursor: pointer; }
   .crm .tabs button.on { background: var(--green); border-color: var(--green); color: var(--white); }
   .crm .jobs { width: 100%; border-collapse: collapse; font-size: 14px; }
