@@ -51,7 +51,7 @@ export async function getStaticPaths() {
 const { kind, page, entry } = Astro.props as any;
 const d = entry?.data;
 ---
-{kind === 'imported' && (refreshed[page.path] ? <RefreshedPage page={page} options={refreshed[page.path]} /> : <ImportedPage page={page} />)}
+{kind === 'imported' && ((refreshed[page.path] ?? page.refresh) ? <RefreshedPage page={page} options={refreshed[page.path] ?? page.refresh} /> : <ImportedPage page={page} />)}
 {kind === 'cms' && (
   <BaseLayout
     title={d.seoTitle || `${d.title} | Moments In Light`}

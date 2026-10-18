@@ -5,6 +5,7 @@ import monogramWhite from '../assets/brand/monogram-white.webp';
 import badgeMyWeddingGuide from '../assets/brand/badge-my-wedding-guide.webp';
 import badgeBrideAndGroom from '../assets/brand/badge-bride-and-groom.webp';
 import badgeMyWed from '../assets/brand/badge-mywed.webp';
+import menu from './menu.json';
 
 export const site = {
   name: 'Moments In Light',
@@ -29,53 +30,9 @@ export const announcement = {
 
 export type NavItem = { label: string; href: string; children?: { label: string; href: string }[] };
 
-export const nav: NavItem[] = [
-  { label: 'Weddings', href: '/weddings' },
-  {
-    label: 'Galleries',
-    href: '/galleries-menu',
-    children: [
-      { label: 'Love Stories', href: '/wedding-galleries' },
-      { label: 'Portraits Gallery', href: '/portraits-gallery' },
-      { label: 'Family Galleries', href: '/family-galleries' },
-    ],
-  },
-  {
-    label: 'Portraits',
-    href: '/portraits-1',
-    children: [
-      { label: 'Portraits', href: '/portraits' },
-      { label: 'Premium Portraits', href: '/premium-portraits' },
-      { label: 'Lifestyle', href: '/lifestyle' },
-      { label: 'Headshots', href: '/headshots' },
-      { label: 'Family', href: '/family' },
-    ],
-  },
-  {
-    label: 'Venues',
-    href: '/wedding-venues',
-    children: [
-      { label: 'West Auckland Wedding Venues', href: '/west-auckland-wedding-venues' },
-      { label: 'Abel Estate', href: '/abel-estate' },
-      { label: 'Bridgewater Estate', href: '/bridgewater-estate-wedding-photographer' },
-      { label: 'Kumeu Valley Estate', href: '/kumeu-valley-estate-wedding-photographer' },
-      { label: 'Markovina Vineyard Estate', href: '/markovina-vineyard-estate-wedding-photographer' },
-      { label: 'Settlers Country Manor', href: '/settlers-country-manor-wedding-photographer' },
-      { label: 'The Barn Waimauku', href: '/the-barn-waimauku-wedding-photographer' },
-      { label: 'Tui Hills', href: '/tui-hills' },
-    ],
-  },
-  {
-    label: 'More',
-    href: '/more',
-    children: [
-      { label: 'Wedding Photo Guide', href: '/wedding-photo-guide' },
-      { label: 'Wedding Resources', href: '/wedding-resources' },
-      { label: 'Testimonials', href: '/testimonials' },
-      { label: 'About', href: '/about' },
-    ],
-  },
-];
+// The main menu, edited from the studio (Website > Pages > Menu): src/data/menu.json.
+// A top-level item with children opens as a dropdown (its own address isn't a page).
+export const nav: NavItem[] = menu.items;
 
 export const cta = { label: 'Check now to see if your date is available', href: '/contact' };
 

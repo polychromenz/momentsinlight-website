@@ -270,4 +270,5 @@ export async function startFlow() {
   counts();
   draw();
   dirty = false; $<HTMLButtonElement>('[data-save]').disabled = true; $('.pe-state').textContent = '';
+  if (new URLSearchParams(location.search).get('new')) toast('Your new page is made. Write it here and Save; it appears on the website about 2 minutes after each save.');
 }

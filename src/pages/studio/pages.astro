@@ -4,18 +4,21 @@
 import StudioLayout from '../../layouts/StudioLayout.astro';
 import home from '../../data/home.json';
 import { refreshed } from '../../data/refreshed';
+import menu from '../../data/menu.json';
 
 const files = import.meta.glob<any>('../../data/pages/*.json', { eager: true });
 // Pages whose content is built in code (only their Google title and description come from here).
 const codeContent = new Set(['wedding-galleries']);
 const pages = Object.entries(files)
   .map(([f, m]) => ({ id: f.split('/').pop()!.replace(/\.json$/, ''), path: m.default.path as string, title: m.default.title as string }))
-  .map((p) => ({ ...p, href: refreshed[p.path] ? `/studio/page-write?id=${p.id}` : `/studio/page-edit?id=${p.id}` }))
+  .map((p) => ({ ...p, href: refreshed[p.path] || (files[`../../data/pages/${p.id}.json`] as any).default.refresh ? `/studio/page-write?id=${p.id}` : `/studio/page-edit?id=${p.id}` }))
   .filter((p) => !['/thanks'].includes(p.path))
   .sort((a, b) => a.path.localeCompare(b.path));
 const strip = (t: string) => t.replace(/\s*\|\s*Moments In Light\s*$/i, '');
 ---
 <StudioLayout title="Pages" section="pages">
+  <a slot="bar" class="s-btn s-btn--quiet" href="/studio/menu">Edit the menu</a>
+  <button slot="bar" type="button" class="s-btn s-btn--solid" data-new>+ Add a page</button>
   <main class="pages">
     <h1>Pages</h1>
     <p class="intro">Your website’s pages (blog posts are under Blog). Change the words, photos and photo descriptions, and how each page appears on Google. Saving updates the website in about 2 minutes.</p>
@@ -34,9 +37,41 @@ const strip = (t: string) => t.replace(/\s*\|\s*Moments In Light\s*$/i, '');
     </div>
     <p class="hint">Built into the site’s code, so ask Claude to change them: Weddings (/weddings), the blog’s list pages, and the contact form itself.</p>
   </main>
+  <dialog class="new-page">
+    <form class="np">
+      <h2>Add a page</h2>
+      <label>Page name <input name="name" required maxlength="80" placeholder="e.g. Elopements" /></label>
+      <label>Its address <span class="addr">momentsinlight.co.nz/<input name="slug" required maxlength="80" pattern="[a-z0-9][a-z0-9\-]{1,80}" /></span></label>
+      <label>In the menu <select name="menu"><option value="">Not in the menu (add it later)</option>{menu.items.filter((i: any) => i.children).map((i: any) => <option value={i.label}>Under “{i.label}”</option>)}<option value="top">On the menu bar itself</option></select></label>
+      <p class="np-msg" hidden></p>
+      <div class="row"><button type="button" class="s-btn s-btn--quiet" data-cancel>Cancel</button><button type="submit" class="s-btn s-btn--solid">Create the page</button></div>
+    </form>
+  </dialog>
+  <div class="s-toast" role="status"></div>
 </StudioLayout>
 
 <script>
+  // New page: name -> address, created in the refreshed design, then opened in the editor.
+  const dlg = document.querySelector<HTMLDialogElement>('dialog.new-page')!;
+  const form = dlg.querySelector<HTMLFormElement>('form')!;
+  const slugIn = form.elements.namedItem('slug') as HTMLInputElement;
+  let slugTouched = false;
+  const slugify = (t: string) => t.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/&/g, ' and ').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 80);
+  document.querySelector('[data-new]')!.addEventListener('click', () => { form.reset(); slugTouched = false; dlg.querySelector<HTMLElement>('.np-msg')!.hidden = true; dlg.showModal(); });
+  dlg.querySelector('[data-cancel]')!.addEventListener('click', () => dlg.close());
+  (form.elements.namedItem('name') as HTMLInputElement).addEventListener('input', (e) => { if (!slugTouched) slugIn.value = slugify((e.target as HTMLInputElement).value); });
+  slugIn.addEventListener('input', () => { slugTouched = true; });
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = form.querySelector<HTMLButtonElement>('[type=submit]')!; btn.disabled = true; btn.textContent = 'Creating…';
+    const body = Object.fromEntries(new FormData(form));
+    const r = await fetch('/api/studio/page', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
+    const d = await r.json().catch(() => ({}));
+    btn.disabled = false; btn.textContent = 'Create the page';
+    if (!r.ok) { const m = dlg.querySelector<HTMLElement>('.np-msg')!; m.textContent = d.error || 'Couldn’t create it.'; m.hidden = false; return; }
+    location.href = `/studio/page-write?id=${d.id}&new=1`;
+  });
+
   const input = document.querySelector<HTMLInputElement>('.pg-search')!;
   input.addEventListener('input', () => {
     const q = input.value.trim().toLowerCase();
@@ -56,4 +91,13 @@ const strip = (t: string) => t.replace(/\s*\|\s*Moments In Light\s*$/i, '');
   .what { flex: 1; display: flex; flex-direction: column; color: var(--ink); text-decoration: none; min-width: 0; }
   .what small { color: #888; font-size: 13px; }
   .hint { font-size: 13px; color: #888; margin-top: 12px; }
+  .new-page { border: 0; border-radius: 20px 0; padding: 22px 24px; width: min(480px, 94vw); }
+  .new-page::backdrop { background: rgb(20 20 15 / 0.45); }
+  .np { display: flex; flex-direction: column; gap: 12px; }
+  .np h2 { margin: 0; font-weight: 300; font-size: 22px; color: var(--ink); }
+  .np label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: #555; }
+  .np input, .np select { font: inherit; font-size: 15px; padding: 8px 10px; border: 1px solid #ddd3c4; border-radius: 8px 0; }
+  .addr { display: flex; align-items: center; gap: 2px; font-size: 14px; color: #888; } .addr input { flex: 1; min-width: 0; }
+  .np-msg { margin: 0; padding: 8px 10px; background: #fff1ec; color: #8a3a22; border-radius: 8px 0; font-size: 13px; }
+  .row { display: flex; justify-content: flex-end; gap: 8px; }
 </style>

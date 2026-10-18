@@ -1,0 +1,160 @@
+---
+// Moments Studio > Website > Pages > Menu: the website's main menu. Drag to reorder the menu bar
+// and each dropdown, rename items, move a page into another dropdown, add pages, remove items.
+// Saved to src/data/menu.json through functions/api/studio/menu.js.
+import StudioLayout from '../../layouts/StudioLayout.astro';
+import home from '../../data/home.json';
+
+const files = import.meta.glob<any>('../../data/pages/*.json', { eager: true });
+const pages = [
+  { path: '/', title: 'Home page' },
+  { path: '/weddings', title: 'Weddings' },
+  { path: '/wedding-galleries', title: 'Love Stories (wedding galleries)' },
+  { path: '/west-auckland-wedding-venues', title: 'West Auckland Wedding Venues' },
+  { path: '/contact', title: 'Contact' },
+  { path: '/blog', title: 'Blog' },
+  ...Object.values(files).map((m: any) => ({ path: m.default.path, title: String(m.default.title).replace(/\s*\|\s*Moments In Light\s*$/i, '') })),
+].filter((p, i, all) => p.path && p.path !== '/thanks' && all.findIndex((x) => x.path === p.path) === i).sort((a, b) => a.title.localeCompare(b.title));
+void home;
+---
+<StudioLayout title="Menu" section="pages">
+  <span slot="bar" class="m-state"></span>
+  <button slot="bar" type="button" class="s-btn s-btn--solid" data-save disabled>Save the menu</button>
+  <main class="menu-ed">
+    <p class="back"><a href="/studio/pages">← Pages</a></p>
+    <h1>Menu</h1>
+    <p class="intro">Your website’s menu, left to right. Drag the ⠿ handles to change the order, or to move a page into another dropdown. Click a name to rename it.</p>
+    <ul class="top" data-list="top"></ul>
+    <div class="adders">
+      <button type="button" class="s-btn s-btn--quiet" data-add-top>+ Add a page to the menu bar</button>
+      <button type="button" class="s-btn s-btn--quiet" data-add-group>+ Add a dropdown</button>
+    </div>
+    <p class="hint">On a phone the same menu shows as a list, in the same order. Saving updates the website in about 2 minutes.</p>
+  </main>
+  <dialog class="pick"><form method="dialog" class="pick-f"><h2>Add a page</h2>
+    <label>Page <select name="page">{pages.map((p) => <option value={p.path}>{p.title} ({p.path})</option>)}<option value="">Another address…</option></select></label>
+    <label class="other" hidden>Address <input name="href" placeholder="/something or https://…" /></label>
+    <label>Name in the menu <input name="label" maxlength="60" /></label>
+    <div class="row"><button value="cancel" class="s-btn s-btn--quiet">Cancel</button><button value="ok" class="s-btn s-btn--solid">Add</button></div></form></dialog>
+  <div class="s-toast" role="status"></div>
+</StudioLayout>
+
+<script>
+  import Sortable from 'sortablejs';
+  const $ = <T extends HTMLElement = HTMLElement>(s: string, r: ParentNode = document) => r.querySelector<T>(s)!;
+  const esc = (s: unknown) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
+  const toast = (text: string, error = false) => { const t = $('.s-toast'); t.textContent = text; t.classList.toggle('error', error); t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 4500); };
+  let sha = '';
+  let extra: any = {};
+  let dirty = false;
+  const markDirty = () => { dirty = true; $<HTMLButtonElement>('[data-save]').disabled = false; $('.m-state').textContent = 'Unsaved changes'; };
+  addEventListener('beforeunload', (e) => { if (dirty) { e.preventDefault(); e.returnValue = ''; } });
+
+  const linkLi = (c: any) => `<li class="link" data-href="${esc(c.href)}"><span class="h" title="Drag">⠿</span><input class="lbl" value="${esc(c.label)}" aria-label="Name in the menu"><a class="to" href="${esc(c.href)}" target="_blank" rel="noopener">${esc(c.href)}</a><button type="button" class="rm" data-rm title="Remove from the menu">✕</button></li>`;
+  const itemLi = (i: any) => i.children
+    ? `<li class="group" data-href="${esc(i.href)}"><div class="g-head"><span class="h" title="Drag">⠿</span><input class="lbl" value="${esc(i.label)}" aria-label="Dropdown name"><small>dropdown</small><button type="button" class="s-btn s-btn--quiet" data-add-to>+ Add a page</button><button type="button" class="rm" data-rm title="Remove this dropdown">✕</button></div>
+        <ul class="kids" data-list="kids">${i.children.map(linkLi).join('')}</ul></li>`
+    : linkLi(i);
+
+  function sortables() {
+    Sortable.create($('[data-list=top]'), { handle: '.h', animation: 180, group: { name: 'top', put: (to, from, el) => !el.classList.contains('group') || to.el.dataset.list === 'top' }, onEnd: markDirty });
+    document.querySelectorAll<HTMLElement>('[data-list=kids]').forEach((ul) => Sortable.create(ul, { handle: '.h', animation: 180, group: { name: 'kids', pull: true, put: ['kids', 'top'] }, onEnd: markDirty, onAdd: markDirty }));
+  }
+  function read() {
+    const items = [...$('[data-list=top]').children].map((li: any) => {
+      const label = li.querySelector('.lbl').value.trim();
+      if (li.classList.contains('group')) return { label, href: li.dataset.href, children: [...li.querySelectorAll('.kids > li')].map((k: any) => ({ label: k.querySelector('.lbl').value.trim(), href: k.dataset.href })) };
+      return { label, href: li.dataset.href };
+    });
+    return { ...extra, items };
+  }
+
+  // Adding a page (to the bar, or into a dropdown).
+  const pick = $<HTMLDialogElement>('dialog.pick');
+  const pf = $<HTMLFormElement>('.pick-f');
+  const pageSel = pf.elements.namedItem('page') as HTMLSelectElement;
+  const labelIn = pf.elements.namedItem('label') as HTMLInputElement;
+  const nameOf = () => pageSel.selectedOptions[0]?.textContent?.replace(/\s*\([^)]*\)$/, '') ?? '';
+  pageSel.addEventListener('change', () => { $('.other', pf).hidden = pageSel.value !== ''; labelIn.value = pageSel.value ? nameOf() : ''; });
+  function askPage(onAdd: (item: any) => void) {
+    pf.reset(); $('.other', pf).hidden = true; labelIn.value = nameOf();
+    pick.showModal();
+    pick.onclose = () => {
+      if (pick.returnValue !== 'ok') return;
+      const href = pageSel.value || (pf.elements.namedItem('href') as HTMLInputElement).value.trim();
+      const label = labelIn.value.trim() || nameOf();
+      if (!href || !label) { toast('Choose a page and give it a name.', true); return; }
+      onAdd({ label, href }); markDirty();
+    };
+  }
+
+  document.addEventListener('click', async (e) => {
+    const t = e.target as HTMLElement;
+    const rm = t.closest<HTMLButtonElement>('[data-rm]');
+    if (rm) { const li = rm.closest('li')!; if (!li.classList.contains('group') || confirm('Remove this dropdown and the links in it from the menu? (The pages themselves stay.)')) { li.remove(); markDirty(); } return; }
+    const at = t.closest<HTMLButtonElement>('[data-add-to]');
+    if (at) { const ul = at.closest('li')!.querySelector('.kids')!; askPage((item) => ul.insertAdjacentHTML('beforeend', linkLi(item))); return; }
+    if (t.closest('[data-add-top]')) { askPage((item) => $('[data-list=top]').insertAdjacentHTML('beforeend', linkLi(item))); return; }
+    if (t.closest('[data-add-group]')) {
+      const name = prompt('Name of the dropdown (e.g. Elopements):')?.trim(); if (!name) return;
+      $('[data-list=top]').insertAdjacentHTML('beforeend', itemLi({ label: name, href: `/${name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-menu`, children: [] }));
+      const ul = $('[data-list=top]').lastElementChild!.querySelector<HTMLElement>('.kids')!;
+      Sortable.create(ul, { handle: '.h', animation: 180, group: { name: 'kids', pull: true, put: ['kids', 'top'] }, onEnd: markDirty, onAdd: markDirty });
+      markDirty(); toast('Added. Now add pages to it, or drag pages into it.'); return;
+    }
+    if (t.closest('[data-save]')) {
+      const btn = t.closest<HTMLButtonElement>('[data-save]')!;
+      const data = read();
+      // A link dragged onto the bar from a dropdown becomes a top-level link; an empty dropdown is left out.
+      data.items = data.items.filter((i: any) => !i.children || i.children.length);
+      btn.disabled = true; btn.textContent = 'Saving…';
+      const r = await fetch('/api/studio/menu', { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ data, sha }) });
+      const d = await r.json().catch(() => ({}));
+      btn.textContent = 'Save the menu';
+      if (!r.ok) { btn.disabled = false; toast(d.error || 'Couldn’t save.', true); return; }
+      sha = d.sha; dirty = false; $('.m-state').textContent = 'Saved. The website updates in about 2 minutes.';
+    }
+  });
+  document.addEventListener('input', (e) => { if ((e.target as HTMLElement).matches('.lbl')) markDirty(); });
+
+  (async () => {
+    const r = await fetch('/api/studio/menu');
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) { $('[data-list=top]').innerHTML = `<li class="muted">${esc(d.error || 'Couldn’t load the menu.')}</li>`; return; }
+    sha = d.sha; const { items, ...rest } = d.data; extra = rest;
+    $('[data-list=top]').innerHTML = items.map(itemLi).join('');
+    sortables();
+  })();
+</script>
+
+<style>
+  .menu-ed { max-width: 780px; margin: 0 auto; padding: 20px clamp(14px, 3vw, 32px) 90px; }
+  .back { margin: 0 0 6px; font-size: 14px; } .back a { color: var(--green); }
+  h1 { margin: 0 0 4px; font-weight: 300; font-size: 32px; color: var(--ink); }
+  .intro { margin: 0 0 16px; color: #666; font-size: 15px; }
+  .m-state { font-size: 13px; color: #888; align-self: center; }
+  ul { list-style: none; margin: 0; padding: 0; }
+  .top { display: flex; flex-direction: column; gap: 10px; }
+  :global(.top > li) { background: var(--white); border-radius: 16px 0; padding: 8px 12px; }
+  :global(.link), :global(.g-head) { display: flex; align-items: center; gap: 10px; }
+  :global(.kids) { margin: 6px 0 4px 26px; padding: 6px 10px; border-left: 2px solid #e6dccb; display: flex; flex-direction: column; gap: 4px; min-height: 30px; }
+  :global(.kids > li) { background: #faf6ee; border-radius: 10px 0; padding: 5px 10px; }
+  :global(.h) { cursor: grab; color: #aaa; font-size: 18px; user-select: none; }
+  :global(.lbl) { font: inherit; font-size: 15px; border: 1px solid transparent; background: transparent; padding: 4px 6px; border-radius: 6px 0; min-width: 0; flex: 0 1 260px; }
+  :global(.lbl:hover), :global(.lbl:focus) { border-color: #ddd3c4; background: var(--white); outline: none; }
+  :global(.g-head .lbl) { font-weight: 600; }
+  :global(.g-head small) { color: #aaa; font-size: 12px; }
+  :global(.to) { flex: 1; font-size: 12px; color: #999; text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+  :global(.g-head .s-btn) { margin-left: auto; font-size: 13px; }
+  :global(.rm) { border: 0; background: none; color: #a8432a; cursor: pointer; font-size: 14px; }
+  :global(.sortable-ghost) { opacity: 0.4; }
+  .adders { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+  .hint { font-size: 13px; color: #888; margin-top: 14px; }
+  .pick { border: 0; border-radius: 20px 0; padding: 22px 24px; width: min(460px, 94vw); }
+  .pick::backdrop { background: rgb(20 20 15 / 0.45); }
+  .pick-f { display: flex; flex-direction: column; gap: 12px; }
+  .pick-f h2 { margin: 0; font-weight: 300; font-size: 22px; }
+  .pick-f label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: #555; }
+  .pick-f input, .pick-f select { font: inherit; font-size: 14px; padding: 8px 10px; border: 1px solid #ddd3c4; border-radius: 8px 0; }
+  .row { display: flex; justify-content: flex-end; gap: 8px; }
+</style>

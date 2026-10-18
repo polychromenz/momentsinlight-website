@@ -81,6 +81,21 @@ export async function writeRepoFile(env, path, content, sha, message) {
   });
 }
 
+/** Several files saved as one commit (so the site rebuilds once): { 'path': 'content' }. */
+export async function commitFiles(env, files, message) {
+  const ref = await github(env, `git/ref/heads/${BRANCH}`);
+  if (!ref.ok) throw new Error(`GitHub ${ref.status}: ${ref.data?.message ?? ''}`);
+  const base = ref.data.object.sha;
+  const baseCommit = await github(env, `git/commits/${base}`);
+  const tree = await github(env, 'git/trees', { method: 'POST', body: JSON.stringify({ base_tree: baseCommit.data.tree.sha, tree: Object.entries(files).map(([path, content]) => ({ path, mode: '100644', type: 'blob', content })) }) });
+  if (!tree.ok) throw new Error(`GitHub ${tree.status}: ${tree.data?.message ?? ''}`);
+  const commit = await github(env, 'git/commits', { method: 'POST', body: JSON.stringify({ message, tree: tree.data.sha, parents: [base] }) });
+  if (!commit.ok) throw new Error(`GitHub ${commit.status}: ${commit.data?.message ?? ''}`);
+  const upd = await github(env, `git/refs/heads/${BRANCH}`, { method: 'PATCH', body: JSON.stringify({ sha: commit.data.sha }) });
+  if (!upd.ok) throw new Error(upd.status === 422 ? 'Something else was saved at the same moment. Try again.' : `GitHub ${upd.status}: ${upd.data?.message ?? ''}`);
+  return commit.data.sha;
+}
+
 export async function readPost(env, id) {
   const r = await github(env, `contents/${postPath(id)}?ref=${BRANCH}`);
   if (r.status === 404) return { exists: false };

@@ -1,0 +1,112 @@
+{
+  "items": [
+    {
+      "label": "Weddings",
+      "href": "/weddings"
+    },
+    {
+      "label": "Galleries",
+      "href": "/galleries-menu",
+      "children": [
+        {
+          "label": "Love Stories",
+          "href": "/wedding-galleries"
+        },
+        {
+          "label": "Portraits Gallery",
+          "href": "/portraits-gallery"
+        },
+        {
+          "label": "Family Galleries",
+          "href": "/family-galleries"
+        }
+      ]
+    },
+    {
+      "label": "Portraits",
+      "href": "/portraits-1",
+      "children": [
+        {
+          "label": "Portraits",
+          "href": "/portraits"
+        },
+        {
+          "label": "Premium Portraits",
+          "href": "/premium-portraits"
+        },
+        {
+          "label": "Lifestyle",
+          "href": "/lifestyle"
+        },
+        {
+          "label": "Headshots",
+          "href": "/headshots"
+        },
+        {
+          "label": "Family",
+          "href": "/family"
+        }
+      ]
+    },
+    {
+      "label": "Venues",
+      "href": "/wedding-venues",
+      "children": [
+        {
+          "label": "West Auckland Wedding Venues",
+          "href": "/west-auckland-wedding-venues"
+        },
+        {
+          "label": "Abel Estate",
+          "href": "/abel-estate"
+        },
+        {
+          "label": "Bridgewater Estate",
+          "href": "/bridgewater-estate-wedding-photographer"
+        },
+        {
+          "label": "Kumeu Valley Estate",
+          "href": "/kumeu-valley-estate-wedding-photographer"
+        },
+        {
+          "label": "Markovina Vineyard Estate",
+          "href": "/markovina-vineyard-estate-wedding-photographer"
+        },
+        {
+          "label": "Settlers Country Manor",
+          "href": "/settlers-country-manor-wedding-photographer"
+        },
+        {
+          "label": "The Barn Waimauku",
+          "href": "/the-barn-waimauku-wedding-photographer"
+        },
+        {
+          "label": "Tui Hills",
+          "href": "/tui-hills"
+        }
+      ]
+    },
+    {
+      "label": "More",
+      "href": "/more",
+      "children": [
+        {
+          "label": "Wedding Photo Guide",
+          "href": "/wedding-photo-guide"
+        },
+        {
+          "label": "Wedding Resources",
+          "href": "/wedding-resources"
+        },
+        {
+          "label": "Testimonials",
+          "href": "/testimonials"
+        },
+        {
+          "label": "About",
+          "href": "/about"
+        }
+      ]
+    }
+  ]
+}
