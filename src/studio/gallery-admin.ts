@@ -141,7 +141,7 @@ let current: { files: File[]; into?: string } | null = null;
 let busy = false;
 let stop = false;
 const skippedNote = (list: string[]) => {
-  const web = list.find((x) => /web-size copies/.test(x));
+  const web = list.find((x) => /web or social copies/.test(x));
   const other = list.filter((x) => x !== web).length;
   const bits = [other ? (other === 1 ? '1 file that isn’t a JPEG' : `${other} files that aren’t JPEGs`) : '', web ?? ''].filter(Boolean);
   return bits.length ? `<p class="hint">Skipped ${bits.join(' and ')}.</p>` : '';

@@ -17,13 +17,14 @@ export function plan(files: File[], detail: Detail, intoSection?: string): Plan 
   const by = new Map<string, File[]>();
   // Tony's Wedding Collection Export plugin saves <wedding>\Color\<section> and <wedding>\Mono\<section>
   // (and web copies under Web\, which aren't needed: the browser makes its own web sizes).
-  const hasFull = files.some((f) => !(f.webkitRelativePath || '').split('/').slice(0, -1).some((p) => /^web$/i.test(p)));
+  const COPY = /^(web|social)$/i; // smaller copies made for the web and social media
+  const hasFull = files.some((f) => !(f.webkitRelativePath || '').split('/').slice(0, -1).some((p) => COPY.test(p)));
   let web = 0;
   for (const f of files) {
     if (!/\.jpe?g$/i.test(f.name)) { if (!f.name.startsWith('.') && !/^(thumbs\.db|desktop\.ini)$/i.test(f.name)) skipped.push(f.name); continue; }
     const parts = (f.webkitRelativePath || f.name).split('/');
     const between = parts.slice(0, -2); // the chosen folder and any between it and the section (e.g. Mono)
-    if (hasFull && between.some((p) => /^web$/i.test(p))) { web++; continue; }
+    if (hasFull && parts.slice(0, -1).some((p) => COPY.test(p))) { web++; continue; }
     const mono = between.some((p) => /^(mono|b\s*\+?\s*w|black and white)$/i.test(p));
     const base = intoSection ?? (parts.length >= 3 ? parts[parts.length - 2] : 'Photos');
     const section = !intoSection && mono && !isBw(base) ? `${base} B+W` : base;
@@ -42,7 +43,7 @@ export function plan(files: File[], detail: Detail, intoSection?: string): Plan 
     });
     return { name, is_bw: isBw(name), files: list.length, done };
   });
-  if (web) skipped.push(`${web} web-size copies (the full-size ones are used)`);
+  if (web) skipped.push(`${web} web or social copies (the full-size ones are used)`);
   return { sections, jobs, skipped };
 }
 
