@@ -38,6 +38,7 @@ import { contactsTimer } from '../../../functions-lib/contacts.js';
 import { weeklyPositions, contentTasks, siteHealth, competitorWatch } from '../../../functions-lib/seo.js';
 import { rankingsTimer } from '../../../functions-lib/rankings.js';
 import { gscSync } from '../../../functions-lib/ads.js';
+import { adsWeekly } from '../../../functions-lib/ads-weekly.js';
 
 const reply = (data, status = 200) => new Response(JSON.stringify(data), { status, headers: { 'content-type': 'application/json' } });
 const stops = (step, ev) => (',' + step.stop_on + ',').includes(`,${ev},`);
@@ -177,6 +178,8 @@ export async function onRequestPost({ request, env }) {
   log.rankings = await rankingsTimer(env).catch((e) => `error: ${e.message}`);
   // 11. Search Console kept day by day for the Ads view (functions-lib/ads.js).
   log.gsc = await gscSync(env).catch((e) => `error: ${e.message}`);
+  // 12. Monday morning: the Google Ads check email and task (functions-lib/ads-weekly.js).
+  log.ads_weekly = await adsWeekly(env).catch((e) => `error: ${e.message}`);
 
   return reply({ ok: true, ...log });
 }
