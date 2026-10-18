@@ -68,11 +68,6 @@ const sources: [string, string][] = [
   <button class="btn" type="submit">Send enquiry</button>
 </form>
 
-<div class="enquiry-thanks" hidden tabindex="-1">
-  <h2>Thank you!</h2>
-  <p>I've got your enquiry and I'll be in touch soon. Keep an eye on your inbox (and just in case, your spam folder).</p>
-</div>
-
 <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 <script>
   const form = document.querySelector<HTMLFormElement>('form.enquiry')!;
@@ -109,10 +104,9 @@ const sources: [string, string][] = [
       const r = await fetch(form.action, { method: 'POST', body: new FormData(form), headers: { accept: 'application/json' } });
       const d = await r.json().catch(() => ({}));
       if (!r.ok) throw new Error(d.error || 'Sorry, something went wrong. Please try again, or call me on 021 625 943.');
-      form.hidden = true;
-      const thanks = document.querySelector<HTMLElement>('.enquiry-thanks')!;
-      thanks.hidden = false;
-      thanks.focus();
+      // The same thank-you page the Studio Ninja form uses: its page load is the Google Ads
+      // conversion, so tracking carries on unchanged when this form replaces that one.
+      location.href = '/thanks';
     } catch (err) {
       show((err as Error).message);
       // Only a failed send can be tried again.
@@ -137,13 +131,10 @@ const sources: [string, string][] = [
   }
   .enquiry input:focus, .enquiry select:focus, .enquiry textarea:focus { outline: none; border-color: var(--green); border-radius: 0 14px; }
   .enquiry textarea { resize: vertical; }
-  /* Hidden means hidden: once sent, the form goes and only the thank-you shows. */
-  .enquiry[hidden], .enquiry-thanks[hidden], .msg[hidden] { display: none; }
+  /* Hidden means hidden. */
+  .enquiry[hidden], .msg[hidden] { display: none; }
   .hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
   .msg { margin: 0; padding: 12px 14px; background: #fbeee8; color: #8a3b1e; border-radius: 12px 0; font-size: 15px; }
   .enquiry .btn { align-self: flex-start; }
-  .enquiry-thanks { padding: 40px 24px; text-align: center; }
-  .enquiry-thanks h2 { font-weight: 300; font-size: clamp(28px, 2vw + 18px, 40px); margin: 0 0 12px; color: var(--ink); }
-  .enquiry-thanks p { color: #444; line-height: 1.8; max-width: 46ch; margin: 0 auto; }
   @media (min-width: 640px) { .row { grid-template-columns: 1fr 1fr; } }
 </style>
