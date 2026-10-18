@@ -4,6 +4,7 @@
 // secret is made in Studio > SEO > Ads and kept encrypted in settings ('ads_sync').
 import { encrypt, decrypt } from './gmail.js';
 import { gscReady, property, gscQuery } from './seo.js';
+import { reportsFor } from './ads-reports.js';
 
 const enc = new TextEncoder();
 const hex = (buf) => [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('');
@@ -50,7 +51,7 @@ export async function scriptState(env) {
   const due = first || !!force || Date.now() - Date.parse(last.at) > 20 * 3600_000;
   const actions = (await env.DB.prepare(`SELECT id, type, payload FROM ads_action WHERE status = 'pending' ORDER BY id LIMIT 50`).all()).results
     .map((a) => ({ ...a, payload: JSON.parse(a.payload) }));
-  return { export_due: due, days: first ? 90 : 30, actions };
+  return { export_due: due, days: first ? 90 : 30, actions, reports: due ? await reportsFor(env.DB) : [] };
 }
 
 const cents = (micros) => Math.round(Number(micros || 0) / 10_000);
