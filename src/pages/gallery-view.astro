@@ -67,7 +67,7 @@ import { site } from '../data/site';
 
 <script>
   type Img = { id: string; s: number; w: number; h: number; hero: number; thumb: string; web: string };
-  type View = { gallery: any; cover: any; rights: { downloads: 'none' | 'web' | 'highres'; watermark: boolean }; sections: { id: number; name: string; is_bw: number }[]; images: Img[]; preview?: { status: string; link: string } };
+  type View = { gallery: any; cover: any; rights: { downloads: 'none' | 'web' | 'highres'; watermark: boolean }; sections: { id: number; name: string; is_bw: number }[]; images: Img[]; preview?: { status: string; link: string; gallery_id: string } };
   const $ = <T extends HTMLElement = HTMLElement>(s: string, el: ParentNode = document) => el.querySelector<T>(s)!;
   const esc = (s: unknown) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
   const params = new URLSearchParams(location.search);
@@ -166,7 +166,7 @@ import { site } from '../data/site';
   function tile(i: Img, w: number, h: number) {
     const n = view.images.indexOf(i);
     return `<button type="button" class="ph" data-n="${n}" style="width:${w}px;height:${h}px" aria-label="Open photo ${n + 1}">
-      <img src="${esc(i.thumb)}" srcset="${esc(i.thumb)} ${thumbW(i)}w, ${esc(i.web)} ${webW(i)}w" sizes="${Math.ceil(w)}px" width="${Math.round(w)}" height="${Math.round(h)}" alt="" loading="lazy" decoding="async" /></button>`;
+      <img src="${esc(i.thumb)}" srcset="${esc(i.thumb)} ${thumbW(i)}w, ${esc(i.web)} ${webW(i)}w" sizes="${Math.ceil(w)}px" width="${Math.round(w)}" height="${Math.round(h)}" alt="" loading="lazy" decoding="async" />${view.preview ? `<span class="ph-star" data-star="${i.id}" role="button" tabindex="0" title="${i.hero ? 'Make it normal size' : 'Show it big (a highlight)'}">${i.hero ? '⤡' : '⤢'}</span>` : ''}</button>`;
   }
   function rows(list: Img[], width: number) {
     const phone = width < 600;
@@ -285,6 +285,20 @@ import { site } from '../data/site';
 
   document.addEventListener('click', (e) => {
     const t = e.target as HTMLElement;
+    // Preview only: the expand button makes a photo a highlight (or normal again), saved straight away.
+    const star = t.closest<HTMLElement>('[data-star]');
+    if (star && view.preview) {
+      e.stopPropagation();
+      const img = view.images.find((x) => x.id === star.dataset.star)!;
+      const before = star.closest('.ph')!.getBoundingClientRect().top;
+      fetch('/api/studio/galleries/photos', { method: 'PATCH', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ gallery_id: view.preview.gallery_id, ids: [img.id], set: { is_hero: img.hero ? 0 : 1 } }) })
+        .then((r) => { if (!r.ok) throw new Error(); img.hero = img.hero ? 0 : 1; draw();
+          // Keep that photo where it was on screen.
+          const again = document.querySelector<HTMLElement>(`[data-star="${img.id}"]`)?.closest('.ph');
+          if (again) scrollBy(0, again.getBoundingClientRect().top - before); })
+        .catch(() => alert('Couldn’t save that. Are you still signed in to the studio?'));
+      return;
+    }
     const ph = t.closest<HTMLElement>('.ph');
     if (ph) return open(Number(ph.dataset.n));
     if (t.closest('[data-play]')) return play();
@@ -372,6 +386,10 @@ import { site } from '../data/site';
   .ph { padding: 0; border: 0; background: #eeefe9; cursor: zoom-in; flex: none; overflow: hidden; }
   .ph img { display: block; width: 100%; height: 100%; transition: opacity 0.4s var(--ease), transform 0.8s var(--ease); -webkit-user-drag: none; user-select: none; }
   .ph:hover img { opacity: 0.92; }
+  .ph { position: relative; }
+  .ph-star { position: absolute; top: 8px; right: 8px; width: 34px; height: 34px; display: grid; place-items: center; border-radius: 50%; background: rgb(255 255 255 / 0.9); color: var(--ink); font-size: 18px; cursor: pointer; opacity: 0; transition: opacity 0.25s; box-shadow: 0 4px 12px -6px rgb(0 0 0 / 0.5); }
+  .ph:hover .ph-star, .ph-star:focus { opacity: 1; }
+  @media (hover: none) { .ph-star { opacity: 0.85; } }
   .g-foot { text-align: center; font-size: 13px; color: #888; padding: 20px 16px 40px; }
   .g-foot a { color: var(--green); }
   @media (max-width: 640px) {
