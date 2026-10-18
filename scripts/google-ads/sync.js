@@ -74,13 +74,13 @@ function exportAll(days) {
       'SELECT campaign.id, campaign.name, campaign.status, campaign.advertising_channel_type, campaign.advertising_channel_sub_type, ' +
       'campaign.bidding_strategy_type, campaign.network_settings.target_google_search, campaign.network_settings.target_search_network, ' +
       'campaign.network_settings.target_content_network, campaign.geo_target_type_setting.positive_geo_target_type, ' +
-      'campaign_budget.amount_micros, campaign.start_date FROM campaign WHERE campaign.status != REMOVED',
+      'campaign_budget.amount_micros FROM campaign WHERE campaign.status != REMOVED',
       function (r) {
         return { id: v(r, 'campaign.id'), name: v(r, 'campaign.name'), status: v(r, 'campaign.status'), channel: v(r, 'campaign.advertisingChannelType'),
           sub: v(r, 'campaign.advertisingChannelSubType'), bidding: v(r, 'campaign.biddingStrategyType'),
           search: v(r, 'campaign.networkSettings.targetGoogleSearch'), partners: v(r, 'campaign.networkSettings.targetSearchNetwork'),
           display: v(r, 'campaign.networkSettings.targetContentNetwork'), geo: v(r, 'campaign.geoTargetTypeSetting.positiveGeoTargetType'),
-          budget_micros: v(r, 'campaignBudget.amountMicros'), start: v(r, 'campaign.startDate') };
+          budget_micros: v(r, 'campaignBudget.amountMicros') };
       }));
   });
   run('campaign_daily', function () {
@@ -174,10 +174,20 @@ function exportAll(days) {
     function (r) { return { id: [v(r, 'campaign.id'), v(r, 'geographicView.locationType'), v(r, 'segments.geoTargetCity'), v(r, 'segments.geoTargetRegion')].join('~'),
       campaign_id: v(r, 'campaign.id'), location_type: v(r, 'geographicView.locationType'), city: v(r, 'segments.geoTargetCity'), region: v(r, 'segments.geoTargetRegion'),
       cost_micros: v(r, 'metrics.costMicros'), clicks: v(r, 'metrics.clicks'), conversions: v(r, 'metrics.conversions') }; });
-  entity('pmax_search_term', 'SELECT campaign.id, campaign_search_term_insight.category_label, metrics.clicks, metrics.impressions, metrics.conversions ' +
-    'FROM campaign_search_term_insight WHERE ' + range,
-    function (r) { return { id: v(r, 'campaign.id') + '~' + v(r, 'campaignSearchTermInsight.categoryLabel'), campaign_id: v(r, 'campaign.id'),
-      label: v(r, 'campaignSearchTermInsight.categoryLabel'), clicks: v(r, 'metrics.clicks'), impressions: v(r, 'metrics.impressions'), conversions: v(r, 'metrics.conversions') }; });
+  // Performance Max search term groups (Google only allows one campaign per query).
+  run('pmax_search_term', function () {
+    var rows = [];
+    var camps = AdsApp.search("SELECT campaign.id FROM campaign WHERE campaign.advertising_channel_type = PERFORMANCE_MAX AND campaign.status != REMOVED");
+    while (camps.hasNext()) {
+      var cid = v(camps.next(), 'campaign.id');
+      rows = rows.concat(rowsOf('SELECT campaign_search_term_insight.category_label, metrics.clicks, metrics.impressions, metrics.conversions ' +
+        'FROM campaign_search_term_insight WHERE campaign_search_term_insight.campaign_id = ' + cid + ' AND ' + range,
+        function (r) { return { id: cid + '~' + v(r, 'campaignSearchTermInsight.categoryLabel'), campaign_id: cid,
+          label: v(r, 'campaignSearchTermInsight.categoryLabel'), clicks: v(r, 'metrics.clicks'), impressions: v(r, 'metrics.impressions'), conversions: v(r, 'metrics.conversions') }; }));
+    }
+    send('entity:pmax_search_term', rows);
+    sentKinds.push('pmax_search_term');
+  });
   // Place names for the location ids used above.
   run('geo_names', function () {
     var ids = {};

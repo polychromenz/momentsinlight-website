@@ -17,6 +17,12 @@ export async function newSyncSecret(env) {
   return secret;
 }
 
+/** The current key (for copying the latest script without changing the key). */
+export async function currentSyncSecret(env) {
+  const row = await env.DB.prepare(`SELECT value FROM settings WHERE key = 'ads_sync'`).first();
+  return row ? decrypt(env, JSON.parse(row.value).secret) : null;
+}
+
 /** Is this request from the Ads Script? Returns the body text, or null. */
 export async function scriptRequest(request, env) {
   const body = await request.text();

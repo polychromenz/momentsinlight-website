@@ -1,8 +1,9 @@
 // Studio > SEO > Ads (phase 1): set-up and what's come in.
 //   GET  /api/studio/crm/ads                  -> { connected, last, imports, campaigns (last 30 days), totals, gsc }
-//   POST /api/studio/crm/ads { action: 'key' } -> { secret } a new key for the Ads Script (shown once; the old one stops working)
+//   POST /api/studio/crm/ads { action: 'key' } -> { secret } a new key for the Ads Script (the old one stops working)
+//   POST /api/studio/crm/ads { action: 'current' } -> { secret } the key in use, to copy an updated script
 import { json } from '../../../../functions-lib/studio.js';
-import { newSyncSecret } from '../../../../functions-lib/ads.js';
+import { newSyncSecret, currentSyncSecret } from '../../../../functions-lib/ads.js';
 
 export async function onRequestGet({ env }) {
   const db = env.DB;
@@ -24,5 +25,7 @@ export async function onRequestGet({ env }) {
 export async function onRequestPost({ request, env }) {
   const d = await request.json().catch(() => ({}));
   if (d.action === 'key') return json({ secret: await newSyncSecret(env) });
+  // The latest script with the key already in use (after the script itself has been updated).
+  if (d.action === 'current') { const secret = await currentSyncSecret(env); return secret ? json({ secret }) : json({ error: 'Make the script first.' }, 400); }
   return json({ error: 'What should happen?' }, 400);
 }

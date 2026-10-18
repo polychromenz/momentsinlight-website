@@ -17,7 +17,8 @@ import script from '../../../../scripts/google-ads/sync.js?raw';
     <section class="card setup">
       <h2>Connect Google Ads</h2>
       <ol>
-        <li><button type="button" class="s-btn s-btn--solid" data-key>Make the script</button> <span class="muted">(this makes a new private key, so an old copy of the script stops working)</span></li>
+        <li><button type="button" class="s-btn s-btn--solid" data-key>Make the script</button> <span class="muted">(this makes a new private key, so an old copy of the script stops working)</span>
+          <span class="update" hidden> or, already set up: <button type="button" class="s-btn" data-current>Copy the latest script</button> <span class="muted">(same key; paste over the old one in Google Ads and Save)</span></span></li>
         <li class="after" hidden>Copy it: <button type="button" class="s-btn" data-copy-script>Copy the script</button></li>
         <li>Open <a href="https://ads.google.com" target="_blank" rel="noopener">Google Ads</a>, then in the left menu <strong>Tools</strong> (the wrench) › <strong>Bulk actions</strong> › <strong>Scripts</strong>. Click the blue <strong>+</strong> and choose <strong>New script</strong>.</li>
         <li>Delete what’s in the box, paste, and name it <code>Moments Studio sync</code>.</li>
@@ -48,6 +49,7 @@ import script from '../../../../scripts/google-ads/sync.js?raw';
   async function load() {
     const d = await (await fetch('/api/studio/crm/ads')).json();
     const s = $('.status');
+    document.querySelector<HTMLElement>('.update')!.hidden = !d.connected;
     if (!d.last) {
       s.innerHTML = `<h2>Not connected yet</h2><p class="muted">${d.connected ? 'The script has been made but hasn’t sent anything yet. Paste it into Google Ads and click Run (steps below).' : 'Follow the steps below to connect your Google Ads account.'}</p>`;
       return;
@@ -73,6 +75,13 @@ import script from '../../../../scripts/google-ads/sync.js?raw';
       document.querySelector<HTMLElement>('.after')!.hidden = false;
       toast('Made. Now copy it.');
       load();
+    }
+    if (t.closest('[data-current]')) {
+      const d = await (await fetch('/api/studio/crm/ads', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'current' }) })).json();
+      if (!d.secret) return toast(d.error || 'Couldn’t get the key.', true);
+      await navigator.clipboard.writeText((window as any).__adsScript.replace('__PASTE_KEY__', d.secret));
+      toast('Copied. In Google Ads, open Moments Studio sync, select everything in the box, paste, then Save.');
+      return;
     }
     if (t.closest('[data-copy-script]')) {
       await navigator.clipboard.writeText($<HTMLTextAreaElement>('.script').value);
