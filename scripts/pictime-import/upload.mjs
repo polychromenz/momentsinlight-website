@@ -174,7 +174,9 @@ function match(layout, files, folder) {
       const free = (n) => (byName.get(n) ?? []).filter((f) => !used.has(f));
       // Where colour and mono share a folder, the mono copy is the one exported as "-2".
       const two = !norm(p.name).endsWith('-2') ? free(`${norm(p.name)}-2`) : [];
-      const options = [...(bw ? two : []), ...free(norm(p.name))];
+      let options = [...(bw ? two : []), ...free(norm(p.name))];
+      // The same photo can be in two sections in Pic-Time (e.g. Ceremony and Extras): use it again.
+      if (!options.length) options = [...(bw ? byName.get(`${norm(p.name)}-2`) ?? [] : []), ...(byName.get(norm(p.name)) ?? [])];
       const score = (f) => {
         const parts = path.relative(folder, f).toLowerCase().split(path.sep).slice(0, -1);
         let n = 0;
