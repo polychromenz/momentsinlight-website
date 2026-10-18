@@ -24,6 +24,12 @@ Agreed with Tony on 2026-10-18. Builds on `MIL-Galleries-Spec.md`. Phase 1 = gal
 5. **1e Lightroom Publish Service** (Windows): green/purple → sections, custom sort order, re-publish changes only, deletions after confirmation, retries and clear progress.
 6. **1f Studio extras**: Send to client (branded email), preview as client/guest, templates per type, gallery dashboard and activity feed (also on the studio dashboard and morning email), portal link, blog photo picker, videos.
 
+## Progress
+- **1a done (2026-10-18)**: R2 buckets `mil-galleries` (private originals) and `mil-galleries-web` (public at photos.momentsinlight.co.nz), migration 0026 (`photo_galleries`, because `galleries` is the portal's gallery links), upload API.
+- **1b done (2026-10-18)**: Studio > Galleries (list, new, defaults), gallery page (Photos / Add photos / Details / Sharing). Highlights get a row of their own in the client gallery instead of 2×2 tiles, so nothing is cropped. Sections from a Pic-Time download come in folder-name order; reorder them after.
+- **1c done (2026-10-18)**: client gallery page (src/pages/gallery-view.astro) served by functions/_middleware.js on galleries.* and /g/{slug}; access via link key, code, or the visitor token in their browser; email first with consent; watermark via Cloudflare image transformations (draw), cached in R2 `wm/`. Single-photo downloads only (ZIPs in 1d).
+- Known: a guest's first visit to a watermarked gallery makes each watermarked copy on the spot (a few seconds each the first time, then instant). Warm them in the background when a watermarked link is saved (later).
+
 ## Later / noted
 - A Lightroom helper that **creates the standard wedding collections** on import (Tony's idea), possibly as a menu item in the new plugin.
 - Phase 2: vendors, second shooter, full migration, portfolio pages. Phase 3: shop, sales emails, paid expiry extension checkout if not done earlier.
