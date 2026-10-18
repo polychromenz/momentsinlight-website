@@ -19,7 +19,7 @@ export async function onRequestGet({ request, env }) {
   const id = Number(new URL(request.url).searchParams.get('id'));
   if (!id) return json({ error: 'Which job?' }, 400);
   const job = await env.DB.prepare(
-    `SELECT j.*, c.first_name, c.last_name, c.email, c.phone, c.address, c.notes AS client_notes
+    `SELECT j.*, c.first_name, c.last_name, c.email, c.phone, c.address, c.ads_ok, c.notes AS client_notes
      FROM jobs j JOIN clients c ON c.id = j.client_id WHERE j.id = ?1`,
   ).bind(id).first();
   if (!job) return json({ error: 'That job doesn’t exist (it may have been deleted).' }, 404);
@@ -79,6 +79,8 @@ export async function onRequestPut(context) {
     stmts.push(env.DB.prepare('UPDATE clients SET first_name = ?2, last_name = ?3, email = ?4, phone = ?5, address = ?7, updated_at = ?6 WHERE id = ?1')
       .bind(c.id, d.first_name !== undefined ? text(d.first_name, 100) || c.first_name : c.first_name, d.last_name !== undefined ? text(d.last_name, 100) : c.last_name, email, d.phone !== undefined ? text(d.phone, 40) : c.phone, now, d.address !== undefined ? text(d.address, 300) : c.address));
   }
+  // Whether their photos can be used in ads (some contracts say no).
+  if (d.ads_ok !== undefined) stmts.push(env.DB.prepare('UPDATE clients SET ads_ok = ?2, updated_at = ?3 WHERE id = ?1').bind(job.client_id, d.ads_ok ? 1 : 0, now));
   // Booked or lost: steps waiting on a booking stop.
   if ((jobFields.stage === 'booked' || jobFields.stage === 'lost') && job.stage !== jobFields.stage) {
     stmts.push(env.DB.prepare(

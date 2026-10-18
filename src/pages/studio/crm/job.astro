@@ -90,6 +90,7 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
           <label>Email<input name="email" type="email" /></label>
           <label>Phone<input name="phone" type="tel" /></label>
           <label>Postal address<textarea name="address" rows="3" placeholder="Added when they accept a quote"></textarea></label>
+          <label class="tick"><input type="checkbox" name="ads_ok" value="1" /> Their photos can be used in ads and marketing <small>(untick if their contract says no)</small></label>
           <div class="two">
             <label>Type
               <select name="job_type">
@@ -277,7 +278,8 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
     $('.stage').innerHTML = `<span class="stage-now stage-now--${stage}">${now}</span>${acts.map(([to, label]) => `<button type="button" data-stage="${to}" class="${label === 'Undo' ? 'undo' : ''}">${label}</button>`).join('')}`;
     const typeSel = form.elements.namedItem('job_type') as HTMLSelectElement;
     if (j.job_type && ![...typeSel.options].some((o) => o.value === j.job_type)) typeSel.add(new Option(j.job_type, j.job_type));
-    for (const el of Array.from(form.elements) as HTMLInputElement[]) if (el.name) el.value = j[el.name] ?? '';
+    for (const el of Array.from(form.elements) as HTMLInputElement[]) if (el.name && el.type !== 'checkbox') el.value = j[el.name] ?? '';
+    (form.elements.namedItem('ads_ok') as HTMLInputElement).checked = j.ads_ok !== 0;
     $('.message').textContent = j.message || 'No message.';
     const enquired = new Date(j.created_at).toLocaleDateString('en-NZ', { day: 'numeric', month: 'long', year: 'numeric' });
     $('.message').dataset.when = `Enquired ${enquired}`;
@@ -365,7 +367,7 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
   }
 
   async function save(extra: Record<string, unknown> = {}) {
-    const body: Record<string, unknown> = { id, stage, ...Object.fromEntries(new FormData(form)), ...extra };
+    const body: Record<string, unknown> = { id, stage, ...Object.fromEntries(new FormData(form)), ads_ok: (form.elements.namedItem('ads_ok') as HTMLInputElement).checked, ...extra };
     saveBtn.disabled = true;
     $('.save-state').textContent = 'Saving…';
     const r = await fetch('/api/studio/crm/job', { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
@@ -714,6 +716,8 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
   .job-page .message[data-when]::after { content: attr(data-when); display: block; margin-top: 10px; font-size: 13px; color: #888; }
   .job-page .details { display: flex; flex-direction: column; gap: 12px; align-self: start; }
   .job-page .details label { display: flex; flex-direction: column; gap: 5px; font-size: 13px; font-weight: 600; color: #555; }
+  .job-page .details label.tick { flex-direction: row; align-items: center; gap: 8px; font-weight: 400; color: #333; }
+  .job-page .details label.tick small { color: #888; }
   .job-page .details input, .job-page .details select, .job-page .details textarea { min-width: 0; width: 100%; box-sizing: border-box; font: inherit; font-weight: 400; font-size: 15px; padding: 9px 11px; border: 1px solid #ddd3c4; border-radius: 10px 0; background: var(--white); color: var(--ink); }
   .job-page .two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
   .job-page .other-jobs { margin: 0; font-size: 14px; color: #555; }
