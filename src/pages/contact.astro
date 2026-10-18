@@ -1,10 +1,9 @@
 ---
-// Contact: the imported page's own words (src/data/pages/contact.json) in the refreshed
-// design. The enquiry form (Studio Ninja, with reCAPTCHA) is heavy, so it loads as soon as the
-// visitor does anything (scrolls, moves the mouse, taps, presses a key) rather than holding up
-// the page's first moments; its space is held open so nothing jumps. The map uses the browser's
-// own lazy loading.
+// Contact: the imported page's own words (src/data/pages/contact.json) in the refreshed design,
+// with the studio's own enquiry form (src/components/page/EnquiryForm.astro; it replaced the
+// Studio Ninja form on 2026-10-19). After sending, people land on /thanks, the Google Ads conversion.
 import BaseLayout from '../layouts/BaseLayout.astro';
+import EnquiryForm from '../components/page/EnquiryForm.astro';
 import page from '../data/pages/contact.json';
 import { site } from '../data/site';
 
@@ -17,7 +16,6 @@ const intro = clean(textOf(0));
 const heading = intro.match(/<h1[^>]*>([\s\S]*?)<\/h1>/)?.[1].replace(/<[^>]+>/g, '').trim() ?? 'Let’s talk';
 const introBody = intro.replace(/<h1[^>]*>[\s\S]*?<\/h1>/, '');
 const reassurance = clean(textOf(2));
-const formHtml = embedOf(1);
 const mapSrc = embedOf(3).match(/src="([^"]+)"/)?.[1] ?? '';
 const tel = site.phone.replace(/\s/g, '');
 const directions = 'https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(`Moments in Light, ${site.address}`);
@@ -41,9 +39,8 @@ const directions = 'https://www.google.com/maps/dir/?api=1&destination=' + encod
           <span class="phone-number">{site.phone}</span>
         </a>
       </aside>
-      <div class="form-card" data-lazy-form>
-        <p class="loading" aria-hidden="true">Loading the enquiry form…</p>
-        <template><Fragment set:html={formHtml} /></template>
+      <div class="form-card">
+        <EnquiryForm />
       </div>
     </div>
   </section>
@@ -63,30 +60,6 @@ const directions = 'https://www.google.com/maps/dir/?api=1&destination=' + encod
     </section>
   )}
 </BaseLayout>
-
-<script>
-  // Put the form's code in place on the visitor's first move. Scripts inside a <template> don't
-  // run when copied, so each one is recreated (the form needs its resizing script).
-  const box = document.querySelector<HTMLElement>('[data-lazy-form]');
-  const events = ['scroll', 'wheel', 'pointermove', 'pointerdown', 'touchstart', 'keydown', 'focusin'];
-  const load = () => {
-    events.forEach((e) => removeEventListener(e, load));
-    const tpl = box?.querySelector('template');
-    if (!box || !tpl) return;
-    box.append(tpl.content.cloneNode(true));
-    box.querySelectorAll('script').forEach((old) => {
-      const s = document.createElement('script');
-      [...old.attributes].forEach((a) => s.setAttribute(a.name, a.value));
-      s.text = old.text;
-      old.replaceWith(s);
-    });
-    tpl.remove();
-    box.classList.add('loaded');
-  };
-  events.forEach((e) => addEventListener(e, load, { once: true, passive: true }));
-  // Arriving straight at the form (a link to #form, or coming back to the page) loads it at once.
-  if (location.hash || scrollY > 0) load();
-</script>
 
 <style>
   .intro { max-width: calc(820px + 2 * var(--pad)); margin: 0 auto; padding-block: 64px 48px; text-align: center; }
@@ -122,11 +95,7 @@ const directions = 'https://www.google.com/maps/dir/?api=1&destination=' + encod
   .phone-label { font-size: 12px; font-weight: 500; letter-spacing: 0.26em; text-transform: uppercase; color: var(--green); }
   .phone-number { font-size: 26px; font-weight: 300; }
 
-  /* The form's card holds its full height open from the start (the form then sizes itself). */
-  .form-card { position: relative; background: var(--white); border-radius: 40px 0; padding: 18px 10px; min-height: 640px; }
-  .form-card :global(iframe) { width: 100%; border: 0; display: block; }
-  .loading { position: absolute; top: 40px; left: 0; right: 0; text-align: center; color: #888; font-size: 15px; }
-  .form-card.loaded .loading { display: none; }
+  .form-card { position: relative; background: var(--white); border-radius: 40px 0; padding: 18px 10px; }
 
   .map-band { padding-block: 64px 80px; }
   /* The map with the address card beside it (underneath on phones). */
@@ -151,7 +120,7 @@ const directions = 'https://www.google.com/maps/dir/?api=1&destination=' + encod
   @media (min-width: 768px) {
     .intro { padding-block: 110px 64px; }
     .form-band { padding-block: 90px; }
-    .form-card { padding: 26px 20px; }
+    .form-card { padding: 30px 28px; }
     .map-band { padding-block: 90px 120px; }
   }
   @media (min-width: 900px) {

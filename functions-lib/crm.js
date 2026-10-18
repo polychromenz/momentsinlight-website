@@ -14,14 +14,33 @@ export const sendMode = (env) => (env.CRM_SEND_MODE === 'live' ? 'live' : 'test'
 
 /** The email as it will really be sent: unchanged in live mode (or to a safe address); in test
  *  mode, anything for anyone else goes to Tony with "TEST" on it. */
-export function outgoing(env, { to, subject, html }) {
+export function outgoing(env, { to, subject, html }, newClient = false) {
   const intended = String(to ?? '').trim().toLowerCase();
-  if (sendMode(env) === 'live' || SAFE_RECIPIENTS.includes(intended)) return { to: intended, subject, html, redirected: false, intended };
+  if (sendMode(env) === 'live' || SAFE_RECIPIENTS.includes(intended) || newClient) return { to: intended, subject, html, redirected: false, intended };
   const note = `<div style="margin:0 0 16px;padding:12px 16px;background:#fff4d6;border:1px solid #e0c46c;border-radius:10px 0;font-family:Arial,sans-serif;font-size:14px;color:#5c4400">
 <strong>TEST MODE</strong>: this email would have gone to <strong>${intended.replace(/[<>&"]/g, '')}</strong>. The studio is in test mode, so it came to you instead.</div>`;
   return { to: SAFE_RECIPIENTS[0], subject: `[TEST → ${intended}] ${subject}`, html: html.includes('<body') ? html.replace(/<body([^>]*)>/, `<body$1>${note}`) : note + html, redirected: true, intended };
 }
 
+
+/**
+ * "New enquiries live" (Settings, switched on by Tony): while the rest of the studio is in test
+ * mode, emails to a client may go to them for real only if they first enquired after the switch
+ * was turned on, and aren't from the Studio Ninja import. Everyone else still comes to Tony.
+ * Pass the result to outgoing() as `newClient`.
+ */
+export async function liveForNew(env, to) {
+  const email = String(to ?? '').trim().toLowerCase();
+  if (!email || sendMode(env) === 'live') return false;
+  const on = await env.DB.prepare(`SELECT value FROM settings WHERE key = 'send_new_live'`).first();
+  const since = on && JSON.parse(on.value).on ? JSON.parse(on.value).since : null;
+  if (!since) return false;
+  const c = await env.DB.prepare(`SELECT created_at, import_batch FROM clients WHERE lower(email) = ?1`).bind(email).first();
+  if (!c || c.import_batch || c.created_at < since) return false;
+  // Never anyone with history from before the switch (e.g. an older enquiry under the same email).
+  const old = await env.DB.prepare(`SELECT 1 FROM jobs j JOIN clients c ON c.id = j.client_id WHERE lower(c.email) = ?1 AND (j.import_batch IS NOT NULL OR j.created_at < ?2) LIMIT 1`).bind(email, since).first();
+  return !old;
+}
 
 /** Plan a new enquiry's steps from its workflow (Settings > Workflows; functions-lib/workflows.js).
  *  Without a workflow, Tony gets a "reply to this enquiry" to-do. */

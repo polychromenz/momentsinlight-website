@@ -9,7 +9,7 @@
 //
 // SAFETY: sendEmail() always passes the message through outgoing() (the test-mode lock in
 // crm.js) before anything leaves; nothing else in the CRM sends client email.
-import { outgoing } from './crm.js';
+import { outgoing, liveForNew } from './crm.js';
 
 // gmail.send/readonly: send as Tony and see replies. calendar.app.created: the studio's own
 // "Moments in Light" calendar only (functions-lib/calendar.js); it can't see his other calendars.
@@ -96,7 +96,7 @@ const wrap76 = (s) => s.replace(/.{76}/g, '$&\r\n');
  * @returns {{ id: string, threadId: string, to: string, redirected: boolean, intended: string }}
  */
 export async function sendEmail(env, msg) {
-  const out = outgoing(env, { to: msg.to, subject: msg.subject, html: msg.html });
+  const out = outgoing(env, { to: msg.to, subject: msg.subject, html: msg.html }, await liveForNew(env, msg.to));
   const conn = await connection(env.DB);
   const from = conn?.email ? `Tony Gorham <${conn.email}>` : 'Tony Gorham <tony@momentsinlight.co.nz>';
   const boundary = `b${crypto.randomUUID().replace(/-/g, '')}`;

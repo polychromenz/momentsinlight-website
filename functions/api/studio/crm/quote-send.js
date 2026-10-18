@@ -6,7 +6,7 @@ import { renderTemplate, fields, studioLinks } from '../../../../functions-lib/e
 import { sendEmail, connection } from '../../../../functions-lib/gmail.js';
 import { loadJob, templateAttachments } from '../../../../functions-lib/crm-send.js';
 import { listDocuments, attachmentsFor } from '../../../../functions-lib/documents.js';
-import { outgoing, sendMode } from '../../../../functions-lib/crm.js';
+import { outgoing, sendMode, liveForNew } from '../../../../functions-lib/crm.js';
 import { longDate, parseQuote, planHtml } from '../../../../functions-lib/quotes.js';
 
 async function prepare(env, id) {
@@ -24,7 +24,7 @@ export async function onRequestGet({ request, env }) {
   try {
     const { job, template, values } = await prepare(env, Number(new URL(request.url).searchParams.get('id')));
     const e = renderTemplate(template, values);
-    return json({ attachments: templateAttachments(template), documents: (await listDocuments(env.DB)).map(({ id, name, size }) => ({ id, name, size })), subject: e.subject, body: e.body, missing: e.missing, to: job.email, deliversTo: outgoing(env, { to: job.email, subject: '', html: '' }).to, mode: sendMode(env), gmail: !!(await connection(env.DB)) });
+    return json({ attachments: templateAttachments(template), documents: (await listDocuments(env.DB)).map(({ id, name, size }) => ({ id, name, size })), subject: e.subject, body: e.body, missing: e.missing, to: job.email, deliversTo: outgoing(env, { to: job.email, subject: '', html: '' }, await liveForNew(env, job.email)).to, mode: sendMode(env), gmail: !!(await connection(env.DB)) });
   } catch (err) {
     return json({ error: err.message }, 400);
   }

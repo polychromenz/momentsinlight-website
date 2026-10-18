@@ -19,6 +19,17 @@ const enabled = import.meta.env.PROD;
       window.dataLayer = window.dataLayer || [];
       window.gtag = function () { dataLayer.push(arguments); };
       gtag('js', new Date());
+      // Enhanced conversions: on the thank-you page after an enquiry, the email and phone the form
+      // kept (EnquiryForm.astro) go to Google with the conversion; Google hashes them in the browser.
+      try {
+        const ud = location.pathname.replace(/\/$/, '') === '/thanks' && JSON.parse(sessionStorage.getItem('mil_ud') || 'null');
+        sessionStorage.removeItem('mil_ud');
+        if (ud && ud.email) {
+          const digits = String(ud.phone || '').replace(/[^\d+]/g, '');
+          const phone = digits.startsWith('+') ? digits : digits.startsWith('64') ? '+' + digits : digits.startsWith('0') ? '+64' + digits.slice(1) : '';
+          gtag('set', 'user_data', phone.length > 8 ? { email: ud.email.toLowerCase(), phone_number: phone } : { email: ud.email.toLowerCase() });
+        }
+      } catch (e) {}
       gtag('config', ga);
       scripts.push('https://www.googletagmanager.com/gtag/js?id=' + ga);
     }

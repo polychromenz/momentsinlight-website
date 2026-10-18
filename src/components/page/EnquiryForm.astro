@@ -106,6 +106,10 @@ const sources: [string, string][] = [
       if (!r.ok) throw new Error(d.error || 'Sorry, something went wrong. Please try again, or call me on 021 625 943.');
       // The same thank-you page the Studio Ninja form uses: its page load is the Google Ads
       // conversion, so tracking carries on unchanged when this form replaces that one.
+      // For Google Ads enhanced conversions: the thank-you page hands Google these (Google hashes
+      // them in the browser before sending), then forgets them. See src/components/Tracking.astro.
+      const field = (n: string) => (form.elements.namedItem(n) as HTMLInputElement | null)?.value.trim() ?? '';
+      try { sessionStorage.setItem('mil_ud', JSON.stringify({ email: field('email'), phone: field('phone') })); } catch {}
       location.href = '/thanks';
     } catch (err) {
       show((err as Error).message);

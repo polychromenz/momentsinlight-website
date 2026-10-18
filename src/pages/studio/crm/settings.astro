@@ -41,6 +41,10 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
     <p class="status" aria-live="polite">Loading…</p>
 
     <section class="pane" data-pane="templates" hidden>
+      <div class="card send-mode">
+        <p class="sm-state">Loading…</p>
+        <label class="sm-new"><input type="checkbox" data-new-live /> <strong>Reply to new enquiries for real</strong>: people who first enquire from now on get the studio’s emails themselves. Anyone already in your records or the Studio Ninja import still comes to you.</label>
+      </div>
       <div class="tpl-layout">
         <div class="card tpl-list-card">
           <ul class="tpl-list email-list"></ul>
@@ -642,6 +646,25 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
     }
   });
 
+  // ---- Where client emails go (send-mode.js) ----
+  async function loadSendMode() {
+    const d = await (await fetch('/api/studio/crm/send-mode')).json();
+    const box = $<HTMLInputElement>('[data-new-live]');
+    box.checked = !!d.new_live.on;
+    box.closest<HTMLElement>('.sm-new')!.hidden = d.mode === 'live';
+    $('.sm-state').innerHTML = d.mode === 'live' ? '<strong>Live:</strong> client emails go to clients.'
+      : d.new_live.on ? `<strong>Test mode, new enquiries live</strong> (since ${new Date(d.new_live.since).toLocaleString('en-NZ', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })}): new enquirers get their emails; everyone else’s come to you.`
+      : '<strong>Test mode:</strong> every client email comes to you, marked with who it was for.';
+  }
+  $('[data-new-live]').addEventListener('change', async (e) => {
+    const box = e.target as HTMLInputElement;
+    if (box.checked && !confirm('From now on, people who send a new enquiry will get the studio’s emails (your enquiry reply and follow-ups) themselves. Anyone already in your records still comes to you. Turn this on?')) { box.checked = false; return; }
+    await fetch('/api/studio/crm/send-mode', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ on: box.checked }) });
+    toast(box.checked ? 'On: new enquiries get real replies.' : 'Off: everything comes to you again.');
+    loadSendMode();
+  });
+  loadSendMode();
+
   // ---- Payments ----
   const payForm = $<HTMLFormElement>('.payments-form');
   function renderPayments() {
@@ -810,6 +833,9 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
   .settings .status { color: #666; }
   .settings .card { background: var(--white); border-radius: 24px 0; padding: 18px 20px; }
   .settings .hint { margin: 0 0 12px; font-size: 14px; color: #666; }
+  .settings .send-mode { margin-bottom: 14px; font-size: 14px; }
+  .settings .send-mode p { margin: 0 0 8px; }
+  .settings .send-mode label { display: flex; gap: 8px; align-items: flex-start; line-height: 1.5; }
   .settings .pay-form { display: flex; flex-direction: column; gap: 12px; max-width: 760px; }
   .settings .pay-form .two { display: grid; gap: 12px; }
   .settings .pay-form label { display: flex; flex-direction: column; gap: 5px; font-size: 13px; font-weight: 600; color: #555; }
