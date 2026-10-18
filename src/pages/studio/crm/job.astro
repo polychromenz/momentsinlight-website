@@ -211,7 +211,7 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
     portal = p;
     document.querySelectorAll<HTMLAnchorElement>('.portal-open').forEach((a) => { a.href = p.path; a.hidden = false; });
     $('.portal-galleries').innerHTML = p.galleries.map((g: any) => `<li class="inv"><span class="what"><a href="${esc(g.url)}" target="_blank" rel="noopener"><strong>${esc(g.title)}</strong></a><br><small>${esc(g.url)}</small></span><button type="button" class="s-btn s-btn--quiet" data-gallery-remove="${g.id}">Remove</button></li>`).join('') || '<li class="empty">None yet. Add the Pic-Time link when their gallery is ready.</li>';
-    $('.portal-docs').innerHTML = p.documents.length ? p.documents.map((x: any) => `<label class="pdoc"><input type="checkbox" value="${x.id}"${x.shared ? ' checked' : ''} /> ${esc(x.name)} <small>${kb(x.size)}</small></label>${x.own ? ` <a class="pdoc-open" href="/api/studio/crm/documents?id=${x.id}" target="_blank" rel="noopener">open</a>` : ''}`).join('') : '<p class="empty">Upload files in Settings &gt; Documents first.</p>';
+    $('.portal-docs').innerHTML = p.documents.length ? p.documents.map((x: any) => `<span class="pdoc"><input type="checkbox" value="${x.id}"${x.shared ? ' checked' : ''} aria-label="Share ${esc(x.name)} in their portal" /> <a href="/api/studio/crm/documents?id=${x.id}" target="_blank" rel="noopener">${esc(x.name)}</a> <small>${kb(x.size)}${x.own ? ' · just for them' : ''}</small></span>`).join('') : '<p class="empty">Upload files in Settings &gt; Documents first.</p>';
     $('.portal-uploads').innerHTML = p.uploads.map((u: any) => `<li class="inv"><span class="what"><a href="/api/studio/crm/portal?job=${id}&upload=${u.id}" target="_blank" rel="noopener">${esc(u.name)}</a><br><small>${kb(u.size)} · ${u.questionnaire_id ? 'from their questionnaire' : 'added in their portal'} · ${dateTime(u.created_at)}</small></span>${u.questionnaire_id ? '' : `<button type="button" class="s-btn s-btn--quiet" data-upload-remove="${u.id}">Remove</button>`}</li>`).join('') || '<li class="empty">Nothing yet.</li>';
   }
   async function portalPost(body: Record<string, unknown>) {
@@ -651,7 +651,6 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
   .job-page .stage { align-items: center; }
   .job-page .clash { margin: 0 0 12px; padding: 10px 14px; background: #fbeee8; color: #8a3b1e; border-radius: 12px 0; font-size: 14px; }
   .job-page .hold-note { margin: 0 0 12px; padding: 10px 14px; background: #e3e7f6; color: #2f3f86; border-radius: 12px 0; font-size: 14px; }
-  .job-page .pdoc-open { font-size: 13px; margin-left: 4px; }
   .job-page .clash a { color: #8a3b1e; font-weight: 600; }
   .job-page .appt-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; margin-top: 10px; }
   .job-page .appt-form input { font: inherit; font-size: 14px; padding: 8px 10px; border: 1px solid #ddd3c4; border-radius: 10px 0; min-width: 0; }
