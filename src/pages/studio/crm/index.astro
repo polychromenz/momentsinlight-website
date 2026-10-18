@@ -30,9 +30,14 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
           <div class="tabs" role="group" aria-label="Show">
             <button type="button" data-stage="lead" class="on">Leads</button>
             <button type="button" data-stage="booked">Booked</button>
+            <button type="button" data-stage="past">Past</button>
+            <button type="button" data-stage="lost">Not going ahead</button>
+            <button type="button" data-stage="all">Everyone</button>
             <a class="spam-link" href="/studio/crm/spam" hidden>Spam</a>
           </div>
+          <input class="people-search" type="search" placeholder="Search names, emails, venues…" aria-label="Search" />
         </div>
+        <p class="list-count muted"></p>
         <table class="jobs"><thead><tr><th>Name</th><th>Type</th><th>Date</th><th>Venue</th><th>Enquired</th></tr></thead><tbody></tbody></table>
       </section>
     </div>
@@ -139,12 +144,48 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
     ${actions && s.kind !== 'todo' ? `<a class="s-btn" href="/studio/crm/job?id=${s.job_id}#step-${s.id}">Review</a>` : ''}
   </li>`;
 
-  const renderJobs = () => {
-    const list = jobs.filter((j) => j.stage === stage);
-    $('.jobs tbody').innerHTML = list.length
-      ? list.map((j) => `<tr><td><a href="/studio/crm/job?id=${j.id}">${esc(j.title)}</a></td><td>${esc(j.job_type)}</td><td>${nzDate(j.event_date)}</td><td>${esc(j.venue)}</td><td>${when(j.created_at)}</td></tr>`).join('')
-      : `<tr><td colspan="5" class="empty">No ${stage === 'lead' ? 'open leads' : 'booked jobs'} yet.</td></tr>`;
+  // Past, Not going ahead and Everyone come from /api/studio/crm/people, fetched the first time each is opened.
+  const other: Record<string, any[]> = {};
+  const money = (c: number) => (c ? `$${(c / 100).toLocaleString('en-NZ', { maximumFractionDigits: 0 })}` : '–');
+  const STAGE: Record<string, string> = { lead: 'Lead', booked: 'Booked', completed: 'Past', lost: 'Not going ahead' };
+  const matches = (q: string, ...parts: unknown[]) => !q || parts.join(' ').toLowerCase().includes(q);
+  const head = (cols: string[]) => { $('.jobs thead').innerHTML = `<tr>${cols.map((c) => `<th>${c}</th>`).join('')}</tr>`; };
+  const renderJobs = async () => {
+    const q = $<HTMLInputElement>('.people-search').value.trim().toLowerCase();
+    const body = $('.jobs tbody');
+    if (stage === 'lead' || stage === 'booked') {
+      head(['Name', 'Type', 'Date', 'Venue', 'Enquired']);
+      const list = jobs.filter((j) => j.stage === stage && matches(q, j.title, j.venue, j.job_type, (j as any).email));
+      body.innerHTML = list.length
+        ? list.map((j) => `<tr><td><a href="/studio/crm/job?id=${j.id}">${esc(j.title)}</a></td><td>${esc(j.job_type)}</td><td>${nzDate(j.event_date)}</td><td>${esc(j.venue)}</td><td>${when(j.created_at)}</td></tr>`).join('')
+        : `<tr><td colspan="5" class="empty">${q ? 'Nothing matches.' : `No ${stage === 'lead' ? 'open leads' : 'booked jobs'} yet.`}</td></tr>`;
+      return;
+    }
+    if (!other[stage]) {
+      body.innerHTML = '<tr><td colspan="5" class="empty">Loading…</td></tr>';
+      const r = await fetch(`/api/studio/crm/people?view=${stage}`);
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) { body.innerHTML = `<tr><td colspan="5" class="empty">${esc(d.error || 'Couldn’t load.')}</td></tr>`; return; }
+      other[stage] = d.rows;
+    }
+    if (stage === 'all') {
+      head(['Name', 'Email', 'Phone', 'Jobs', 'Added']);
+      const list = other.all.filter((c) => matches(q, c.first_name, c.last_name, c.email, c.phone, c.notes, ...c.jobs.map((j: any) => j.title)));
+      body.innerHTML = list.length ? list.map((c) => `<tr><td><strong>${esc(`${c.first_name} ${c.last_name}`.trim())}</strong>${c.notes ? `<br><small class="note" title="${esc(c.notes)}">${esc(c.notes.slice(0, 90))}${c.notes.length > 90 ? '…' : ''}</small>` : ''}</td>
+        <td>${c.email.endsWith('.invalid') ? '<small class="muted">no email</small>' : `<a href="mailto:${esc(c.email)}">${esc(c.email)}</a>`}</td><td>${esc(c.phone)}</td>
+        <td>${c.jobs.length ? c.jobs.map((j: any) => `<a href="/studio/crm/job?id=${j.id}">${esc(j.title)}</a> <small class="muted">${STAGE[j.stage] ?? j.stage}${j.event_date ? ` · ${nzDate(j.event_date)}` : ''}</small>`).join('<br>') : '<small class="muted">No jobs</small>'}</td>
+        <td>${when(c.created_at)}</td></tr>`).join('') : `<tr><td colspan="5" class="empty">${q ? 'Nobody matches.' : 'Nobody yet.'}</td></tr>`;
+      $('.list-count').textContent = `${list.length} ${list.length === 1 ? 'person' : 'people'}`;
+      return;
+    }
+    const past = stage === 'past';
+    head(past ? ['Name', 'Type', 'Date', 'Venue', 'Paid'] : ['Name', 'Type', 'Their date', 'Venue', 'Enquired']);
+    const list = other[stage].filter((j) => matches(q, j.title, j.venue, j.job_type, j.email, j.first_name, j.last_name, j.lead_source));
+    body.innerHTML = list.length ? list.map((j) => `<tr><td><a href="/studio/crm/job?id=${j.id}">${esc(j.title)}</a>${j.lead_source ? `<br><small class="muted">${esc(j.lead_source)}</small>` : ''}</td><td>${esc(j.job_type)}</td><td>${nzDate(j.event_date)}</td><td>${esc(j.venue)}</td>
+      <td>${past ? money(j.paid) : when(j.created_at)}</td></tr>`).join('') : `<tr><td colspan="5" class="empty">${q ? 'Nothing matches.' : 'None yet.'}</td></tr>`;
+    $('.list-count').textContent = `${list.length} ${past ? 'past job' : 'not going ahead'}${list.length === 1 || !past ? '' : 's'}${past && list.length ? ` · ${money(list.reduce((a, j) => a + j.paid, 0))} paid` : ''}`;
   };
+  $('.people-search').addEventListener('input', () => renderJobs());
 
   async function load() {
     try {
@@ -198,6 +239,7 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
     if (tab) {
       stage = tab.dataset.stage!;
       document.querySelectorAll('.tabs button').forEach((b) => b.classList.toggle('on', b === tab));
+      $('.list-count').textContent = '';
       renderJobs();
     }
   });
@@ -254,6 +296,10 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
   .crm .list-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 8px; }
   .crm .list-head h2 { margin: 0; }
   .crm .tabs { display: flex; gap: 6px; align-items: center; }
+  .crm .people-search { font: inherit; font-size: 14px; padding: 7px 12px; border: 1px solid #ddd3c4; border-radius: 10px 0; background: var(--white); min-width: 220px; }
+  .crm .list-count { margin: 0 0 4px; font-size: 13px; color: #888; min-height: 1em; }
+  .crm .jobs small.muted, .crm .jobs .note { color: #888; font-weight: 400; }
+  .crm .tabs { flex-wrap: wrap; }
   .crm .spam-link { margin-left: 6px; font-size: 13px; color: #888; }
   .crm .tabs button { padding: 7px 14px; border: 1px solid #ddd3c4; border-radius: 999px; background: var(--white); font: inherit; font-size: 14px; cursor: pointer; }
   .crm .tabs button.on { background: var(--green); border-color: var(--green); color: var(--white); }
