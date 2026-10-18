@@ -236,10 +236,12 @@ export async function quotePdf(q, job, number) {
   return d.pdf.save();
 }
 
-/** An invoice (or, once paid, its receipt). inv = invoice row; job = job + client; pay = Settings > Payments. */
-export async function invoicePdf(inv, job, pay) {
+/** An invoice (or, once paid, its receipt). inv = invoice row; job = job + client; pay = Settings > Payments.
+ *  asInvoice: the invoice itself even when it's been paid (the studio's invoice link). */
+export async function invoicePdf(inv, job, pay, { asInvoice = false } = {}) {
   const d = await setup();
-  const paid = inv.status === 'paid';
+  const paid = inv.status === 'paid' && !asInvoice;
+  const wasPaid = inv.status === 'paid' && asInvoice;
   d.title(paid ? 'Receipt' : pay?.gst_number ? 'Tax invoice' : 'Invoice', `Invoice ${inv.number}  ·  Issued ${longDate((inv.sent_at || inv.created_at).slice(0, 10))}${paid ? `  ·  Paid ${longDate(inv.paid_at.slice(0, 10))}` : `  ·  Due ${longDate(inv.due_date)}`}`);
   d.columns([['From', [...FROM, pay?.gst_number && `GST number: ${pay.gst_number}`].filter(Boolean).join('\n')], ['To', [`${job.first_name} ${job.last_name}`.trim(), job.email, job.address].filter(Boolean).join('\n')]]);
   d.rule(20);
@@ -258,6 +260,7 @@ export async function invoicePdf(inv, job, pay) {
     }
     if (pay?.instructions) d.write([{ text: pay.instructions }], { size: 9, color: GREY });
   }
+  if (wasPaid) d.write([{ text: `Paid on ${longDate(inv.paid_at.slice(0, 10))}. Thank you!`, weight: 'medium' }], { size: 11, color: GREEN });
   d.footer(`Moments in Light  ·  Invoice ${inv.number}`);
   return d.pdf.save();
 }

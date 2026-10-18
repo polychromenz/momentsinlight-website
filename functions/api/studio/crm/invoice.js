@@ -1,5 +1,5 @@
 // Invoices in the studio.
-//   GET  /api/studio/crm/invoice?id=4&pdf=1      the invoice (or receipt) PDF
+//   GET  /api/studio/crm/invoice?id=4&pdf=1      the invoice PDF (&receipt=1: the receipt, once paid)
 //   POST /api/studio/crm/invoice  { id, action: 'paid', method: 'bank'|'other', note }   mark it paid
 //                                 { id, action: 'send' }      send it now (or again)
 //                                 { id, action: 'void' }      cancel an unpaid invoice
@@ -12,10 +12,12 @@ import { markPaid, sendInvoice, paymentSettings, createInvoices } from '../../..
 import { invoicePdf } from '../../../../functions-lib/pdf.js';
 
 export async function onRequestGet({ request, env }) {
-  const inv = await env.DB.prepare('SELECT * FROM invoices WHERE id = ?1').bind(Number(new URL(request.url).searchParams.get('id'))).first();
+  const u = new URL(request.url);
+  const inv = await env.DB.prepare('SELECT * FROM invoices WHERE id = ?1').bind(Number(u.searchParams.get('id'))).first();
   if (!inv) return json({ error: 'That invoice doesn’t exist.' }, 404);
-  return new Response(await invoicePdf(inv, await loadJob(env.DB, inv.job_id), await paymentSettings(env.DB)),
-    { headers: { 'content-type': 'application/pdf', 'content-disposition': `inline; filename="${inv.status === 'paid' ? 'Receipt' : 'Invoice'} ${inv.number}.pdf"`, 'cache-control': 'no-store' } });
+  const receipt = inv.status === 'paid' && u.searchParams.has('receipt');
+  return new Response(await invoicePdf(inv, await loadJob(env.DB, inv.job_id), await paymentSettings(env.DB), { asInvoice: !receipt }),
+    { headers: { 'content-type': 'application/pdf', 'content-disposition': `inline; filename="${receipt ? 'Receipt' : 'Invoice'} ${inv.number}.pdf"`, 'cache-control': 'no-store' } });
 }
 
 export async function onRequestPost({ request, env }) {

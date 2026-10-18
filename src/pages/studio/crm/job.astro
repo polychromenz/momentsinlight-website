@@ -351,7 +351,7 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
       const open = i.status === 'sent' || i.status === 'scheduled';
       return `<li class="inv inv--${i.status}"><span class="what"><a href="/api/studio/crm/invoice?id=${i.id}&pdf=1" target="_blank" rel="noopener"><strong>${esc(i.number)}</strong></a> ${esc(i.label)} · <strong>${money(i.amount)}</strong><br><small>${state}</small></span>
         ${open ? `<button type="button" class="s-btn" data-inv="${i.id}" data-inv-act="paid">Mark paid</button><button type="button" class="s-btn s-btn--quiet" data-inv="${i.id}" data-inv-act="send">${i.status === 'sent' ? 'Send again' : 'Send now'}</button><button type="button" class="s-btn s-btn--quiet" data-inv="${i.id}" data-inv-act="edit">Change</button><button type="button" class="s-btn s-btn--quiet" data-inv="${i.id}" data-inv-act="void">Cancel</button>` : ''}
-        ${i.status !== 'void' ? `<a class="pdf" href="/invoice?t=${i.token}" target="_blank" rel="noopener">Their page</a>` : ''}</li>`;
+        ${i.status === 'paid' ? `<a class="pdf" href="/api/studio/crm/invoice?id=${i.id}&pdf=1&receipt=1" target="_blank" rel="noopener">Receipt</a> ` : ''}${i.status !== 'void' ? `<a class="pdf" href="/invoice?t=${i.token}" target="_blank" rel="noopener">Their page</a>` : ''}</li>`;
     }).join('')
       : signed.length ? `<li class="empty">No invoices. <button type="button" class="s-btn s-btn--quiet" data-make-invoices="${signed[0].id}">Make the invoices</button></li>`
       : '<li class="empty">No invoices yet. They’re made when the contract is signed, and the deposit invoice goes straight away.</li>';
