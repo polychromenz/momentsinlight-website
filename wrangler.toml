@@ -15,3 +15,12 @@ migrations_dir = "migrations"
 # (functions/api/studio/describe.js and seo.js). Free allowance covers normal use.
 [ai]
 binding = "AI"
+
+# MIL Galleries photo storage (docs/MIL-Galleries-Phase1-Plan.md)
+[[r2_buckets]]
+binding = "GALLERY_FILES"        # full-size originals (private)
+bucket_name = "mil-galleries"
+
+[[r2_buckets]]
+binding = "GALLERY_WEB"          # 2048px and 600px (public at photos.momentsinlight.co.nz)
+bucket_name = "mil-galleries-web"
