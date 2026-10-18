@@ -51,6 +51,24 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
   const post = async (body: any) => { const r = await fetch('/api/studio/crm/rankings', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) }); return { ok: r.ok, d: await r.json().catch(() => ({})) }; };
   const day = (iso: string) => new Date(`${iso.slice(0, 10)}T12:00:00Z`).toLocaleDateString('en-NZ', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' });
   let data: any = null;
+  const LEVEL_NAME: Record<string, string> = { main: 'main', supporting: 'supporting', low: 'low' };
+  const LEVELS: Record<string, number> = { main: 3, supporting: 2, low: 1 };
+  const draftFor = (kw: string) => '/studio/edit?' + new URLSearchParams({ title: kw.replace(/^\w/, (c) => c.toUpperCase()), kind: 'Info', seoTitle: `${kw.replace(/\b\w/g, (c) => c.toUpperCase())} | Moments In Light`.slice(0, 60) });
+  const STOP = new Set(['in', 'the', 'a', 'an', 'for', 'of', 'and', 'nz', 'near', 'me', 'best', 'top', 'to', 'at', 'on', 'my']);
+  const stems = (t: string) => String(t || '').toLowerCase().replace(/&#39;|’/g, "'").split(/[^a-z0-9']+/).filter((w) => w && !STOP.has(w)).map((w) => (w.length > 6 ? w.slice(0, 6) : w.replace(/s$/, '')));
+  const near = (text: string, want: string[], slack: number) => { const got = stems(text); const size = want.length + slack; for (let i = 0; i < Math.max(1, got.length); i++) { const win = new Set(got.slice(i, i + size)); if (want.every((w) => win.has(w))) return true; } return false; };
+  const allWords = (text: string, want: string[]) => { const got = new Set(stems(text)); return want.every((w) => got.has(w)); };
+  const covers = (type: string, text: string, kw: string) => (type === 'title' || type === 'h1' ? near(text, stems(kw), 2) : allWords(text, stems(kw)));
+  /** Searches this change would knock out: they're in the "Now" but not in the suggestion. */
+  function losses(i: any) {
+    if (!['title', 'h1', 'description', 'text'].includes(i.type) || !sugg) return [];
+    const mine = stems(sugg.keyword).sort().join(' ');
+    const hit = (data.pageKeywords?.[i.path] ?? []).filter((x: any) => x.group !== mine && covers(i.type, i.show ?? i.before, x.keyword) && !covers(i.type, i.after, x.keyword));
+    // The same words in another order are the same search: name it once (its highest priority).
+    const byGroup = new Map<string, any>();
+    for (const x of hit) if (!byGroup.has(x.group) || LEVELS[x.level] > LEVELS[byGroup.get(x.group).level]) byGroup.set(x.group, x);
+    return [...byGroup.values()];
+  }
   // Fixes that can be suggested and applied from here.
   const SUGGEST = ['title', 'desc', 'h1', 'intro', 'alt', 'compete', 'inlinks'];
   const applied = new Set<string>();
@@ -128,11 +146,31 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
       <p class="sugg-label"><label><input type="checkbox" data-use checked> ${esc(labelOf(i))}</label> <small class="muted">${esc(i.path)}</small></p>
       ${i.type === 'photo' ? `<img src="${esc(i.src.replace(/\/(public|w=[^/]*)$/, '/w=360'))}" alt="" class="sugg-img">` : ''}
       <div class="sugg-cols"><div><span class="lbl">Now</span><div class="before">${esc(i.show ?? i.before) || '<span class="muted">(nothing)</span>'}</div></div>
-      <div><span class="lbl">Suggested</span><textarea data-after rows="${i.type === 'text' ? 6 : i.type === 'description' || i.type === 'append' ? 3 : 2}">${esc(i.after)}</textarea><span class="cnt">${counter(i.type, i.after)}</span>${onPage(i) ? `<button type="button" class="pv-btn" data-preview="${n}">👁 Preview on the page</button>` : ''}${i.options?.length > 1 ? `<div class="opts"><span class="lbl">Or choose</span>${i.options.map((o: string, m: number) => `<button type="button" class="opt${o === i.after ? ' on' : ''}" data-opt="${m}">${esc(o)}</button>`).join('')}</div>` : ''}</div></div>${googlePreview(i)}</div>`).join('');
+      <div><span class="lbl">Suggested</span><textarea data-after rows="${i.type === 'text' ? 6 : i.type === 'description' || i.type === 'append' ? 3 : 2}">${esc(i.after)}</textarea><span class="cnt">${counter(i.type, i.after)}</span><p class="warn" hidden></p>${onPage(i) ? `<button type="button" class="pv-btn" data-preview="${n}">👁 Preview on the page</button>` : ''}${i.options?.length > 1 ? `<div class="opts"><span class="lbl">Or choose</span>${i.options.map((o: string, m: number) => `<button type="button" class="opt${o === i.after ? ' on' : ''}" data-opt="${m}">${esc(o)}</button>`).join('')}</div>` : ''}</div></div>${googlePreview(i)}</div>`).join('');
     document.querySelector<HTMLElement>('.pv')!.hidden = true;
     pvItem = -1;
     const first = sugg!.items.findIndex(onPage);
     if (first !== -1) showPreview(first);
+    drawWarnings();
+  }
+  /** Warnings under each item; Apply is blocked if a more important search would lose out. */
+  function drawWarnings() {
+    if (!sugg) return;
+    const k = data.keywords.find((x: any) => x.keyword === sugg!.keyword);
+    let blocked = false;
+    sugg.items.forEach((i, n) => {
+      const box = document.querySelector<HTMLElement>(`.sugg-item[data-n="${n}"] .warn`);
+      if (!box) return;
+      const lost = losses(i);
+      const used = document.querySelector<HTMLInputElement>(`.sugg-item[data-n="${n}"] [data-use]`)?.checked;
+      const serious = lost.filter((x: any) => LEVELS[x.level] >= LEVELS[k?.level ?? 'supporting'] || x.level === 'main');
+      if (used && serious.length) blocked = true;
+      box.innerHTML = lost.length ? lost.map((x: any) => `⚠ This would remove “${esc(x.keyword)}” (${LEVEL_NAME[x.level]} search for this page)`).join('<br>') + (serious.length ? '<br><b>Edit the suggestion to keep those words, or untick it.</b>' : '') : '';
+      box.hidden = !lost.length;
+    });
+    const ap = document.querySelector<HTMLButtonElement>('[data-sugg-apply]')!;
+    ap.disabled = blocked;
+    ap.title = blocked ? 'This would cost you a more important search. Edit the suggestion first.' : '';
   }
   function refreshItem(n: number) {
     const i = sugg!.items[n];
@@ -150,7 +188,8 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
     const note = document.querySelector<HTMLElement>('.sugg-note')!; note.hidden = true;
     document.querySelector<HTMLButtonElement>('[data-sugg-apply]')!.hidden = true;
     if (!d.open) d.showModal();
-    const { ok, d: r } = await post({ action: 'suggest', keyword, key, target: k.target, pages: fix.pages ?? [] });
+    const keep = (k.protect ?? []).map((x: any) => x.keyword);
+    const { ok, d: r } = await post({ action: 'suggest', keyword, key, target: k.target, pages: fix.pages ?? [], keep });
     if (!ok) { document.querySelector('.sugg-items')!.innerHTML = `<p class="note">${esc(r.error || 'No suggestion came back. Try again.')}</p>`; return; }
     sugg.items = r.items ?? [];
     if (r.note) { note.textContent = r.note; note.hidden = false; }
@@ -176,25 +215,27 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
         ${(r.mobile ?? r.desktop)?.has_map ? `<div><span class="lbl">Map</span>${(r.mobile ?? r.desktop).map != null ? `<span class="pos top">#${(r.mobile ?? r.desktop).map}</span>` : '<span class="pos none">not in it</span>'}</div>` : ''}
       </div>` : `<div class="ranks"><div><span class="lbl">Google</span><span class="muted">${data.ready ? 'after the first check' : 'once set up'}</span></div></div>`;
     const g = k.gsc ? `<span class="gsc">Search Console: about #${k.gsc.position?.toFixed?.(1) ?? '–'}, shown ${k.gsc.impressions} times, ${k.gsc.clicks} clicks (week of ${day(k.gsc.week)})</span>` : '';
-    const fixes = k.fixes.filter((f: any) => !f.ok);
-    const done = k.fixes.filter((f: any) => f.ok);
-    const fixHtml = (f: any) => `<li class="fix ${f.ok ? 'ok' : 'todo'}"><span class="mark">${f.ok ? '✓' : '✗'}</span><div><strong>${esc(f.title)}</strong><p>${esc(f.detail)}</p>
+    const fixes = k.fixes.filter((f: any) => !f.ok || f.info);
+    const done = k.fixes.filter((f: any) => f.ok && !f.info);
+    const fixHtml = (f: any) => `<li class="fix ${f.info ? 'info' : f.ok ? 'ok' : 'todo'}"><span class="mark">${f.info ? 'i' : f.ok ? '✓' : '✗'}</span><div><strong>${esc(f.title)}</strong><p>${esc(f.detail)}</p>
       ${f.contacts?.length ? `<p class="links">${f.contacts.map((c: any) => `<a href="/studio/contacts/contact?id=${c.id}">${esc(c.business)}</a>`).join(' · ')}</p>` : ''}
       ${f.map?.length ? `<p class="links">In the map now: ${f.map.map((m: any) => `${esc(m.title)}${m.rating ? ` (${m.rating}★, ${m.votes ?? 0} reviews)` : ''}`).join(' · ')}</p>` : ''}
-      ${f.ok ? (f.task === 'closed' ? '<small class="up">Task closed: fixed</small>' : '') : f.task === 'open' ? '<small class="muted">In your tasks</small>' : `${SUGGEST.includes(f.key) && !applied.has(`${k.keyword}|${f.key}`) ? `<button type="button" class="s-btn s-btn--quiet" data-suggest="${esc(f.key)}" data-kw="${esc(k.keyword)}">✨ Suggest fix</button>` : ''}${applied.has(`${k.keyword}|${f.key}`) ? '<small class="up">Applied: the website updates in about 2 minutes, and this ticks off at the next check.</small>' : ''}<button type="button" class="s-btn s-btn--quiet" data-task="${esc(f.key)}" data-kw="${esc(k.keyword)}">+ Add to my tasks</button>`}</div></li>`;
+      ${f.draft ? `<a class="s-btn s-btn--quiet" href="${esc(draftFor(k.keyword))}">Draft a blog post for it</a> ` : ''}${f.info ? '' : f.ok ? (f.task === 'closed' ? '<small class="up">Task closed: fixed</small>' : '') : f.task === 'open' ? '<small class="muted">In your tasks</small>' : `${SUGGEST.includes(f.key) && !applied.has(`${k.keyword}|${f.key}`) ? `<button type="button" class="s-btn s-btn--quiet" data-suggest="${esc(f.key)}" data-kw="${esc(k.keyword)}">✨ Suggest fix</button>` : ''}${applied.has(`${k.keyword}|${f.key}`) ? '<small class="up">Applied: the website updates in about 2 minutes, and this ticks off at the next check.</small>' : ''}<button type="button" class="s-btn s-btn--quiet" data-task="${esc(f.key)}" data-kw="${esc(k.keyword)}">+ Add to my tasks</button>`}</div></li>`;
     const top = k.top?.organic?.length ? `<details class="above"><summary>Who's on Google for this (${esc(day(r.run))}, ${r.mobile ? 'phone' : 'desktop'})</summary>
       <ol>${k.top.organic.map((x: any) => `<li class="${(x.domain || '').endsWith('momentsinlight.co.nz') ? 'you' : ''}"><span class="n">${x.rank}</span><a href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.title || x.domain)}</a> <small>${esc(x.domain)}${/easyweddings|weddingwire|bridebook|facebook|instagram|pinterest|directory|nzweddings|theknot|hitched/.test(x.domain) ? ' · directory' : ''}</small></li>`).join('')}</ol>
       <button type="button" class="s-btn s-btn--quiet" data-compare="${esc(k.keyword)}">Compare with the top 3</button>
       ${k.compare ? `<table class="cmp"><thead><tr><th>Page</th><th>Words</th><th>Photos</th><th>Main heading</th></tr></thead><tbody>${k.compare.pages.map((p: any) => `<tr><td><a href="${esc(p.url)}" target="_blank" rel="noopener">#${p.rank} ${esc(p.domain)}</a></td><td>${p.words}</td><td>${p.imgs}</td><td>${esc(p.h1)}</td></tr>`).join('')}</tbody></table><small class="muted">Compared ${day(k.compare.at)}</small>` : ''}</details>` : '';
     return `<article class="card kw${open.has(k.keyword) || (i === 0 && !open.size) ? ' open' : ''}" data-kw-card="${esc(k.keyword)}">
       <button type="button" class="kw-head" data-toggle="${esc(k.keyword)}">
-        <span class="kw-name">${i < 3 && k.todo ? '<span class="first">Work on this</span>' : ''}${esc(k.keyword)}</span>
+        <span class="kw-name">${k.level === 'main' ? '<span class="lvl main">Main</span>' : k.level === 'low' ? '<span class="lvl low">Low</span>' : ''}${i < 3 && k.todo && k.level !== 'low' ? '<span class="first">Work on this</span>' : ''}${esc(k.keyword)}</span>
         <span class="kw-sum">${r.run && r.mobile ? place(r.mobile.position) : ''} ${k.todo ? `<span class="todo-n">${k.todo} to fix</span>` : '<span class="up">All checks pass</span>'}</span>
       </button>
       <div class="kw-body">
         ${rankHtml}${g}
-        <label class="target">The page for this search <select data-target="${esc(k.keyword)}"><option value="">${k.target_how === 'chosen' ? 'Choose automatically' : `Automatic: ${esc(k.target)}${k.target_how === 'google' ? ' (the one Google shows)' : ' (best match)'}`}</option>${data.pages.map((p: string) => `<option value="${esc(p)}"${k.target_how === 'chosen' && p === k.target ? ' selected' : ''}>${esc(p)}</option>`).join('')}</select>
-          <a href="https://www.momentsinlight.co.nz${esc(k.target)}" target="_blank" rel="noopener">Open ↗</a></label>
+        <label class="target">Priority <select data-level="${esc(k.keyword)}">${[['main', 'Main: protect this page for it'], ['supporting', 'Supporting'], ['low', 'Low']].map(([v, l]) => `<option value="${v}"${k.level === v ? ' selected' : ''}>${l}</option>`).join('')}</select></label>
+        <label class="target">The page for this search <select data-target="${esc(k.keyword)}"><option value="">${k.target_how === 'chosen' ? 'Choose automatically' : k.target ? `Automatic: ${esc(k.target)}${k.target_how === 'google' ? ' (the one Google shows)' : ' (best match)'}` : 'Automatic: no page fits yet'}</option>${data.pages.map((p: string) => `<option value="${esc(p)}"${k.target_how === 'chosen' && p === k.target ? ' selected' : ''}>${esc(p)}</option>`).join('')}</select>
+          ${k.target ? `<a href="https://www.momentsinlight.co.nz${esc(k.target)}" target="_blank" rel="noopener">Open ↗</a>` : ''}</label>
+        ${k.sharing?.length ? `<p class="sharing">This page is also the page for: ${k.sharing.map((x: any) => `<b>${esc(x.keyword)}</b> <small>(${LEVEL_NAME[x.level]})</small>`).join(', ')}</p>` : ''}
         <ul class="fixes">${fixes.map(fixHtml).join('') || '<li class="muted">Nothing to fix on this page. Links from other sites and fresh blog posts are what move it now.</li>'}</ul>
         ${done.length ? `<details class="passed"><summary>${done.length} checks pass</summary><ul class="fixes">${done.map(fixHtml).join('')}</ul></details>` : ''}
         ${top}
@@ -223,12 +264,14 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
     sugg.items[n].after = ta.value;
     ta.parentElement!.querySelector('.cnt')!.innerHTML = counter(sugg.items[n].type, ta.value);
     refreshItem(n);
+    drawWarnings();
   });
   document.addEventListener('click', async (e) => {
     const t = e.target as HTMLElement;
     const sb = t.closest<HTMLButtonElement>('[data-suggest]');
     if (sb) { open.add(sb.dataset.kw!); await openSuggest(sb.dataset.kw!, sb.dataset.suggest!); return; }
     if (t.closest('[data-sugg-close]')) { dlg().close(); return; }
+    if (t.closest('.sugg [data-use]')) { drawWarnings(); }
     const ob = t.closest<HTMLButtonElement>('[data-opt]');
     if (ob && sugg) {
       const item = ob.closest<HTMLElement>('.sugg-item')!;
@@ -239,6 +282,7 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
       item.querySelector('.cnt')!.innerHTML = counter(sugg.items[n].type, ta.value);
       item.querySelectorAll('.opt').forEach((x) => x.classList.toggle('on', x === ob));
       refreshItem(n);
+      drawWarnings();
       return;
     }
     const pb = t.closest<HTMLButtonElement>('[data-preview]');
@@ -278,6 +322,13 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
     }
   });
   document.addEventListener('change', async (e) => {
+    const lv = (e.target as HTMLElement).closest<HTMLSelectElement>('[data-level]');
+    if (lv) {
+      open.add(lv.dataset.level!);
+      await post({ action: 'level', keyword: lv.dataset.level, level: lv.value });
+      toast(lv.value === 'main' ? 'Main search: its page’s title and heading are now protected for it.' : 'Saved.');
+      load(); return;
+    }
     const s = (e.target as HTMLElement).closest<HTMLSelectElement>('[data-target]');
     if (!s) return;
     open.add(s.dataset.target!);
@@ -319,6 +370,12 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
   .fixes { list-style: none; margin: 8px 0; padding: 0; }
   .fix { display: flex; gap: 12px; padding: 10px 0; border-top: 1px solid #f1ebe1; font-size: 14px; }
   .fix .mark { flex: 0 0 22px; height: 22px; display: grid; place-items: center; border-radius: 50%; font-size: 12px; font-weight: 700; }
+  .fix.info .mark { background: #eef0f7; color: #2f3f86; font-style: italic; font-family: Georgia, serif; }
+  .sharing { margin: 2px 0 8px; font-size: 13px; color: #666; } .sharing small { color: #999; }
+  .lvl { font-size: 10px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; padding: 3px 9px; border-radius: 999px; }
+  .lvl.main { background: #2f3f86; color: #fff; } .lvl.low { background: #eee; color: #888; }
+  .sugg .warn { margin: 8px 0 0; padding: 8px 10px; background: #fff1ec; color: #8a3a22; border-radius: 8px 0; font-size: 13px; }
+  .sugg [data-sugg-apply]:disabled { opacity: 0.45; cursor: not-allowed; }
   .fix.todo .mark { background: #f6e3dc; color: #a8432a; } .fix.ok .mark { background: #e6ecd9; color: #3e6b1f; }
   .fix p { margin: 3px 0 6px; color: #555; line-height: 1.5; }
   .fix .links { font-size: 13px; } .fix .links a { color: var(--green); }

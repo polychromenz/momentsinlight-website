@@ -57,7 +57,8 @@ function titleOf(src) {
 const notHere = (why) => ({ items: [], note: why });
 const CODE = 'This page is built into the site’s code, so it can’t be changed from here. Ask Claude to change it.';
 
-export async function suggestFix(env, { keyword, key, target, pages = [] }) {
+export async function suggestFix(env, { keyword, key, target, pages = [], keep = [] }) {
+  const keepNote = keep.length ? `\nImportant: this page also ranks for ${keep.map((k) => `"${k}"`).join(', ')}. Whatever you write must still contain those words if the current version does.` : '';
   const { html } = await builtPage(env, target);
   const page = readPage(html);
   const src = await source(env, target);
@@ -65,13 +66,13 @@ export async function suggestFix(env, { keyword, key, target, pages = [] }) {
 
   if (key === 'title') {
     if (!src) return notHere(CODE);
-    const opts = await options(env, `${about}\n\nWrite a Google title for this page, at most 60 characters, with "${keyword}" (or very close wording) near the start, and a romantic, timeless feel. End with " | Moments In Light" only if it still fits in 60 characters.`, 60);
+    const opts = await options(env, `${about}${keepNote}\n\nWrite a Google title for this page, at most 60 characters, with "${keyword}" (or very close wording) near the start, and a romantic, timeless feel. End with " | Moments In Light" only if it still fits in 60 characters.`, 60);
     return { items: [{ type: 'title', path: target, before: titleOf(src), after: opts[0], options: opts, ctx: { title: page.title, description: page.desc } }] };
   }
   if (key === 'desc') {
     if (!src) return notHere(CODE);
     const before = src.file.endsWith('.md') ? getField(split(src.content).fm, 'description') : JSON.parse(src.content).description;
-    const opts = await options(env, `${about}\n\nWrite the Google description for this page: 140 to 155 characters, using "${keyword}" naturally, in his warm, romantic voice, giving a couple a reason to click.`, 120);
+    const opts = await options(env, `${about}${keepNote}\n\nWrite the Google description for this page: 140 to 155 characters, using "${keyword}" naturally, in his warm, romantic voice, giving a couple a reason to click.`, 120);
     return { items: [{ type: 'description', path: target, before: before ?? '', after: opts[0], options: opts, ctx: { title: page.title, description: page.desc } }] };
   }
   if (key === 'h1') {
@@ -81,7 +82,7 @@ export async function suggestFix(env, { keyword, key, target, pages = [] }) {
     else if (src.file.endsWith('.md')) before = getField(split(src.content).fm, 'title');
     else before = jsonStrings(src.content).find((s) => plain(s) === plain(page.h1) && s.length < 200);
     if (!before) return notHere('Couldn’t find where this heading is written. Ask Claude to change it.');
-    const opts = await options(env, `${about}\n\nRewrite the main heading so it keeps the romantic feeling of the current one ("${plain(before)}") and also includes "${keyword}" naturally, for example as a short phrase before or after a dash. At most 80 characters.`, 60);
+    const opts = await options(env, `${about}${keepNote}\n\nRewrite the main heading so it keeps the romantic feeling of the current one ("${plain(before)}") and also includes "${keyword}" naturally, for example as a short phrase before or after a dash. At most 80 characters.`, 60);
     const after = opts[0];
     const note = src.file.endsWith('.md') ? 'For a blog post, the main heading comes from the post’s title, so this changes the title too.' : undefined;
     return { items: [{ type: 'h1', path: target, before: plain(before), raw: before, after, options: opts }], note };
@@ -99,7 +100,7 @@ export async function suggestFix(env, { keyword, key, target, pages = [] }) {
       }
     }
     if (!raw) return notHere('Couldn’t find where this paragraph is written. Ask Claude to change it.');
-    const after = (await ai(env, VOICE, `Here is the opening paragraph of a page:\n\n${raw}\n\nRewrite it changing as few words as possible so that it naturally includes the phrase "${keyword}" (small changes in word order are fine). Keep his voice and everything else exactly as it is, including any links or formatting. Reply with the paragraph only.`, 300)).replace(/^["“]|["”]$/g, '').trim();
+    const after = (await ai(env, VOICE, `Here is the opening paragraph of a page:\n\n${raw}\n\n${keepNote}\nRewrite it changing as few words as possible so that it naturally includes the phrase "${keyword}" (small changes in word order are fine). Keep his voice and everything else exactly as it is, including any links or formatting. Reply with the paragraph only.`, 300)).replace(/^["“]|["”]$/g, '').trim();
     return { items: [{ type: 'text', path: target, label: 'Opening paragraph', before: raw, show: plain(raw), after }] };
   }
   if (key === 'alt') {

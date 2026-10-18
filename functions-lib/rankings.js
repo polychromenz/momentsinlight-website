@@ -159,14 +159,19 @@ async function sitePages(env) {
   return { pages: [...map.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => ({ path: new URL(m[1]).pathname, title: new URL(m[1]).pathname })), inlinks: null };
 }
 const pathOf = (url) => { try { return new URL(url).pathname.replace(/\/$/, '') || '/'; } catch { return url; } };
-/** The page that should rank: Tony's choice, else the one Google shows, else the best title match. */
+// Priorities: a page's Google title and main heading belong to its highest-priority search;
+// lower ones can't change them (they'd risk the more important one).
+export const LEVELS = { main: 3, supporting: 2, low: 1 };
+/** Searches with the same words in any order are the same search to Google. */
+export const groupOf = (k) => [...new Set(stems(k))].sort().join(' ');
+/** The page that should rank: Tony's choice, else the one Google shows, else a page whose title has every word (else none). */
 function pickTarget(keyword, pages, chosen, google) {
   if (chosen) return { page: chosen, how: 'chosen' };
   if (google) return { page: pathOf(google), how: 'google' };
   const want = stems(keyword);
   const scored = pages.map((p) => ({ p, n: want.filter((w) => new Set(stems(`${p.title} ${p.path.replace(/[-/]/g, ' ')}`)).has(w)).length }))
     .sort((a, b) => b.n - a.n || a.p.path.length - b.p.path.length);
-  return { page: scored[0]?.n ? scored[0].p.path : '/', how: 'guess' };
+  return { page: scored[0]?.n === want.length ? scored[0].p.path : null, how: 'guess' };
 }
 
 const GBP = 'Google shows a map with 3 businesses above the websites for this search. Those places come from Google Business Profiles, not your website. What moves you up: the main category “Wedding photographer”; your service area set to the suburbs you work in; new reviews that mention the venue and “wedding”; a few photos and a post every week; replying to every review.';
@@ -205,6 +210,15 @@ export async function rankingsReport(env) {
 
   const out = [];
   const close = [];
+  // Each search's page first (to know which searches share a page), and its priority.
+  const levelOf = (k) => (s.priorities ?? {})[k] ?? 'supporting';
+  const targetOf = new Map();
+  for (const k of s.keywords) {
+    const r = serp.find((x) => x.keyword === k && x.run === runs[0] && x.device === 'mobile') ?? serp.find((x) => x.keyword === k && x.run === runs[0]);
+    targetOf.set(k, pickTarget(k, pages, targets[k], r?.url));
+  }
+  const pageKeywords = {};
+  for (const k of s.keywords) { const p = targetOf.get(k).page; if (p) (pageKeywords[p] ||= []).push({ keyword: k, level: levelOf(k), group: groupOf(k) }); }
   for (const keyword of s.keywords) {
     const rows = serp.filter((r) => r.keyword === keyword);
     const latest = (device) => rows.find((r) => r.run === runs[0] && r.device === device) ?? null;
@@ -212,16 +226,28 @@ export async function rankingsReport(env) {
     const now = { mobile: latest('mobile'), desktop: latest('desktop') };
     const main = now.mobile ?? now.desktop;
     const top = main ? JSON.parse(main.top) : null;
-    const t = pickTarget(keyword, pages, targets[keyword], main?.url);
+    const t = targetOf.get(keyword);
     const want = stems(keyword);
-    const p = await page(t.page);
+    const level = levelOf(keyword);
     const fixes = [];
     const fix = (key, ok, title, detail, extra = {}) => fixes.push({ key, ok, title, detail, ...extra });
+    // Other searches on the same page, and the ones that outrank this one there.
+    const sharing = (pageKeywords[t.page] ?? []).filter((x) => x.group !== groupOf(keyword));
+    const above = sharing.filter((x) => LEVELS[x.level] > LEVELS[level]).sort((a, b) => LEVELS[b.level] - LEVELS[a.level]);
+    const protect = sharing.filter((x) => LEVELS[x.level] >= LEVELS[level]).map(({ keyword: k, level: l }) => ({ keyword: k, level: l }));
+    if (!t.page) {
+      fix('nopage', false, 'No page for this search yet', `None of your pages is really about “${keyword}”. Choose the page that should rank for it below, or start a blog post about it. (Bending a page that's about something else, like the home page, can cost you its own search.)`, { draft: true });
+      const g0 = gsc[keyword];
+      out.push({ keyword, target: null, target_how: 'none', level, sharing: [], protect: [], rank: { run: runs[0] ?? null }, top, gsc: g0 ?? null, compare: null, history: history.filter((h) => h.keyword === keyword), fixes, todo: 1, priority: (g0?.impressions ?? 0) + 1 });
+      continue;
+    }
+    const p = await page(t.page);
 
     if (main?.url && pathOf(main.url) !== t.page) fix('google_page', false, `Google shows a different page: ${pathOf(main.url)}`, `Either choose that page as the one for this search (if it suits it better), or make this page the clear best match and link to it from ${pathOf(main.url)}.`);
     if (p) {
-      fix('title', has(p.title, want), has(p.title, want) ? 'The Google title includes the search' : 'The Google title doesn’t include the search', has(p.title, want) ? `“${p.title}”` : `Now: “${p.title}”. Put “${keyword}” near the start, e.g. “${keyword.replace(/\b\w/g, (c) => c.toUpperCase())} | Moments in Light”. Change it in the post editor’s Google title (or ask me for pages that aren’t posts).`);
-      fix('h1', has(p.h1, want), has(p.h1, want) ? 'The main heading mentions it' : 'The main heading doesn’t mention it', has(p.h1, want) ? `“${p.h1}”` : `Now: “${p.h1 || 'no main heading'}”. Say what the page is about in plain words, with “${keyword}”.`);
+      if (above.length) fix('lock', true, `🔒 The title and main heading are kept for “${above[0].keyword}”`, `This page’s Google title and main heading belong to “${above[0].keyword}”, a higher-priority search. Changing them for “${keyword}” could cost you that one. Use the description, the opening paragraph and photo descriptions instead, or give “${keyword}” a page of its own.`, { info: true });
+      if (!above.length) fix('title', has(p.title, want), has(p.title, want) ? 'The Google title includes the search' : 'The Google title doesn’t include the search', has(p.title, want) ? `“${p.title}”` : `Now: “${p.title}”. Put “${keyword}” near the start, e.g. “${keyword.replace(/\b\w/g, (c) => c.toUpperCase())} | Moments in Light”. Change it in the post editor’s Google title (or ask me for pages that aren’t posts).`);
+      if (!above.length) fix('h1', has(p.h1, want), has(p.h1, want) ? 'The main heading mentions it' : 'The main heading doesn’t mention it', has(p.h1, want) ? `“${p.h1}”` : `Now: “${p.h1 || 'no main heading'}”. Say what the page is about in plain words, with “${keyword}”.`);
       fix('desc', all(p.desc, want), all(p.desc, want) ? 'The Google description mentions it' : 'The Google description doesn’t mention it', all(p.desc, want) ? 'Yes.' : `Write one or two sentences (140–155 characters) that use “${keyword}” and give a reason to click.`);
       fix('intro', all(p.intro, want), all(p.intro, want) ? 'The first paragraph mentions it' : 'The first paragraph doesn’t mention it', all(p.intro, want) ? 'Yes.' : 'Mention it naturally in the first paragraph; Google reads the start of a page most closely.');
       const cmp = compare[keyword];
@@ -259,7 +285,8 @@ export async function rankingsReport(env) {
     const reach = g?.impressions ?? 0;
     const near = pos == null ? 0.4 : pos <= 3 ? 0.3 : pos <= 10 ? 1 : pos <= 20 ? 0.8 : 0.4;
     out.push({
-      keyword, target: t.page, target_how: t.how,
+      keyword, target: t.page, target_how: t.how, level, protect,
+      sharing: sharing.map(({ keyword: k, level: l }) => ({ keyword: k, level: l })),
       rank: { mobile: now.mobile && { position: now.mobile.position, map: now.mobile.map_position, has_map: now.mobile.has_map, before: before('mobile')?.position ?? null }, desktop: now.desktop && { position: now.desktop.position, map: now.desktop.map_position, has_map: now.desktop.has_map, before: before('desktop')?.position ?? null }, run: runs[0] ?? null },
       top, gsc: g ?? null, compare: compare[keyword] ?? null,
       history: history.filter((h) => h.keyword === keyword),
@@ -268,11 +295,11 @@ export async function rankingsReport(env) {
     });
   }
   if (close.length) await db.batch(close.map((id) => db.prepare(`UPDATE tasks SET status = 'done', done_at = ?2, done_note = 'Fixed: the check passes now' WHERE id = ?1`).bind(id, new Date().toISOString())));
-  out.sort((a, b) => b.priority - a.priority);
+  out.sort((a, b) => LEVELS[b.level] - LEVELS[a.level] || b.priority - a.priority);
   return {
     ready: serpReady(env), location: LOCATION, pending, error: lastErr && lastErr.run === runs[0] ? lastErr.error : null,
     spend: spendRow ? JSON.parse(spendRow.value) : null,
-    keywords: out, pages: pages.map((x) => x.path).sort(),
+    keywords: out, pages: pages.map((x) => x.path).sort(), pageKeywords,
   };
 }
 
@@ -295,6 +322,13 @@ export async function compareTop(env, keyword) {
   all[keyword] = { at: new Date().toISOString(), pages };
   await env.DB.prepare(`INSERT INTO settings (key, value, updated_at) VALUES ('serp_compare', ?1, ?2) ON CONFLICT (key) DO UPDATE SET value = ?1, updated_at = ?2`).bind(JSON.stringify(all), new Date().toISOString()).run();
   return all[keyword];
+}
+
+export async function setLevel(db, keyword, level) {
+  const s = await seoSettings(db);
+  const priorities = { ...(s.priorities ?? {}) };
+  if (LEVELS[level] && level !== 'supporting') priorities[keyword] = level; else delete priorities[keyword];
+  await saveSeoSettings(db, { ...s, priorities });
 }
 
 export async function setTarget(db, keyword, page) {
