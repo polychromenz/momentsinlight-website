@@ -171,12 +171,10 @@ function match(layout, files, folder) {
     const want = s.name.toLowerCase();
     const bw = isMono(s.name);
     for (const p of s.photos) {
-      const free = (n) => (byName.get(n) ?? []).filter((f) => !used.has(f));
+      const name = norm(p.name);
       // Where colour and mono share a folder, the mono copy is the one exported as "-2".
-      const two = !norm(p.name).endsWith('-2') ? free(`${norm(p.name)}-2`) : [];
-      let options = [...(bw ? two : []), ...free(norm(p.name))];
-      // The same photo can be in two sections in Pic-Time (e.g. Ceremony and Extras): use it again.
-      if (!options.length) options = [...(bw ? byName.get(`${norm(p.name)}-2`) ?? [] : []), ...(byName.get(norm(p.name)) ?? [])];
+      const twoIsMono = !name.endsWith('-2');
+      const options = [...(bw && twoIsMono ? byName.get(`${name}-2`) ?? [] : []), ...(byName.get(name) ?? [])];
       const score = (f) => {
         const parts = path.relative(folder, f).toLowerCase().split(path.sep).slice(0, -1);
         let n = 0;
@@ -186,7 +184,9 @@ function match(layout, files, folder) {
           if (x.includes(want)) n += 2;
         }
         // Colour or mono matters more than the folder's name (a colour "Prep" folder beats "Preparation B+W").
-        n += bw === (parts.some(isMono) || bare(f).endsWith('-2')) ? 3 : -3;
+        n += bw === (parts.some(isMono) || (twoIsMono && bare(f).endsWith('-2'))) ? 3 : -3;
+        // A file not used yet wins a tie; one already used (the photo is in two sections) still beats the wrong colour.
+        if (used.has(f)) n -= 1.5;
         return n;
       };
       const pick = options.map((f, i) => ({ f, n: score(f) - i / 1000 })).sort((a, b) => b.n - a.n)[0]?.f;
