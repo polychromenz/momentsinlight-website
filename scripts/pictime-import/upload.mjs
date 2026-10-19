@@ -5,7 +5,8 @@
 //   node scripts/pictime-import/upload.mjs "E:\EXPORTS\WEDDINGS"        (add --check to only report what matches)
 //
 // Speed: 3 megabits a second from 7am to 10pm (so the internet stays usable), no limit overnight.
-// The couples in order.txt go at full speed day and night (or --priority-speed=10).
+// The couples in order.txt go at full speed day and night (or --priority-speed=10). A file called
+// fast.txt in the base folder means full speed until 7am (for an evening out).
 // Change with --day-speed=5 or --night-speed=20, or --full for no limit at all.
 //
 // Under the base folder, any folder with a link.txt is a couple's folder: link.txt holds their
@@ -71,8 +72,20 @@ const NIGHT_MBPS = Number(arg('night-speed') ?? 0); // 0 = no limit
 const FULL = process.argv.includes('--full');
 const PRIORITY_MBPS = Number(arg('priority-speed') ?? 0); // the couples in order.txt, day and night
 let priority = false; // set while one of the order.txt couples is uploading
+// fast.txt in the base folder: full speed from when it was made until 7am (e.g. "I'm out tonight").
+// It's tidied away at 7am so the next day is gentle again.
+const fastFile = path.join(root, 'fast.txt');
+function fastNow() {
+  if (!fs.existsSync(fastFile)) return false;
+  const made = fs.statSync(fastFile).mtime;
+  const until = new Date(made); until.setHours(7, 0, 0, 0);
+  if (until <= made) until.setDate(until.getDate() + 1);
+  if (Date.now() < until.valueOf()) return true;
+  try { fs.unlinkSync(fastFile); log('fast.txt has run its course (7am): back to the gentle daytime speed.'); } catch {}
+  return false;
+}
 function speedNow() {
-  if (FULL) return 0;
+  if (FULL || fastNow()) return 0;
   if (priority) return PRIORITY_MBPS;
   const h = new Date().getHours();
   return h >= 7 && h < 22 ? DAY_MBPS : NIGHT_MBPS;
