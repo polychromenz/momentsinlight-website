@@ -1,3 +1,4 @@
+import { ask, askText, guardLeaving } from './dialogs';
 // Moments Studio editor (src/pages/studio/edit.astro).
 // Opens a post from the repository (via /api/studio/post), lets Tony edit it in place, uploads
 // photos straight to Cloudflare Images, and saves it back: Publish puts it live (or schedules it
@@ -53,7 +54,7 @@ const markDirty = () => {
   dirty = true;
   $('.save-state').textContent = 'Unsaved changes';
 };
-addEventListener('beforeunload', (e) => { if (dirty) { e.preventDefault(); e.returnValue = ''; } });
+guardLeaving(() => dirty);
 
 // ---------- Story editor ----------
 const turndown = new TurndownService({ headingStyle: 'atx', bulletListMarker: '-', emDelimiter: '*', strongDelimiter: '**', hr: '---' });
@@ -104,7 +105,7 @@ function updateToolbar() {
 }
 
 document.querySelectorAll<HTMLButtonElement>('.toolbar button').forEach((b) =>
-  b.addEventListener('click', () => {
+  b.addEventListener('click', async () => {
     const cmd = b.dataset.cmd!;
     if (cmd === 'image') { $<HTMLInputElement>('.inline-file').click(); return; }
     if (!editor) return;
@@ -120,7 +121,7 @@ document.querySelectorAll<HTMLButtonElement>('.toolbar button').forEach((b) =>
     if (cmd === 'redo') c.redo().run();
     if (cmd === 'link') {
       const prev = editor.getAttributes('link').href as string | undefined;
-      const href = prompt('Link to (a web address, or a page on your site such as /weddings). Leave empty to remove the link.', prev ?? 'https://');
+      const href = await askText('Link to (a web address, or a page on your site such as /weddings). Leave empty to remove the link.', prev ?? 'https://');
       if (href === null) return;
       if (!href.trim() || href.trim() === 'https://') c.unsetLink().run();
       else c.extendMarkRange('link').setLink({ href: href.trim() }).run();
@@ -137,7 +138,7 @@ $<HTMLInputElement>('.inline-file').addEventListener('change', async (e) => {
   toast('Uploading the photo…', false, 60000);
   try {
     const p = await uploadPhoto(file, () => {});
-    const alt = prompt('A short description of this photo (for Google and screen readers):', '') ?? '';
+    const alt = await askText('A short description of this photo (for Google and screen readers):', '') ?? '';
     const src = p.src.replace(/\/public$/, '/w=1600,q=75');
     if (rawMode) {
       rawEl.setRangeText(`\n\n![${alt}](${src})\n\n`, rawEl.selectionStart, rawEl.selectionEnd, 'end');
@@ -257,7 +258,7 @@ function refreshShare(isLive: boolean) {
 }
 async function copyText(text: string, done: string) {
   try { await navigator.clipboard.writeText(text); toast(done); }
-  catch { prompt('Copy this:', text); }
+  catch { await askText('Copy this:', text); }
 }
 $('[data-share="link"]').addEventListener('click', () => copyText(`${SITE}/blog/${id}`, 'Link copied.'));
 // Instagram doesn't take posts from websites, so this copies a caption to paste in the app.
@@ -318,7 +319,7 @@ grid.addEventListener('click', async (e) => {
   const t = btn && tileOf(btn);
   if (!btn || !t) return;
   if (btn.classList.contains('star')) { data.thumbnail = t.src; data.thumbnailPosition = undefined; data.thumbnailAlt = undefined; renderPhotos(); renderCover(); markDirty(); }
-  if (btn.classList.contains('remove') && confirm('Remove this photo from the post? (It stays in your photo library.)')) {
+  if (btn.classList.contains('remove') && await ask('Remove this photo from the post? (It stays in your photo library.)')) {
     tiles = tiles.filter((x) => x !== t);
     if (data.thumbnail === t.src) data.thumbnail = undefined;
     syncGallery(); renderPhotos(); renderCover(); markDirty();
@@ -526,7 +527,7 @@ async function save(draft: boolean) {
   const next = collect(draft);
   if (!next.title) { toast('Give the post a title first.', true); titleEl.focus(); return; }
   if (!next.description) {
-    if (!confirm('There’s no Google description yet. Save anyway? (Use “Suggest from the post” to write one.)')) return;
+    if (!await ask('There’s no Google description yet. Save anyway? (Use “Suggest from the post” to write one.)')) return;
   }
   if (isNew && !sha) {
     const slug = slugify(field<HTMLInputElement>('slug').value || next.title);
@@ -568,11 +569,11 @@ async function save(draft: boolean) {
 }
 $('[data-act="draft"]').addEventListener('click', () => save(true));
 $('[data-act="publish"]').addEventListener('click', () => save(false));
-$('[data-act="unpublish"]').addEventListener('click', () => {
-  if (confirm('Take this post off the site? It stays here as a draft, and you can publish it again any time.')) save(true);
+$('[data-act="unpublish"]').addEventListener('click', async () => {
+  if (await ask('Take this post off the site? It stays here as a draft, and you can publish it again any time.')) save(true);
 });
 $('[data-act="delete"]').addEventListener('click', async () => {
-  if (!sha || !confirm(`Delete “${data.title}” completely? This can’t be undone from the studio. (Its photos stay in your photo library.)`)) return;
+  if (!sha || !await ask(`Delete “${data.title}” completely? This can’t be undone from the studio. (Its photos stay in your photo library.)`)) return;
   try {
     await api(`/api/studio/post?id=${id}&sha=${sha}`, { method: 'DELETE' });
     dirty = false;

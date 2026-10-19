@@ -1,3 +1,4 @@
+import { ask, askText, guardLeaving } from './dialogs';
 // The page editor for pages in the refreshed design (most of them): the page as one flowing
 // document, like a blog post. Each part is a section of the page, in order:
 //   text     words (headings, paragraphs, lists, links) with an optional photo beside them,
@@ -33,7 +34,7 @@ async function api(path: string, init?: RequestInit) {
   return d;
 }
 const markDirty = () => { dirty = true; $<HTMLButtonElement>('[data-save]').disabled = false; $('.pe-state').textContent = 'Unsaved changes'; };
-addEventListener('beforeunload', (e) => { if (dirty) { e.preventDefault(); e.returnValue = ''; } });
+guardLeaving(() => dirty);
 
 async function upload(file: File) {
   let width: number | undefined, height: number | undefined;
@@ -148,7 +149,7 @@ function newSection(kind: 'text' | 'photo' | 'gallery', img?: any) {
 
 // ---- Toolbar (acts on the text you're in) ----
 document.addEventListener('mousedown', (e) => { if ((e.target as HTMLElement).closest('.fl-toolbar button')) e.preventDefault(); });
-$('.fl-toolbar').addEventListener('click', (e) => {
+$('.fl-toolbar').addEventListener('click', async (e) => {
   const b = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-cmd]');
   if (!b) return;
   const ed = lastEditor ?? [...editors.values()][0];
@@ -164,7 +165,7 @@ $('.fl-toolbar').addEventListener('click', (e) => {
   else if (cmd === 'ul') c.toggleBulletList().run();
   else if (cmd === 'link') {
     const cur = ed.getAttributes('link').href ?? '';
-    const href = prompt('Link to (e.g. /contact or https://…). Leave empty to remove the link.', cur);
+    const href = await askText('Link to (e.g. /contact or https://…). Leave empty to remove the link.', cur);
     if (href === null) return;
     if (href.trim()) c.extendMarkRange('link').setLink({ href: href.trim() }).run(); else c.extendMarkRange('link').unsetLink().run();
   }
@@ -177,7 +178,7 @@ document.addEventListener('click', async (e) => {
   const mv = t.closest<HTMLButtonElement>('[data-move]');
   if (mv) { const [si, d] = mv.dataset.move!.split(':').map(Number); const to = si + d; if (to < 0 || to >= data.sections.length) return; readAll(); const [s] = data.sections.splice(si, 1); data.sections.splice(to, 0, s); draw(); markDirty(); return; }
   const dp = t.closest<HTMLButtonElement>('[data-delpart]');
-  if (dp) { if (!confirm('Remove this part of the page?')) return; readAll(); data.sections.splice(Number(dp.dataset.delpart), 1); draw(); markDirty(); return; }
+  if (dp) { if (!await ask('Remove this part of the page?')) return; readAll(); data.sections.splice(Number(dp.dataset.delpart), 1); draw(); markDirty(); return; }
   const ins = t.closest<HTMLButtonElement>('[data-insert]');
   if (ins) {
     const [at, kind] = ins.dataset.insert!.split(':');
@@ -197,7 +198,7 @@ document.addEventListener('click', async (e) => {
     return;
   }
   const ub = t.closest<HTMLButtonElement>('[data-unbeside]');
-  if (ub) { if (!confirm('Remove this photo from the page?')) return; readAll(); const [si, bi] = ub.dataset.unbeside!.split('.').map(Number); data.sections[si].blocks.splice(bi, 1); draw(); markDirty(); return; }
+  if (ub) { if (!await ask('Remove this photo from the page?')) return; readAll(); const [si, bi] = ub.dataset.unbeside!.split('.').map(Number); data.sections[si].blocks.splice(bi, 1); draw(); markDirty(); return; }
   const ds = t.closest<HTMLButtonElement>('[data-describe]');
   if (ds) { const where = ds.dataset.describe!; ds.disabled = true; ds.textContent = 'Looking…'; try { const v = await describe(imgOf(where.replace('.beside', '')).src); document.querySelector<HTMLTextAreaElement>(`[data-alt="${where}"]`)!.value = v; markDirty(); } catch (err) { toast((err as Error).message, true); } ds.disabled = false; ds.textContent = '✨ Suggest'; return; }
   const rp = t.closest<HTMLButtonElement>('[data-replace]');
@@ -210,7 +211,7 @@ document.addEventListener('click', async (e) => {
   const gd = t.closest<HTMLButtonElement>('[data-gdescribe]');
   if (gd) { readGalleries(); const li = gd.closest<HTMLElement>('li')!; const s = data.sections[Number(li.closest<HTMLElement>('[data-gal]')!.dataset.gal)]; gd.disabled = true; try { li.querySelector<HTMLTextAreaElement>('[data-galt]')!.value = await describe(s.images[Number(li.dataset.gi)].src); markDirty(); } catch (err) { toast((err as Error).message, true); } gd.disabled = false; return; }
   const gr = t.closest<HTMLButtonElement>('[data-grm]');
-  if (gr) { if (confirm('Remove this photo from the slideshow?')) { gr.closest('li')!.remove(); readGalleries(); markDirty(); } return; }
+  if (gr) { if (await ask('Remove this photo from the slideshow?')) { gr.closest('li')!.remove(); readGalleries(); markDirty(); } return; }
   const ga = t.closest<HTMLButtonElement>('[data-gadd]');
   if (ga) {
     const files = await pickFiles(true); if (!files.length) return;

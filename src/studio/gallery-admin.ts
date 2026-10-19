@@ -1,3 +1,4 @@
+import { ask, askText } from './dialogs';
 // The studio's gallery page (src/pages/studio/gallery.astro): photos, adding photos, details, sharing.
 import { plan, run, type Plan } from './gallery-import';
 
@@ -83,7 +84,7 @@ document.addEventListener('click', async (e) => {
   if (!card) return;
   const lid = Number(card.dataset.list);
   if (t.closest('[data-reopen]') && (await tryApi('/api/studio/galleries/lists', 'POST', { gallery_id: id, action: 'reopen', id: lid }))) { toast('Reopened.'); loadLists(); }
-  if (t.closest('[data-del-list]') && confirm('Delete this list? The photos stay in the gallery.') && (await tryApi('/api/studio/galleries/lists', 'DELETE', { gallery_id: id, id: lid }))) loadLists();
+  if (t.closest('[data-del-list]') && await ask('Delete this list? The photos stay in the gallery.') && (await tryApi('/api/studio/galleries/lists', 'DELETE', { gallery_id: id, id: lid }))) loadLists();
 });
 
 // ---- Loading and the header ----
@@ -422,7 +423,7 @@ document.addEventListener('click', async (e) => {
       // A link for a venue or supplier showing just these photos (web size, free to use with credit).
       const r0 = await tryApi(`/api/studio/galleries/links?gallery_id=${id}`, 'GET');
       const vendors = (r0?.links ?? []).filter((l: any) => l.kind === 'vendor');
-      const name = prompt(`Add ${ids.length} photo${ids.length === 1 ? '' : 's'} to which vendor link?\nType the venue or supplier’s name${vendors.length ? ` (existing: ${vendors.map((l: any) => l.name).join(', ')})` : ''}.`, vendors[0]?.name ?? d.gallery.venue ?? '');
+      const name = await askText(`Add ${ids.length} photo${ids.length === 1 ? '' : 's'} to which vendor link?\nType the venue or supplier’s name${vendors.length ? ` (existing: ${vendors.map((l: any) => l.name).join(', ')})` : ''}.`, vendors[0]?.name ?? d.gallery.venue ?? '');
       if (!name?.trim()) return;
       const have = vendors.find((l: any) => l.name.toLowerCase() === name.trim().toLowerCase());
       const r = await tryApi('/api/studio/galleries/links', 'POST', { action: 'vendor', gallery_id: id, link_id: have?.id, name: name.trim(), image_ids: ids });
@@ -435,7 +436,7 @@ document.addEventListener('click', async (e) => {
       return;
     }
     if (k === 'delete') {
-      if (!confirm(`Delete ${ids.length} photo${ids.length === 1 ? '' : 's'} (all sizes)? This can’t be undone.`)) return;
+      if (!await ask(`Delete ${ids.length} photo${ids.length === 1 ? '' : 's'} (all sizes)? This can’t be undone.`)) return;
       if (await tryApi('/api/studio/galleries/photos', 'DELETE', { gallery_id: id, ids })) { selected.clear(); toast('Deleted.'); load(); }
     }
     return;
@@ -452,12 +453,12 @@ document.addEventListener('click', async (e) => {
   }
   if (sec && t.closest('[data-delsec]')) {
     const n = inSection(Number(sec.dataset.sec)).length;
-    if (!confirm(n ? `Delete this section and its ${n} photo${n === 1 ? '' : 's'}? To keep the photos, move them to another section first.` : 'Delete this empty section?')) return;
+    if (!await ask(n ? `Delete this section and its ${n} photo${n === 1 ? '' : 's'}? To keep the photos, move them to another section first.` : 'Delete this empty section?')) return;
     if (await tryApi('/api/studio/galleries/sections', 'DELETE', { gallery_id: id, id: Number(sec.dataset.sec) })) load();
     return;
   }
   if (t.closest('[data-add-section]')) {
-    const name = prompt('Section name:');
+    const name = await askText('Section name:');
     if (name?.trim() && (await tryApi('/api/studio/galleries/photos', 'POST', { action: 'section', gallery_id: id, name: name.trim(), is_bw: / b\+?w$|mono$/i.test(name.trim()) }))) load();
     return;
   }
@@ -472,11 +473,11 @@ document.addEventListener('click', async (e) => {
     return;
   }
   if (t.closest('[data-offline]')) {
-    if (confirm('Take this gallery offline? Nobody will be able to see it until you put it online again.') && (await tryApi('/api/studio/galleries/gallery', 'POST', { id, action: 'offline' }))) { toast('Offline.'); load(); }
+    if (await ask('Take this gallery offline? Nobody will be able to see it until you put it online again.') && (await tryApi('/api/studio/galleries/gallery', 'POST', { id, action: 'offline' }))) { toast('Offline.'); load(); }
     return;
   }
   if (t.closest('[data-delete]')) {
-    const name = prompt(`This deletes every photo in “${d.gallery.name}”. Type the gallery’s name to confirm:`);
+    const name = await askText(`This deletes every photo in “${d.gallery.name}”. Type the gallery’s name to confirm:`);
     if (name === null) return;
     if (await tryApi('/api/studio/galleries/gallery', 'DELETE', { id, confirm: name })) location.href = '/studio/galleries';
     return;
@@ -492,7 +493,7 @@ document.addEventListener('click', async (e) => {
   if (el) return editLink(links.find((l) => l.id === Number(el.dataset.editLink)));
   if (t.closest('[data-del-link]')) {
     const lid = Number($<HTMLFormElement>('[data-link-form]').dataset.id);
-    if (!confirm('Remove this link? Anyone using it won’t be able to open the gallery any more.')) return;
+    if (!await ask('Remove this link? Anyone using it won’t be able to open the gallery any more.')) return;
     if (await tryApi('/api/studio/galleries/links', 'DELETE', { id: lid })) { $<HTMLDialogElement>('[data-link-dlg]').close(); loadLinks(); }
     return;
   }

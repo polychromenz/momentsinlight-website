@@ -1,3 +1,4 @@
+import { ask, guardLeaving } from './dialogs';
 // The page editor (/studio/page-edit?id=…): loads a page's data, shows its Google fields, text
 // blocks (edited in place so their styling survives), photos, galleries and buttons, and saves the
 // whole page back through /api/studio/page. Everything else in the page's data is kept as it is.
@@ -21,7 +22,7 @@ async function api(path: string, init?: RequestInit) {
   return d;
 }
 const markDirty = () => { dirty = true; $<HTMLButtonElement>('[data-save]').disabled = false; $('.pe-state').textContent = 'Unsaved changes'; };
-addEventListener('beforeunload', (e) => { if (dirty) { e.preventDefault(); e.returnValue = ''; } });
+guardLeaving(() => dirty);
 
 // ---- Google ----
 const field = <T extends HTMLElement = HTMLInputElement>(n: string) => document.querySelector<T>(`[name="${n}"]`)!;
@@ -148,7 +149,7 @@ document.addEventListener('click', async (e) => {
     gs.disabled = false; gs.textContent = '✨'; return;
   }
   const rm = t.closest<HTMLButtonElement>('[data-grm]');
-  if (rm) { if (confirm('Remove this photo from the gallery?')) { rm.closest('li')!.remove(); readGalleries(); markDirty(); } return; }
+  if (rm) { if (await ask('Remove this photo from the gallery?')) { rm.closest('li')!.remove(); readGalleries(); markDirty(); } return; }
   if (t.closest('[data-save]')) { await save(); }
 });
 document.addEventListener('change', async (e) => {

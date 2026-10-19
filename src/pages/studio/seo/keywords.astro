@@ -27,6 +27,7 @@ import SeoTabs from '../../../components/studio/SeoTabs.astro';
 </StudioLayout>
 
 <script>
+  import { ask } from '../../../studio/dialogs';
   const $ = <T extends HTMLElement = HTMLElement>(s: string) => document.querySelector<T>(s)!;
   const esc = (s: unknown) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
   const toast = (text: string, error = false) => { const t = $('.s-toast'); t.textContent = text; t.classList.toggle('error', error); t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 4500); };
@@ -90,7 +91,7 @@ import SeoTabs from '../../../components/studio/SeoTabs.astro';
     if (a) { if (await add(a.dataset.add!)) a.outerHTML = '<small class="up">tracking</small>'; return; }
     const rm = t.closest<HTMLButtonElement>('[data-rm]');
     if (rm) {
-      if (!confirm(`Stop tracking “${rm.dataset.rm}”?`)) return;
+      if (!await ask(`Stop tracking “${rm.dataset.rm}”?`)) return;
       const keywords = data.keywords.map((k: any) => k.keyword).filter((k: string) => k !== rm.dataset.rm);
       const { ok, d } = await seo({ action: 'settings', keywords });
       toast(ok ? 'Removed.' : d.error || 'Couldn’t change it.', !ok); load(); return;

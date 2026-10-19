@@ -90,6 +90,7 @@ import { site } from '../data/site';
 </html>
 
 <script>
+  import { ask, askText, tell } from '../studio/dialogs';
   type Img = { id: string; s: number; w: number; h: number; hero: number; ch?: number; thumb: string; web: string };
   type List = { id: number; name: string; kind: 'favourites' | 'custom' | 'selection_request'; purpose: string | null; status: string; min: number | null; max: number | null; deadline: string | null; instructions: string; note: string; submitted_at: string | null; ids: string[] };
   type View = {
@@ -407,7 +408,7 @@ import { site } from '../data/site';
           // Keep that photo where it was on screen.
           const again = document.querySelector<HTMLElement>(`[data-star="${img.id}"]`)?.closest('.ph');
           if (again) { scrollBy(0, again.getBoundingClientRect().top - before); again.classList.add(img.hero ? 'ph--grew' : 'ph--shrank'); } })
-        .catch(() => alert('Couldn’t save that. Are you still signed in to the studio?'));
+        .catch(() => tell('Couldn’t save that. Are you still signed in to the studio?'));
       return;
     }
     if (live() && onClick(t, e)) return;
@@ -602,19 +603,18 @@ import { site } from '../data/site';
       act({ action: 'list-share', list_id: Number(x.dataset.shareList) }).then(async (d) => {
         if (!d) return;
         try { await navigator.clipboard.writeText(d.url); toast('Link copied. Anyone with it sees only the photos in this list.'); }
-        catch { prompt('Copy this link to share the list:', d.url); }
+        catch { await askText('Copy this link to share the list:', d.url); }
       });
       return true;
     }
     if ((x = id('[data-rename-list]'))) {
       const l = lists().find((y) => y.id === Number(x!.dataset.renameList))!;
-      const name = prompt('List name:', l.name);
-      if (name?.trim()) act({ action: 'list-rename', list_id: l.id, name }).then((d) => d && refreshAfter());
+      askText('List name:', l.name).then((name) => { if (name?.trim()) act({ action: 'list-rename', list_id: l.id, name }).then((d) => d && refreshAfter()); });
       return true;
     }
     if ((x = id('[data-del-list]'))) {
       const l = lists().find((y) => y.id === Number(x!.dataset.delList))!;
-      if (confirm(`Delete the list “${l.name}”? The photos stay in the gallery.`)) act({ action: 'list-delete', list_id: l.id }).then((d) => { if (d) { if (filter === l.id) filter = 0; refreshAfter(); } });
+      ask(`Delete the list “${l.name}”? The photos stay in the gallery.`).then((yes) => { if (yes) act({ action: 'list-delete', list_id: l.id }).then((d) => { if (d) { if (filter === l.id) filter = 0; refreshAfter(); } }); });
       return true;
     }
     if ((x = id('[data-pick]'))) {

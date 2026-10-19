@@ -69,6 +69,7 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
 </StudioLayout>
 
 <script>
+  import { ask } from '../../studio/dialogs';
   import { drawGalleryInsights } from '../../studio/gallery-insights';
   drawGalleryInsights(document.querySelector<HTMLElement>('.gi-galleries')!);
   const $ = <T extends HTMLElement = HTMLElement>(s: string) => document.querySelector<T>(s)!;
@@ -114,7 +115,7 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
     draw();
   }
 
-  document.addEventListener('click', (e) => {
+  document.addEventListener('click', async (e) => {
     const t = e.target as HTMLElement;
     const b = t.closest<HTMLButtonElement>('[data-show]');
     if (b) { show = b.dataset.show!; document.querySelectorAll('[data-show]').forEach((x) => x.classList.toggle('on', x === b)); draw(); return; }
@@ -130,7 +131,7 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
     }
     if (t.closest('[data-close]')) (t.closest('dialog') as HTMLDialogElement).close();
     if (t.closest('[data-lr-key]')) {
-      if (!confirm('Make a new Lightroom key? The plugin will need the new one (the old key stops working).')) return;
+      if (!await ask('Make a new Lightroom key? The plugin will need the new one (the old key stops working).')) return;
       fetch('/api/studio/galleries/settings', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'lr-key' }) })
         .then((r) => r.json()).then((d) => {
           if (!d.key) return toast(d.error || 'Couldn’t make a key.', true);

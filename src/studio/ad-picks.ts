@@ -1,3 +1,4 @@
+import { ask } from './dialogs';
 // SEO > Google Ads > Ad picks (src/pages/studio/seo/ads.astro). Photos marked Ad in the
 // galleries: the studio suggests crops, Tony nudges them, and Approve makes the files here in the
 // browser (from the web-size photo) and queues them for the Ads Script. API: functions/api/studio/ads/picks.js.
@@ -131,7 +132,7 @@ list.addEventListener('click', async (e) => {
   const n = t.closest<HTMLElement>('[data-n]');
   if (n) { nudge(p, kind, n.dataset.n!); saveCrop(p); return draw(); }
   if (t.closest('[data-unpick]')) {
-    if (!confirm('Remove this pick? (Nothing changes in Google Ads.)')) return;
+    if (!await ask('Remove this pick? (Nothing changes in Google Ads.)')) return;
     await post({ action: 'remove', id: p.id });
     return load();
   }

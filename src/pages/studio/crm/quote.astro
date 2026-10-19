@@ -74,6 +74,7 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
 </StudioLayout>
 
 <script>
+  import { ask, guardLeaving } from '../../../studio/dialogs';
   import { attachRich } from '../../../studio/rich-editor';
   import { attachPicker } from '../../../studio/attach-picker';
   type Pkg = { name: string; subtitle: string; price: number; description: string; recommended: boolean };
@@ -165,7 +166,7 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
   }
 
   form.addEventListener('input', () => { dirty = true; $('.save-state').textContent = 'Unsaved changes'; });
-  addEventListener('beforeunload', (e) => { if (dirty) e.preventDefault(); });
+  guardLeaving(() => dirty);
   document.addEventListener('click', async (e) => {
     const t = e.target as HTMLElement;
     if (t.closest('[data-act="save"]')) { save(); return; }
@@ -194,7 +195,7 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
       return;
     }
     if (t.closest('[data-act="withdraw"]')) {
-      if (!confirm('Withdraw this quote? Its link will say it’s no longer available.')) return;
+      if (!await ask('Withdraw this quote? Its link will say it’s no longer available.')) return;
       const r = await fetch(`/api/studio/crm/quote?id=${id}`, { method: 'DELETE' });
       const d = await r.json().catch(() => ({}));
       if (!r.ok) { toast(d.error || 'Couldn’t withdraw.', true); return; }

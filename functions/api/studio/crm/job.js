@@ -10,7 +10,8 @@
 // Marking a lead booked or lost stops any steps waiting on that ('booked' in stop_on).
 import { json } from '../../../../functions-lib/studio.js';
 import { sendMode } from '../../../../functions-lib/crm.js';
-import { clashes, syncSoon, calendarReady } from '../../../../functions-lib/calendar.js';
+import { clashes, syncSoon, calendarReady, unsyncAppointment } from '../../../../functions-lib/calendar.js';
+import { deleteClient, deleteJob } from '../../../../functions-lib/cleanup.js';
 import { planBooking, replanDates, planSteps, loadWorkflow } from '../../../../functions-lib/workflows.js';
 
 const STAGES = ['lead', 'booked', 'completed', 'lost'];
@@ -138,4 +139,24 @@ export async function onRequestPost(context) {
   const clash = await clashes(env.DB, date, job.id);
   syncSoon(context, job.id);
   return json({ ok: true, id: job.id, clashes: clash });
+}
+
+// Delete permanently (e.g. a test lead), so it doesn't count as a lost lead. Refused when anything
+// has been paid: business records are kept (IRD: 7 years). A client with other jobs keeps those;
+// otherwise the client goes too. Their Google Calendar entries are removed; Gmail isn't touched.
+//   DELETE /api/studio/crm/job?id=12
+export async function onRequestDelete({ request, env }) {
+  const id = Number(new URL(request.url).searchParams.get('id'));
+  const job = id && await env.DB.prepare('SELECT * FROM jobs WHERE id = ?1').bind(id).first();
+  if (!job) return json({ error: 'That job doesn’t exist.' }, 404);
+  const others = (await env.DB.prepare('SELECT count(*) n FROM jobs WHERE client_id = ?1 AND id <> ?2').bind(job.client_id, id).first()).n;
+  // (Both forms use ?1 and ?2, so the same two values bind either way.)
+  const scope = others ? 'job_id = ?1 AND ?2 = ?2' : 'job_id IN (SELECT id FROM jobs WHERE client_id = ?2) AND ?1 = ?1';
+  const paid = await env.DB.prepare(`SELECT count(*) n FROM invoices WHERE ${scope} AND status = 'paid'`).bind(id, job.client_id).first();
+  if (paid.n) return json({ error: 'They’ve paid an invoice, so their records need keeping (IRD asks for 7 years). Mark them “Not going ahead” instead.' }, 409);
+  // Google Calendar: the job's own event and its appointments.
+  const events = [job.gcal_event_id, ...(await env.DB.prepare(`SELECT gcal_event_id FROM appointments WHERE ${scope} AND gcal_event_id IS NOT NULL`).bind(id, job.client_id).all()).results.map((a) => a.gcal_event_id)].filter(Boolean);
+  for (const e of events) await unsyncAppointment(env, { gcal_event_id: e }).catch(() => {});
+  if (others) await deleteJob(env.DB, id); else await deleteClient(env.DB, job.client_id);
+  return json({ ok: true, deleted: others ? 'job' : 'client' });
 }

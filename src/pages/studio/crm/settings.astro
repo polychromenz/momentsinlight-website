@@ -227,6 +227,7 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
 <style is:inline set:html={FORM_CSS}></style>
 
 <script>
+  import { ask, askText, tell } from '../../../studio/dialogs';
   import { renderTemplate } from '../../../../functions-lib/email-render.js';
   import { attachRich } from '../../../studio/rich-editor';
   import Sortable from 'sortablejs';
@@ -425,7 +426,7 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
     if (t.closest('[data-qn-remove]')) { t.closest('.qn-q')!.remove(); qnPreview(); return; }
     if (t.closest('[data-act="qn-delete"]')) {
       if (!currentQn) { openQn(data.questionnaires[0] ?? null); return; }
-      if (!confirm(`Delete “${currentQn.name}”? Questionnaires already made from it keep their questions and answers.`)) return;
+      if (!await ask(`Delete “${currentQn.name}”? Questionnaires already made from it keep their questions and answers.`)) return;
       const r = await fetch('/api/studio/crm/settings', { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ delete_questionnaire: currentQn.key }) });
       const d = await r.json().catch(() => ({}));
       if (!r.ok) { toast(d.error || 'Couldn’t delete it.', true); return; }
@@ -509,7 +510,7 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
       // Start from a copy of the one open (or empty), named for you to change.
       const base = currentWf;
       openWf(null);
-      if (base && confirm(`Start from a copy of “${base.name}”? (Cancel starts empty.)`)) wfDraw(base.steps.map((x) => ({ ...x })));
+      if (base && await ask(`Start from a copy of “${base.name}”?`, { ok: 'Copy it', cancel: 'Start empty' })) wfDraw(base.steps.map((x) => ({ ...x })));
       (wf.elements.namedItem('wf_name') as HTMLInputElement).focus();
       return;
     }
@@ -523,7 +524,7 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
     if (t.closest('[data-wf-remove]')) { t.closest('.wf-step')!.remove(); return; }
     if (t.closest('[data-act="wf-delete"]')) {
       if (!currentWf) { openWf(data.workflows[0] ?? null); return; }
-      if (!confirm(`Delete the “${currentWf.name}” workflow? Jobs already under way keep their steps.`)) return;
+      if (!await ask(`Delete the “${currentWf.name}” workflow? Jobs already under way keep their steps.`)) return;
       const r = await fetch('/api/studio/crm/settings', { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ delete_workflow: currentWf.key }) });
       const d = await r.json().catch(() => ({}));
       if (!r.ok) { toast(d.error || 'Couldn’t delete it.', true); return; }
@@ -587,7 +588,7 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
     if (t.closest('[data-act="add-part"]')) { $('.sch-parts tbody').insertAdjacentHTML('beforeend', partRow({ percent: 0, label: 'Payment', when: 'before', months: 1 })); schExample(); return; }
     if (t.closest('[data-part-remove]')) { t.closest('tr')!.remove(); schExample(); return; }
     if (t.closest('[data-act="delete-schedule"]') && currentSch) {
-      if (!confirm(`Delete “${currentSch.name}”?`)) return;
+      if (!await ask(`Delete “${currentSch.name}”?`)) return;
       const r = await fetch('/api/studio/crm/settings', { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ delete_schedule: currentSch.key }) });
       const d = await r.json().catch(() => ({}));
       if (!r.ok) { toast(d.error || 'Couldn’t delete.', true); return; }
@@ -641,13 +642,13 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
     const doc = data.documents.find((d) => d.id === id)!;
     try {
       if (b.dataset.docAct === 'rename') {
-        const name = prompt('New name (this is the file name clients see):', doc.name);
+        const name = await askText('New name (this is the file name clients see):', doc.name);
         if (!name || name === doc.name) return;
         await docApi('PUT', { id, name }); toast('Renamed.');
       } else if (b.dataset.docAct === 'replace') {
         replacing = id; ($('[data-replace]') as HTMLInputElement).click(); return;
       } else if (b.dataset.docAct === 'delete') {
-        if (!confirm(`Delete “${doc.name}”? This can’t be undone.`)) return;
+        if (!await ask(`Delete “${doc.name}”? This can’t be undone.`)) return;
         await docApi('DELETE', undefined, `?id=${id}`); toast('Deleted.');
       }
       await load(current?.key);
@@ -724,19 +725,19 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
       document.querySelector('.bk-recent')!.innerHTML = d.recent.length ? d.recent.map((b: any) => `<li>${esc(b.date)} ${esc(b.time)} · <a href="/studio/crm/job?id=${b.job_id}">${esc(`${b.first_name} ${b.last_name}`)}</a> · ${esc(b.type_name)} · ${esc(b.status)}</li>`).join('') : '<li class="muted">None yet.</li>';
     };
     fetch('/api/studio/booking').then((r) => r.json()).then(draw).catch(() => {});
-    f.addEventListener('click', (e) => {
+    f.addEventListener('click', async (e) => {
       const t = e.target as HTMLElement;
       if (t.closest('[data-bk-add]')) f.querySelector('.bk-types')!.insertAdjacentHTML('beforeend', typeRow({ key: '', name: '', minutes: 30, price: 0, job_type: jobTypes[0] ?? 'Wedding', where: '', description: '', on: true }));
-      if (t.closest('[data-bk-remove]') && confirm('Remove this kind of booking?')) t.closest('.bk-type')!.remove();
+      if (t.closest('[data-bk-remove]') && await ask('Remove this kind of booking?')) t.closest('.bk-type')!.remove();
     });
     f.addEventListener('submit', async (e) => {
       e.preventDefault();
       const r = await fetch('/api/studio/booking', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(read()) });
       const d = await r.json().catch(() => ({}));
-      if (!r.ok) { alert(d.error || 'That didn’t save.'); return; }
+      if (!r.ok) { tell(d.error || 'That didn’t save.'); return; }
       const fresh = await (await fetch('/api/studio/booking')).json();
       draw(fresh);
-      alert('Saved.');
+      tell('Saved.');
     });
   }
 
@@ -747,7 +748,7 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
     const save = async (next: typeof people) => {
       const r = await fetch('/api/studio/people', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ people: next }) });
       const d = await r.json().catch(() => ({}));
-      if (!r.ok) { alert(d.error || 'That didn’t save.'); return; }
+      if (!r.ok) { tell(d.error || 'That didn’t save.'); return; }
       people = d.people; drawPeople();
     };
     const drawPeople = () => {
@@ -765,17 +766,17 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
       const n = Number(sel.closest<HTMLElement>('[data-n]')!.dataset.n);
       save(people.map((p, i) => (i === n ? { ...p, access: sel.value } : p)));
     });
-    list.addEventListener('click', (e) => {
+    list.addEventListener('click', async (e) => {
       const b = (e.target as HTMLElement).closest('[data-remove]');
       if (!b) return;
       const n = Number(b.closest<HTMLElement>('[data-n]')!.dataset.n);
-      if (confirm(`Remove ${people[n].name || people[n].email}? (Also take them off the Cloudflare sign-in list.)`)) save(people.filter((_, i) => i !== n));
+      if (await ask(`Remove ${people[n].name || people[n].email}? (Also take them off the Cloudflare sign-in list.)`)) save(people.filter((_, i) => i !== n));
     });
     document.querySelector<HTMLFormElement>('.people-add')!.addEventListener('submit', (e) => {
       e.preventDefault();
       const f = e.target as HTMLFormElement;
       const d = Object.fromEntries(new FormData(f)) as Record<string, string>;
-      if (people.some((p) => p.email === d.email.trim().toLowerCase())) { alert('They’re already on the list.'); return; }
+      if (people.some((p) => p.email === d.email.trim().toLowerCase())) { tell('They’re already on the list.'); return; }
       save([...people, { email: d.email, name: d.name, access: d.access }]).then(() => f.reset());
     });
   }
@@ -792,7 +793,7 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
   }
   $('[data-new-live]').addEventListener('change', async (e) => {
     const box = e.target as HTMLInputElement;
-    if (box.checked && !confirm('From now on, people who send a new enquiry will get the studio’s emails (your enquiry reply and follow-ups) themselves. Anyone already in your records still comes to you. Turn this on?')) { box.checked = false; return; }
+    if (box.checked && !await ask('From now on, people who send a new enquiry will get the studio’s emails (your enquiry reply and follow-ups) themselves. Anyone already in your records still comes to you. Turn this on?')) { box.checked = false; return; }
     await fetch('/api/studio/crm/send-mode', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ on: box.checked }) });
     toast(box.checked ? 'On: new enquiries get real replies.' : 'Off: everything comes to you again.');
     loadSendMode();
@@ -872,7 +873,7 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
       return;
     }
     if (t.closest('[data-sn-clear]')) {
-      if (!confirm('Remove everything read from the Studio Ninja emails? (Your Gmail isn’t touched; you can read them again any time.)')) return;
+      if (!await ask('Remove everything read from the Studio Ninja emails? (Your Gmail isn’t touched; you can read them again any time.)')) return;
       await fetch('/api/studio/crm/sn-gmail', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'clear' }) });
       const g = await (await fetch('/api/studio/crm/sn-gmail')).json();
       $('.sn-progress').innerHTML = snProgress(g.progress);

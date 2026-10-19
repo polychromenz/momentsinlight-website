@@ -65,6 +65,7 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
 </StudioLayout>
 
 <script>
+  import { ask, askText } from '../../studio/dialogs';
   import { attachAddressLookup } from '../../studio/address-lookup';
   const $ = <T extends HTMLElement = HTMLElement>(s: string) => document.querySelector<T>(s)!;
   const esc = (s: unknown) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
@@ -145,11 +146,11 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
       if (t.closest('[data-skip]')) await post({ action: 'edit', id, skip: !trip.skip });
       if (t.closest('[data-recalc]')) await post({ action: 'recalc', id });
       if (t.closest('[data-note]')) {
-        const note = window.prompt('A note for this trip (e.g. combined with another trip)', trip.note ?? '');
+        const note = await askText('A note for this trip (e.g. combined with another trip)', trip.note ?? '');
         if (note === null) return;
         await post({ action: 'edit', id, note });
       }
-      if (t.closest('[data-del]')) { if (!confirm('Delete this trip?')) return; await post({ action: 'delete', id }); }
+      if (t.closest('[data-del]')) { if (!await ask('Delete this trip?')) return; await post({ action: 'delete', id }); }
       load();
     } catch (err) { toast((err as Error).message, true); }
   });

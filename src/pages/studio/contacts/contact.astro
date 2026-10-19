@@ -79,6 +79,7 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
 </StudioLayout>
 
 <script>
+  import { ask, askText, guardLeaving } from '../../../studio/dialogs';
   import { emailHtml } from '../../../../functions-lib/email-render.js';
   import { attachRich } from '../../../studio/rich-editor';
   import { attachPicker } from '../../../studio/attach-picker';
@@ -129,7 +130,7 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
   const markDirty = () => { dirty = true; saveBtn.disabled = false; $('.save-state').textContent = 'Not saved yet'; };
   details.addEventListener('input', markDirty); linkForm.addEventListener('input', markDirty);
   saveBtn.addEventListener('click', () => save());
-  addEventListener('beforeunload', (e) => { if (dirty) e.preventDefault(); });
+  guardLeaving(() => dirty);
 
   // ---- Writing to them ----
   const cf = $<HTMLFormElement>('.compose-form');
@@ -182,15 +183,15 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
       await load(); return;
     }
     if (t.closest('[data-delete]')) {
-      if (!confirm(`Delete ${c.business}, with its emails list and tasks? (Your Gmail isn’t touched.)`)) return;
+      if (!await ask(`Delete ${c.business}, with its emails list and tasks? (Your Gmail isn’t touched.)`)) return;
       await fetch(`/api/studio/crm/contacts?id=${id}`, { method: 'DELETE' }); dirty = false; location.href = '/studio/contacts'; return;
     }
     const tk = t.closest<HTMLButtonElement>('[data-task]');
     if (tk) { await fetch('/api/studio/crm/tasks', { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ id: Number(tk.dataset.task), action: tk.dataset.act }) }); await load(); return; }
     if (t.closest('[data-task-add]')) {
-      const title = prompt('The task:', `Follow up with ${c.business}`);
+      const title = await askText('The task:', `Follow up with ${c.business}`);
       if (!title) return;
-      const due = prompt('Due date (YYYY-MM-DD), or leave empty:', new Date(Date.now() + 7 * 86400_000).toLocaleDateString('en-CA')) ?? '';
+      const due = await askText('Due date (YYYY-MM-DD), or leave empty:', new Date(Date.now() + 7 * 86400_000).toLocaleDateString('en-CA')) ?? '';
       await fetch('/api/studio/crm/tasks', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ title, due_date: due.trim(), contact_id: id }) });
       await load(); return;
     }

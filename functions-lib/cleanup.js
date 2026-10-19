@@ -26,6 +26,9 @@ export async function dueForCleanup(db, now = new Date()) {
       ORDER BY last_enquiry`).bind(c).all()).results;
 }
 
+// Everything hanging off a job.
+const JOB_TABLES = ['uploads', 'job_documents', 'documents', 'steps', 'quotes', 'contracts', 'invoices', 'questionnaires', 'appointments', 'galleries', 'enquiry_spam', 'activity', 'bookings', 'mileage_trips'];
+
 /** Everything about one client, gone (their files too). Galleries linked to them are kept, unlinked. */
 export async function deleteClient(db, clientId) {
   const jobs = (await db.prepare('SELECT id FROM jobs WHERE client_id = ?1').bind(clientId).all()).results.map((j) => j.id);
@@ -34,11 +37,24 @@ export async function deleteClient(db, clientId) {
   await db.batch([
     db.prepare(`DELETE FROM files WHERE name IN (SELECT 'upload-' || id FROM uploads WHERE job_id IN (SELECT value FROM json_each(?1)))`).bind(J),
     db.prepare(`DELETE FROM files WHERE name IN (SELECT 'doc-' || id FROM documents WHERE job_id IN (SELECT value FROM json_each(?1)))`).bind(J),
-    ...['uploads', 'job_documents', 'documents', 'steps', 'quotes', 'contracts', 'invoices', 'questionnaires', 'appointments', 'galleries', 'enquiry_spam'].map(inJobs),
+    ...JOB_TABLES.map(inJobs),
     db.prepare(`DELETE FROM messages WHERE client_id = ?1 OR job_id IN (SELECT value FROM json_each(?2))`).bind(clientId, J),
     db.prepare(`UPDATE photo_galleries SET client_id = NULL, job_id = NULL WHERE client_id = ?1 OR job_id IN (SELECT value FROM json_each(?2))`).bind(clientId, J),
     db.prepare('DELETE FROM jobs WHERE client_id = ?1').bind(clientId),
     db.prepare('DELETE FROM clients WHERE id = ?1').bind(clientId),
+  ]);
+}
+
+/** One job and everything hanging off it (for a client who has other jobs too). */
+export async function deleteJob(db, jobId) {
+  const J = JSON.stringify([jobId]);
+  await db.batch([
+    db.prepare(`DELETE FROM files WHERE name IN (SELECT 'upload-' || id FROM uploads WHERE job_id = ?1)`).bind(jobId),
+    db.prepare(`DELETE FROM files WHERE name IN (SELECT 'doc-' || id FROM documents WHERE job_id = ?1)`).bind(jobId),
+    ...JOB_TABLES.map((t) => db.prepare(`DELETE FROM ${t} WHERE job_id IN (SELECT value FROM json_each(?1))`).bind(J)),
+    db.prepare('DELETE FROM messages WHERE job_id = ?1').bind(jobId),
+    db.prepare('UPDATE photo_galleries SET job_id = NULL WHERE job_id = ?1').bind(jobId),
+    db.prepare('DELETE FROM jobs WHERE id = ?1').bind(jobId),
   ]);
 }
 

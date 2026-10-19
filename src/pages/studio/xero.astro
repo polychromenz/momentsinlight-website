@@ -47,6 +47,7 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
 </StudioLayout>
 
 <script>
+  import { ask } from '../../studio/dialogs';
   const $ = <T extends HTMLElement = HTMLElement>(s: string) => document.querySelector<T>(s)!;
   const esc = (s: unknown) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
   const money = (c: number) => `$${(c / 100).toLocaleString('en-NZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -126,15 +127,15 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
         const all = btn.matches('[data-approve-all]');
         const ids = data.queue.filter((q: any) => q.status !== 'approved' && (all || document.querySelector<HTMLInputElement>(`[data-id="${q.id}"] [data-pick]`)?.checked)).map((q: any) => q.id);
         if (!ids.length) return toast('Tick the ones to approve first.', true);
-        if (all && !confirm(`Approve all ${ids.length} and send them to Xero now?`)) return;
+        if (all && !await ask(`Approve all ${ids.length} and send them to Xero now?`)) return;
         btn.disabled = true; btn.textContent = 'Sending…';
         const d = await post({ action: 'approve', ids });
         toast(`${d.result.done} sent to Xero${d.result.failed ? `, ${d.result.failed} didn’t go (see why below)` : ''}.`, !!d.result.failed);
       }
       if (btn.matches('[data-run]')) { btn.disabled = true; const d = await post({ action: 'run' }); toast(`${d.queued} new to check${d.paid ? `, ${d.paid} paid in Xero` : ''}${d.result.done ? `, ${d.result.done} sent` : ''}.`); }
-      if (btn.matches('[data-skip]') && row) { if (!confirm('Skip this one? It won’t go to Xero.')) return; await post({ action: 'skip', id: Number(row.dataset.id) }); }
+      if (btn.matches('[data-skip]') && row) { if (!await ask('Skip this one? It won’t go to Xero.')) return; await post({ action: 'skip', id: Number(row.dataset.id) }); }
       if (btn.matches('[data-retry]') && row) await post({ action: 'retry', id: Number(row.dataset.id) });
-      if (btn.matches('[data-disconnect]')) { if (!confirm('Disconnect Xero? Nothing more goes to Xero until you connect again.')) return; await post({ action: 'disconnect' }); }
+      if (btn.matches('[data-disconnect]')) { if (!await ask('Disconnect Xero? Nothing more goes to Xero until you connect again.')) return; await post({ action: 'disconnect' }); }
       load();
     } catch (err) { toast((err as Error).message, true); load(); }
   });

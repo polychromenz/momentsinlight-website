@@ -102,6 +102,7 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
           <label class="tick autopay-tick" hidden><input type="checkbox" name="autopay" value="1" /> <span class="autopay-text">Pay their instalments automatically</span></label>
           <label class="tick"><input type="checkbox" name="keep" value="1" /> Keep their details <small>(old enquiries that never book are deleted after two years, as your privacy page says; tick to keep this one)</small></label>
           <p class="export"><a data-export href="#" download>Download everything held about them</a> <small>(a ZIP, for a privacy request)</small></p>
+          <p class="export"><button type="button" class="link-danger" data-delete-job>Delete permanently</button> <small>(e.g. a test lead: gone completely, so it isn’t counted as a lost lead)</small></p>
           <div class="two">
             <label>Type
               <select name="job_type">
@@ -178,6 +179,7 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
 <style is:inline set:html={FORM_CSS}></style>
 
 <script>
+  import { ask, askText, guardLeaving, tell } from '../../../studio/dialogs';
   import { emailHtml } from '../../../../functions-lib/email-render.js';
   import { formHtml } from '../../../../functions-lib/questionnaire-form.js';
   import { attachRich } from '../../../studio/rich-editor';
@@ -198,6 +200,7 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
   };
   let stage = 'lead';
   let dirty = false;
+  let lastJob: any = null; // the job as last loaded (for Delete permanently)
   const markDirty = () => { dirty = true; saveBtn.disabled = false; $('.save-state').textContent = 'Unsaved changes'; };
 
   let listsLoaded = false;
@@ -287,6 +290,7 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
     if (!r.ok) { $('.status').textContent = d.error || `Something went wrong (${r.status}).`; return; }
     $('.test-banner').hidden = d.mode === 'live';
     const j = d.job;
+    lastJob = j;
     document.title = `${j.title} · Moments Studio`;
     $('.title').textContent = j.title;
     $('.hold-note').hidden = !j.hold;
@@ -509,16 +513,16 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
 
   form.addEventListener('input', markDirty);
   saveBtn.addEventListener('click', () => save());
-  addEventListener('beforeunload', (e) => { if (dirty) e.preventDefault(); });
+  guardLeaving(() => dirty);
 
   document.addEventListener('click', async (e) => {
     const t = e.target as HTMLElement;
     const st = t.closest<HTMLButtonElement>('.stage button');
     if (st && st.dataset.stage !== stage) {
       const next = st.dataset.stage!;
-      if (next === 'lost' && !confirm('Mark as not going ahead? Any follow-ups waiting will stop.')) return;
+      if (next === 'lost' && !await ask('Mark as not going ahead? Any follow-ups waiting will stop.')) return;
       const taken = clashList.filter((c) => c.stage === 'booked');
-      if (next === 'booked' && taken.length && !confirm(`This date is already booked: ${taken.map((c) => c.title).join(', ')}. Mark this one booked as well?`)) return;
+      if (next === 'booked' && taken.length && !await ask(`This date is already booked: ${taken.map((c) => c.title).join(', ')}. Mark this one booked as well?`)) return;
       stage = next;
       await save();
       return;
@@ -535,12 +539,12 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
     const ae = t.closest<HTMLButtonElement>('[data-appt-edit]');
     if (ae) { openAppt(appts[Number(ae.dataset.apptEdit)]); return; }
     const ad = t.closest<HTMLButtonElement>('[data-appt-delete]');
-    if (ad) { if (confirm('Remove this appointment?')) { await fetch(`/api/studio/crm/appointment?id=${ad.dataset.apptDelete}`, { method: 'DELETE' }); await load(); } return; }
+    if (ad) { if (await ask('Remove this appointment?')) { await fetch(`/api/studio/crm/appointment?id=${ad.dataset.apptDelete}`, { method: 'DELETE' }); await load(); } return; }
     if (t.closest('[data-portal-copy]') && portal) { await navigator.clipboard.writeText(portal.link); toast('Portal link copied.'); return; }
     const gr = t.closest<HTMLButtonElement>('[data-gallery-remove]');
-    if (gr) { if (confirm('Remove this gallery from their portal?')) await portalPost({ action: 'gallery-remove', id: Number(gr.dataset.galleryRemove) }); return; }
+    if (gr) { if (await ask('Remove this gallery from their portal?')) await portalPost({ action: 'gallery-remove', id: Number(gr.dataset.galleryRemove) }); return; }
     const ur = t.closest<HTMLButtonElement>('[data-upload-remove]');
-    if (ur) { if (confirm('Delete this file they uploaded?')) await portalPost({ action: 'upload-remove', id: Number(ur.dataset.uploadRemove) }); return; }
+    if (ur) { if (await ask('Delete this file they uploaded?')) await portalPost({ action: 'upload-remove', id: Number(ur.dataset.uploadRemove) }); return; }
     const ql = t.closest<HTMLButtonElement>('[data-q-link]');
     if (ql) { await navigator.clipboard.writeText(location.origin.replace(/localhost:\d+/, 'www.momentsinlight.co.nz') + ql.dataset.qLink); toast('Link copied. Paste it into an email to them.'); return; }
     if (t.closest('[data-q-close]')) { $<HTMLDialogElement>('dialog.q-view').close(); return; }
@@ -555,7 +559,7 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
         toast('Made. Use Copy link to send it to them, or see their page.');
         await load();
       } else if (act === 'delete') {
-        if (!confirm('Remove this questionnaire, with any answers and photos they’ve added? This can’t be undone.')) return;
+        if (!await ask('Remove this questionnaire, with any answers and photos they’ve added? This can’t be undone.')) return;
         await fetch(`/api/studio/crm/questionnaire?id=${qa.dataset.q}`, { method: 'DELETE' });
         await load();
       } else if (act === 'view') {
@@ -585,20 +589,20 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
       const act = ib.dataset.invAct!;
       const body: Record<string, unknown> = { id: inv.id, action: act };
       if (act === 'paid') {
-        const how = prompt(`Mark ${inv.number} (${(inv.amount / 100).toFixed(2)}) as paid. They'll be emailed a receipt.\n\nHow was it paid? bank, card or other, then a note if you like (e.g. "bank paid 12 Nov").`, 'bank');
+        const how = await askText(`Mark ${inv.number} (${(inv.amount / 100).toFixed(2)}) as paid. They'll be emailed a receipt.\n\nHow was it paid? bank, card or other, then a note if you like (e.g. "bank paid 12 Nov").`, 'bank');
         if (how === null) return;
         const [m, ...note] = how.trim().split(/\s+/);
         const known = ['bank', 'card', 'other'].includes((m || '').toLowerCase());
         body.method = known ? m.toLowerCase() : 'other';
         body.note = known ? note.join(' ') : how.trim();
       } else if (act === 'send') {
-        if (!confirm(`Email ${inv.number} to them now?`)) return;
+        if (!await ask(`Email ${inv.number} to them now?`)) return;
       } else if (act === 'void') {
-        if (!confirm(`Cancel ${inv.number}? It won't be sent, reminded or payable after this.`)) return;
+        if (!await ask(`Cancel ${inv.number}? It won't be sent, reminded or payable after this.`)) return;
       } else if (act === 'edit') {
-        const amt = prompt(`Amount for ${inv.number} (NZ$, including GST):`, (inv.amount / 100).toFixed(2));
+        const amt = await askText(`Amount for ${inv.number} (NZ$, including GST):`, (inv.amount / 100).toFixed(2));
         if (amt === null) return;
-        const due = prompt('Due date (YYYY-MM-DD):', inv.due_date);
+        const due = await askText('Due date (YYYY-MM-DD):', inv.due_date);
         if (due === null) return;
         body.amount = Math.round(Number(amt.replace(/[$,\s]/g, '')) * 100);
         body.due_date = due.trim();
@@ -652,6 +656,20 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
       composeRich.set(d.body);
       showComposePreview();
       toast('A draft to edit: check every detail before sending. Gaps to fill are in [square brackets].');
+      return;
+    }
+    // Delete permanently (functions/api/studio/crm/job.js): typing their name confirms it.
+    if (t.closest('[data-delete-job]')) {
+      const j = lastJob;
+      const name = `${j.first_name} ${j.last_name}`.trim();
+      const typed = await askText(`This deletes ${name} for good: their details, emails in the studio, quotes, contracts, invoices, questionnaires, files and appointments (your Gmail isn’t touched). Type their name to confirm:`, '', { title: 'Delete permanently?', ok: 'Delete permanently' });
+      if (typed === null) return;
+      if (typed.trim().toLowerCase() !== name.toLowerCase()) { toast('The name didn’t match, so nothing was deleted.', true); return; }
+      const r = await fetch(`/api/studio/crm/job?id=${id}`, { method: 'DELETE' });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) { await tell(d.error || 'That didn’t delete.', 'Not deleted'); return; }
+      dirty = false;
+      location.href = '/studio/crm';
       return;
     }
     const sum = t.closest<HTMLButtonElement>('[data-summary]');
@@ -780,6 +798,7 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
   .job-page .details label.tick { display: block; font-weight: 400; color: #333; line-height: 1.5; }
   .job-page .details label.tick input { margin: 0 8px 0 0; vertical-align: -2px; }
   .job-page .details label.tick small { color: #888; }
+  .job-page .link-danger { border: 0; background: none; padding: 0; font: inherit; font-size: inherit; color: #a8432a; text-decoration: underline; cursor: pointer; }
   .job-page .details .export { margin: 4px 0 0; font-size: 13px; }
   .job-page .details .export small { color: #888; }
   .job-page .details input, .job-page .details select, .job-page .details textarea { min-width: 0; width: 100%; box-sizing: border-box; font: inherit; font-weight: 400; font-size: 15px; padding: 9px 11px; border: 1px solid #ddd3c4; border-radius: 10px 0; background: var(--white); color: var(--ink); }

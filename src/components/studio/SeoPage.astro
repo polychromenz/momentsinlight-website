@@ -56,6 +56,7 @@ const heads = {
 </StudioLayout>
 
 <script>
+  import { ask, askText } from '../../studio/dialogs';
   const $ = <T extends HTMLElement = HTMLElement>(s: string) => document.querySelector<T>(s)!;
   const esc = (s: unknown) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
   const num = (n: number) => Number(n).toLocaleString('en-NZ');
@@ -291,7 +292,7 @@ const heads = {
     const rm = t.closest<HTMLButtonElement>('[data-comp-rm]');
     if (rm) {
       e.preventDefault();
-      if (!confirm(`Remove ${rm.dataset.name} from your competitors? This also forgets their pages and keywords.`)) return;
+      if (!await ask(`Remove ${rm.dataset.name} from your competitors? This also forgets their pages and keywords.`)) return;
       const { ok, d } = await post({ action: 'competitor_remove', id: Number(rm.dataset.compRm) });
       toast(ok ? 'Removed.' : d.error || 'Couldn’t remove it.', !ok);
       await loadCompetitors(); return;
@@ -306,7 +307,7 @@ const heads = {
     const ka = t.closest<HTMLButtonElement>('[data-comp-kw-all]');
     if (ka) {
       const ids = [...document.querySelectorAll<HTMLButtonElement>('[data-comp-kw]')].map((x) => Number(x.dataset.compKw));
-      if (!confirm(`Fetch the keywords for all ${ids.length} competitors? About US${(ids.length * 0.02).toFixed(2)} from your DataForSEO credit.`)) return;
+      if (!await ask(`Fetch the keywords for all ${ids.length} competitors? About US${(ids.length * 0.02).toFixed(2)} from your DataForSEO credit.`)) return;
       ka.disabled = true;
       for (const [i, id] of ids.entries()) {
         ka.textContent = `Fetching ${i + 1} of ${ids.length}…`;
@@ -333,9 +334,9 @@ const heads = {
     const tr = t.closest<HTMLButtonElement>('[data-track]');
     if (tr) { e.preventDefault(); const r = await post({ action: 'track', keywords: [tr.dataset.track] }); if (!r.ok) { toast(r.d.error || 'Couldn’t add it.', true); return; } tr.outerHTML = '<small class="up">tracking</small>'; toast('Tracking it. It’s on your Rankings page too.'); await loadTracked(); return; }
     const un = t.closest<HTMLButtonElement>('[data-untrack]');
-    if (un) { if (confirm(`Stop tracking “${un.dataset.untrack}”?`)) await saveKeywords([...tracked].filter((k) => k !== un.dataset.untrack)); return; }
-    if (t.closest('[data-track-add]')) { const k = prompt('The search to track, as people type it (e.g. kumeu wedding photographer):'); if (k) await saveKeywords([...tracked, k]); return; }
-    if (t.closest('[data-goal]')) { const g = prompt('How many blog posts a month?', String(settings.posts_goal ?? 2)); if (g !== null) { await post({ action: 'settings', posts_goal: Number(g) }); loadContent(); } return; }
+    if (un) { if (await ask(`Stop tracking “${un.dataset.untrack}”?`)) await saveKeywords([...tracked].filter((k) => k !== un.dataset.untrack)); return; }
+    if (t.closest('[data-track-add]')) { const k = await askText('The search to track, as people type it (e.g. kumeu wedding photographer):'); if (k) await saveKeywords([...tracked, k]); return; }
+    if (t.closest('[data-goal]')) { const g = await askText('How many blog posts a month?', String(settings.posts_goal ?? 2)); if (g !== null) { await post({ action: 'settings', posts_goal: Number(g) }); loadContent(); } return; }
     const hb = t.closest<HTMLButtonElement>('[data-health]');
     if (hb) {
       hb.disabled = true;

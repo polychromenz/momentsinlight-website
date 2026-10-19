@@ -48,6 +48,7 @@ import SeoTabs from '../../components/studio/SeoTabs.astro';
 </StudioLayout>
 
 <script>
+  import { ask, askText } from '../../studio/dialogs';
   const $ = <T extends HTMLElement = HTMLElement>(s: string) => document.querySelector<T>(s)!;
   const esc = (s: unknown) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
   const toast = (text: string, error = false) => { const t = $('.s-toast'); t.textContent = text; t.classList.toggle('error', error); t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 5000); };
@@ -287,12 +288,12 @@ import SeoTabs from '../../components/studio/SeoTabs.astro';
   });
   document.addEventListener('click', async (e) => {
     const t = e.target as HTMLElement;
-    if (t.closest('[data-track-new]')) { const kw = prompt('The search to track, as people type it (e.g. kumeu wedding photographer):')?.trim(); if (kw) await track(kw); return; }
+    if (t.closest('[data-track-new]')) { const kw = (await askText('The search to track, as people type it (e.g. kumeu wedding photographer):'))?.trim(); if (kw) await track(kw); return; }
     const ti = t.closest<HTMLButtonElement>('[data-track-idea]');
     if (ti) { if (await track(ti.dataset.trackIdea!)) ti.outerHTML = '<small class="up">tracking</small>'; return; }
     const ut = t.closest<HTMLButtonElement>('[data-untrack]');
     if (ut) {
-      if (!confirm(`Stop tracking “${ut.dataset.untrack}”?`)) return;
+      if (!await ask(`Stop tracking “${ut.dataset.untrack}”?`)) return;
       const keywords = [...trackedNow()].filter((k) => k !== ut.dataset.untrack);
       const { ok, d } = await seoApi({ action: 'settings', keywords });
       toast(ok ? 'Stopped tracking it.' : d.error || 'Couldn’t change it.', !ok);

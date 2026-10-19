@@ -1,3 +1,4 @@
+import { ask } from './dialogs';
 // Moments Studio: reviews (src/pages/studio/reviews.astro). Reads and saves src/data/reviews.json
 // through /api/studio/reviews; review photos upload straight to Cloudflare Images.
 import { slugify } from './frontmatter';
@@ -140,7 +141,7 @@ $('[data-act="save"]').addEventListener('click', async () => {
 $('[data-act="remove"]').addEventListener('click', async () => {
   if (editing === null) return;
   const r = file.reviews[editing];
-  if (!confirm(`Remove ${r.name}’s review from your website? (It stays on Google.)`)) return;
+  if (!await ask(`Remove ${r.name}’s review from your website? (It stays on Google.)`)) return;
   const before = JSON.stringify(file.reviews);
   file.reviews.splice(editing, 1);
   try {

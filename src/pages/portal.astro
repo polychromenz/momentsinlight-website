@@ -43,6 +43,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 </BaseLayout>
 
 <script>
+  import { ask } from '../studio/dialogs';
   const $ = <T extends HTMLElement = HTMLElement>(s: string) => document.querySelector<T>(s)!;
   const esc = (s: unknown) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
   const money = (c: number) => `$${(c / 100).toLocaleString('en-NZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -150,7 +151,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   });
   document.addEventListener('click', async (e) => {
     const b = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-remove]');
-    if (!b || !confirm('Remove this file?')) return;
+    if (!b || !await ask('Remove this file?')) return;
     await fetch(`/api/portal?t=${T}&upload=${b.dataset.remove}`, { method: 'DELETE' });
     d.uploads = d.uploads.filter((u: any) => u.id !== Number(b.dataset.remove));
     render();

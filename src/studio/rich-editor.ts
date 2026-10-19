@@ -1,3 +1,4 @@
+import { askText } from './dialogs';
 // The studio CRM's rich text editor (TipTap): bold, italic, underline, text size, colours,
 // headings, lists, links, buttons and fill-ins like {{first_name}}. Used for email templates,
 // "Review and send", and quote packages, introduction and notes.
@@ -85,7 +86,7 @@ export function attachRich(textarea: HTMLTextAreaElement, opts: { fields?: strin
   };
 
   bar.addEventListener('mousedown', (e) => { if ((e.target as HTMLElement).closest('button')) e.preventDefault(); }); // keep the selection
-  bar.addEventListener('click', (e) => {
+  bar.addEventListener('click', async (e) => {
     const b = (e.target as HTMLElement).closest<HTMLButtonElement>('button');
     if (!b) return;
     const ch = editor.chain().focus();
@@ -100,16 +101,16 @@ export function attachRich(textarea: HTMLTextAreaElement, opts: { fields?: strin
       case 'ordered': ch.toggleOrderedList().run(); break;
       case 'link': {
         const current = editor.getAttributes('link').href ?? '';
-        const href = prompt('Link address (leave empty to remove the link):', current || 'https://');
+        const href = await askText('Link address (leave empty to remove the link):', current || 'https://');
         if (href === null) return;
         if (!href || href === 'https://') ch.extendMarkRange('link').unsetLink().run();
         else ch.extendMarkRange('link').setLink({ href }).run();
         break;
       }
       case 'button': {
-        const label = prompt('Button text:', 'View your quote');
+        const label = await askText('Button text:', 'View your quote');
         if (!label) return;
-        const href = prompt('Button link (a web address, or a fill-in like {{quote_link}}):', '{{quote_link}}');
+        const href = await askText('Button link (a web address, or a fill-in like {{quote_link}}):', '{{quote_link}}');
         if (!href) return;
         ch.insertContent(`<p><a href="${href.replace(/"/g, '')}" class="button">${label.replace(/[<>]/g, '')}</a></p>`).run();
         break;

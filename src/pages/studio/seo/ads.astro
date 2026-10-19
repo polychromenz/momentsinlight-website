@@ -65,6 +65,7 @@ import script from '../../../../scripts/google-ads/sync.js?raw';
   import '../../../studio/ad-picks.ts';
 </script>
 <script>
+  import { ask } from '../../../studio/dialogs';
   const $ = <T extends HTMLElement = HTMLElement>(s: string) => document.querySelector<T>(s)!;
   const esc = (s: unknown) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
   const money = (c: number) => `$${(c / 100).toLocaleString('en-NZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -94,7 +95,7 @@ import script from '../../../../scripts/google-ads/sync.js?raw';
   async function approve(body: Record<string, unknown>) {
     const r = await fetch('/api/studio/crm/ads', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'negative', ...body }) });
     const d = await r.json().catch(() => ({}));
-    if (r.status === 409 && confirm(`${d.error} Block it anyway?`)) return approve({ ...body, anyway: true });
+    if (r.status === 409 && await ask(`${d.error} Block it anyway?`)) return approve({ ...body, anyway: true });
     if (!r.ok) { toast(d.error || 'Couldn’t approve that.', true); return false; }
     toast('Approved. The script adds it on its next run (within the hour).');
     return true;
@@ -132,7 +133,7 @@ import script from '../../../../scripts/google-ads/sync.js?raw';
   document.addEventListener('click', async (e) => {
     const t = e.target as HTMLElement;
     if (t.closest('[data-key]')) {
-      if (!confirm('Make the script with a new key? Any copy already in Google Ads will stop working until you paste the new one.')) return;
+      if (!await ask('Make the script with a new key? Any copy already in Google Ads will stop working until you paste the new one.')) return;
       const d = await (await fetch('/api/studio/crm/ads', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'key' }) })).json();
       if (!d.secret) return toast(d.error || 'Couldn’t make the key.', true);
       const ta = $<HTMLTextAreaElement>('.script');

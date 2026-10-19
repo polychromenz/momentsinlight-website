@@ -15,6 +15,7 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
 </StudioLayout>
 
 <script>
+  import { ask } from '../../../studio/dialogs';
   const $ = <T extends HTMLElement = HTMLElement>(s: string) => document.querySelector<T>(s)!;
   const esc = (s: unknown) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
   const when = (d: string) => new Date(d).toLocaleString('en-NZ', { day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit', timeZone: 'Pacific/Auckland' });
@@ -38,8 +39,8 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
     const li = t.closest<HTMLElement>('[data-id]');
     const action = t.closest('[data-release]') ? 'release' : t.closest('[data-delete]') ? 'delete' : '';
     if (!li || !action) return;
-    if (action === 'release' && !confirm('Make this a lead? It gets the usual automatic reply and you get the new-enquiry alert.')) return;
-    if (action === 'delete' && !confirm('Delete this enquiry for good?')) return;
+    if (action === 'release' && !await ask('Make this a lead? It gets the usual automatic reply and you get the new-enquiry alert.')) return;
+    if (action === 'delete' && !await ask('Delete this enquiry for good?')) return;
     (t as HTMLButtonElement).disabled = true;
     const r = await fetch('/api/studio/crm/spam', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ id: Number(li.dataset.id), action }) });
     const d = await r.json().catch(() => ({}));

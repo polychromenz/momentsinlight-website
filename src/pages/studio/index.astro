@@ -69,6 +69,7 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
 </StudioLayout>
 
 <script>
+  import { askText } from '../../studio/dialogs';
   import { drawGalleryInsights } from '../../studio/gallery-insights';
   drawGalleryInsights(document.querySelector<HTMLElement>('.gi-home')!);
   const $ = <T extends HTMLElement = HTMLElement>(s: string, root: ParentNode = document) => root.querySelector<T>(s)!;
@@ -215,7 +216,7 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
     $('.content').hidden = false; $('.status').hidden = true;
   }
 
-  document.addEventListener('click', (e) => {
+  document.addEventListener('click', async (e) => {
     const t = e.target as HTMLElement;
     const rb = t.closest<HTMLButtonElement>('[data-range]');
     if (rb) {
@@ -238,9 +239,9 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
       fetch('/api/studio/crm/tasks', { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ id: Number(dt.dataset.doneTask), action: 'done' }) }).then(() => load());
     }
     if (t.closest('[data-add-task]')) {
-      const title = prompt('What’s the task? (e.g. Write a blog post about Kumeu Valley)');
+      const title = await askText('What’s the task? (e.g. Write a blog post about Kumeu Valley)');
       if (!title) return;
-      const due = prompt('Due date (YYYY-MM-DD), or leave empty:', new Date(Date.now() + 7 * 86400_000).toLocaleDateString('en-CA')) ?? '';
+      const due = await askText('Due date (YYYY-MM-DD), or leave empty:', new Date(Date.now() + 7 * 86400_000).toLocaleDateString('en-CA')) ?? '';
       fetch('/api/studio/crm/tasks', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ title, due_date: due.trim() }) }).then(() => load());
     }
   });

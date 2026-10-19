@@ -82,6 +82,7 @@ const links = ['/weddings', '/wedding-galleries', '/contact', '/blog', '/west-au
 </StudioLayout>
 
 <script>
+  import { ask, askText, guardLeaving } from '../../studio/dialogs';
   import { Editor } from '@tiptap/core';
   import StarterKit from '@tiptap/starter-kit';
   import Link from '@tiptap/extension-link';
@@ -98,7 +99,7 @@ const links = ['/weddings', '/wedding-galleries', '/contact', '/blog', '/west-au
   const editors = new Map<string, Editor>();
   let lastEditor: Editor | null = null;
   const markDirty = () => { dirty = true; $<HTMLButtonElement>('[data-save]').disabled = false; $('.pe-state').textContent = 'Unsaved changes'; };
-  addEventListener('beforeunload', (e) => { if (dirty) { e.preventDefault(); e.returnValue = ''; } });
+  guardLeaving(() => dirty);
   const get = (path: string) => path.split('.').reduce((o, k) => o?.[k], data);
   const set = (path: string, v: any) => { const ks = path.split('.'); const last = ks.pop()!; const o = ks.reduce((o, k) => (o[k] ??= {}), data); o[last] = v; };
   async function api(path: string, init?: RequestInit) {
@@ -172,12 +173,12 @@ const links = ['/weddings', '/wedding-galleries', '/contact', '/blog', '/west-au
 
   // ---- Toolbar ----
   document.addEventListener('mousedown', (e) => { if ((e.target as HTMLElement).closest('.fl-toolbar button')) e.preventDefault(); });
-  $('.fl-toolbar').addEventListener('click', (e) => {
+  $('.fl-toolbar').addEventListener('click', async (e) => {
     const b = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-cmd]'); if (!b) return;
     const ed = lastEditor ?? [...editors.values()][0]; if (!ed) return;
     const c = ed.chain().focus(); const cmd = b.dataset.cmd;
     if (cmd === 'bold') c.toggleBold().run(); else if (cmd === 'italic') c.toggleItalic().run(); else if (cmd === 'p') c.setParagraph().run(); else if (cmd === 'ul') c.toggleBulletList().run();
-    else if (cmd === 'link') { const href = prompt('Link to (e.g. /contact). Leave empty to remove the link.', ed.getAttributes('link').href ?? ''); if (href === null) return; if (href.trim()) c.extendMarkRange('link').setLink({ href: href.trim() }).run(); else c.extendMarkRange('link').unsetLink().run(); }
+    else if (cmd === 'link') { const href = await askText('Link to (e.g. /contact). Leave empty to remove the link.', ed.getAttributes('link').href ?? ''); if (href === null) return; if (href.trim()) c.extendMarkRange('link').setLink({ href: href.trim() }).run(); else c.extendMarkRange('link').unsetLink().run(); }
     markDirty();
   });
 
@@ -188,7 +189,7 @@ const links = ['/weddings', '/wedding-galleries', '/contact', '/blog', '/west-au
     const gd = t.closest<HTMLButtonElement>('[data-gdesc]');
     if (gd) { readSlides(); const li = gd.closest<HTMLElement>('li')!; gd.disabled = true; try { li.querySelector<HTMLTextAreaElement>('[data-galt]')!.value = await describe(data.slides[Number(li.dataset.gi)].src); markDirty(); } catch (err) { toast((err as Error).message, true); } gd.disabled = false; return; }
     const gr = t.closest<HTMLButtonElement>('[data-grm]');
-    if (gr) { if (document.querySelectorAll('[data-gal=slides] li').length < 2) { toast('Keep at least one photo.', true); return; } if (confirm('Remove this photo from the slideshow?')) { gr.closest('li')!.remove(); readSlides(); markDirty(); } return; }
+    if (gr) { if (document.querySelectorAll('[data-gal=slides] li').length < 2) { toast('Keep at least one photo.', true); return; } if (await ask('Remove this photo from the slideshow?')) { gr.closest('li')!.remove(); readSlides(); markDirty(); } return; }
     if (t.closest('[data-gadd]')) {
       const fs = await pick(true); if (!fs.length) return;
       readAll(); const st = $('.hero-blk .uploading');
