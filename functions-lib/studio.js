@@ -20,8 +20,9 @@ const b64urlBytes = (s) => Uint8Array.from(atob(s.replace(/-/g, '+').replace(/_/
 const b64urlJson = (s) => JSON.parse(new TextDecoder().decode(b64urlBytes(s)));
 let certs = { at: 0, keys: [] };
 
+/** Who is signed in through Cloudflare Access: their token's claims (with .email), or false. */
 export async function signedIn(request, env) {
-  if (env.STUDIO_DEV === '1') return true;
+  if (env.STUDIO_DEV === '1') return { email: 'dev@localhost' };
   const token = request.headers.get('Cf-Access-Jwt-Assertion');
   if (!token || !env.ACCESS_TEAM || !env.ACCESS_AUD) return false;
   const [h, p, s] = token.split('.');
@@ -37,7 +38,8 @@ export async function signedIn(request, env) {
   const jwk = certs.keys.find((k) => k.kid === header.kid);
   if (!jwk) return false;
   const key = await crypto.subtle.importKey('jwk', jwk, { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' }, false, ['verify']);
-  return crypto.subtle.verify('RSASSA-PKCS1-v1_5', key, b64urlBytes(s), new TextEncoder().encode(`${h}.${p}`));
+  const ok = await crypto.subtle.verify('RSASSA-PKCS1-v1_5', key, b64urlBytes(s), new TextEncoder().encode(`${h}.${p}`));
+  return ok ? { ...claims, email: String(claims.email ?? '').toLowerCase() } : false;
 }
 
 // ---- GitHub: read and write the post files.

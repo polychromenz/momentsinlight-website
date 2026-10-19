@@ -71,6 +71,11 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   const params = new URLSearchParams(location.search);
   const token = params.get('t') || '';
   const preview = params.has('preview');
+  // Address suggestions as they type (Google, through the studio; only works with this quote's link).
+  if (!preview && token) import('../studio/address-lookup').then(({ attachAddressLookup }) => {
+    const box = document.querySelector<HTMLTextAreaElement>('.q-accept textarea[name="address"]');
+    if (box) attachAddressLookup(box, { endpoint: '/api/address', extra: `t=${token}` });
+  });
   let q: { status: string; packages: Pkg[]; extras: Extra[]; discount: number; discount_label: string; schedule: Part[]; event_date: string | null; today: string; [k: string]: any };
   let chosen = -1;
   const extras = new Set<number>();

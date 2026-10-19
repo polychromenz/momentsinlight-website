@@ -1,11 +1,25 @@
-// Every studio request must come from Tony, signed in through Cloudflare Access.
+// Every studio request must come from someone signed in through Cloudflare Access. People listed in
+// Settings > People with "Look only" can read but not change anything (functions-lib/people.js).
 import { signedIn, json } from '../../../functions-lib/studio.js';
+import { accessFor } from '../../../functions-lib/people.js';
+
+// Reads that still change something (connecting Google), so a look-only person can't use them.
+const READ_BUT_CHANGES = /^\/api\/studio\/crm\/(gmail-connect|gmail-callback)/;
 
 export async function onRequest(context) {
+  const { request, env } = context;
+  let who;
   try {
-    if (!(await signedIn(context.request, context.env))) return json({ error: 'Please sign in to the studio again.' }, 401);
+    who = await signedIn(request, env);
+    if (!who) return json({ error: 'Please sign in to the studio again.' }, 401);
   } catch {
     return json({ error: 'Could not check your sign-in. Please reload the page.' }, 401);
   }
+  const user = await accessFor(env.DB, who.email).catch(() => ({ email: who.email, access: 'owner' }));
+  context.data.user = user;
+  const path = new URL(request.url).pathname;
+  const writes = !['GET', 'HEAD', 'OPTIONS'].includes(request.method) || READ_BUT_CHANGES.test(path);
+  if (user.access === 'read' && writes) return json({ error: 'Your studio access is look-only, so this can’t be changed. Ask Tony if you need it.' }, 403);
+  if (user.access !== 'owner' && path === '/api/studio/people' && request.method !== 'GET') return json({ error: 'Only Tony can change who has access.' }, 403);
   return context.next();
 }

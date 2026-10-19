@@ -8,7 +8,7 @@ import '@fontsource/raleway/500.css';
 import '@fontsource/raleway/600.css';
 import '../styles/global.css';
 
-type Section = 'dashboard' | 'clients' | 'galleries' | 'calendar' | 'contacts' | 'blog' | 'pages' | 'reviews' | 'stats' | 'seo' | 'rankings' | 'payments' | 'social' | 'settings';
+type Section = 'dashboard' | 'clients' | 'galleries' | 'calendar' | 'contacts' | 'blog' | 'pages' | 'reviews' | 'stats' | 'seo' | 'rankings' | 'payments' | 'mileage' | 'social' | 'settings';
 interface Props { title: string; section?: Section }
 const { title, section } = Astro.props;
 // Which build this is (Cloudflare Pages gives the commit), shown at the bottom of every studio page.
@@ -17,6 +17,7 @@ const version = `${built} · ${(process.env.CF_PAGES_COMMIT_SHA ?? 'local').slic
 type Item = [Section, string, string];
 // Small menus that open: the website's content, and how it's found and seen (SEO).
 const website: Item[] = [['blog', 'Blog', '/studio/blog'], ['pages', 'Pages', '/studio/pages']];
+const money: Item[] = [['payments', 'Payments', '/studio/payments'], ['mileage', 'Mileage', '/studio/mileage']];
 const seo: Item[] = [['seo', 'SEO', '/studio/seo'], ['rankings', 'Rankings', '/studio/rankings'], ['stats', 'Stats', '/studio/stats'], ['reviews', 'Reviews', '/studio/reviews']];
 const menu: (Item | [string, string, Item[]])[] = [
   ['dashboard', 'Dashboard', '/studio'],
@@ -24,7 +25,7 @@ const menu: (Item | [string, string, Item[]])[] = [
   ['galleries', 'Galleries', '/studio/galleries'],
   ['social', 'Social', '/studio/social'],
   ['calendar', 'Calendar', '/studio/calendar'],
-  ['payments', 'Payments', '/studio/payments'],
+  ['money-menu', 'Payments', money],
   ['contacts', 'Contacts', '/studio/contacts'],
   ['website', 'Website', website],
   ['seo-menu', 'SEO', seo],
@@ -54,9 +55,17 @@ const inGroup = (items: Item[]) => items.some(([k]) => k === section);
       </nav>
       <div class="studio-actions"><slot name="bar" /></div>
     </header>
+    <p class="studio-ro" hidden>You’re looking at the studio with look-only access: nothing can be changed. Ask Tony if you need to change something.</p>
     <slot />
     <p class="studio-version">Moments Studio, updated {version}</p>
     <script>
+      // Look-only access (Settings > People): a note at the top of every page.
+      fetch('/api/studio/people').then((r) => (r.ok ? r.json() : null)).then((d) => {
+        if (d?.me?.access !== 'read') return;
+        document.body.classList.add('studio-read-only');
+        const n = document.querySelector<HTMLElement>('.studio-ro');
+        if (n) n.hidden = false;
+      }).catch(() => {});
       // The Website menu closes when you click elsewhere.
       document.addEventListener('click', (e) => {
         document.querySelectorAll<HTMLDetailsElement>('.nav-group[open]').forEach((d) => { if (!d.contains(e.target as Node)) d.open = false; });
@@ -67,6 +76,7 @@ const inGroup = (items: Item[]) => items.some(([k]) => k === section);
 
 <style is:global>
   .studio-body { background: var(--champagne); min-height: 100vh; }
+  .studio-ro { margin: 0; padding: 8px 16px; text-align: center; font-size: 14px; background: #fbf3df; color: #6b5310; }
   /* Motion, like the website (its --ease): cards rise in as a page shows them, a little
      staggered; tabs and dialogs ease in. Plain CSS, so it also works on content drawn later.
      Lists that redraw after every save don't animate, so working in the studio stays calm. */

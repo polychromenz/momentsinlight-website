@@ -30,6 +30,8 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
       <button type="button" role="tab" data-tab="documents">Documents</button>
       <p class="tab-group">Import</p>
       <button type="button" role="tab" data-tab="sn">Studio Ninja</button>
+      <p class="tab-group">Access</p>
+      <button type="button" role="tab" data-tab="people">People</button>
     </nav>
     <select class="tabs-select" aria-label="Settings section">
       <optgroup label="Emails"><option value="templates">Email templates</option><option value="links">Your links</option></optgroup>
@@ -37,6 +39,7 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
       <optgroup label="Money"><option value="schedules">Payment schedules</option><option value="payments">Payments</option><option value="contracts">Contracts</option></optgroup>
       <optgroup label="Clients"><option value="portal">Client portal</option><option value="documents">Documents</option></optgroup>
       <optgroup label="Import"><option value="sn">Studio Ninja</option></optgroup>
+      <optgroup label="Access"><option value="people">People</option></optgroup>
     </select>
     <p class="status" aria-live="polite">Loading…</p>
 
@@ -174,6 +177,19 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
           <p class="hint">Changes apply to steps planned from now on; jobs already under way keep the steps they have. An email with a “[check: …]” note in it can’t be sent until it’s filled in.</p>
         </form>
       </div>
+    </section>
+
+    <section class="pane card people-pane" data-pane="people" hidden>
+      <h2>People</h2>
+      <p class="muted">Who else can use the studio. First add their email to the studio’s sign-in list in <a href="https://one.dash.cloudflare.com/ba83c09be6ee9fa1e0ae58f61811a3db/access/apps" target="_blank" rel="noopener">Cloudflare Zero Trust › Access › Applications</a> (they sign in with a code sent to that email). Then add them here. Anyone signed in who isn’t listed here can do everything, as you can.</p>
+      <ul class="people-list"></ul>
+      <form class="people-add" autocomplete="off">
+        <input name="name" placeholder="Name, e.g. Mel" aria-label="Name" />
+        <input name="email" type="email" placeholder="Their email" aria-label="Email" required />
+        <select name="access" aria-label="Access"><option value="read">Look only</option><option value="edit">Can make changes</option></select>
+        <button type="submit" class="s-btn s-btn--solid">Add</button>
+      </form>
+      <p class="muted"><strong>Look only</strong>: they can open every page but can’t save, send or change anything. <strong>Can make changes</strong>: everything except this People list.</p>
     </section>
 
     <section class="pane card" data-pane="documents" hidden>
@@ -646,6 +662,46 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
     }
   });
 
+  // ---- People: who else can use the studio (functions/api/studio/people.js) ----
+  {
+    let people: { email: string; name: string; access: string }[] = [];
+    const list = document.querySelector<HTMLElement>('.people-list')!;
+    const save = async (next: typeof people) => {
+      const r = await fetch('/api/studio/people', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ people: next }) });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) { alert(d.error || 'That didn’t save.'); return; }
+      people = d.people; drawPeople();
+    };
+    const drawPeople = () => {
+      list.innerHTML = people.length ? people.map((p, n) => `<li data-n="${n}"><span><strong>${esc(p.name || p.email)}</strong> <small>${esc(p.email)}</small></span>
+        <select data-access aria-label="Access"><option value="read"${p.access === 'read' ? ' selected' : ''}>Look only</option><option value="edit"${p.access === 'edit' ? ' selected' : ''}>Can make changes</option></select>
+        <button type="button" class="s-btn s-btn--quiet" data-remove>Remove</button></li>`).join('') : '<li class="muted">Nobody else yet.</li>';
+    };
+    fetch('/api/studio/people').then((r) => r.json()).then((d) => {
+      if (d.me?.access !== 'owner') { list.innerHTML = '<li class="muted">Only Tony can see and change this list.</li>'; document.querySelector<HTMLElement>('.people-add')!.hidden = true; return; }
+      people = d.people; drawPeople();
+    });
+    list.addEventListener('change', (e) => {
+      const sel = (e.target as HTMLElement).closest<HTMLSelectElement>('[data-access]');
+      if (!sel) return;
+      const n = Number(sel.closest<HTMLElement>('[data-n]')!.dataset.n);
+      save(people.map((p, i) => (i === n ? { ...p, access: sel.value } : p)));
+    });
+    list.addEventListener('click', (e) => {
+      const b = (e.target as HTMLElement).closest('[data-remove]');
+      if (!b) return;
+      const n = Number(b.closest<HTMLElement>('[data-n]')!.dataset.n);
+      if (confirm(`Remove ${people[n].name || people[n].email}? (Also take them off the Cloudflare sign-in list.)`)) save(people.filter((_, i) => i !== n));
+    });
+    document.querySelector<HTMLFormElement>('.people-add')!.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const f = e.target as HTMLFormElement;
+      const d = Object.fromEntries(new FormData(f)) as Record<string, string>;
+      if (people.some((p) => p.email === d.email.trim().toLowerCase())) { alert('They’re already on the list.'); return; }
+      save([...people, { email: d.email, name: d.name, access: d.access }]).then(() => f.reset());
+    });
+  }
+
   // ---- Where client emails go (send-mode.js) ----
   async function loadSendMode() {
     const d = await (await fetch('/api/studio/crm/send-mode')).json();
@@ -834,6 +890,11 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
   .settings .card { background: var(--white); border-radius: 24px 0; padding: 18px 20px; }
   .settings .hint { margin: 0 0 12px; font-size: 14px; color: #666; }
   .settings .send-mode { margin-bottom: 14px; font-size: 14px; }
+  .settings .people-list { list-style: none; margin: 12px 0; padding: 0; display: grid; gap: 8px; }
+  .settings .people-list li { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f3eee6; }
+  .settings .people-list small { color: #888; }
+  .settings .people-add { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
+  .settings .people-add input, .settings .people-add select, .settings .people-list select { font: inherit; font-size: 14px; padding: 7px 10px; border: 1px solid #ddd3c4; border-radius: 10px 0; background: var(--white); }
   .settings .send-mode p { margin: 0 0 8px; }
   .settings .send-mode label { display: flex; gap: 8px; align-items: flex-start; line-height: 1.5; }
   .settings .pay-form { display: flex; flex-direction: column; gap: 12px; max-width: 760px; }

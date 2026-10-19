@@ -60,16 +60,17 @@ export async function onRequestPut(context) {
     event_date: d.event_date !== undefined ? (/^\d{4}-\d{2}-\d{2}$/.test(d.event_date) ? d.event_date : null) : job.event_date,
     event_time: d.event_time !== undefined ? (/^([01]\d|2[0-3]):[0-5]\d$/.test(d.event_time) ? d.event_time : null) : job.event_time,
     venue: d.venue !== undefined ? text(d.venue, 200) : job.venue,
+    venue_address: d.venue_address !== undefined ? text(d.venue_address, 300) : job.venue_address ?? '',
     lead_source: d.lead_source !== undefined ? text(d.lead_source, 60) : job.lead_source,
     notes: d.notes !== undefined ? text(d.notes, 20000) : job.notes,
   };
   const stmts = [
     env.DB.prepare(
-      `UPDATE jobs SET title = ?2, job_type = ?3, stage = ?4, partner_name = ?5, event_date = ?6, venue = ?7, lead_source = ?8, notes = ?9, event_time = ?11,
+      `UPDATE jobs SET title = ?2, job_type = ?3, stage = ?4, partner_name = ?5, event_date = ?6, venue = ?7, lead_source = ?8, notes = ?9, event_time = ?11, venue_address = ?12,
          booked_at = CASE WHEN ?4 = 'booked' AND booked_at IS NULL THEN ?10 ELSE booked_at END,
          lost_at = CASE WHEN ?4 = 'lost' AND lost_at IS NULL THEN ?10 ELSE lost_at END,
          updated_at = ?10 WHERE id = ?1`,
-    ).bind(id, jobFields.title, jobFields.job_type, jobFields.stage, jobFields.partner_name, jobFields.event_date, jobFields.venue, jobFields.lead_source, jobFields.notes, now, jobFields.event_time),
+    ).bind(id, jobFields.title, jobFields.job_type, jobFields.stage, jobFields.partner_name, jobFields.event_date, jobFields.venue, jobFields.lead_source, jobFields.notes, now, jobFields.event_time, jobFields.venue_address),
   ];
   // Client details (name, email, phone) live on the client.
   if (d.first_name !== undefined || d.last_name !== undefined || d.email !== undefined || d.phone !== undefined || d.address !== undefined) {

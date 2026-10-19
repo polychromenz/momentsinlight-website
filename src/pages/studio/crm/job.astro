@@ -102,7 +102,7 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
             <label>Date<input name="event_date" type="date" /></label>
           </div>
           <label>Time <small>(for a shoot; optional)</small><input name="event_time" type="time" /></label>
-          <label>Venue<input name="venue" /></label>
+          <label>Venue<input name="venue" placeholder="Start typing the venue or address" /><input type="hidden" name="venue_address" /></label>
           <label>Heard about you via<input name="lead_source" list="lead-sources" /><datalist id="lead-sources"></datalist></label>
           <label>Your notes<textarea name="notes" rows="6" placeholder="Anything to remember about them or their day"></textarea></label>
           <p class="other-jobs" hidden></p>
@@ -172,6 +172,7 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
   import { formHtml } from '../../../../functions-lib/questionnaire-form.js';
   import { attachRich } from '../../../studio/rich-editor';
   import { attachPicker } from '../../../studio/attach-picker';
+  import { attachAddressLookup } from '../../../studio/address-lookup';
   type Step = { id: number; kind: string; title: string; due_at: string; status: string; note: string; done_at: string | null; stop_on: string; config: string | null };
   const $ = <T extends HTMLElement = HTMLElement>(s: string) => document.querySelector<T>(s)!;
   const esc = (s: unknown) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
@@ -239,6 +240,18 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
   let appts: any[] = [];
   let editingAppt = 0;
   const apptForm = $<HTMLFormElement>('.appt-form');
+  // Google address suggestions: the postal address, the venue (its name, plus its address for the
+  // mileage log) and an appointment's place.
+  {
+    const api = { endpoint: '/api/studio/address' };
+    const f = $<HTMLFormElement>('form.card.details');
+    const venueAddr = f.elements.namedItem('venue_address') as HTMLInputElement;
+    attachAddressLookup(f.elements.namedItem('address') as HTMLTextAreaElement, api);
+    const venue = f.elements.namedItem('venue') as HTMLInputElement;
+    attachAddressLookup(venue, { ...api, onPick: (p, el) => { el.value = p.business && p.name ? p.name : p.address; venueAddr.value = p.address; } });
+    venue.addEventListener('input', (e) => { if ((e as InputEvent).inputType) venueAddr.value = ''; });
+    attachAddressLookup(apptForm.elements.namedItem('location') as HTMLInputElement, { ...api, onPick: (p, el) => { el.value = p.business && p.name ? `${p.name}, ${p.address}` : p.address; } });
+  }
   function openAppt(a: any | null) {
     editingAppt = a?.id ?? 0;
     apptForm.reset();
