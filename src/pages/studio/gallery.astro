@@ -31,6 +31,8 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
         <button type="button" class="s-btn s-btn--quiet" data-sel="unhero">Not a highlight</button>
         <button type="button" class="s-btn s-btn--quiet" data-sel="hide">Hide</button>
         <button type="button" class="s-btn s-btn--quiet" data-sel="show">Show</button>
+        <button type="button" class="s-btn s-btn--quiet" data-sel="social" title="Use these photos in social media drafts (only you see this)">Social</button>
+        <button type="button" class="s-btn s-btn--quiet" data-sel="unsocial">Not social</button>
         <button type="button" class="s-btn s-btn--quiet" data-sel="vendor" title="Add these photos to a link for a venue or supplier">Vendor link…</button>
         <label class="sel-move">Move to <select data-move></select></label>
         <button type="button" class="s-btn s-btn--danger" data-sel="delete">Delete</button>
@@ -190,7 +192,9 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
   .th .tools button { width: 26px; height: 26px; padding: 0; border: 0; border-radius: 50%; background: rgb(255 255 255 / 0.9); cursor: pointer; font-size: 13px; line-height: 26px; }
   .th.hero .marks .hero-mark { background: var(--gold); }
   .th .marks .ad-mark { background: #1a73e8; }
-  .th .tools .ad-t { font-size: 10px; font-weight: 700; }
+  .th .marks .so-mark { background: #b0568a; }
+  .th .tools .ad-t, .th .tools .so-t { font-size: 10px; font-weight: 700; }
+  .th .tools .so-t:disabled { opacity: 0.4; cursor: not-allowed; }
   .th .tools .ad-t:disabled { opacity: 0.4; cursor: not-allowed; }
   .th.wait { display: grid; place-items: center; width: 120px; font-size: 11px; color: #888; }
 

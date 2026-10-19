@@ -1,0 +1,138 @@
+---
+// Moments Studio > Social (docs/social-media-manager-plan.md, milestone 1): the drafts the studio
+// makes a week ahead for Instagram, Facebook, Google and Pinterest. Tony edits and approves each
+// one; for now he copies the caption and downloads the photos to post them himself. Script in
+// src/studio/social.ts; data from functions/api/studio/social.
+import StudioLayout from '../../layouts/StudioLayout.astro';
+---
+<StudioLayout title="Social" section="social">
+  <main class="so">
+    <div class="so-head">
+      <div>
+        <h1>Social</h1>
+        <p class="intro">Drafts for the week ahead. Edit each one, approve it, then copy the caption and download the photos to post. Nothing goes out without your approval.</p>
+      </div>
+      <div class="so-tools">
+        <button type="button" class="s-btn s-btn--quiet" data-move="-7" aria-label="Earlier">‹</button>
+        <button type="button" class="s-btn s-btn--quiet" data-move="0">This week</button>
+        <button type="button" class="s-btn s-btn--quiet" data-move="7" aria-label="Later">›</button>
+        <button type="button" class="s-btn" data-draft-now>Make drafts now</button>
+      </div>
+    </div>
+
+    <div class="so-weeks"><p class="muted">Loading…</p></div>
+    <p class="so-key"><span class="pf pf-instagram">IG</span> Instagram <span class="pf pf-facebook">FB</span> Facebook <span class="pf pf-google">G</span> Google <span class="pf pf-pinterest">P</span> Pinterest
+      · <span class="chip st-draft">Draft</span> <span class="chip st-approved">Approved</span> <span class="chip st-posted">Posted</span> <span class="chip st-skipped">Skipped</span></p>
+
+    <section class="card so-ideas">
+      <h2>Ideas and reminders</h2>
+      <ul class="idea-list"></ul>
+      <p class="muted so-marked"></p>
+      <label class="so-auto"><input type="checkbox" data-auto /> Make drafts automatically (a week ahead: Instagram and Facebook Mon, Wed, Fri; Google Tuesday; Pinterest weekdays)</label>
+    </section>
+  </main>
+
+  <dialog class="so-ed" aria-label="Post">
+    <form method="dialog" class="ed-form" autocomplete="off">
+      <div class="ed-top">
+        <strong class="ed-title"></strong>
+        <span class="chip ed-status"></span>
+        <button type="button" class="ed-x" data-close aria-label="Close">×</button>
+      </div>
+      <div class="ed-body">
+        <div class="ed-photos">
+          <div class="ed-big"></div>
+          <div class="ed-nudge" hidden>
+            <span class="nudge"><button type="button" data-n="up" title="Up">↑</button><button type="button" data-n="down" title="Down">↓</button><button type="button" data-n="left" title="Left">←</button><button type="button" data-n="right" title="Right">→</button><button type="button" data-n="in" title="Closer">＋</button><button type="button" data-n="out" title="Wider">－</button></span>
+          </div>
+          <div class="ed-strip"></div>
+        </div>
+        <div class="ed-fields">
+          <label>When <input type="datetime-local" name="post_at" required /></label>
+          <label class="ed-label">Note <input name="label" maxlength="200" /></label>
+          <label>Caption <span class="ed-count muted"></span>
+            <textarea name="caption" rows="12"></textarea></label>
+          <p class="ed-ai muted" hidden>Written by AI from the post’s details: check it reads like you.</p>
+          <label class="ed-link">Link <input name="link" type="url" placeholder="https://www.momentsinlight.co.nz/…" /></label>
+          <div class="ed-acts"></div>
+          <p class="ed-how muted"></p>
+        </div>
+      </div>
+    </form>
+  </dialog>
+  <div class="s-toast" role="status"></div>
+</StudioLayout>
+
+<script>
+  import '../../studio/social.ts';
+</script>
+
+<style is:global>
+  .so { max-width: 1300px; margin: 0 auto; padding: 24px clamp(14px, 3vw, 32px) 80px; }
+  .so-head { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 14px; }
+  .so h1 { margin: 0; font-weight: 300; font-size: 32px; color: var(--ink); }
+  .so .intro { color: #666; margin: 4px 0 0; max-width: 640px; }
+  .so-tools { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+  .so .muted { color: #888; font-size: 14px; }
+  .so .card { background: var(--white); border-radius: 24px 0; padding: 18px 22px; margin-top: 18px; }
+  .so h2 { margin: 0 0 8px; font-weight: 300; font-size: 22px; }
+  .so-week { margin-bottom: 14px; }
+  .so-week h3 { margin: 0 0 6px; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--green); font-weight: 600; }
+  .so-days { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); background: var(--white); border-radius: 20px 0; border: 1px solid #ece4d7; overflow: hidden; }
+  .so-day { min-height: 150px; padding: 8px 6px; border-right: 1px solid #f3eee6; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+  .so-day:last-child { border-right: 0; }
+  .so-day.past { background: #fcfaf7; }
+  .so-day.today .so-dn { color: var(--white); background: var(--green); }
+  .so-dn { align-self: flex-start; font-size: 12px; color: #777; padding: 2px 8px; border-radius: 999px; }
+  .post { display: grid; grid-template-columns: 26px 1fr; gap: 2px 6px; align-items: start; text-align: left; padding: 6px; border: 0; border-left: 3px solid #d9b45c; border-radius: 8px 0; background: #fbf3df; font: inherit; font-size: 12px; line-height: 1.35; color: var(--ink); cursor: pointer; transition: border-radius 0.35s var(--ease), filter 0.2s; }
+  .post:hover { border-radius: 0 8px; filter: brightness(0.97); }
+  .post.st-approved { background: #e9eddf; border-color: var(--green); }
+  .post.st-posted { background: #f1f1ee; border-color: #aaa; color: #666; }
+  .post.st-skipped { background: #faf8f5; border-color: #ddd; color: #aaa; text-decoration: line-through; }
+  .post .t { grid-column: 2; font-size: 11px; color: #777; }
+  .post .l { grid-column: 2; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+  .post .pf { grid-row: span 2; }
+  .post img { grid-column: 1 / -1; width: 100%; height: 56px; object-fit: cover; border-radius: 4px; }
+  .pf { display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; font-size: 10px; font-weight: 700; color: #fff; text-decoration: none; }
+  .pf-instagram { background: #c13584; } .pf-facebook { background: #1877f2; } .pf-google { background: #34a853; } .pf-pinterest { background: #e60023; }
+  .chip { display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: 12px; background: #fbf3df; color: #6b5310; }
+  .chip.st-approved { background: #e9eddf; color: var(--green); } .chip.st-posted { background: #eee; color: #555; } .chip.st-skipped { background: #f5f2ee; color: #999; } .chip.st-failed { background: #fbeee9; color: #8a3a22; }
+  .so-key { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 13px; color: #777; }
+  .idea-list { margin: 0 0 8px; padding-left: 18px; line-height: 1.7; }
+  .so-auto { display: flex; gap: 8px; align-items: center; font-size: 14px; color: #666; margin-top: 10px; }
+
+  .so-ed { width: min(1100px, 96vw); max-height: 94vh; padding: 0; border: 0; border-radius: 24px 0; box-shadow: 0 30px 80px -30px rgb(0 0 0 / 0.5); }
+  .so-ed::backdrop { background: rgb(30 30 20 / 0.45); }
+  .ed-form { display: flex; flex-direction: column; max-height: 94vh; }
+  .ed-top { display: flex; gap: 10px; align-items: center; padding: 14px 20px; border-bottom: 1px solid #f3eee6; }
+  .ed-title { font-weight: 400; font-size: 18px; }
+  .ed-x { margin-left: auto; border: 0; background: none; font-size: 28px; line-height: 1; cursor: pointer; color: #777; }
+  .ed-body { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 20px; padding: 16px 20px 20px; overflow: auto; }
+  .ed-big { position: relative; overflow: hidden; background: #eee; border-radius: 6px; margin: 0 auto; }
+  .ed-big img { display: block; width: 100%; height: 100%; object-fit: cover; }
+  .ed-frame { position: absolute; border: 2px solid #fff; box-shadow: 0 0 0 999px rgb(0 0 0 / 0.45); pointer-events: none; }
+  .ed-nudge { margin: 8px 0; display: flex; gap: 8px; align-items: center; }
+  .ed-nudge .nudge { display: inline-flex; gap: 4px; }
+  .ed-nudge button { min-width: 34px; height: 34px; border: 1px solid #ddd3c4; background: var(--white); border-radius: 8px; cursor: pointer; font-size: 16px; }
+  .ed-strip { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+  .ed-th { position: relative; width: 82px; height: 82px; border-radius: 6px; overflow: hidden; border: 2px solid transparent; cursor: pointer; padding: 0; background: #eee; }
+  .ed-th.on { border-color: var(--green); }
+  .ed-th img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .ed-th .x, .ed-th .mv { position: absolute; top: 2px; width: 20px; height: 20px; border-radius: 50%; border: 0; background: rgb(255 255 255 / 0.9); font-size: 12px; line-height: 20px; padding: 0; cursor: pointer; }
+  .ed-th .x { right: 2px; } .ed-th .mv { left: 2px; }
+  .ed-fields { display: flex; flex-direction: column; gap: 10px; }
+  .ed-fields label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; font-weight: 600; color: #555; }
+  .ed-fields input, .ed-fields textarea { font: inherit; font-size: 15px; font-weight: 400; padding: 8px 10px; border: 1px solid #ddd3c4; border-radius: 10px 0; background: var(--white); color: var(--ink); }
+  .ed-fields textarea { resize: vertical; line-height: 1.5; min-height: 200px; }
+  .ed-count { font-weight: 400; }
+  .ed-acts { display: flex; flex-wrap: wrap; gap: 8px; }
+  .ed-ai { margin: -4px 0 0; }
+  @media (max-width: 860px) {
+    .ed-body { grid-template-columns: 1fr; }
+    .so-days { grid-template-columns: 1fr; }
+    .so-day { min-height: 0; border-right: 0; border-bottom: 1px solid #f3eee6; flex-direction: row; flex-wrap: wrap; }
+    .so-day.empty { display: none; }
+    .so-dn { flex: 0 0 100%; }
+    .post { flex: 1 1 160px; }
+  }
+</style>
