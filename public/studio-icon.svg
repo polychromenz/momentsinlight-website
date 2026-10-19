@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Moments Studio's tab and bookmark icon: an M on the studio's olive, so it's easy to tell from the website's. -->
+  <rect width="64" height="64" rx="14" fill="#5a5e3b"/>
+  <text x="32" y="45" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="40" font-weight="700" fill="#f6f1ea">M</text>
+</svg>
