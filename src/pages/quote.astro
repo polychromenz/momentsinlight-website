@@ -42,9 +42,9 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
       <form class="q-card q-accept" novalidate>
         <h2>Ready to go ahead?</h2>
-        <p>Add your name and postal address, then click Accept. Next, I'll send your contract to sign and your deposit invoice.</p>
+        <p>Add your name and address, then click Accept. Next, I'll send your contract to sign and your deposit invoice.</p>
         <label>Your full name<input name="name" autocomplete="name" required /></label>
-        <label>Your postal address<textarea name="address" rows="3" autocomplete="street-address" required placeholder="Street, suburb, town and postcode"></textarea></label>
+        <label>Your address<textarea name="address" rows="3" autocomplete="street-address" required placeholder="Street, suburb, town and postcode"></textarea></label>
         <label>Your phone number <span class="opt">(optional)</span><input name="phone" type="tel" autocomplete="tel" /></label>
         <p class="q-msg" role="alert" hidden></p>
         <div class="q-buttons"><button class="btn" type="submit">Accept quote</button><button class="btn btn--outline" type="button" data-print>Save as PDF / print</button></div>
@@ -180,7 +180,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     if (name.length < 2) { msg.textContent = 'Please type your full name.'; msg.hidden = false; return; }
     const address = ($<HTMLTextAreaElement>('.q-accept textarea[name="address"]')).value.trim();
     const phone = ($<HTMLInputElement>('.q-accept input[name="phone"]')).value.trim();
-    if (address.length < 8) { msg.textContent = 'Please add your postal address.'; msg.hidden = false; return; }
+    if (address.length < 8) { msg.textContent = 'Please add your address.'; msg.hidden = false; return; }
     const btn = $<HTMLButtonElement>('.q-accept button[type="submit"]');
     btn.disabled = true; btn.textContent = 'Accepting…'; msg.hidden = true;
     const r = await fetch('/api/quote', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ t: token, package: chosen, extras: [...extras], name, address, phone }) });

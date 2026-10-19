@@ -53,7 +53,7 @@ export async function onRequestPost({ request, env }) {
   if (name.length < 2) return reply({ error: 'Please type your full name to accept.' }, 400);
   const address = (d.address ?? '').toString().replace(/\r\n/g, '\n').replace(/[\u0000-\u0009\u000b-\u001f]/g, ' ').trim().slice(0, 300);
   const phone = (d.phone ?? '').toString().replace(/[^\d +()-]/g, '').trim().slice(0, 40);
-  if (address.length < 8) return reply({ error: 'Please add your postal address.' }, 400);
+  if (address.length < 8) return reply({ error: 'Please add your address.' }, 400);
 
   const now = new Date();
   const at = now.toISOString();
