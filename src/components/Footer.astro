@@ -3,7 +3,6 @@ import { Image } from 'astro:assets';
 import { site, badges, social } from '../data/site';
 
 const [mwg, bride, mywed] = badges;
-const tel = site.phone.replace(/\s/g, '');
 
 // Simple line icons for the social links.
 const icons: Record<string, string> = {
@@ -26,7 +25,7 @@ const icons: Record<string, string> = {
     <Image src={mywed.src} alt="My Wed" widths={[120, 240]} sizes="(min-width: 768px) 5vw, 29vw" />
   </a>
   <p class="address">
-    {site.name} | {site.address} | <a href={`tel:${tel}`}>{site.phone}</a> | <a href="/privacy">Privacy</a>
+    {site.name} | {site.address} | <a href="/privacy">Privacy</a>
   </p>
   <ul class="social">
     {social.map((s) => (
