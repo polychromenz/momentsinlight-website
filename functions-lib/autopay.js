@@ -29,6 +29,11 @@ export async function saveCard(env, session, jobId) {
   const card = pm.card ? `${pm.card.brand.replace(/^\w/, (c) => c.toUpperCase())} ending ${pm.card.last4}` : 'your card';
   await env.DB.prepare('UPDATE jobs SET autopay = 1, stripe_customer = ?2, stripe_payment_method = ?3, autopay_card = ?4, updated_at = ?5 WHERE id = ?1')
     .bind(jobId, session.customer, pm.id ?? pm, card, new Date().toISOString()).run();
+  // Only later instalments are paid automatically: anything already due stays a normal invoice
+  // (with its reminders), so the card isn't charged straight away for it.
+  const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Pacific/Auckland' });
+  await env.DB.prepare(`UPDATE invoices SET autopay_tried_at = ?2, autopay_error = 'Already due when the card was saved, so not paid automatically' WHERE job_id = ?1 AND status IN ('sent', 'scheduled') AND due_date <= ?3 AND autopay_tried_at IS NULL`)
+    .bind(jobId, new Date().toISOString(), today).run();
 }
 
 /** The timer: charge instalments that are due today for jobs on automatic payments. */

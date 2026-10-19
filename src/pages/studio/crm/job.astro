@@ -49,7 +49,7 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
           </section>
           <section class="card">
             <div class="card-head"><h2>Quotes</h2><button type="button" class="s-btn" data-act="new-quote">+ New quote</button></div>
-            <ul class="quotes"></ul>
+            <ul class="quotes quote-list"></ul>
           </section>
           <section class="card">
             <h2>Contracts</h2>
@@ -345,7 +345,7 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
       : '<li class="empty">No emails yet. Once Gmail is connected, everything sent from the studio shows here.</li>';
 
     const qs: Record<string, string> = { draft: 'Draft', sent: 'Sent', accepted: 'Accepted', withdrawn: 'Withdrawn', declined: 'Declined' };
-    $('.quotes').innerHTML = d.quotes.length ? d.quotes.map((q: { id: number; status: string; total: number | null; sent_at: string | null; viewed_at: string | null; accepted_at: string | null; created_at: string }) =>
+    $('.quote-list').innerHTML = d.quotes.length ? d.quotes.map((q: { id: number; status: string; total: number | null; sent_at: string | null; viewed_at: string | null; accepted_at: string | null; created_at: string }) =>
       `<li><a href="/studio/crm/quote?id=${q.id}"><strong>${qs[q.status] ?? q.status}</strong></a> <a class="pdf" href="/api/studio/crm/contract?quote=${q.id}&pdf=1" target="_blank" rel="noopener">PDF</a> <small>${q.accepted_at ? `accepted ${dateTime(q.accepted_at)}${q.total ? ` · ${(q.total / 100).toLocaleString('en-NZ')}` : ''}` : q.sent_at ? `sent ${dateTime(q.sent_at)}${q.viewed_at ? ' · opened' : ' · not opened yet'}` : `made ${dateTime(q.created_at)}`}</small></li>`).join('')
       : '<li class="empty">No quotes yet.</li>';
     const cs: Record<string, string> = { sent: 'Sent, not signed yet', signed: 'Signed', void: 'Cancelled' };
