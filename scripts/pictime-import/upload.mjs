@@ -33,6 +33,17 @@ const keyFile = [path.join(root, 'lightroom-key.txt'), path.join(path.dirname(ro
 const KEY = (process.env.MIL_LR_KEY || (keyFile ? fs.readFileSync(keyFile, 'utf8') : '')).trim();
 if (!KEY && !CHECK) stop(`Put the Lightroom key (Studio > Galleries > Defaults) in ${path.join(root, 'lightroom-key.txt')}`);
 
+// Photos whose web copies have the light sharpening (kept beside the log, so a run never redoes one twice).
+const sharpenedFile = path.join(root, 'web-copies-sharpened.json');
+const sharpened = new Set(fs.existsSync(sharpenedFile) ? JSON.parse(fs.readFileSync(sharpenedFile, 'utf8')) : []);
+let saveTimer = null;
+function markSharpened(id) {
+  sharpened.add(id);
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => fs.writeFileSync(sharpenedFile, JSON.stringify([...sharpened])), 2000);
+}
+process.on('exit', () => { try { fs.writeFileSync(sharpenedFile, JSON.stringify([...sharpened])); } catch {} });
+
 const logFile = path.join(root, `upload-log-${new Date().toLocaleDateString('en-CA')}.txt`);
 function log(...a) {
   const line = `${new Date().toLocaleTimeString('en-NZ')}  ${a.join(' ')}`;
@@ -239,7 +250,7 @@ async function moveGallery(folder, link) {
     s.photos.forEach((p, i) => p.file && jobs.push({ ...p, section_id: sec.id, sort_order: order * 10000 + i }));
   }
 
-  let done = 0, sent = 0, failed = 0, bytes = 0;
+  let done = 0, sent = 0, refreshed = 0, failed = 0, bytes = 0;
   const started = Date.now();
   async function one(job) {
     const original = fs.readFileSync(job.file);
@@ -251,14 +262,20 @@ async function moveGallery(folder, link) {
       checksum: crypto.createHash('sha1').update(original).digest('hex'), filename: path.basename(job.file),
       width: turned ? m.height : m.width, height: turned ? m.width : m.height, sort_order: job.sort_order,
     });
-    if (!r.needs?.length) return;
-    const web = await img.clone().resize(2048, 2048, { fit: 'inside', withoutEnlargement: true }).jpeg({ quality: 86, mozjpeg: true }).toBuffer();
-    const thumb = await sharp(web).resize(600, 600, { fit: 'inside' }).jpeg({ quality: 80, mozjpeg: true }).toBuffer();
-    if (r.needs.includes('thumb')) await put(r.id, 'thumb', thumb);
-    if (r.needs.includes('web')) await put(r.id, 'web', web);
-    if (r.needs.includes('original')) await put(r.id, 'original', original);
-    sent++;
-    bytes += original.length + web.length + thumb.length;
+    // Photos sent before the web copies were sharpened get new web copies (not the full size again).
+    const lrid = `pt:${layout.project}:${job.n}`;
+    const needs = new Set(r.needs ?? []);
+    if (!sharpened.has(lrid)) { needs.add('web'); needs.add('thumb'); }
+    if (!needs.size) return;
+    // Light output sharpening after shrinking, as Pic-Time does (strength chosen with Tony, 19 Oct 2026).
+    const web = await img.clone().resize(2048, 2048, { fit: 'inside', withoutEnlargement: true }).sharpen({ sigma: 0.8 }).withIccProfile('srgb').jpeg({ quality: 86, mozjpeg: true }).toBuffer();
+    const thumb = await img.clone().resize(600, 600, { fit: 'inside' }).sharpen({ sigma: 0.6 }).withIccProfile('srgb').jpeg({ quality: 82, mozjpeg: true }).toBuffer();
+    if (needs.has('thumb')) await put(r.id, 'thumb', thumb);
+    if (needs.has('web')) await put(r.id, 'web', web);
+    if (needs.has('original')) await put(r.id, 'original', original);
+    markSharpened(lrid);
+    if (needs.has('original')) sent++; else refreshed++;
+    bytes += (needs.has('original') ? original.length : 0) + web.length + thumb.length;
   }
   let next = 0;
   async function worker() {
@@ -268,7 +285,7 @@ async function moveGallery(folder, link) {
       done++;
       if (done % 10 === 0 || done === jobs.length) {
         const mins = (Date.now() - started) / 60000;
-        log(`  ${done} of ${jobs.length} done (${sent} sent, ${(bytes / 1048576).toFixed(0)} MB in ${mins.toFixed(0)} min)`);
+        log(`  ${done} of ${jobs.length} done (${sent} sent${refreshed ? `, ${refreshed} web copies redone` : ''}, ${(bytes / 1048576).toFixed(0)} MB in ${mins.toFixed(0)} min)`);
       }
     }
   }

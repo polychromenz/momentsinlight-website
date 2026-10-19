@@ -61,6 +61,12 @@ export async function onRequestPost({ request, env }) {
       const counts = await db.prepare(`SELECT count(*) n, sum(status = 'ready') ready FROM gallery_images WHERE gallery_id = ?1`).bind(g.id).first();
       return json({ extra: extra.map(({ id, filename }) => ({ id, filename })), photos: counts.n, ready: counts.ready });
     }
+    if (d.action === 'list') {
+      // A gallery's photos (to redo their web copies from the originals on Tony's PC).
+      const rows = (await db.prepare(`SELECT i.id, i.filename, s.name section, s.is_bw FROM gallery_images i LEFT JOIN gallery_sections s ON s.id = i.section_id
+        WHERE i.gallery_id = ?1 AND i.status = 'ready' ORDER BY i.id`).bind(g.id).all()).results;
+      return json({ images: rows });
+    }
     if (d.action === 'layout') {
       // The cover and the big photos (from Pic-Time when a gallery is moved across), by lightroom_id.
       const idOf = async (lr) => (await db.prepare('SELECT id FROM gallery_images WHERE gallery_id = ?1 AND lightroom_id = ?2').bind(g.id, String(lr)).first())?.id ?? null;

@@ -21,7 +21,8 @@ export function fileKey(galleryId, imageId, size) {
   if (size === 'original') return `galleries/${galleryId}/original/${imageId}.jpg`;
   return `${galleryId}/${imageId}_${SIZES[size]}.jpg`;
 }
-export const webUrl = (galleryId, imageId, size = 'web') => `${PHOTOS}/${fileKey(galleryId, imageId, size)}`;
+// v: the web copy's checksum, so a replaced copy gets a new address (they're cached for a year).
+export const webUrl = (galleryId, imageId, size = 'web', v = null) => `${PHOTOS}/${fileKey(galleryId, imageId, size)}${v ? `?v=${Number(v).toString(36)}` : ''}`;
 
 // CRC-32 (for ZIP files, worked out once at upload so downloads only copy bytes).
 const CRC_TABLE = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
@@ -150,6 +151,6 @@ export async function galleryDetail(env, galleryId) {
   if (!g) return null;
   const sections = (await db.prepare('SELECT * FROM gallery_sections WHERE gallery_id = ?1 ORDER BY sort_order, id').bind(galleryId).all()).results;
   const images = (await db.prepare('SELECT * FROM gallery_images WHERE gallery_id = ?1 ORDER BY sort_order, created_at').bind(galleryId).all()).results
-    .map((i) => ({ ...i, web: i.has_web ? webUrl(galleryId, i.id, 'web') : null, thumb: i.has_thumb ? webUrl(galleryId, i.id, 'thumb') : null }));
+    .map((i) => ({ ...i, web: i.has_web ? webUrl(galleryId, i.id, 'web', i.web_crc) : null, thumb: i.has_thumb ? webUrl(galleryId, i.id, 'thumb', i.web_crc) : null }));
   return { gallery: { ...g, settings: JSON.parse(g.settings || '{}') }, sections, images };
 }

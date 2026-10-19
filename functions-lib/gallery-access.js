@@ -81,15 +81,15 @@ export async function createLink(env, galleryId, input = {}) {
 // ---- The client gallery ----
 async function coverOf(env, g) {
   const id = g.cover_image_id ?? (await env.DB.prepare(`SELECT id FROM gallery_images WHERE gallery_id = ?1 AND status = 'ready' AND hidden = 0 ORDER BY is_hero DESC, sort_order LIMIT 1`).bind(g.id).first())?.id;
-  const img = id ? await env.DB.prepare(`SELECT id, width, height FROM gallery_images WHERE id = ?1 AND status = 'ready'`).bind(id).first() : null;
-  return img ? { id: img.id, w: img.width, h: img.height } : null;
+  const img = id ? await env.DB.prepare(`SELECT id, width, height, web_crc FROM gallery_images WHERE id = ?1 AND status = 'ready'`).bind(id).first() : null;
+  return img ? { id: img.id, w: img.width, h: img.height, v: img.web_crc } : null;
 }
 const publicInfo = (g) => ({ name: g.name, type: g.type, event_date: g.event_date, spouse_a: g.spouse_a, spouse_b: g.spouse_b, family_name: g.family_name, venue: g.venue, description: g.description, expires_at: g.expires_at });
 
 /** The cover for the front page before someone is in (none when guests would need a watermark). */
 async function frontCover(env, g, watermark) {
   const c = await coverOf(env, g);
-  return c && !watermark ? { w: c.w, h: c.h, web: webUrl(g.id, c.id, 'web'), thumb: webUrl(g.id, c.id, 'thumb') } : null;
+  return c && !watermark ? { w: c.w, h: c.h, web: webUrl(g.id, c.id, 'web', c.v), thumb: webUrl(g.id, c.id, 'thumb', c.v) } : null;
 }
 
 /** Somebody arriving: by link (key), access code, or the visitor token kept in their browser. */
@@ -148,21 +148,21 @@ export async function galleryView(env, g, link, viewerToken) {
     .filter((s) => !only || !only.length || only.includes(s.id));
   const ids = new Set(sections.map((s) => s.id));
   const wm = !!link?.watermark && !!viewerToken;
-  const src = (id, size) => (wm ? `/api/gallery/img/${viewerToken}/${id}_${SIZES[size]}.jpg` : webUrl(g.id, id, size));
+  const src = (id, size, v) => (wm ? `/api/gallery/img/${viewerToken}/${id}_${SIZES[size]}.jpg` : webUrl(g.id, id, size, v));
   // Photos the couple hid: only the couple sees them (at the end of their section, marked).
   const couple = !link || link.kind === 'main_client';
   // A shared list, or a vendor link, shows only its list's photos.
   const inList = (link?.kind === 'list_share' || link?.kind === 'vendor') && link.list_id ? new Set((await db.prepare('SELECT image_id FROM gallery_list_items WHERE list_id = ?1').bind(link.list_id).all()).results.map((r) => r.image_id)) : null;
-  const images = (await db.prepare(`SELECT id, section_id, width, height, is_hero, client_hidden FROM gallery_images WHERE gallery_id = ?1 AND hidden = 0 AND status = 'ready' ORDER BY sort_order, created_at`).bind(g.id).all()).results
+  const images = (await db.prepare(`SELECT id, section_id, width, height, is_hero, client_hidden, web_crc FROM gallery_images WHERE gallery_id = ?1 AND hidden = 0 AND status = 'ready' ORDER BY sort_order, created_at`).bind(g.id).all()).results
     .filter((i) => ids.has(i.section_id) && (couple || !i.client_hidden) && (!inList || inList.has(i.id)))
-    .map((i) => ({ id: i.id, s: i.section_id, w: i.width, h: i.height, hero: i.is_hero && !i.client_hidden ? 1 : 0, ch: i.client_hidden ? 1 : 0, thumb: src(i.id, 'thumb'), web: src(i.id, 'web') }));
+    .map((i) => ({ id: i.id, s: i.section_id, w: i.width, h: i.height, hero: i.is_hero && !i.client_hidden ? 1 : 0, ch: i.client_hidden ? 1 : 0, thumb: src(i.id, 'thumb', i.web_crc), web: src(i.id, 'web', i.web_crc) }));
   // In section order, so the slideshow runs through the gallery as it reads; hidden ones last.
   const pos = new Map(sections.map((s, n) => [s.id, n]));
   images.sort((a, b) => pos.get(a.s) - pos.get(b.s) || a.ch - b.ch);
   const c = await coverOf(env, g);
   const shown = c && images.find((i) => i.id === c.id);
   const cover = shown ? { w: shown.w, h: shown.h, thumb: shown.thumb, web: shown.web }
-    : c && !wm ? { w: c.w, h: c.h, thumb: webUrl(g.id, c.id, 'thumb'), web: webUrl(g.id, c.id, 'web') }
+    : c && !wm ? { w: c.w, h: c.h, thumb: webUrl(g.id, c.id, 'thumb', c.v), web: webUrl(g.id, c.id, 'web', c.v) }
     : images[0] ? { w: images[0].w, h: images[0].h, thumb: images[0].thumb, web: images[0].web } : null;
   return {
     gallery: publicInfo(g),
