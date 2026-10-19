@@ -5,7 +5,7 @@
 export type Place = { id?: string; name?: string; address: string; lat?: number | null; lng?: number | null; business?: boolean };
 type Opts = { endpoint: string; extra?: string; onPick?: (p: Place, el: HTMLInputElement | HTMLTextAreaElement) => void };
 
-const css = `.al-list{position:absolute;z-index:60;left:0;right:0;top:100%;margin:2px 0 0;padding:4px;list-style:none;background:#fff;border:1px solid #ddd3c4;border-radius:10px 0;box-shadow:0 14px 30px -16px rgb(0 0 0/.4);font-size:14px;line-height:1.35;text-align:left}
+const css = `.al-list{position:absolute;z-index:1000;margin:0;padding:4px;list-style:none;background:#fff;border:1px solid #ddd3c4;border-radius:10px 0;box-shadow:0 14px 30px -16px rgb(0 0 0/.4);font-size:14px;line-height:1.35;text-align:left}
 .al-list li{padding:7px 10px;border-radius:6px;cursor:pointer;color:#2b2a24}.al-list li small{display:block;color:#888;font-size:12px}
 .al-list li.on,.al-list li:hover{background:#eef0e4}.al-list .al-g{padding:2px 10px 0;font-size:10px;color:#aaa;cursor:default;background:none}`;
 let styled = false;
@@ -16,13 +16,21 @@ export function attachAddressLookup(el: HTMLInputElement | HTMLTextAreaElement, 
   if (el.dataset.al) return;
   el.dataset.al = '1';
   if (!styled) { const s = document.createElement('style'); s.textContent = css; document.head.append(s); styled = true; }
-  const wrap = el.parentElement!;
-  if (getComputedStyle(wrap).position === 'static') wrap.style.position = 'relative';
   const list = document.createElement('ul');
   list.className = 'al-list';
   list.hidden = true;
   list.setAttribute('role', 'listbox');
-  el.after(list);
+  // The list sits on the page itself (or the pop-up the field is in), directly under the field, so
+  // nothing around the field can cover it or push it somewhere else.
+  (el.closest('dialog') ?? document.body).append(list);
+  const place = () => {
+    const r = el.getBoundingClientRect();
+    const host = list.parentElement!;
+    const base = host === document.body ? { left: -scrollX, top: -scrollY } : host.getBoundingClientRect();
+    list.style.left = `${r.left - base.left}px`;
+    list.style.top = `${r.bottom - base.top + 2}px`;
+    list.style.width = `${r.width}px`;
+  };
   el.setAttribute('autocomplete', 'off');
   let session = uid(), items: { id: string; main: string; rest: string }[] = [], at = -1, timer = 0, seq = 0;
   const url = (p: string) => `${opts.endpoint}?${p}&s=${session}${opts.extra ? `&${opts.extra}` : ''}`;
@@ -30,6 +38,7 @@ export function attachAddressLookup(el: HTMLInputElement | HTMLTextAreaElement, 
   const draw = () => {
     list.innerHTML = items.map((x, n) => `<li role="option" data-n="${n}" class="${n === at ? 'on' : ''}">${esc(x.main)}<small>${esc(x.rest)}</small></li>`).join('') + '<li class="al-g" aria-hidden="true">Suggestions by Google</li>';
     list.hidden = !items.length;
+    if (!list.hidden) place();
   };
   async function look() {
     const q = el.value.trim();
