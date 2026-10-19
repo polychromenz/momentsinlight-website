@@ -107,7 +107,7 @@ function drawPhotos() {
   $('.ga-sections').innerHTML = secs.map((s: any, n: number) => {
     const list = inSection(s.id);
     return `<div class="ga-sec${s.hidden ? ' hidden-sec' : ''}" data-sec="${s.id}">
-      <div class="sec-head"><input class="sec-name" value="${esc(s.name)}" aria-label="Section name" /><small>${list.length} photo${list.length === 1 ? '' : 's'}</small><span class="sp"></span>
+      <div class="sec-head"><input class="sec-name" value="${esc(s.name)}" aria-label="Section name" /><small>${list.length} photo${list.length === 1 ? '' : 's'}</small><button type="button" class="s-btn s-btn--quiet sec-all" data-sec-all="${s.id}">${list.length && list.every((i: any) => selected.has(i.id)) ? 'Unselect all' : 'Select all'}</button><span class="sp"></span>
         <label><input type="checkbox" data-bw ${s.is_bw ? 'checked' : ''}/> B+W</label>
         <label><input type="checkbox" data-hidesec ${s.hidden ? 'checked' : ''}/> Hidden</label>
         <button type="button" data-up ${n === 0 ? 'disabled' : ''} title="Move up">↑</button><button type="button" data-down ${n === secs.length - 1 ? 'disabled' : ''} title="Move down">↓</button>
@@ -381,6 +381,14 @@ document.addEventListener('click', async (e) => {
       ids.slice(a, b + 1).forEach((x: string) => selected.add(x));
     } else selected.has(iid) ? selected.delete(iid) : selected.add(iid);
     lastClicked = iid;
+    return drawPhotos();
+  }
+  // Select (or unselect) a whole section, e.g. for a vendor link.
+  const all = t.closest<HTMLElement>('[data-sec-all]');
+  if (all) {
+    const list = inSection(Number(all.dataset.secAll)).filter((i: any) => i.status === 'ready');
+    const on = list.every((i: any) => selected.has(i.id));
+    for (const i of list) on ? selected.delete(i.id) : selected.add(i.id);
     return drawPhotos();
   }
   const sel = t.closest<HTMLElement>('[data-sel]');
