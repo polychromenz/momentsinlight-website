@@ -1,7 +1,8 @@
 ---
 // Moments Studio calendar: a month of wedding/shoot dates (leads and booked jobs) and
-// appointments, with a Leads / Jobs filter. On a phone the month is compact (coloured marks) and
-// tapping a day lists it underneath. Clashing dates are marked. Data from functions/api/studio/crm/calendar.js.
+// appointments, with a Leads / Jobs filter, and under it a list of the month's dates with their
+// details (each opens the client page). On a phone the month is compact (coloured marks) and
+// tapping a day lists just that day. Clashing dates are marked. Data from functions/api/studio/crm/calendar.js.
 import StudioLayout from '../../layouts/StudioLayout.astro';
 ---
 <StudioLayout title="Calendar" section="calendar">
@@ -40,18 +41,25 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
   const tm = (t: string | null) => (t ? new Date(`2000-01-01T${t}:00`).toLocaleTimeString('en-NZ', { hour: 'numeric', minute: '2-digit' }).replace(':00', '') : '');
   const who = (title: string, partner: string) => (partner ? `${title.split(' ')[0]} & ${partner}` : title);
 
+  // The month's marks (by day) and, for the list under it, the same things with their details.
+  let detail: Record<string, string[]> = {};
+  const STAGE: Record<string, string> = { lead: 'Lead', booked: 'Booked', completed: 'Done' };
   function items() {
     const out: Record<string, string[]> = {};
+    detail = {};
     const add = (date: string, html: string) => (out[date] ||= []).push(html);
+    const more = (date: string, html: string) => (detail[date] ||= []).push(html);
     for (const j of data.jobs) {
       const kind = j.stage === 'lead' ? 'lead' : 'job';
       if (show !== 'all' && show !== kind) continue;
       add(j.event_date, `<a class="ev ev--${kind}${j.clash ? ' ev--clash' : ''}" href="/studio/crm/job?id=${j.id}" title="${esc(`${j.job_type}${j.venue ? ` · ${j.venue}` : ''}`)}"><b>${j.clash ? '⚠ ' : ''}${kind === 'lead' ? 'Lead' : esc(j.job_type)}</b> ${esc(who(j.title, j.partner_name))}</a>`);
+      more(j.event_date, `<a class="cal-row ev--${kind}${j.clash ? ' ev--clash' : ''}" href="/studio/crm/job?id=${j.id}"><span class="cal-k">${j.clash ? '⚠ ' : ''}${STAGE[j.stage] ?? esc(j.stage)}</span><b>${esc(who(j.title, j.partner_name))}</b><span class="cal-d">${esc(j.job_type)}${j.venue ? ` · ${esc(j.venue)}` : ''}${j.clash ? ' · two on this date' : ''}</span></a>`);
     }
     for (const a of data.appointments) {
       const kind = a.stage === 'lead' ? 'lead' : 'job';
       if (show !== 'all' && show !== kind) continue;
       add(a.date, `<a class="ev ev--appt" href="/studio/crm/job?id=${a.job_id}" title="${esc(a.location)}"><b>${a.start_time ? tm(a.start_time) : 'All day'}</b> ${esc(a.title)}: ${esc(who(a.job_title, a.partner_name))}</a>`);
+      more(a.date, `<a class="cal-row ev--appt" href="/studio/crm/job?id=${a.job_id}"><span class="cal-k">${a.start_time ? `${tm(a.start_time)}${a.end_time ? `–${tm(a.end_time)}` : ''}` : 'All day'}</span><b>${esc(a.title)}</b><span class="cal-d">${esc(who(a.job_title, a.partner_name))}${a.location ? ` · ${esc(a.location)}` : ''}</span></a>`);
     }
     return out;
   }
@@ -71,9 +79,9 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
       d.setDate(d.getDate() + 1);
     }
     $('.cal-grid').innerHTML = cells.join('');
-    // The phone list: the day tapped, or this month's days that have something.
-    const days = picked ? [picked] : Object.keys(by).filter((k) => k.slice(0, 7) === iso(month).slice(0, 7)).sort();
-    $('.cal-list').innerHTML = (picked ? '<li class="cal-all"><button type="button" data-all>Show the whole month</button></li>' : '') + days.map((k) => `<li><span class="cal-ld${k === today ? ' today' : ''}">${new Date(`${k}T12:00:00`).toLocaleDateString('en-NZ', { weekday: 'short', day: 'numeric' })}</span><span class="cal-li">${by[k].join('') || '<span class="empty">Nothing on.</span>'}</span></li>`).join('') || '<li class="empty">Nothing this month.</li>';
+    // The list: the day tapped (phone), or this month's days that have something, with the details.
+    const days = picked ? [picked] : Object.keys(detail).filter((k) => k.slice(0, 7) === iso(month).slice(0, 7)).sort();
+    $('.cal-list').innerHTML = (picked ? '<li class="cal-all"><button type="button" data-all>Show the whole month</button></li>' : '') + days.map((k) => `<li><span class="cal-ld${k === today ? ' today' : ''}">${new Date(`${k}T12:00:00`).toLocaleDateString('en-NZ', { weekday: 'short', day: 'numeric', month: 'short' })}</span><span class="cal-li">${(detail[k] || []).join('') || '<span class="empty">Nothing on.</span>'}</span></li>`).join('') || '<li class="empty">Nothing this month.</li>';
   }
 
   async function load() {
@@ -130,7 +138,20 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
   .ev--job { background: #e9eddf; border-color: var(--green); }
   .ev--appt { background: #eef0f7; border-color: #7d8ca8; }
   .ev--clash { box-shadow: inset 0 0 0 1px #c46a4a; }
-  .cal-list { display: none; list-style: none; margin: 0; padding: 0; }
+  .cal-list { list-style: none; margin: 18px 0 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+  .cal-list li { display: flex; gap: 14px; background: var(--white); border-radius: 16px 0; padding: 10px 14px; animation: s-rise 0.6s var(--ease) both; }
+  .cal-list .empty { color: #888; }
+  .cal-ld { flex: 0 0 90px; font-size: 14px; color: #777; padding-top: 7px; }
+  .cal-ld.today { color: var(--green); font-weight: 600; }
+  .cal-li { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+  .cal-row { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; padding: 7px 10px; border-left: 3px solid; border-radius: 8px 0; color: var(--ink); text-decoration: none; font-size: 15px; transition: border-radius 0.35s var(--ease), filter 0.2s; }
+  .cal-row:hover { border-radius: 0 8px; filter: brightness(0.97); opacity: 1; }
+  .cal-row.ev--lead { background: #fbf3df; } .cal-row.ev--job { background: #e9eddf; } .cal-row.ev--appt { background: #eef0f7; }
+  .cal-k { flex: 0 0 auto; min-width: 70px; font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #6b6b5c; }
+  .cal-row b { font-weight: 600; }
+  .cal-d { color: #666; font-size: 14px; }
+  .cal-all button { border: 0; background: none; padding: 0; font: inherit; font-size: 14px; color: var(--green); text-decoration: underline; cursor: pointer; }
+  .cal-list li.cal-all { background: none; padding: 0 4px; }
   .cal-key { margin: 14px 0 0; font-size: 13px; color: #777; display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; }
   .cal-key .ev { display: inline-block; white-space: normal; }
   @media (max-width: 760px) {
@@ -142,15 +163,11 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
     .cal-day .ev { height: 6px; padding: 0; border-left: 0; border-radius: 3px; font-size: 0; pointer-events: none; }
     .cal-day .ev--lead { background: #d9b45c; } .cal-day .ev--job { background: var(--green); } .cal-day .ev--appt { background: #7d8ca8; }
     .cal-day .ev--clash { background: #c46a4a; box-shadow: none; }
-    .cal-all button { border: 0; background: none; padding: 0; font: inherit; font-size: 14px; color: var(--green); text-decoration: underline; cursor: pointer; }
-    .cal-list li.cal-all { background: none; padding: 0 4px; }
-    .cal-list { display: flex; flex-direction: column; gap: 8px; }
-    .cal-list li { display: flex; gap: 12px; background: var(--white); border-radius: 16px 0; padding: 10px 12px; animation: s-rise 0.6s var(--ease) both; }
-    .cal-list .empty { color: #888; }
-    .cal-ld { flex: 0 0 64px; font-size: 13px; color: #777; padding-top: 4px; }
-    .cal-ld.today { color: var(--green); font-weight: 600; }
-    .cal-li { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
-    .cal-li .ev { white-space: normal; font-size: 13px; }
+    .cal-list { margin-top: 0; }
+    .cal-list li { gap: 10px; padding: 10px 12px; }
+    .cal-ld { flex-basis: 64px; font-size: 13px; padding-top: 6px; }
+    .cal-row { font-size: 14px; padding: 6px 8px; }
+    .cal-k { min-width: 0; }
     .cal-title { min-width: 0; font-size: 22px; }
   }
 </style>

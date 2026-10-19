@@ -230,12 +230,40 @@ import { site } from '../data/site';
     let row: Img[] = [];
     let side = 0;
     const line = (items: Img[], h: number, cls = '') => `<div class="row${cls}" style="gap:${GAP}px;margin-bottom:${GAP}px">${items.map((i) => tile(i, h * ar(i), h)).join('')}</div>`;
+    const fill = (items: Img[]) => (width - GAP * (items.length - 1)) / items.reduce((a, i) => a + ar(i), 0);
+    const cap = target * 1.6;
+    // The last full row of plain photos, so a few left over can share it rather than leave a gap.
+    let prev: { items: Img[]; at: number } | null = null;
     const flush = (last: boolean) => {
       if (!row.length) return;
-      const sum = row.reduce((a, i) => a + ar(i), 0);
-      const full = (width - GAP * (row.length - 1)) / sum;
-      // A last row that doesn't fill the width sits in the middle rather than against the left.
-      out.push(line(row, last ? Math.min(target, full) : full, last && full > target ? ' row--end' : ''));
+      const full = fill(row);
+      if (!last || full <= cap) {
+        if (!last) prev = { items: row, at: out.length };
+        out.push(line(row, full));
+        row = [];
+        return;
+      }
+      // Too few photos left to fill the width: split them and the row above into two rows that both
+      // fill it, at the heights nearest the usual.
+      if (prev) {
+        const all = [...prev.items, ...row];
+        let best = 0, score = Infinity;
+        for (let s = 1; s < all.length; s++) {
+          const a = fill(all.slice(0, s)), b = fill(all.slice(s));
+          if (a > cap || b > cap) continue;
+          const sc = Math.log(a / target) ** 2 + Math.log(b / target) ** 2;
+          if (sc < score) { score = sc; best = s; }
+        }
+        if (best) {
+          out[prev.at] = line(all.slice(0, best), fill(all.slice(0, best)));
+          out.push(line(all.slice(best), fill(all.slice(best))));
+          row = [];
+          prev = null;
+          return;
+        }
+      }
+      // Still not enough (a section of only a few photos): they sit in the middle.
+      out.push(line(row, Math.min(target, full), ' row--end'));
       row = [];
     };
     for (let n = 0; n < list.length; n++) {
@@ -249,9 +277,10 @@ import { site } from '../data/site';
       const stack: Img[] = [];
       if (!phone) {
         if (row.length === 1) stack.push(row.pop()!);
-        else if (row.length > 1) { const sum = row.reduce((a, x) => a + ar(x), 0); out.push(line(row, Math.min((width - GAP * (row.length - 1)) / sum, target * 1.6))); row = []; }
+        else if (row.length > 1) flush(true);
+        prev = null;
         while (stack.length < 2 && n + 1 < list.length && !list[n + 1].hero) stack.push(list[++n]);
-      } else flush(true);
+      } else { flush(true); prev = null; }
       if (stack.length === 2) {
         // Highlight width a·H, stack width c where c/b1 + c/b2 + gap = H, and a·H + gap + c = width.
         const k = 1 / ar(stack[0]) + 1 / ar(stack[1]);
