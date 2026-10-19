@@ -223,6 +223,12 @@ export async function siteHealth(env, { now = false } = {}) {
     for (const r of st.results) { if (r.title) (titles[r.title] ||= []).push(r.path); if (r.desc) (descs[r.desc] ||= []).push(r.path); }
     const broken = {};
     for (const r of st.results) for (const l of r.links ?? []) if (!known.has(l) && !/^\/(studio|newcontact|portal|quote|contract|invoice|questionnaire)/.test(l)) (broken[l] ||= []).push(r.path);
+    // Pages left out of the sitemap on purpose (e.g. /thanks, /privacy, /book) aren't broken:
+    // only report a link if it really doesn't load.
+    for (const l of Object.keys(broken)) {
+      const res = await env.ASSETS.fetch(new Request(`${SITE}${l}`)).catch(() => null);
+      if (res && res.status < 400) delete broken[l];
+    }
     st.summary = {
       pages: st.results.length,
       shortTitles: st.results.filter((r) => r.title && (r.title.length < 25 || r.title.length > 65)).map((r) => ({ path: r.path, title: r.title })),
