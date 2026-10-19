@@ -45,13 +45,15 @@ export async function deleteGallery(env, galleryId) {
 
 // ---- Access links ----
 export const GALLERY_ORIGIN = 'https://galleries.momentsinlight.co.nz';
-export const LINK_KINDS = { main_client: 'Couple / client', invited: 'Invited', guest: 'Guests' };
+export const LINK_KINDS = { main_client: 'Couple / client', invited: 'Invited', guest: 'Guests', vendor: 'Vendor / venue' };
 export const linkUrl = (slug, token) => `${GALLERY_ORIGIN}/${slug}${token ? `?k=${token}` : ''}`;
 const today = () => new Date().toLocaleDateString('en-CA', { timeZone: 'Pacific/Auckland' });
 
-/** Clean values for a link. Defaults by kind: guests give their email first and get web-size downloads. */
+/** Clean values for a link. Defaults by kind: guests give their email first and get web-size downloads;
+ *  vendors (venues, suppliers) see only the photos chosen for them, web size, free to use with credit. */
 export function linkValues(d, kind, old = {}) {
   const guest = kind === 'guest';
+  const vendor = kind === 'vendor';
   const pick = (k, fallback) => (d[k] === undefined ? old[k] ?? fallback : d[k]);
   const secs = pick('visible_section_ids', null);
   return {
@@ -60,8 +62,8 @@ export function linkValues(d, kind, old = {}) {
     access_code: String(pick('access_code', '') ?? '').trim().slice(0, 30) || null,
     visible_section_ids: Array.isArray(secs) ? JSON.stringify(secs.map(Number).filter(Boolean)) : typeof secs === 'string' ? secs : null,
     watermark: pick('watermark', 0) ? 1 : 0,
-    downloads: ['none', 'web', 'highres'].includes(pick('downloads')) ? pick('downloads') : guest ? 'none' : 'highres',
-    allow_lists: pick('allow_lists', 1) ? 1 : 0,
+    downloads: ['none', 'web', 'highres'].includes(pick('downloads')) ? pick('downloads') : guest ? 'none' : vendor ? 'web' : 'highres',
+    allow_lists: pick('allow_lists', vendor ? 0 : 1) ? 1 : 0,
     require_email: pick('require_email', guest ? 1 : 0) ? 1 : 0,
     expires_at: /^\d{4}-\d{2}-\d{2}$/.test(pick('expires_at', '') ?? '') ? pick('expires_at') : null,
   };
@@ -149,8 +151,8 @@ export async function galleryView(env, g, link, viewerToken) {
   const src = (id, size) => (wm ? `/api/gallery/img/${viewerToken}/${id}_${SIZES[size]}.jpg` : webUrl(g.id, id, size));
   // Photos the couple hid: only the couple sees them (at the end of their section, marked).
   const couple = !link || link.kind === 'main_client';
-  // A shared list shows only that list's photos.
-  const inList = link?.kind === 'list_share' ? new Set((await db.prepare('SELECT image_id FROM gallery_list_items WHERE list_id = ?1').bind(link.list_id).all()).results.map((r) => r.image_id)) : null;
+  // A shared list, or a vendor link, shows only its list's photos.
+  const inList = (link?.kind === 'list_share' || link?.kind === 'vendor') && link.list_id ? new Set((await db.prepare('SELECT image_id FROM gallery_list_items WHERE list_id = ?1').bind(link.list_id).all()).results.map((r) => r.image_id)) : null;
   const images = (await db.prepare(`SELECT id, section_id, width, height, is_hero, client_hidden FROM gallery_images WHERE gallery_id = ?1 AND hidden = 0 AND status = 'ready' ORDER BY sort_order, created_at`).bind(g.id).all()).results
     .filter((i) => ids.has(i.section_id) && (couple || !i.client_hidden) && (!inList || inList.has(i.id)))
     .map((i) => ({ id: i.id, s: i.section_id, w: i.width, h: i.height, hero: i.is_hero && !i.client_hidden ? 1 : 0, ch: i.client_hidden ? 1 : 0, thumb: src(i.id, 'thumb'), web: src(i.id, 'web') }));
@@ -166,7 +168,7 @@ export async function galleryView(env, g, link, viewerToken) {
     gallery: publicInfo(g),
     cover,
     rights: { downloads: link?.downloads ?? 'highres', watermark: !!link?.watermark, kind: link?.kind ?? 'main_client',
-      lists: !!link?.allow_lists && link?.kind !== 'list_share', hide: couple, zip: !!link && link.downloads !== 'none' && !link.watermark },
+      lists: !!link?.allow_lists && link?.kind !== 'list_share' && link?.kind !== 'vendor', hide: couple, zip: !!link && link.downloads !== 'none' && !link.watermark },
     sections,
     images,
   };

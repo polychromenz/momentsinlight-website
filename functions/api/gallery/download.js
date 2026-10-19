@@ -13,6 +13,9 @@ export async function onRequestGet({ request, env }) {
   if (a.link.downloads === 'none') return json({ error: 'Downloads aren’t switched on for this gallery.' }, 403);
   const img = await env.DB.prepare(`SELECT * FROM gallery_images WHERE id = ?1 AND gallery_id = ?2 AND hidden = 0 AND status = 'ready'`).bind(u.searchParams.get('id') ?? '', a.gallery.id).first();
   if (!img) return json({ error: 'That photo isn’t here.' }, 404);
+  // Links limited to a list (a shared list, a vendor link) download only the photos in it.
+  if (a.link.list_id && (a.link.kind === 'list_share' || a.link.kind === 'vendor')
+    && !(await env.DB.prepare('SELECT 1 FROM gallery_list_items WHERE list_id = ?1 AND image_id = ?2').bind(a.link.list_id, img.id).first())) return json({ error: 'That photo isn’t here.' }, 404);
   const full = u.searchParams.get('size') === 'original' && a.link.downloads === 'highres' && !a.link.watermark;
   let body;
   if (a.link.watermark) body = await watermarked(env, a.gallery.id, img, 2048, request).catch(() => null);

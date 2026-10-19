@@ -322,7 +322,7 @@ async function loadLinks() {
     <div class="top"><span><span class="kind">${esc(r.kinds[l.kind] ?? l.kind)}</span> <strong>${esc(l.name)}</strong>${l.email ? ` <small>${esc(l.email)}</small>` : ''}</span>
       <span><a class="s-btn s-btn--quiet" href="/g/${esc(d.gallery.slug)}?preview=1&link=${l.id}" target="_blank" rel="noopener">Preview as this</a> <button type="button" class="s-btn" data-edit-link="${l.id}">Change</button></span></div>
     <div class="url"><code>${esc(l.url)}</code><button type="button" class="s-btn s-btn--quiet" data-copy="${esc(l.url)}">Copy link</button>${l.access_code ? `<span>Code: <code>${esc(l.access_code)}</code> <button type="button" class="s-btn s-btn--quiet" data-copy="${esc(l.access_code)}">Copy</button></span>` : ''}</div>
-    <div class="facts">${[DL[l.downloads], l.watermark ? 'Monogram on photos' : '', l.require_email ? 'Name and email first' : '', l.visible_section_ids?.length ? `Only: ${l.visible_section_ids.map(secName).filter(Boolean).map(esc).join(', ')}` : 'All sections', l.expires_at ? `Until ${day(l.expires_at)}` : '', `${l.visitors} visitor${l.visitors === 1 ? '' : 's'}${l.last_seen ? `, last ${day(l.last_seen)}` : ''}`].filter(Boolean).join(' · ')}</div></div>`).join('');
+    <div class="facts">${[DL[l.downloads], l.watermark ? 'Monogram on photos' : '', l.require_email ? 'Name and email first' : '', l.kind === 'vendor' ? `${l.photos ?? 0} chosen photo${l.photos === 1 ? '' : 's'} (select photos, then Vendor link…), free to use with credit` : l.visible_section_ids?.length ? `Only: ${l.visible_section_ids.map(secName).filter(Boolean).map(esc).join(', ')}` : 'All sections', l.expires_at ? `Until ${day(l.expires_at)}` : '', `${l.visitors} visitor${l.visitors === 1 ? '' : 's'}${l.last_seen ? `, last ${day(l.last_seen)}` : ''}`].filter(Boolean).join(' · ')}</div></div>`).join('');
 }
 function editLink(l: any) {
   const f = $<HTMLFormElement>('[data-link-form]');
@@ -390,6 +390,17 @@ document.addEventListener('click', async (e) => {
     if (k === 'none') { selected.clear(); return drawPhotos(); }
     if (k === 'hero' || k === 'unhero') return patch(ids, { is_hero: k === 'hero' ? 1 : 0 });
     if (k === 'hide' || k === 'show') return patch(ids, { hidden: k === 'hide' ? 1 : 0 });
+    if (k === 'vendor') {
+      // A link for a venue or supplier showing just these photos (web size, free to use with credit).
+      const r0 = await tryApi(`/api/studio/galleries/links?gallery_id=${id}`, 'GET');
+      const vendors = (r0?.links ?? []).filter((l: any) => l.kind === 'vendor');
+      const name = prompt(`Add ${ids.length} photo${ids.length === 1 ? '' : 's'} to which vendor link?\nType the venue or supplier’s name${vendors.length ? ` (existing: ${vendors.map((l: any) => l.name).join(', ')})` : ''}.`, vendors[0]?.name ?? d.gallery.venue ?? '');
+      if (!name?.trim()) return;
+      const have = vendors.find((l: any) => l.name.toLowerCase() === name.trim().toLowerCase());
+      const r = await tryApi('/api/studio/galleries/links', 'POST', { action: 'vendor', gallery_id: id, link_id: have?.id, name: name.trim(), image_ids: ids });
+      if (r) { selected.clear(); drawPhotos(); toast(`${r.name}’s vendor link now has ${r.photos} photo${r.photos === 1 ? '' : 's'}. Copy it from the Sharing tab.`); }
+      return;
+    }
     if (k === 'delete') {
       if (!confirm(`Delete ${ids.length} photo${ids.length === 1 ? '' : 's'} (all sizes)? This can’t be undone.`)) return;
       if (await tryApi('/api/studio/galleries/photos', 'DELETE', { gallery_id: id, ids })) { selected.clear(); toast('Deleted.'); load(); }

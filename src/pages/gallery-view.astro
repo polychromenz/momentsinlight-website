@@ -48,6 +48,7 @@ import { site } from '../data/site';
         </div>
       </header>
       <p class="g-note" hidden></p>
+      <p class="g-note g-vendor" hidden>These photos are yours to use on your website and social media, with a credit to <a href="https://www.momentsinlight.co.nz/">Moments in Light</a>. Download any you like.</p>
       <div class="g-filter" hidden></div>
       <main class="g-main"></main>
       <div class="selbar" hidden>
@@ -193,6 +194,7 @@ import { site } from '../data/site';
     $('[data-lists]').hidden = !(live() && view.rights.lists);
     $('[data-select]').hidden = !(live() && (view.rights.lists || view.rights.zip || view.rights.hide));
     $('[data-dl]').hidden = !(live() && view.rights.zip);
+    $('.g-vendor').hidden = view.rights.kind !== 'vendor';
     gate(`<a class="g-cta" href="#photos">View the gallery</a>`);
     if (view.preview) {
       const p = $('.gv-preview');
