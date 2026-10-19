@@ -8,7 +8,7 @@ import '@fontsource/raleway/500.css';
 import '@fontsource/raleway/600.css';
 import '../styles/global.css';
 
-type Section = 'dashboard' | 'clients' | 'galleries' | 'calendar' | 'contacts' | 'blog' | 'pages' | 'reviews' | 'stats' | 'seo' | 'rankings' | 'payments' | 'mileage' | 'social' | 'settings';
+type Section = 'dashboard' | 'clients' | 'galleries' | 'calendar' | 'contacts' | 'blog' | 'pages' | 'reviews' | 'stats' | 'seo' | 'rankings' | 'payments' | 'mileage' | 'xero' | 'social' | 'settings';
 interface Props { title: string; section?: Section }
 const { title, section } = Astro.props;
 // Which build this is (Cloudflare Pages gives the commit), shown at the bottom of every studio page.
@@ -17,7 +17,7 @@ const version = `${built} · ${(process.env.CF_PAGES_COMMIT_SHA ?? 'local').slic
 type Item = [Section, string, string];
 // Small menus that open: the website's content, and how it's found and seen (SEO).
 const website: Item[] = [['blog', 'Blog', '/studio/blog'], ['pages', 'Pages', '/studio/pages']];
-const money: Item[] = [['payments', 'Payments', '/studio/payments'], ['mileage', 'Mileage', '/studio/mileage']];
+const money: Item[] = [['payments', 'Payments', '/studio/payments'], ['mileage', 'Mileage', '/studio/mileage'], ['xero', 'Xero', '/studio/xero']];
 const seo: Item[] = [['seo', 'SEO', '/studio/seo'], ['rankings', 'Rankings', '/studio/rankings'], ['stats', 'Stats', '/studio/stats'], ['reviews', 'Reviews', '/studio/reviews']];
 const menu: (Item | [string, string, Item[]])[] = [
   ['dashboard', 'Dashboard', '/studio'],

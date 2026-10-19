@@ -1,0 +1,186 @@
+---
+// Moments Studio > Payments > Xero: the connection, what's waiting for Tony's approval before it
+// goes into Xero (invoices, payments, Stripe fees and payouts, invoices paid in Xero), the account
+// choices, and the Stripe payouts. Data from functions/api/studio/xero (functions-lib/xero.js).
+import StudioLayout from '../../layouts/StudioLayout.astro';
+---
+<StudioLayout title="Xero" section="xero">
+  <main class="xe">
+    <h1>Xero</h1>
+    <p class="intro">The studio copies your invoices, their payments, Stripe’s fees and Stripe’s payouts into Xero, so your bank feed lines match with one click. Each one waits here for your approval until you switch that kind to automatic.</p>
+
+    <section class="card xe-conn"><p class="muted">Loading…</p></section>
+
+    <section class="card">
+      <div class="head"><h2>Waiting for you</h2><span class="xe-acts"><button type="button" class="s-btn" data-run>Check for new ones</button> <button type="button" class="s-btn s-btn--solid" data-approve-all>Approve all</button></span></div>
+      <div class="xe-queue"></div>
+    </section>
+
+    <section class="card">
+      <h2>Settings</h2>
+      <form class="xe-set" autocomplete="off">
+        <label>Start from <small>(invoices sent on or after this date go to Xero)</small><input type="date" name="start" /></label>
+        <label>Sales account<select name="sales_code"></select></label>
+        <label>GST on sales<select name="sales_tax"></select></label>
+        <label>Your bank account<select name="bank_code"></select></label>
+        <label>Stripe account <small>(a bank account in Xero called Stripe)</small><select name="clearing_code"></select></label>
+        <label>Stripe fees account<select name="fees_code"></select></label>
+        <label>GST on Stripe fees<select name="fees_tax"></select></label>
+        <fieldset class="xe-auto"><legend>Send without asking</legend></fieldset>
+        <button type="submit" class="s-btn s-btn--solid">Save settings</button>
+      </form>
+      <p class="muted">Once you’re happy a kind is working smoothly, tick it under “Send without asking” and it goes into Xero on the next run (every 5 minutes). Ask your accountant whether Stripe’s fees carry GST.</p>
+    </section>
+
+    <section class="card">
+      <h2>Stripe payouts</h2>
+      <div class="tbl-wrap"><table class="xe-tbl xe-payouts"><thead><tr><th>Arrived</th><th class="r">Payments</th><th class="r">Fees</th><th class="r">Other</th><th class="r">Into the bank</th><th>In Xero</th></tr></thead><tbody></tbody></table></div>
+      <p class="muted">“Other” is refunds, disputes and anything else Stripe took out or added. A payment that isn’t from a studio invoice is flagged so you can check it.</p>
+    </section>
+
+    <section class="card">
+      <h2>Recently sent</h2>
+      <ul class="xe-recent"></ul>
+    </section>
+  </main>
+  <div class="s-toast" role="status"></div>
+</StudioLayout>
+
+<script>
+  const $ = <T extends HTMLElement = HTMLElement>(s: string) => document.querySelector<T>(s)!;
+  const esc = (s: unknown) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
+  const money = (c: number) => `$${(c / 100).toLocaleString('en-NZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const when = (iso: string) => new Date(iso).toLocaleString('en-NZ', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' });
+  function toast(msg: string, error = false) {
+    const t = $('.s-toast'); t.textContent = msg; t.classList.toggle('error', error); t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 5000);
+  }
+  const post = async (body: unknown) => {
+    const r = await fetch('/api/studio/xero', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(d.error || 'That didn’t work. Are you still signed in?');
+    return d;
+  };
+  const back = new URLSearchParams(location.search).get('xero');
+  if (back) {
+    toast({ connected: 'Xero is connected.', cancelled: 'Xero wasn’t connected (cancelled).', expired: 'That took too long. Click Connect again.', failed: 'Xero didn’t connect. Try again.' }[back] ?? '', back !== 'connected');
+    history.replaceState(null, '', location.pathname);
+  }
+  let data: any = null;
+  async function load() {
+    const r = await fetch('/api/studio/xero');
+    data = await r.json().catch(() => null);
+    if (!r.ok || !data) { $('.xe-conn').innerHTML = `<p>${esc(data?.error || 'Couldn’t load.')}</p>`; return; }
+    draw();
+  }
+  function draw() {
+    const { ready, connection: c, settings: s, kinds, queue, recent, payouts, choices } = data;
+    // The connection
+    $('.xe-conn').innerHTML = !ready
+      ? `<h2>Set up</h2><p>The Xero link is built and waiting for its keys. To switch it on:</p>
+        <ol><li>At <a href="https://developer.xero.com/app/manage" target="_blank" rel="noopener">developer.xero.com › My Apps</a>, click <strong>New app</strong>: a <strong>Web app</strong> called Moments Studio, company URL your website, and this redirect URI:<br><code>https://www.momentsinlight.co.nz/api/studio/xero/callback</code></li>
+        <li>In the app’s <strong>Configuration</strong>, copy the Client id and generate a Client secret.</li>
+        <li>Add both as secrets in <a href="https://dash.cloudflare.com/ba83c09be6ee9fa1e0ae58f61811a3db/pages/view/momentsinlight-website/settings/environment-variables" target="_blank" rel="noopener">Cloudflare Pages settings</a> (Production): <code>XERO_CLIENT_ID</code> and <code>XERO_CLIENT_SECRET</code>, then ask Claude to redeploy.</li>
+        <li>Come back here and click Connect.</li></ol>`
+      : !c || c.expired
+        ? `<h2>${c?.expired ? 'Reconnect Xero' : 'Connect Xero'}</h2><p>${c?.expired ? 'The connection expired (it lasts while it’s used at least every 60 days).' : 'Choose your Moments in Light organisation in Xero and allow the studio in.'}</p><p><a class="s-btn s-btn--solid" href="/api/studio/xero/connect">Connect Xero</a></p>`
+        : `<div class="head"><h2>Connected to ${esc(c.tenant_name)}</h2><button type="button" class="s-btn s-btn--quiet" data-disconnect>Disconnect</button></div><p class="muted">Since ${when(c.connected_at)}.${!s.start ? ' Choose a start date in the settings below, and the studio starts queuing.' : ''}${choices?.error ? ` Couldn’t read your Xero accounts: ${esc(choices.error)}` : ''}</p>`;
+    // The queue
+    const order = ['invoice', 'paid_in_xero', 'payment', 'fee', 'payout'];
+    const rows = [...queue].sort((a: any, b: any) => order.indexOf(a.kind) - order.indexOf(b.kind) || a.id - b.id);
+    $('.xe-queue').innerHTML = rows.length ? `<ul class="xe-list">${rows.map((q: any) => `<li class="st-${q.status}" data-id="${q.id}">
+        <label><input type="checkbox" data-pick ${q.status === 'approved' ? 'checked disabled' : ''} /> <span class="kind">${esc(kinds[q.kind])}</span> ${esc(q.summary)}</label>
+        <span class="row-acts">${q.status === 'approved' ? '<em class="muted">Approved: sending on the next run</em>' : ''}${q.status === 'failed' ? `<span class="warn">${esc(q.error)}</span> <button type="button" class="s-btn s-btn--quiet" data-retry>Try again</button>` : ''}<button type="button" class="s-btn s-btn--quiet" data-skip title="Never send this one (e.g. it’s already in Xero)">Skip</button></span></li>`).join('')}</ul>
+        <p><button type="button" class="s-btn s-btn--solid" data-approve>Approve ticked</button></p>`
+      : `<p class="muted">${c && !c.expired ? 'Nothing waiting.' : 'Nothing yet: invoices and payments appear here once Xero is connected and a start date is set.'}</p>`;
+    // Settings
+    const f = $<HTMLFormElement>('.xe-set');
+    const opts = (list: any[], val: string, label: (x: any) => string, value: (x: any) => string) => {
+      const items = list.map((x) => `<option value="${esc(value(x))}"${value(x) === val ? ' selected' : ''}>${esc(label(x))}</option>`).join('');
+      return `<option value="">Choose…</option>${items}${val && !list.some((x) => value(x) === val) ? `<option value="${esc(val)}" selected>${esc(val)}</option>` : ''}`;
+    };
+    const accounts = choices?.accounts ?? [], taxes = choices?.taxes ?? [];
+    const acc = (x: any) => `${x.code ? `${x.code} ` : ''}${x.name}`;
+    const sel = (n: string, html: string) => { (f.elements.namedItem(n) as HTMLSelectElement).innerHTML = html; };
+    sel('sales_code', opts(accounts.filter((x: any) => x.cls === 'REVENUE' && x.code), s.sales_code, acc, (x) => x.code));
+    sel('fees_code', opts(accounts.filter((x: any) => x.cls === 'EXPENSE' && x.code), s.fees_code, acc, (x) => x.code));
+    sel('bank_code', opts(accounts.filter((x: any) => x.bank), s.bank_code, acc, (x) => x.id));
+    sel('clearing_code', opts(accounts.filter((x: any) => x.bank), s.clearing_code, acc, (x) => x.id));
+    const tax = (x: any) => `${x.name} (${x.rate}%)`;
+    sel('sales_tax', opts(taxes, s.sales_tax, tax, (x) => x.type));
+    sel('fees_tax', opts(taxes, s.fees_tax, tax, (x) => x.type));
+    (f.elements.namedItem('start') as HTMLInputElement).value = s.start;
+    $('.xe-auto').innerHTML = `<legend>Send without asking</legend>${Object.entries(kinds).map(([k, v]) => `<label class="tick"><input type="checkbox" name="auto_${k}" ${s.auto[k] ? 'checked' : ''} /> ${esc(v)}</label>`).join('')}`;
+    // Payouts and history
+    $('.xe-payouts tbody').innerHTML = payouts.length ? payouts.map((p: any) => `<tr><td>${esc(p.arrival_date)}${p.unmatched ? ` <span class="warn" title="Payments not from a studio invoice">⚠ ${p.unmatched}</span>` : ''}</td><td class="r">${p.payments} · ${money(p.gross)}</td><td class="r">${money(p.fees)}</td><td class="r">${p.other ? money(p.other) : '–'}</td><td class="r"><strong>${money(p.amount)}</strong></td><td>${p.xero_transfer_id ? 'Yes' : 'Not yet'}</td></tr>`).join('')
+      : '<tr><td colspan="6" class="muted">None yet. They appear when Stripe pays out (once Stripe is live and its payout.paid event is on).</td></tr>';
+    $('.xe-recent').innerHTML = recent.length ? recent.map((q: any) => `<li><span class="kind">${esc(kinds[q.kind])}</span> ${esc(q.summary)} <small class="muted">${q.status === 'skipped' ? 'Skipped' : 'Sent'} ${q.done_at ? when(q.done_at) : ''}</small></li>`).join('') : '<li class="muted">Nothing yet.</li>';
+  }
+  document.addEventListener('click', async (e) => {
+    const t = e.target as HTMLElement;
+    const btn = t.closest<HTMLButtonElement>('button');
+    if (!btn) return;
+    const row = t.closest<HTMLElement>('[data-id]');
+    try {
+      if (btn.matches('[data-approve], [data-approve-all]')) {
+        const all = btn.matches('[data-approve-all]');
+        const ids = data.queue.filter((q: any) => q.status !== 'approved' && (all || document.querySelector<HTMLInputElement>(`[data-id="${q.id}"] [data-pick]`)?.checked)).map((q: any) => q.id);
+        if (!ids.length) return toast('Tick the ones to approve first.', true);
+        if (all && !confirm(`Approve all ${ids.length} and send them to Xero now?`)) return;
+        btn.disabled = true; btn.textContent = 'Sending…';
+        const d = await post({ action: 'approve', ids });
+        toast(`${d.result.done} sent to Xero${d.result.failed ? `, ${d.result.failed} didn’t go (see why below)` : ''}.`, !!d.result.failed);
+      }
+      if (btn.matches('[data-run]')) { btn.disabled = true; const d = await post({ action: 'run' }); toast(`${d.queued} new to check${d.paid ? `, ${d.paid} paid in Xero` : ''}${d.result.done ? `, ${d.result.done} sent` : ''}.`); }
+      if (btn.matches('[data-skip]') && row) { if (!confirm('Skip this one? It won’t go to Xero.')) return; await post({ action: 'skip', id: Number(row.dataset.id) }); }
+      if (btn.matches('[data-retry]') && row) await post({ action: 'retry', id: Number(row.dataset.id) });
+      if (btn.matches('[data-disconnect]')) { if (!confirm('Disconnect Xero? Nothing more goes to Xero until you connect again.')) return; await post({ action: 'disconnect' }); }
+      load();
+    } catch (err) { toast((err as Error).message, true); load(); }
+  });
+  $<HTMLFormElement>('.xe-set').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const f = e.target as HTMLFormElement;
+    const v = (n: string) => (f.elements.namedItem(n) as HTMLInputElement).value;
+    const auto = Object.fromEntries(Object.keys(data.kinds).map((k) => [k, (f.elements.namedItem(`auto_${k}`) as HTMLInputElement).checked]));
+    try {
+      await post({ action: 'settings', start: v('start'), sales_code: v('sales_code'), sales_tax: v('sales_tax'), bank_code: v('bank_code'), clearing_code: v('clearing_code'), fees_code: v('fees_code'), fees_tax: v('fees_tax'), auto });
+      toast('Settings saved.'); load();
+    } catch (err) { toast((err as Error).message, true); }
+  });
+  load();
+</script>
+
+<style is:global>
+  .xe { max-width: 1100px; margin: 0 auto; padding: 24px clamp(14px, 3vw, 32px) 80px; }
+  .xe h1 { margin: 0; font-weight: 300; font-size: 32px; color: var(--ink); }
+  .xe .intro { color: #666; margin: 4px 0 14px; max-width: 760px; }
+  .xe .card { background: var(--white); border-radius: 24px 0; padding: 18px 22px; margin-bottom: 16px; }
+  .xe h2 { margin: 0 0 8px; font-weight: 300; font-size: 22px; }
+  .xe .head { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; align-items: baseline; }
+  .xe .muted { color: #888; font-size: 14px; }
+  .xe .warn { color: #a8432a; font-size: 13px; }
+  .xe code { background: var(--champagne); padding: 2px 7px; border-radius: 6px; word-break: break-all; }
+  .xe ol { padding-left: 20px; line-height: 1.8; }
+  .xe-list { list-style: none; margin: 0; padding: 0; }
+  .xe-list li { display: flex; flex-wrap: wrap; gap: 6px 12px; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #f3eee6; font-size: 14px; }
+  .xe-list li.st-failed { background: #fdf6f3; }
+  .xe-list label { display: flex; gap: 8px; align-items: baseline; flex: 1 1 380px; min-width: 0; }
+  .xe .kind { display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--green); min-width: 96px; }
+  .xe .row-acts { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  .xe .row-acts .s-btn { padding: 4px 10px; font-size: 13px; }
+  .xe-set { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; }
+  .xe-set > label { flex: 1 1 240px; display: flex; flex-direction: column; gap: 4px; font-size: 13px; font-weight: 600; color: #555; }
+  .xe-set small { font-weight: 400; color: #888; }
+  .xe-set input, .xe-set select { font: inherit; font-size: 14px; font-weight: 400; padding: 8px 10px; border: 1px solid #ddd3c4; border-radius: 10px 0; background: var(--white); color: var(--ink); min-width: 0; }
+  .xe-auto { flex: 1 1 100%; border: 1px solid #ece4d7; border-radius: 12px 0; padding: 8px 14px; display: flex; flex-wrap: wrap; gap: 6px 18px; }
+  .xe-auto legend { font-size: 13px; font-weight: 600; color: #555; padding: 0 4px; }
+  .xe-auto .tick { display: flex; gap: 6px; align-items: center; font-size: 14px; }
+  .xe .tbl-wrap { overflow-x: auto; }
+  .xe-tbl { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 620px; }
+  .xe-tbl th { text-align: left; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--green); padding: 8px; border-bottom: 1px solid #ece4d7; }
+  .xe-tbl td { padding: 8px; border-bottom: 1px solid #f3eee6; }
+  .xe-tbl .r { text-align: right; font-variant-numeric: tabular-nums; }
+  .xe-recent { list-style: none; margin: 0; padding: 0; font-size: 14px; }
+  .xe-recent li { padding: 6px 0; border-bottom: 1px solid #f3eee6; }
+</style>

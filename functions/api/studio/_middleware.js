@@ -4,7 +4,7 @@ import { signedIn, json } from '../../../functions-lib/studio.js';
 import { accessFor } from '../../../functions-lib/people.js';
 
 // Reads that still change something (connecting Google), so a look-only person can't use them.
-const READ_BUT_CHANGES = /^\/api\/studio\/crm\/(gmail-connect|gmail-callback)/;
+const READ_BUT_CHANGES = /^\/api\/studio\/(crm\/(gmail-connect|gmail-callback)|xero\/(connect|callback))/;
 
 export async function onRequest(context) {
   const { request, env } = context;
