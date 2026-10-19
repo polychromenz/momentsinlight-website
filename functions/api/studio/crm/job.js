@@ -19,7 +19,7 @@ export async function onRequestGet({ request, env }) {
   const id = Number(new URL(request.url).searchParams.get('id'));
   if (!id) return json({ error: 'Which job?' }, 400);
   const job = await env.DB.prepare(
-    `SELECT j.*, c.first_name, c.last_name, c.email, c.phone, c.address, c.ads_ok, c.notes AS client_notes
+    `SELECT j.*, c.first_name, c.last_name, c.email, c.phone, c.address, c.ads_ok, c.keep, c.notes AS client_notes
      FROM jobs j JOIN clients c ON c.id = j.client_id WHERE j.id = ?1`,
   ).bind(id).first();
   if (!job) return json({ error: 'That job doesn’t exist (it may have been deleted).' }, 404);
@@ -81,6 +81,8 @@ export async function onRequestPut(context) {
   }
   // Whether their photos can be used in ads (some contracts say no).
   if (d.ads_ok !== undefined) stmts.push(env.DB.prepare('UPDATE clients SET ads_ok = ?2, updated_at = ?3 WHERE id = ?1').bind(job.client_id, d.ads_ok ? 1 : 0, now));
+  // Kept even if they never book (the two-year clean-up, functions-lib/cleanup.js, leaves them alone).
+  if (d.keep !== undefined) stmts.push(env.DB.prepare('UPDATE clients SET keep = ?2 WHERE id = ?1').bind(job.client_id, d.keep ? 1 : 0));
   // Booked or lost: steps waiting on a booking stop.
   if ((jobFields.stage === 'booked' || jobFields.stage === 'lost') && job.stage !== jobFields.stage) {
     stmts.push(env.DB.prepare(

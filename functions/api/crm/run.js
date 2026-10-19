@@ -24,6 +24,7 @@
 //      each wedding not yet blogged, and the competitors' new pages; from the 2nd of the month,
 //      the site health check. Rankings (functions-lib/rankings.js): Monday's Google check, and
 //      collecting results as they finish.
+//  13. The two-year clean-up of old enquiries promised on /privacy (functions-lib/cleanup.js).
 // Ready-to-send emails and to-dos need nothing here: they appear on Today when due.
 // Jobs on hold (jobs.hold: the Studio Ninja import until switch-over) are skipped by every step.
 import { sendStep } from '../../../functions-lib/crm-send.js';
@@ -39,6 +40,7 @@ import { weeklyPositions, contentTasks, siteHealth, competitorWatch } from '../.
 import { rankingsTimer } from '../../../functions-lib/rankings.js';
 import { gscSync } from '../../../functions-lib/ads.js';
 import { adsWeekly } from '../../../functions-lib/ads-weekly.js';
+import { enquiryCleanup } from '../../../functions-lib/cleanup.js';
 
 const reply = (data, status = 200) => new Response(JSON.stringify(data), { status, headers: { 'content-type': 'application/json' } });
 const stops = (step, ev) => (',' + step.stop_on + ',').includes(`,${ev},`);
@@ -180,6 +182,8 @@ export async function onRequestPost({ request, env }) {
   log.gsc = await gscSync(env).catch((e) => `error: ${e.message}`);
   // 12. Monday morning: the Google Ads check email and task (functions-lib/ads-weekly.js).
   log.ads_weekly = await adsWeekly(env).catch((e) => `error: ${e.message}`);
+  // 13. Monthly: old enquiries that never booked, warned on the 1st and deleted from the 8th (functions-lib/cleanup.js).
+  log.cleanup = await enquiryCleanup(env).catch((e) => `error: ${e.message}`);
 
   return reply({ ok: true, ...log });
 }
