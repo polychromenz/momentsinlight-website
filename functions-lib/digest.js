@@ -1,8 +1,10 @@
 // Tony's morning email: what's on today in the studio. Sent once a day by the timer
 // (functions/api/crm/run.js) on its first run between 7am and midday NZ time, through Resend like the alerts.
-// Nothing to report (no to-dos, appointments, shoots, payments, problems or new enquiries) = no email.
+// Nothing to report (no to-dos, appointments, shoots, payments, problems, new enquiries or gallery
+// activity) = no email.
 import { emailTony } from './crm.js';
 import { nzNine, MANUAL_DUE } from './workflows.js';
+import { yesterday, activityLine } from './gallery-insights.js';
 
 const SITE = 'https://www.momentsinlight.co.nz';
 const HOUR = 3600_000;
@@ -40,6 +42,8 @@ export async function buildDigest(db, today = nzDate()) {
     db.prepare(`SELECT t.id, t.title, t.due_date, t.contact_id, c.business FROM tasks t LEFT JOIN contacts c ON c.id = t.contact_id
       WHERE t.status = 'open' AND t.due_date IS NOT NULL AND t.due_date <= ?1 ORDER BY t.due_date`).bind(today).all(),
   ]);
+  // Gallery activity yesterday (functions-lib/gallery-insights.js), like Pic-Time's daily report.
+  const galleries = await yesterday(db).catch(() => []);
 
   // Where a new enquiry is at now.
   const leadNow = (j) => j.stage === 'booked' || j.stage === 'completed' ? '<b style="color:#5a7d2a">now booked ✓</b>'
@@ -57,6 +61,7 @@ export async function buildDigest(db, today = nzDate()) {
     ...fresh.results.map((j) => `New ${esc(j.job_type.toLowerCase())} enquiry: ${jobLink(j.id, j.title)}${j.event_date ? ` for ${esc(longDay(j.event_date))}` : ''} · ${leadNow(j)}`),
     ...answers.results.map((q) => `${jobLink(q.job_id, q.who)} sent in their ${esc(q.name.toLowerCase())}`),
   ]);
+  add('Galleries yesterday', galleries.map((r) => `<a href="${SITE}/studio/gallery?id=${r.gallery_id}&tab=activity" style="color:#2b2d1f">${esc(r.name)}</a>: ${esc(activityLine(r))}`));
   const count = sections.reduce((a, s) => a + s.items.length, 0);
   // Going out by themselves today: worth knowing, but not a reason to email on its own.
   add('Going out by itself today', [

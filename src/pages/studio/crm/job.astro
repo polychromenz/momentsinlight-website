@@ -777,7 +777,8 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
   .job-page .message[data-when]::after { content: attr(data-when); display: block; margin-top: 10px; font-size: 13px; color: #888; }
   .job-page .details { display: flex; flex-direction: column; gap: 12px; align-self: start; }
   .job-page .details label { display: flex; flex-direction: column; gap: 5px; font-size: 13px; font-weight: 600; color: #555; }
-  .job-page .details label.tick { flex-direction: row; align-items: center; gap: 8px; font-weight: 400; color: #333; }
+  .job-page .details label.tick { display: block; font-weight: 400; color: #333; line-height: 1.5; }
+  .job-page .details label.tick input { margin: 0 8px 0 0; vertical-align: -2px; }
   .job-page .details label.tick small { color: #888; }
   .job-page .details .export { margin: 4px 0 0; font-size: 13px; }
   .job-page .details .export small { color: #888; }

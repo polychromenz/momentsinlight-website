@@ -12,6 +12,7 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
       <h1>Galleries</h1>
       <div class="totals"></div>
     </div>
+    <section class="card gi-galleries"></section>
     <div class="gl-tools">
       <div class="filter" role="group" aria-label="Show">
         <button type="button" data-show="all" class="on">All</button>
@@ -68,6 +69,8 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
 </StudioLayout>
 
 <script>
+  import { drawGalleryInsights } from '../../studio/gallery-insights';
+  drawGalleryInsights(document.querySelector<HTMLElement>('.gi-galleries')!);
   const $ = <T extends HTMLElement = HTMLElement>(s: string) => document.querySelector<T>(s)!;
   const esc = (s: unknown) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
   const day = (d: string) => new Date(`${d.slice(0, 10)}T12:00:00Z`).toLocaleDateString('en-NZ', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' });

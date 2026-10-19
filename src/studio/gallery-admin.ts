@@ -31,6 +31,21 @@ function tab(name: string) {
   const u = new URL(location.href); u.searchParams.set('tab', name); history.replaceState(null, '', u);
   if (name === 'sharing') loadLinks();
   if (name === 'lists') loadLists();
+  if (name === 'activity') loadActivity();
+}
+
+// ---- Activity: who has visited and downloaded (functions/api/studio/galleries/insights.js) ----
+async function loadActivity() {
+  const r = await fetch(`/api/studio/galleries/insights?gallery=${encodeURIComponent(id)}`).catch(() => null);
+  const a = r?.ok ? await r.json().catch(() => null) : null;
+  if (!a) { $('.ga-act-people').innerHTML = '<p class="muted">Couldn’t load the activity.</p>'; return; }
+  const when = (iso: string) => new Date(iso).toLocaleString('en-NZ', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' });
+  const KIND: Record<string, string> = { main_client: 'Couple', invited: 'Invited', guest: 'Guest', vendor: 'Vendor', list_share: 'Shared list' };
+  $('.ga-act-people').innerHTML = a.people.length ? `<div class="act-wrap"><table class="act-tbl"><thead><tr><th>Who</th><th>Link</th><th class="r">Views</th><th class="r">Downloaded</th><th>First seen</th><th>Last seen</th></tr></thead><tbody>${a.people.map((p: any) => `<tr>
+      <td>${esc(p.name || '–')}${p.email ? `<br><small>${esc(p.email)}${p.marketing ? ' · ✓ marketing' : ''}</small>` : ''}</td><td>${esc(KIND[p.role] ?? p.role)}${p.link_name ? ` <small>${esc(p.link_name)}</small>` : ''}</td>
+      <td class="r">${p.views}</td><td class="r">${p.photos || '–'}</td><td>${when(p.first_seen)}</td><td>${when(p.last_seen)}</td></tr>`).join('')}</tbody></table></div>`
+    : '<p class="muted">Nobody yet. Once the gallery is online and shared, visitors show here.</p>';
+  $('.ga-act-recent').innerHTML = a.recent.length ? a.recent.map((e: any) => `<li><small>${when(e.at)}</small> ${esc(e.who)} ${e.type === 'view' ? 'opened the gallery' : `downloaded ${e.photos} photo${e.photos === 1 ? '' : 's'}${e.size ? ` (${e.size === 'original' ? 'full size' : 'web size'})` : ''}`}</li>`).join('') : '<li class="muted">Nothing yet.</li>';
 }
 
 // ---- Lists (favourites, lists and selections the couple and guests make) ----
