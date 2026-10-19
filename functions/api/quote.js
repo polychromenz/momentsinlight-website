@@ -83,7 +83,7 @@ export async function onRequestPost({ request, env }) {
     await env.DB.prepare(`INSERT OR IGNORE INTO steps (job_id, step_key, kind, title, due_at, note, created_at) VALUES (?1, ?2, 'todo', 'Send the contract (quote accepted)', ?3, ?4, ?3)`).bind(job.id, `send-contract-${q.id}`, at, String(e.message).slice(0, 300)).run();
   }
   const chosen = q.packages[pkg];
-  const plan = payments(q.schedule, total, job.event_date, at.slice(0, 10));
+  const plan = payments(q.schedule, total, job.event_date, new Date(at).toLocaleDateString('en-CA', { timeZone: 'Pacific/Auckland' }));
   await alertTony(env, `Quote accepted: ${view.names}`, [
     ['Package', `${chosen.name}${chosen.subtitle ? ` (${chosen.subtitle})` : ''}`],
     ['Extras', extras.map((i) => q.extras[i].name).join(', ')],

@@ -206,7 +206,7 @@ async function contactFor(env, inv) {
     const found = await xero(env, 'GET', `/Contacts?where=${encodeURIComponent(`EmailAddress=="${email.replace(/"/g, '')}"`)}`);
     if (found.Contacts?.[0]) return found.Contacts[0].ContactID;
   }
-  const make = async (n) => (await xero(env, 'PUT', '/Contacts', { Contacts: [{ Name: n, FirstName: inv.first_name, LastName: inv.last_name, EmailAddress: email }] })).Contacts[0].ContactID;
+  const make = async (n) => (await xero(env, 'PUT', '/Contacts', { Contacts: [{ Name: n, FirstName: inv.first_name, LastName: inv.last_name, EmailAddress: email, ...(inv.address ? { Addresses: [{ AddressType: 'POBOX', AddressLine1: String(inv.address).replace(/\s*\n\s*/g, ', ').slice(0, 500) }] } : {}) }] })).Contacts[0].ContactID;
   try { return await make(name); } catch (e) {
     // Xero contact names must be unique: another person with the same name.
     if (/already/i.test(e.message)) return make(`${name} (${email})`);
@@ -224,7 +224,7 @@ async function doItem(env, q, s) {
     await db.prepare('UPDATE stripe_payouts SET xero_transfer_id = ?2 WHERE id = ?1').bind(p.id, id).run();
     return id;
   }
-  const inv = await db.prepare(`SELECT i.*, j.title job_title, c.first_name, c.last_name, c.email FROM invoices i JOIN jobs j ON j.id = i.job_id JOIN clients c ON c.id = j.client_id WHERE i.id = ?1`).bind(Number(q.ref)).first();
+  const inv = await db.prepare(`SELECT i.*, j.title job_title, c.first_name, c.last_name, c.email, c.address FROM invoices i JOIN jobs j ON j.id = i.job_id JOIN clients c ON c.id = j.client_id WHERE i.id = ?1`).bind(Number(q.ref)).first();
   if (!inv) throw new Error('That invoice isn’t in the studio any more.');
   if (q.kind === 'invoice') {
     if (inv.xero_invoice_id) return inv.xero_invoice_id;

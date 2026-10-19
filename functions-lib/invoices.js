@@ -53,7 +53,8 @@ export async function createInvoices(env, contract) {
   const today = nzToday();
   const now = new Date();
   const made = [];
-  for (const p of payments(q.schedule, q.total, job.event_date, (q.accepted_at || now.toISOString()).slice(0, 10))) {
+  // Timed from the NZ day they accepted (not the UTC one, which is the day before until 1pm).
+  for (const p of payments(q.schedule, q.total, job.event_date, new Date(q.accepted_at || now).toLocaleDateString('en-CA', { timeZone: 'Pacific/Auckland' }))) {
     // Send the first straight away; later ones 2 weeks before they're due (or now if that's passed).
     const sendDay = p.onAccept ? today : new Date(new Date(`${p.due}T12:00:00Z`).valueOf() - 14 * DAY).toISOString().slice(0, 10);
     const sendAt = sendDay <= today ? now.toISOString() : new Date(`${sendDay}T20:00:00Z`).toISOString(); // ~8–9am NZ that day
