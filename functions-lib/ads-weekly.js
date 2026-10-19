@@ -53,7 +53,7 @@ export async function adsWeekly(env) {
     ['Keywords to look at', n.keywords.length ? n.keywords.map((k) => `${k.text} (${String(k.match_type).toLowerCase()}): ${money(k.cost)} in 30 days, no enquiries`).join('\n') : 'None costing $30+ without enquiries.'],
     ...(n.changes.length ? [['Ad images', n.changes.map((c) => c.status !== 'done' ? `Couldn’t ${c.type === 'add_image' ? 'add' : 'swap out'} ${c.payload.name || 'an image'}: ${c.error}`
       : c.type === 'add_image' ? `Added ${c.payload.name}` : `Swapped out ${c.payload.name || `image ${c.payload.asset_id}`} (${c.payload.views ?? '?'} views, ${c.payload.clicks ?? '?'} clicks in 30 days; still in your library)`).join('\n')]] : []),
-    ['What to do', 'Block any searches that aren’t for you: Studio > Website > SEO > Google Ads > Block searches, then Approve. The script adds them within the hour. Ask Claude if anything looks odd.'],
+    ['What to do', 'Block any searches that aren’t for you: Studio > SEO > Google Ads > Block searches, then Approve. The script adds them within the hour. Ask Claude if anything looks odd.'],
   ];
   await alertTony(env, `Google Ads this week: ${money(n.week.cost)} spent, ${Math.round(n.week.conv * 10) / 10} enquiries`, rows, 'https://www.momentsinlight.co.nz/studio/seo/ads');
   await db.prepare(`INSERT INTO tasks (title, notes, due_date, created_at) VALUES (?1, ?2, ?3, ?4)`)

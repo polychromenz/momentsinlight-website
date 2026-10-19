@@ -15,9 +15,10 @@ const { title, section } = Astro.props;
 const built = new Date().toLocaleString('en-NZ', { timeZone: 'Pacific/Auckland', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' });
 const version = `${built} · ${(process.env.CF_PAGES_COMMIT_SHA ?? 'local').slice(0, 7)}`;
 type Item = [Section, string, string];
-// The website's pages sit together under "Website" (a small menu that opens).
-const website: Item[] = [['blog', 'Blog', '/studio/blog'], ['pages', 'Pages', '/studio/pages'], ['seo', 'SEO', '/studio/seo'], ['stats', 'Stats', '/studio/stats'], ['reviews', 'Reviews', '/studio/reviews']];
-const menu: (Item | ['website', string, Item[]])[] = [
+// Small menus that open: the website's content, and how it's found and seen (SEO).
+const website: Item[] = [['blog', 'Blog', '/studio/blog'], ['pages', 'Pages', '/studio/pages']];
+const seo: Item[] = [['seo', 'SEO', '/studio/seo'], ['rankings', 'Rankings', '/studio/rankings'], ['stats', 'Stats', '/studio/stats'], ['reviews', 'Reviews', '/studio/reviews']];
+const menu: (Item | [string, string, Item[]])[] = [
   ['dashboard', 'Dashboard', '/studio'],
   ['clients', 'Clients', '/studio/crm'],
   ['galleries', 'Galleries', '/studio/galleries'],
@@ -25,9 +26,10 @@ const menu: (Item | ['website', string, Item[]])[] = [
   ['payments', 'Payments', '/studio/payments'],
   ['contacts', 'Contacts', '/studio/contacts'],
   ['website', 'Website', website],
+  ['seo-menu', 'SEO', seo],
   ['settings', 'Settings', '/studio/crm/settings'],
 ];
-const inWebsite = website.some(([k]) => k === section) || section === 'rankings';
+const inGroup = (items: Item[]) => items.some(([k]) => k === section);
 ---
 <!doctype html>
 <html lang="en-NZ">
@@ -42,8 +44,8 @@ const inWebsite = website.some(([k]) => k === section) || section === 'rankings'
     <header class="studio-bar">
       <a class="studio-brand" href="/studio">Moments <span>Studio</span></a>
       <nav class="studio-nav" aria-label="Studio">
-        {menu.map(([key, label, target]) => key === 'website'
-          ? <details class="nav-group"><summary class={inWebsite ? 'current' : undefined}>{label} <span aria-hidden="true">▾</span></summary>
+        {menu.map(([key, label, target]) => Array.isArray(target)
+          ? <details class="nav-group"><summary class={inGroup(target) ? 'current' : undefined}>{label} <span aria-hidden="true">▾</span></summary>
               <div class="nav-menu">{(target as Item[]).map(([k, l, h]) => <a href={h} aria-current={k === section ? 'page' : undefined}>{l}</a>)}</div></details>
           : <a href={target as string} aria-current={key === section ? 'page' : undefined}>{label}</a>)}
       </nav>

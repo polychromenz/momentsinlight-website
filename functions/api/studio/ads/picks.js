@@ -1,4 +1,4 @@
-// Ad picks (functions-lib/picks.js), from the gallery page and Website > SEO > Google Ads.
+// Ad picks (functions-lib/picks.js), from the gallery page and SEO > Google Ads.
 //   GET  /api/studio/ads/picks                    -> { picks, campaign, images: { now, waiting, limit } }
 //   GET  /api/studio/ads/picks?image=<id>         the web-size photo (same origin, so the browser can crop it)
 //   POST /api/studio/ads/picks { action: 'toggle', gallery_id, image_id }      pick or unpick a photo

@@ -365,7 +365,7 @@ document.addEventListener('click', async (e) => {
     if (tool.dataset.t === 'hide') return patch([iid], { hidden: i.hidden ? 0 : 1 });
     if (tool.dataset.t === 'ad') {
       const r = await tryApi('/api/studio/ads/picks', 'POST', { action: 'toggle', gallery_id: id, image_id: iid });
-      if (r) { d.picks = d.picks ?? {}; if (r.picked) d.picks[iid] = 'picked'; else delete d.picks[iid]; drawPhotos(); toast(r.picked ? 'Picked for Google Ads. Approve its crop in Website › SEO › Google Ads.' : 'Unpicked.'); }
+      if (r) { d.picks = d.picks ?? {}; if (r.picked) d.picks[iid] = 'picked'; else delete d.picks[iid]; drawPhotos(); toast(r.picked ? 'Picked for Google Ads. Approve its crop in SEO › Google Ads.' : 'Unpicked.'); }
       return;
     }
     if (tool.dataset.t === 'cover' && (await tryApi('/api/studio/galleries/gallery', 'PUT', { id, cover_image_id: iid }))) { d.gallery.cover_image_id = iid; drawPhotos(); toast('Cover chosen.'); }

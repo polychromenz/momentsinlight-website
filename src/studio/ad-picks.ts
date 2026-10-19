@@ -1,4 +1,4 @@
-// Website > SEO > Google Ads > Ad picks (src/pages/studio/seo/ads.astro). Photos marked Ad in the
+// SEO > Google Ads > Ad picks (src/pages/studio/seo/ads.astro). Photos marked Ad in the
 // galleries: the studio suggests crops, Tony nudges them, and Approve makes the files here in the
 // browser (from the web-size photo) and queues them for the Ads Script. API: functions/api/studio/ads/picks.js.
 type Crop = { x: number; y: number; w: number; h: number };
