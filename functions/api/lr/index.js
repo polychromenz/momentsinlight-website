@@ -69,6 +69,10 @@ export async function onRequestPost({ request, env }) {
     }
     if (d.action === 'layout') {
       // The cover and the big photos (from Pic-Time when a gallery is moved across), by lightroom_id.
+      // Only the first time: after that they're Tony's choices, and a re-run must not undo them.
+      const done = await db.prepare(`SELECT json_extract(settings, '$.layout_at') at FROM photo_galleries WHERE id = ?1`).bind(g.id).first();
+      if (done?.at) return json({ cover: false, heroes: 0, kept: true });
+      await db.prepare(`UPDATE photo_galleries SET settings = json_set(settings, '$.layout_at', ?2) WHERE id = ?1`).bind(g.id, new Date().toISOString()).run();
       const idOf = async (lr) => (await db.prepare('SELECT id FROM gallery_images WHERE gallery_id = ?1 AND lightroom_id = ?2').bind(g.id, String(lr)).first())?.id ?? null;
       const cover = d.cover ? await idOf(d.cover) : null;
       if (cover) await db.prepare('UPDATE photo_galleries SET cover_image_id = ?2 WHERE id = ?1').bind(g.id, cover).run();

@@ -293,7 +293,7 @@ async function moveGallery(folder, link) {
 
   const lr = (n) => `pt:${layout.project}:${n}`;
   const lay = await api({ action: 'layout', gallery_id: g.id, cover: layout.cover != null ? lr(layout.cover) : null, heroes: layout.big.map(lr) });
-  log(`  Finished ${layout.title}: ${jobs.length - failed} of ${count} photos up${failed ? `, ${failed} failed (run again to retry)` : ''}${missing.length ? `, ${missing.length} not in the folder` : ''}. Cover ${lay.cover ? 'set' : 'not found'}, ${lay.heroes} big photo(s).`);
+  log(`  Finished ${layout.title}: ${jobs.length - failed} of ${count} photos up${failed ? `, ${failed} failed (run again to retry)` : ''}${missing.length ? `, ${missing.length} not in the folder` : ''}. ${lay.kept ? 'Cover and big photos left as they are' : `Cover ${lay.cover ? 'set' : 'not found'}, ${lay.heroes} big photo(s)`}.`);
   log(`  Check it, then put it online: ${g.studio}`);
 }
 

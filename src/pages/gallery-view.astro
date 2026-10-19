@@ -267,7 +267,7 @@ import { site } from '../data/site';
           return;
         }
       }
-      // Still not enough (a section of only a few photos): they sit in the middle.
+      // Still not enough (a section of only a few photos): they start at the left like the rows above.
       out.push(line(row, Math.min(target, full), ' row--end'));
       row = [];
     };
@@ -679,7 +679,7 @@ import { site } from '../data/site';
   .g-sec { scroll-margin-top: 60px; }
   .g-sec h2 { margin: 42px 0 18px; text-align: center; font-weight: 300; font-size: clamp(20px, 2.4vw, 28px); letter-spacing: 0.24em; text-transform: uppercase; }
   .row { display: flex; }
-  .row--hero, .row--block, .row--end { justify-content: center; }
+  .row--hero, .row--block { justify-content: center; }
   .stack { display: flex; flex-direction: column; flex: none; }
   .ph { padding: 0; border: 0; background: #eeefe9; cursor: zoom-in; flex: none; overflow: hidden; }
   .ph img { display: block; width: 100%; height: 100%; transition: opacity 0.4s var(--ease), transform 0.8s var(--ease); -webkit-user-drag: none; user-select: none; }
