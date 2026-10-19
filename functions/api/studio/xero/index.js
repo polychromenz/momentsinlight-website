@@ -20,6 +20,10 @@ export async function onRequestGet({ env }) {
     db.prepare(`SELECT * FROM stripe_payouts ORDER BY arrival_date DESC LIMIT 12`).all(),
     connected ? xeroChoices(env).catch((e) => ({ error: e.message })) : null,
   ]);
+  // Each payout's invoices (gross) and fees, for matching its BNZ line in Xero.
+  const parts = payouts.results.length ? (await db.prepare(`SELECT number, amount, stripe_fee, stripe_payout FROM invoices WHERE stripe_payout IN (SELECT value FROM json_each(?1)) ORDER BY number`)
+    .bind(JSON.stringify(payouts.results.map((p) => p.id))).all()).results : [];
+  for (const p of payouts.results) p.invoices = parts.filter((i) => i.stripe_payout === p.id);
   return json({
     ready: xeroReady(env),
     connection: conn ? { tenant_name: conn.tenant_name, connected_at: conn.connected_at, expired: !conn.refresh ? conn.expired ?? true : null } : null,

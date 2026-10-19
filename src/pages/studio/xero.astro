@@ -7,7 +7,7 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
 <StudioLayout title="Xero" section="xero">
   <main class="xe">
     <h1>Xero</h1>
-    <p class="intro">The studio copies your invoices, their payments, Stripe’s fees and Stripe’s payouts into Xero, so your bank feed lines match with one click. Each one waits here for your approval until you switch that kind to automatic.</p>
+    <p class="intro">The studio copies your invoices into Xero, each waiting here for your approval until you switch it to automatic. You reconcile in Xero as your accountant showed you; the payouts list below shows what makes up each Stripe payout.</p>
 
     <section class="card xe-conn"><p class="muted">Loading…</p></section>
 
@@ -20,12 +20,13 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
       <h2>Settings</h2>
       <form class="xe-set" autocomplete="off">
         <label>Start from <small>(invoices sent on or after this date go to Xero)</small><input type="date" name="start" /></label>
+        <label>Reconciling payments<select name="style"><option value="match">I reconcile in Xero (my accountant’s way)</option><option value="clearing">The studio records them (Stripe holding account)</option></select></label>
         <label>Sales account<select name="sales_code"></select></label>
         <label>GST on sales<select name="sales_tax"></select></label>
         <label>Your bank account<select name="bank_code"></select></label>
-        <label>Stripe account <small>(a bank account in Xero called Stripe)</small><select name="clearing_code"></select></label>
-        <label>Stripe fees account<select name="fees_code"></select></label>
-        <label>GST on Stripe fees<select name="fees_tax"></select></label>
+        <label class="clearing-only">Stripe account <small>(a bank account in Xero called Stripe)</small><select name="clearing_code"></select></label>
+        <label class="clearing-only">Stripe fees account<select name="fees_code"></select></label>
+        <label class="clearing-only">GST on Stripe fees<select name="fees_tax"></select></label>
         <fieldset class="xe-auto"><legend>Send without asking</legend></fieldset>
         <button type="submit" class="s-btn s-btn--solid">Save settings</button>
       </form>
@@ -34,7 +35,8 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
 
     <section class="card">
       <h2>Stripe payouts</h2>
-      <div class="tbl-wrap"><table class="xe-tbl xe-payouts"><thead><tr><th>Arrived</th><th class="r">Payments</th><th class="r">Fees</th><th class="r">Other</th><th class="r">Into the bank</th><th>In Xero</th></tr></thead><tbody></tbody></table></div>
+      <p class="muted">To reconcile a payout: on its BNZ line in Xero choose <strong>Find &amp; Match</strong>, tick the invoices listed here, then <strong>Adjustments › Bank fee</strong> with contact Stripe, account 500 Stripe Fees, No GST, for the fees shown. The totals then match.</p>
+      <div class="tbl-wrap"><table class="xe-tbl xe-payouts"><thead><tr><th>Arrived</th><th>Invoices to tick (gross)</th><th class="r">Bank fee</th><th class="r">Other</th><th class="r">Into BNZ</th></tr></thead><tbody></tbody></table></div>
       <p class="muted">“Other” is refunds, disputes and anything else Stripe took out or added. A payment that isn’t from a studio invoice is flagged so you can check it.</p>
     </section>
 
@@ -111,10 +113,15 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
     sel('sales_tax', opts(taxes, s.sales_tax, tax, (x) => x.type));
     sel('fees_tax', opts(taxes, s.fees_tax, tax, (x) => x.type));
     (f.elements.namedItem('start') as HTMLInputElement).value = s.start;
-    $('.xe-auto').innerHTML = `<legend>Send without asking</legend>${Object.entries(kinds).map(([k, v]) => `<label class="tick"><input type="checkbox" name="auto_${k}" ${s.auto[k] ? 'checked' : ''} /> ${esc(v)}</label>`).join('')}`;
+    (f.elements.namedItem('style') as HTMLSelectElement).value = s.style ?? 'match';
+    f.querySelectorAll<HTMLElement>('.clearing-only').forEach((el) => (el.hidden = s.style !== 'clearing'));
+    // The kinds that apply to the accountant's way: invoices, and invoices paid in Xero.
+    const shown = s.style === 'clearing' ? Object.keys(kinds) : ['invoice', 'paid_in_xero'];
+    $('.xe-auto').innerHTML = `<legend>Send without asking</legend>${Object.entries(kinds).filter(([k]) => shown.includes(k)).map(([k, v]) => `<label class="tick"><input type="checkbox" name="auto_${k}" ${s.auto[k] ? 'checked' : ''} /> ${esc(v)}</label>`).join('')}`;
     // Payouts and history
-    $('.xe-payouts tbody').innerHTML = payouts.length ? payouts.map((p: any) => `<tr><td>${esc(p.arrival_date)}${p.unmatched ? ` <span class="warn" title="Payments not from a studio invoice">⚠ ${p.unmatched}</span>` : ''}</td><td class="r">${p.payments} · ${money(p.gross)}</td><td class="r">${money(p.fees)}</td><td class="r">${p.other ? money(p.other) : '–'}</td><td class="r"><strong>${money(p.amount)}</strong></td><td>${p.xero_transfer_id ? 'Yes' : 'Not yet'}</td></tr>`).join('')
-      : '<tr><td colspan="6" class="muted">None yet. They appear when Stripe pays out (once Stripe is live and its payout.paid event is on).</td></tr>';
+    $('.xe-payouts tbody').innerHTML = payouts.length ? payouts.map((p: any) => `<tr><td>${esc(p.arrival_date)}${p.unmatched ? `<br><span class="warn" title="Payments not from a studio invoice">⚠ ${p.unmatched} not from a studio invoice</span>` : ''}</td>
+      <td>${(p.invoices ?? []).map((i: any) => `${esc(i.number)} ${money(i.amount)}`).join('<br>') || `${p.payments} payment${p.payments === 1 ? '' : 's'}, ${money(p.gross)}`}</td><td class="r">${money(p.fees)}</td><td class="r">${p.other ? money(p.other) : '–'}</td><td class="r"><strong>${money(p.amount)}</strong></td></tr>`).join('')
+      : '<tr><td colspan="5" class="muted">None yet. They appear when Stripe pays out (once Stripe is live and its payout.paid event is on).</td></tr>';
     $('.xe-recent').innerHTML = recent.length ? recent.map((q: any) => `<li><span class="kind">${esc(kinds[q.kind])}</span> ${esc(q.summary)} <small class="muted">${q.status === 'skipped' ? 'Skipped' : 'Sent'} ${q.done_at ? when(q.done_at) : ''}</small></li>`).join('') : '<li class="muted">Nothing yet.</li>';
   }
   document.addEventListener('click', async (e) => {
@@ -143,9 +150,9 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
     e.preventDefault();
     const f = e.target as HTMLFormElement;
     const v = (n: string) => (f.elements.namedItem(n) as HTMLInputElement).value;
-    const auto = Object.fromEntries(Object.keys(data.kinds).map((k) => [k, (f.elements.namedItem(`auto_${k}`) as HTMLInputElement).checked]));
+    const auto = Object.fromEntries(Object.keys(data.kinds).map((k) => [k, !!(f.elements.namedItem(`auto_${k}`) as HTMLInputElement | null)?.checked]));
     try {
-      await post({ action: 'settings', start: v('start'), sales_code: v('sales_code'), sales_tax: v('sales_tax'), bank_code: v('bank_code'), clearing_code: v('clearing_code'), fees_code: v('fees_code'), fees_tax: v('fees_tax'), auto });
+      await post({ action: 'settings', style: v('style'), start: v('start'), sales_code: v('sales_code'), sales_tax: v('sales_tax'), bank_code: v('bank_code'), clearing_code: v('clearing_code'), fees_code: v('fees_code'), fees_tax: v('fees_tax'), auto });
       toast('Settings saved.'); load();
     } catch (err) { toast((err as Error).message, true); }
   });
@@ -171,6 +178,7 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
   .xe .row-acts { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
   .xe .row-acts .s-btn { padding: 4px 10px; font-size: 13px; }
   .xe-set { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; }
+  .xe-set > label[hidden] { display: none; }
   .xe-set > label { flex: 1 1 240px; display: flex; flex-direction: column; gap: 4px; font-size: 13px; font-weight: 600; color: #555; }
   .xe-set small { font-weight: 400; color: #888; }
   .xe-set input, .xe-set select { font: inherit; font-size: 14px; font-weight: 400; padding: 8px 10px; border: 1px solid #ddd3c4; border-radius: 10px 0; background: var(--white); color: var(--ink); min-width: 0; }

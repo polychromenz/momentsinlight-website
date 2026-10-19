@@ -13,7 +13,8 @@ export const RATES = {
   2026: { petrol: [1.2, 0.37], diesel: [1.3, 0.38], hybrid: [0.9, 0.24], electric: [1.22, 0.23] },
 };
 export const VEHICLES = { petrol: 'Petrol', diesel: 'Diesel', hybrid: 'Petrol hybrid', electric: 'Electric' };
-const DEFAULTS = { base: '', vehicle: 'petrol', debit: '', credit: '', tax: 'No GST', tier1_km: 14000 };
+// Credit: 504 Shareholder Current Account (Tony's accountant: the company owes him the km rate; No GST).
+const DEFAULTS = { base: '', vehicle: 'petrol', debit: '', credit: '504', tax: 'No GST', tier1_km: 14000 };
 
 /** The income year a date is in, named by the year it ends (1 Apr 2026 to 31 Mar 2027 is 2027). */
 export const incomeYear = (date) => Number(date.slice(0, 4)) + (Number(date.slice(5, 7)) >= 4 ? 1 : 0);

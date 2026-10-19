@@ -1,6 +1,12 @@
 // The studio's link to Xero (docs: Studio money plan, Oct 2026; Studio > Payments > Xero).
-// The studio stays the place invoices are made and sent; it copies each one into Xero, then its
-// payment, Stripe's fee and each Stripe payout, so Xero's bank feed lines match with one click:
+// The studio stays the place invoices are made and sent; it copies each one into Xero. How payments
+// are reconciled is settings.style:
+//   'match' (default, Tony's accountant's way): Tony reconciles in Xero as before. On a Stripe payout's
+//            BNZ line he uses Find & Match on the invoices it covers and adds the total Stripe fee as a
+//            bank fee adjustment (500 Stripe Fees, No GST); bank transfers match their invoice. The
+//            studio only sends invoices, shows which invoices and fees make up each payout, and marks
+//            invoices paid in the studio when Xero shows them paid.
+//   'clearing': the studio also records payments, fees and payouts through a Stripe account in Xero:
 //   invoice       a sales invoice (same number, GST inclusive) for the couple's contact
 //   payment       the invoice paid: card payments into the Stripe account in Xero, bank transfers into the bank account
 //   fee           Stripe's fee, spent from the Stripe account
@@ -22,11 +28,12 @@ export const xeroReady = (env) => !!(env.XERO_CLIENT_ID && env.XERO_CLIENT_SECRE
 
 // ---- Settings ----
 const DEFAULTS = {
+  style: 'match',          // 'match' (reconcile in Xero, the accountant's way) or 'clearing' (see above)
   start: '',               // only invoices sent from this date (YYYY-MM-DD) go to Xero
   sales_code: '200', sales_tax: 'OUTPUT2', // Sales, 15% GST on income
   bank_code: '',           // your business bank account in Xero
   clearing_code: '',       // a bank account in Xero called "Stripe" (money held at Stripe)
-  fees_code: '404', fees_tax: 'NONE',      // Bank fees; ask your accountant about GST on Stripe's fees
+  fees_code: '500', fees_tax: 'NONE',      // 500 Stripe Fees, No GST (Tony's accountant)
   auto: { invoice: false, payment: false, fee: false, payout: false, paid_in_xero: false },
 };
 export async function xeroSettings(db) {
@@ -38,6 +45,7 @@ export async function saveXeroSettings(db, d) {
   const s = await xeroSettings(db);
   const code = (v, was) => (v === undefined ? was : String(v).trim().slice(0, 20));
   const next = {
+    style: ['match', 'clearing'].includes(d.style) ? d.style : s.style,
     start: /^\d{4}-\d{2}-\d{2}$/.test(d.start ?? '') ? d.start : s.start,
     sales_code: code(d.sales_code, s.sales_code), sales_tax: code(d.sales_tax, s.sales_tax),
     bank_code: code(d.bank_code, s.bank_code), clearing_code: code(d.clearing_code, s.clearing_code),
@@ -158,6 +166,8 @@ export async function queueNew(env) {
       AND (i.paid_method <> 'card' OR ${live})`).bind(s.start).all()).results;
   const fee = (await db.prepare(`SELECT i.id, i.number, i.stripe_fee ${base} AND i.paid_method = 'card' AND ${live} AND i.stripe_fee > 0 AND i.xero_payment_id IS NOT NULL`).bind(s.start).all()).results;
   const out = (await db.prepare(`SELECT * FROM stripe_payouts WHERE xero_transfer_id IS NULL AND arrival_date >= ?1`).bind(s.start).all()).results;
+  // The accountant's way: Tony reconciles payments in Xero himself, so only invoices go.
+  if (s.style !== 'clearing') { pay.length = 0; fee.length = 0; out.length = 0; }
   const stmts = [
     ...inv.map((r) => add('invoice', r.id, `Invoice ${r.number}: ${r.label}, ${money(r.amount)} to ${name(r)}`)),
     ...pay.map((r) => add('payment', r.id, `${r.number} paid ${money(r.amount)} by ${r.paid_method === 'card' ? 'card, into the Stripe account' : 'bank transfer, into the bank account'} (${name(r)})`)),
