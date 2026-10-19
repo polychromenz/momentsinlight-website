@@ -12,6 +12,7 @@ type Section = 'dashboard' | 'clients' | 'galleries' | 'calendar' | 'contacts' |
 interface Props { title: string; section?: Section }
 const { title, section } = Astro.props;
 // Which build this is (Cloudflare Pages gives the commit), shown at the bottom of every studio page.
+import { areaOfPage } from '../../functions-lib/areas.js';
 const built = new Date().toLocaleString('en-NZ', { timeZone: 'Pacific/Auckland', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' });
 const version = `${built} · ${(process.env.CF_PAGES_COMMIT_SHA ?? 'local').slice(0, 7)}`;
 type Item = [Section, string, string];
@@ -32,6 +33,8 @@ const menu: (Item | [string, string, Item[]])[] = [
   ['settings', 'Settings', '/studio/crm/settings'],
 ];
 const inGroup = (items: Item[]) => items.some(([k]) => k === section);
+// Each menu link's area (functions-lib/areas.js), so a person's hidden areas drop out of their menu.
+const areaAttr = (href: string) => areaOfPage(href) ?? undefined;
 ---
 <!doctype html>
 <html lang="en-NZ">
@@ -50,21 +53,25 @@ const inGroup = (items: Item[]) => items.some(([k]) => k === section);
       <nav class="studio-nav" aria-label="Studio">
         {menu.map(([key, label, target]) => Array.isArray(target)
           ? <details class="nav-group"><summary class={inGroup(target) ? 'current' : undefined}>{label} <span aria-hidden="true">▾</span></summary>
-              <div class="nav-menu">{(target as Item[]).map(([k, l, h]) => <a href={h} aria-current={k === section ? 'page' : undefined}>{l}</a>)}</div></details>
-          : <a href={target as string} aria-current={key === section ? 'page' : undefined}>{label}</a>)}
+              <div class="nav-menu">{(target as Item[]).map(([k, l, h]) => <a href={h} data-area={areaAttr(h)} aria-current={k === section ? 'page' : undefined}>{l}</a>)}</div></details>
+          : <a href={target as string} data-area={areaAttr(target as string)} aria-current={key === section ? 'page' : undefined}>{label}</a>)}
       </nav>
       <div class="studio-actions"><slot name="bar" /></div>
     </header>
-    <p class="studio-ro" hidden>You’re looking at the studio with look-only access: nothing can be changed. Ask Tony if you need to change something.</p>
+    <p class="studio-ro" hidden>You can look at this part of the studio but not change it. Ask Tony if you need to.</p>
+    <p class="studio-ro studio-hidden-note" hidden>That part of the studio isn’t part of your access, so you’ve been brought back here.</p>
     <slot />
     <p class="studio-version">Moments Studio, updated {version}</p>
     <script>
-      // Look-only access (Settings > People): a note at the top of every page.
+      // Per-person access (Settings > People): hidden areas leave the menu; a note on look-only pages.
+      import { areaOfPage, levelFor } from '../../functions-lib/areas.js';
       fetch('/api/studio/people').then((r) => (r.ok ? r.json() : null)).then((d) => {
-        if (d?.me?.access !== 'read') return;
-        document.body.classList.add('studio-read-only');
-        const n = document.querySelector<HTMLElement>('.studio-ro');
-        if (n) n.hidden = false;
+        const me = d?.me;
+        if (!me || me.access === 'owner') return;
+        document.querySelectorAll<HTMLElement>('[data-area]').forEach((a) => { if (levelFor(me, a.dataset.area) === 'hidden') a.hidden = true; });
+        document.querySelectorAll<HTMLElement>('.nav-group').forEach((g) => { if (![...g.querySelectorAll<HTMLElement>('a')].some((a) => !a.hidden)) g.hidden = true; });
+        if (levelFor(me, areaOfPage(location.pathname)) === 'look') { document.body.classList.add('studio-read-only'); document.querySelector<HTMLElement>('.studio-ro')!.hidden = false; }
+        if (new URLSearchParams(location.search).has('hidden')) document.querySelector<HTMLElement>('.studio-hidden-note')!.hidden = false;
       }).catch(() => {});
       // The Website menu closes when you click elsewhere.
       document.addEventListener('click', (e) => {

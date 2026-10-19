@@ -1,10 +1,13 @@
 // Every studio request must come from someone signed in through Cloudflare Access. People listed in
-// Settings > People with "Look only" can read but not change anything (functions-lib/people.js).
+// Settings > People have, per area of the studio, Hidden, Look only or Can change
+// (functions-lib/people.js, functions-lib/areas.js): hidden areas are refused, look-only ones
+// can't be changed. Changes to clients are noted with who made them (functions-lib/activity.js).
 import { signedIn, json } from '../../../functions-lib/studio.js';
 import { accessFor } from '../../../functions-lib/people.js';
+import { areaOfApi, levelFor, AREAS } from '../../../functions-lib/areas.js';
 import { recordActivity } from '../../../functions-lib/activity.js';
 
-// Reads that still change something (connecting Google), so a look-only person can't use them.
+// Reads that still change something (connecting Google or Xero), so they count as changes.
 const READ_BUT_CHANGES = /^\/api\/studio\/(crm\/(gmail-connect|gmail-callback)|xero\/(connect|callback))/;
 
 export async function onRequest(context) {
@@ -16,13 +19,20 @@ export async function onRequest(context) {
   } catch {
     return json({ error: 'Could not check your sign-in. Please reload the page.' }, 401);
   }
-  const user = await accessFor(env.DB, who.email).catch(() => ({ email: who.email, access: 'owner' }));
+  const user = await accessFor(env.DB, who.email).catch(() => ({ email: who.email, access: 'owner', areas: null }));
   context.data.user = user;
   const path = new URL(request.url).pathname;
   const writes = !['GET', 'HEAD', 'OPTIONS'].includes(request.method) || READ_BUT_CHANGES.test(path);
-  if (user.access === 'read' && writes) return json({ error: 'Your studio access is look-only, so this can’t be changed. Ask Tony if you need it.' }, 403);
-  if (user.access !== 'owner' && path === '/api/studio/people' && request.method !== 'GET') return json({ error: 'Only Tony can change who has access.' }, 403);
-  // A change to a client: note who made it (functions-lib/activity.js), once it has worked.
+  // Everyone may ask who they are (the studio's pages use it to set up the menu).
+  const whoAmI = path === '/api/studio/people' && request.method === 'GET';
+  if (path === '/api/studio/people' && writes && user.access !== 'owner') return json({ error: 'Only Tony can change who has access.' }, 403);
+  if (!whoAmI) {
+    const area = areaOfApi(path);
+    const level = levelFor(user, area);
+    if (level === 'hidden') return json({ error: `You don’t have access to ${AREAS[area] ?? 'this part of the studio'}. Ask Tony if you need it.` }, 403);
+    if (level === 'look' && writes) return json({ error: `Your access to ${AREAS[area] ?? 'this part of the studio'} is look-only, so this can’t be changed. Ask Tony if you need it.` }, 403);
+  }
+  // A change to a client: note who made it, once it has worked.
   const logIt = writes && path.startsWith('/api/studio/crm/') && request.method !== 'GET';
   const body = logIt && (request.headers.get('content-type') || '').includes('json') ? await request.clone().json().catch(() => ({})) : {};
   const res = await context.next();

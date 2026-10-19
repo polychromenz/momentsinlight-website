@@ -204,15 +204,14 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
 
     <section class="pane card people-pane" data-pane="people" hidden>
       <h2>People</h2>
-      <p class="muted">Who else can use the studio. First add their email to the studio’s sign-in list in <a href="https://one.dash.cloudflare.com/ba83c09be6ee9fa1e0ae58f61811a3db/access/apps" target="_blank" rel="noopener">Cloudflare Zero Trust › Access › Applications</a> (they sign in with a code sent to that email). Then add them here. Anyone signed in who isn’t listed here can do everything, as you can.</p>
+      <p class="muted">Who else can use the studio, and what they can do in each part of it. First add their email to the studio’s sign-in list in <a href="https://one.dash.cloudflare.com/ba83c09be6ee9fa1e0ae58f61811a3db/access/apps" target="_blank" rel="noopener">Cloudflare Zero Trust › Access › Applications</a> (they sign in with a code sent to that email). Then add them here. Anyone signed in who isn’t listed here can do everything, as you can.</p>
       <ul class="people-list"></ul>
       <form class="people-add" autocomplete="off">
         <input name="name" placeholder="Name, e.g. Mel" aria-label="Name" />
         <input name="email" type="email" placeholder="Their email" aria-label="Email" required />
-        <select name="access" aria-label="Access"><option value="read">Look only</option><option value="edit">Can make changes</option></select>
         <button type="submit" class="s-btn s-btn--solid">Add</button>
       </form>
-      <p class="muted"><strong>Look only</strong>: they can open every page but can’t save, send or change anything. <strong>Can make changes</strong>: everything except this People list.</p>
+      <p class="muted">For each area: <strong>Hidden</strong> (not in their menu, and its pages and data are refused), <strong>Look only</strong> (they can open it but not save, send or change anything) or <strong>Can change</strong>. New people start as Look only everywhere. Only you can change this list.</p>
     </section>
 
     <section class="pane card" data-pane="documents" hidden>
@@ -743,7 +742,8 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
 
   // ---- People: who else can use the studio (functions/api/studio/people.js) ----
   {
-    let people: { email: string; name: string; access: string }[] = [];
+    let people: { email: string; name: string; areas: Record<string, string> }[] = [];
+    let AREAS: Record<string, string> = {}, LEVELS: Record<string, string> = {};
     const list = document.querySelector<HTMLElement>('.people-list')!;
     const save = async (next: typeof people) => {
       const r = await fetch('/api/studio/people', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ people: next }) });
@@ -752,19 +752,20 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
       people = d.people; drawPeople();
     };
     const drawPeople = () => {
-      list.innerHTML = people.length ? people.map((p, n) => `<li data-n="${n}"><span><strong>${esc(p.name || p.email)}</strong> <small>${esc(p.email)}</small></span>
-        <select data-access aria-label="Access"><option value="read"${p.access === 'read' ? ' selected' : ''}>Look only</option><option value="edit"${p.access === 'edit' ? ' selected' : ''}>Can make changes</option></select>
-        <button type="button" class="s-btn s-btn--quiet" data-remove>Remove</button></li>`).join('') : '<li class="muted">Nobody else yet.</li>';
+      list.innerHTML = people.length ? people.map((p, n) => `<li data-n="${n}" class="person"><div class="person-head"><span><strong>${esc(p.name || p.email)}</strong> <small>${esc(p.email)}</small></span>
+        <button type="button" class="s-btn s-btn--quiet" data-remove>Remove</button></div>
+        <div class="person-areas">${Object.entries(AREAS).map(([a, label]) => `<label>${esc(label)}<select data-area="${a}">${Object.entries(LEVELS).map(([v, l]) => `<option value="${v}"${p.areas[a] === v ? ' selected' : ''}>${esc(l)}</option>`).join('')}</select></label>`).join('')}</div></li>`).join('') : '<li class="muted">Nobody else yet.</li>';
     };
     fetch('/api/studio/people').then((r) => r.json()).then((d) => {
       if (d.me?.access !== 'owner') { list.innerHTML = '<li class="muted">Only Tony can see and change this list.</li>'; document.querySelector<HTMLElement>('.people-add')!.hidden = true; return; }
+      AREAS = d.areas; LEVELS = d.levels;
       people = d.people; drawPeople();
     });
     list.addEventListener('change', (e) => {
-      const sel = (e.target as HTMLElement).closest<HTMLSelectElement>('[data-access]');
+      const sel = (e.target as HTMLElement).closest<HTMLSelectElement>('[data-area]');
       if (!sel) return;
       const n = Number(sel.closest<HTMLElement>('[data-n]')!.dataset.n);
-      save(people.map((p, i) => (i === n ? { ...p, access: sel.value } : p)));
+      save(people.map((p, i) => (i === n ? { ...p, areas: { ...p.areas, [sel.dataset.area!]: sel.value } } : p)));
     });
     list.addEventListener('click', async (e) => {
       const b = (e.target as HTMLElement).closest('[data-remove]');
@@ -777,7 +778,7 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
       const f = e.target as HTMLFormElement;
       const d = Object.fromEntries(new FormData(f)) as Record<string, string>;
       if (people.some((p) => p.email === d.email.trim().toLowerCase())) { tell('They’re already on the list.'); return; }
-      save([...people, { email: d.email, name: d.name, access: d.access }]).then(() => f.reset());
+      save([...people, { email: d.email, name: d.name, areas: Object.fromEntries(Object.keys(AREAS).map((a) => [a, 'look'])) }]).then(() => f.reset());
     });
   }
 
@@ -978,7 +979,10 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
   .settings .booking-pane .tick { flex-direction: row; align-items: center; gap: 6px; }
   .settings .bk-recent { list-style: none; padding: 0; margin: 0; font-size: 14px; line-height: 1.9; }
   .settings .people-list { list-style: none; margin: 12px 0; padding: 0; display: grid; gap: 8px; }
-  .settings .people-list li { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f3eee6; }
+  .settings .people-list li { padding: 10px 0; border-bottom: 1px solid #f3eee6; }
+  .settings .person-head { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; }
+  .settings .person-areas { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 8px 14px; margin-top: 8px; }
+  .settings .person-areas label { display: flex; flex-direction: column; gap: 3px; font-size: 13px; color: #555; }
   .settings .people-list small { color: #888; }
   .settings .people-add { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
   .settings .people-add input, .settings .people-add select, .settings .people-list select { font: inherit; font-size: 14px; padding: 7px 10px; border: 1px solid #ddd3c4; border-radius: 10px 0; background: var(--white); }
