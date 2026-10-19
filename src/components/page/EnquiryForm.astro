@@ -66,6 +66,7 @@ const sources: [string, string][] = [
   <div class="cf-turnstile" data-sitekey={siteKey} data-size="flexible"></div>
   <p class="msg" role="alert" hidden></p>
   <button class="btn" type="submit">Send enquiry</button>
+  <p class="privacy-note"><a href="/privacy">How I look after your details</a></p>
 </form>
 
 <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
@@ -137,6 +138,8 @@ const sources: [string, string][] = [
   .enquiry textarea { resize: vertical; }
   /* Hidden means hidden. */
   .enquiry[hidden], .msg[hidden] { display: none; }
+  .privacy-note { margin: 10px 0 0; font-size: 13px; }
+  .privacy-note a { color: #777; }
   .hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
   .msg { margin: 0; padding: 12px 14px; background: #fbeee8; color: #8a3b1e; border-radius: 12px 0; font-size: 15px; }
   .enquiry .btn { align-self: flex-start; }

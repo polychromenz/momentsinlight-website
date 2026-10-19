@@ -1,0 +1,93 @@
+---
+// Privacy: how Moments in Light handles personal information (NZ Privacy Act 2020). Tony's
+// wording, reviewed 19 Oct 2026 (draft and answers in docs/privacy-page-draft.md). Linked from the
+// footer and under the enquiry form. No email address or phone number here on purpose (spam);
+// people get in touch through /contact.
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+const updated = '19 October 2026';
+---
+<BaseLayout title="Privacy | Moments In Light" description="How Moments in Light looks after your personal information: what I collect, why, where it’s kept and your rights under New Zealand’s Privacy Act.">
+  <section class="intro wrap">
+    <p class="eyebrow rise">Your details</p>
+    <h1 class="display rise">Privacy</h1>
+    <hr class="hairline rise" />
+    <p class="lead rise">I’m Tony Gorham, and Moments in Light is my photography business. When you get in touch, book a shoot or view a gallery, you trust me with some of your personal information. This page explains what I collect, why, where it’s kept and what you can ask me to do with it.</p>
+    <p class="rise">If you have any questions, send me a message through my <a href="/contact">contact page</a>.</p>
+  </section>
+
+  <article class="prose wrap">
+    <h2>What I collect</h2>
+    <p><strong>When you enquire.</strong> Your names, email address, phone number, the date and venue of your wedding or shoot, how you heard about me, and anything you write in your message.</p>
+    <p><strong>When you book.</strong> Your postal address, the details in your contract and signature, your answers to my planning questionnaire, any files you upload to your client portal, and your payment details. Card payments are handled by Stripe: I never see or store your card number.</p>
+    <p><strong>When you view a gallery.</strong> Guests are asked for their name and email address before they see the photos, so I know who has access. If you tick the box for occasional offers, I may email you about them. If you don’t tick it, I won’t.</p>
+    <p><strong>When you download my wedding photo guide.</strong> Your email address.</p>
+    <p><strong>Your photos.</strong> The photos I take of you and your guests.</p>
+
+    <h2>How I use it</h2>
+    <ul>
+      <li>To reply to you, plan your day and provide the photography you’ve booked.</li>
+      <li>To send your quote, contract, invoices, reminders and galleries.</li>
+      <li>To keep the records a business has to keep, such as invoices for tax.</li>
+      <li>To understand how people find my website, so I can spend my advertising sensibly (see below).</li>
+      <li>To send you offers, but only if you’ve said yes, and you can stop them at any time.</li>
+    </ul>
+    <p>I don’t sell your information, and I don’t share it with anyone except the services below that help me run my business.</p>
+
+    <h2>Your photos</h2>
+    <p>How I may use your photos in my portfolio, on social media and in my advertising is set out in your contract, and I stick to what we’ve agreed.</p>
+
+    <h2>Services I use</h2>
+    <p>These services store or handle information for me. Some are based overseas, mainly in the United States, and look after it under their own privacy policies:</p>
+    <ul>
+      <li><strong>Cloudflare</strong>: hosts my website, client portal and galleries, and checks forms for spam (Cloudflare Turnstile).</li>
+      <li><strong>Google Workspace</strong>: my email and calendar.</li>
+      <li><strong>Stripe</strong>: card payments.</li>
+      <li><strong>Resend</strong>: sends me a notification when you get in touch.</li>
+      <li><strong>Xero</strong>: my accounting.</li>
+      <li><strong>Google Analytics</strong>, <strong>Google Ads</strong> and the <strong>Meta (Facebook) Pixel</strong>: see “Cookies and measuring my website” below.</li>
+    </ul>
+
+    <h2>Cookies and measuring my website</h2>
+    <p>My website uses Google Analytics and Cloudflare Web Analytics to count visits and see which pages are useful. Google Ads and the Meta (Facebook) Pixel tell me when someone who saw one of my ads gets in touch, so I know which ads are worth paying for. These use cookies, small files your browser keeps.</p>
+    <p>When you send an enquiry, my website also gives Google a scrambled (hashed) version of your email address and phone number, so Google can match your enquiry to an ad you may have clicked. Google scrambles it in your browser before it’s sent, so the original isn’t shared, and it’s used only to measure my ads.</p>
+    <p>You can block or delete cookies in your browser settings, and opt out of Google Analytics with <a href="https://tools.google.com/dlpage/gaoptout" target="_blank" rel="noopener">Google’s browser add-on</a>. My website still works without them.</p>
+
+    <h2>How long I keep it</h2>
+    <ul>
+      <li>If you enquire but don’t book, I keep your enquiry for up to two years in case you get back in touch, then delete it.</li>
+      <li>If you book, I keep your client records for seven years, as Inland Revenue requires for business records.</li>
+      <li>Your gallery is online for at least six months, longer if you extend it. Please download your photos and keep your own backup when you get them: after your gallery closes, I can’t promise I’ll still have copies.</li>
+    </ul>
+
+    <h2>Keeping it safe</h2>
+    <p>Your information sits in password-protected accounts that only I can sign in to, with two-step sign-in where it’s offered. Gallery and portal links are private, and I can change them at any time if a link has been shared too widely.</p>
+
+    <h2>Your rights</h2>
+    <p>You can ask to see the information I hold about you, and ask me to correct it. You can also ask me to delete it, unless I need to keep it (for example, invoices for tax). Send me a message through my <a href="/contact">contact page</a>, and I’ll reply within 20 working days, as the Privacy Act requires, and usually much sooner.</p>
+    <p>If you’re not happy with how I’ve handled your information, please talk to me first. You can also contact the <a href="https://www.privacy.org.nz" target="_blank" rel="noopener">Office of the Privacy Commissioner</a>.</p>
+
+    <h2>Changes</h2>
+    <p>I’ll update this page if anything changes. Last updated {updated}.</p>
+    <p class="small">Moments in Light, 985a Hibiscus Coast Highway, Waiwera, Auckland 0994.</p>
+  </article>
+</BaseLayout>
+
+<style>
+  .intro { max-width: calc(860px + 2 * var(--pad)); margin: 0 auto; padding-block: 64px 32px; text-align: center; }
+  .intro h1 { font-size: clamp(34px, 3vw + 18px, 62px); margin: 0 0 24px; padding: 0; }
+  .lead { font-size: clamp(19px, 0.6vw + 15px, 23px); font-weight: 300; line-height: 1.6; color: var(--ink); }
+  .rise { animation: rise 1.3s var(--ease) both; }
+  hr.rise { animation-name: draw; }
+  @keyframes rise { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
+  @keyframes draw { from { transform: scaleX(0); } to { transform: none; } }
+  .prose { max-width: calc(760px + 2 * var(--pad)); margin: 0 auto; padding-bottom: 80px; }
+  .prose p { color: #3a3a3a; line-height: 1.85; }
+  .prose h2 { font-weight: 300; color: var(--ink); font-size: clamp(26px, 1.4vw + 18px, 38px); line-height: 1.2; margin: 48px 0 18px; }
+  .prose strong { font-weight: 600; color: var(--ink); }
+  .prose a { text-decoration-color: var(--sage); text-underline-offset: 0.2em; }
+  .prose ul { list-style: none; margin: 8px 0 22px; padding: 0; display: grid; gap: 10px; }
+  .prose li { position: relative; padding-left: 28px; line-height: 1.7; color: #3a3a3a; }
+  .prose li::before { content: ''; position: absolute; left: 6px; top: 0.75em; width: 8px; height: 1px; background: var(--sage); }
+  .small { font-size: 14px; color: #777; }
+</style>
