@@ -25,6 +25,10 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
 
       <div class="cols">
         <div>
+          <section class="card ai-card">
+            <div class="card-head"><h2>Where things are</h2><button type="button" class="s-btn s-btn--quiet" data-summary>Summarise</button></div>
+            <p class="ai-summary muted">A short summary of this client from their emails, notes and invoices, written by AI when you click Summarise.</p>
+          </section>
           <section class="card">
             <h2>Steps</h2>
             <ul class="steps"></ul>
@@ -78,6 +82,10 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
             <div class="card-head"><h2>Emails</h2><button type="button" class="s-btn" data-compose>✉ Write email</button></div>
             <ul class="messages"></ul>
           </section>
+          <section class="card activity-card">
+            <h2>Activity</h2>
+            <ul class="activity"></ul>
+          </section>
         </div>
 
         <form class="card details" autocomplete="off">
@@ -91,6 +99,7 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
           <label>Phone<input name="phone" type="tel" /></label>
           <label>Postal address<textarea name="address" rows="3" placeholder="Added when they accept a quote"></textarea></label>
           <label class="tick"><input type="checkbox" name="ads_ok" value="1" /> Their photos can be used in ads and marketing <small>(untick if their contract says no)</small></label>
+          <label class="tick autopay-tick" hidden><input type="checkbox" name="autopay" value="1" /> <span class="autopay-text">Pay their instalments automatically</span></label>
           <label class="tick"><input type="checkbox" name="keep" value="1" /> Keep their details <small>(old enquiries that never book are deleted after two years, as your privacy page says; tick to keep this one)</small></label>
           <p class="export"><a data-export href="#" download>Download everything held about them</a> <small>(a ZIP, for a privacy request)</small></p>
           <div class="two">
@@ -141,6 +150,7 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
       </div>
       <div class="review-attach compose-attach"></div>
       <div class="review-actions">
+        <button type="button" class="s-btn s-btn--quiet" data-compose="ai" title="AI writes a draft from their emails and your notes; you edit it">Suggest a draft</button>
         <button type="button" class="s-btn s-btn--quiet" data-compose="cancel">Cancel</button>
         <button type="button" class="s-btn s-btn--solid" data-compose="send">Send</button>
       </div>
@@ -296,6 +306,10 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
     for (const el of Array.from(form.elements) as HTMLInputElement[]) if (el.name && el.type !== 'checkbox') el.value = j[el.name] ?? '';
     (form.elements.namedItem('ads_ok') as HTMLInputElement).checked = j.ads_ok !== 0;
     (form.elements.namedItem('keep') as HTMLInputElement).checked = j.keep === 1;
+    // Automatic payments (functions-lib/autopay.js): shown once they've saved a card.
+    $('.autopay-tick').hidden = !j.stripe_payment_method;
+    (form.elements.namedItem('autopay') as HTMLInputElement).checked = j.autopay === 1;
+    $('.autopay-text').textContent = `Pay their instalments automatically from their ${j.autopay_card || 'saved card'} on each due date`;
     $<HTMLAnchorElement>('[data-export]').href = `/api/studio/crm/export?job=${id}`;
     $('.message').textContent = j.message || 'No message.';
     const enquired = new Date(j.created_at).toLocaleDateString('en-NZ', { day: 'numeric', month: 'long', year: 'numeric' });
@@ -319,6 +333,9 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
     }).join('') : '<li class="empty">No steps planned.</li>';
 
     messages = d.messages;
+    // Who did what (functions-lib/activity.js)
+    $('.activity').innerHTML = (d.activity ?? []).length ? d.activity.map((a: { who: string; what: string; at: string }) => `<li><span class="act-when">${new Date(a.at).toLocaleString('en-NZ', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })}</span> <strong>${esc(a.who)}</strong> ${esc(a.what)}</li>`).join('')
+      : '<li class="empty">Changes made from now on are noted here, with who made them.</li>';
     $('.messages').innerHTML = d.messages.length ? d.messages.map((m: Message, i: number) =>
       `<li><button type="button" class="msg-open" data-msg="${i}"><span class="dir">${m.direction === 'in' ? 'From them' : 'Sent'}</span> <strong>${esc(m.subject)}</strong> <small>${dateTime(m.sent_at)}${m.attachments ? ' · 📎' : ''}</small></button></li>`).join('')
       : '<li class="empty">No emails yet. Once Gmail is connected, everything sent from the studio shows here.</li>';
@@ -384,7 +401,7 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
   }
 
   async function save(extra: Record<string, unknown> = {}) {
-    const body: Record<string, unknown> = { id, stage, ...Object.fromEntries(new FormData(form)), ads_ok: (form.elements.namedItem('ads_ok') as HTMLInputElement).checked, keep: (form.elements.namedItem('keep') as HTMLInputElement).checked, ...extra };
+    const body: Record<string, unknown> = { id, stage, ...Object.fromEntries(new FormData(form)), ads_ok: (form.elements.namedItem('ads_ok') as HTMLInputElement).checked, keep: (form.elements.namedItem('keep') as HTMLInputElement).checked, ...($('.autopay-tick').hidden ? {} : { autopay: (form.elements.namedItem('autopay') as HTMLInputElement).checked }), ...extra };
     saveBtn.disabled = true;
     $('.save-state').textContent = 'Saving…';
     const r = await fetch('/api/studio/crm/job', { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
@@ -626,6 +643,29 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
     const cb = t.closest<HTMLButtonElement>('[data-compose]');
     if (cb && !cb.dataset.compose) { openCompose(null); return; }
     if (cb?.dataset.compose === 'cancel') { $<HTMLDialogElement>('dialog.compose').close(); return; }
+    if (cb?.dataset.compose === 'ai') {
+      cb.disabled = true; cb.textContent = 'Writing…';
+      const r = await fetch('/api/studio/crm/ai', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'reply', job_id: id, reply: replyingTo }) });
+      const d = await r.json().catch(() => ({}));
+      cb.disabled = false; cb.textContent = 'Suggest a draft';
+      if (!r.ok) { toast(d.error || 'The AI didn’t answer. Try again.', true); return; }
+      composeRich.set(d.body);
+      showComposePreview();
+      toast('A draft to edit: check every detail before sending. Gaps to fill are in [square brackets].');
+      return;
+    }
+    const sum = t.closest<HTMLButtonElement>('[data-summary]');
+    if (sum) {
+      sum.disabled = true; sum.textContent = 'Summarising…';
+      const r = await fetch('/api/studio/crm/ai', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'summary', job_id: id }) });
+      const d = await r.json().catch(() => ({}));
+      sum.disabled = false; sum.textContent = 'Summarise again';
+      const box = $('.ai-summary');
+      if (!r.ok) { box.textContent = d.error || 'The AI didn’t answer. Try again.'; return; }
+      box.classList.remove('muted');
+      box.innerHTML = esc(d.summary).replace(/^- /gm, '• ').replace(/\n/g, '<br>');
+      return;
+    }
     if (cb?.dataset.compose === 'send') {
       if (composeDocs.over()) { toast('The attachments are over Gmail’s 25 MB limit. Untick one.', true); return; }
       cb.disabled = true; cb.textContent = 'Sending…';
@@ -708,6 +748,10 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
   .q-view .q-view-body { max-height: 65dvh; overflow: auto; padding-right: 6px; }
   .job-page .card h2 { margin: 0 0 12px; font-weight: 300; font-size: 22px; color: var(--ink); }
   .job-page .steps, .job-page .messages { list-style: none; margin: 0; padding: 0; }
+  .job-page .activity { list-style: none; margin: 0; padding: 0; font-size: 14px; max-height: 260px; overflow-y: auto; }
+  .job-page .activity li { padding: 6px 0; border-bottom: 1px solid #f1ebe1; }
+  .job-page .activity .act-when { color: #888; font-size: 12px; margin-right: 4px; }
+  .job-page .activity .empty { color: #888; }
   .job-page .step, .job-page .messages li { display: flex; align-items: center; gap: 8px 12px; flex-wrap: wrap; padding: 10px 0; border-bottom: 1px solid #f1ebe1; }
   .job-page .step:last-child, .job-page .messages li:last-child { border-bottom: 0; }
   .job-page .step--done .what, .job-page .step--skipped .what { opacity: 0.55; }

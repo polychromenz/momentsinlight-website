@@ -1,0 +1,176 @@
+---
+// Book a time with Tony (www.momentsinlight.co.nz/book): choose what it's for, a day and a free
+// time, then your details. Paid sessions go to Stripe to pay, then they're confirmed. Hidden from
+// Google until Tony links to it. Data: functions/api/book.js (functions-lib/booking.js).
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+<BaseLayout title="Book a time | Moments In Light" description="Book a time to chat with Tony about your wedding or portrait photos." noindex>
+  <main class="book-page">
+    <header class="bk-head">
+      <p class="eyebrow">Moments in Light</p>
+      <h1 class="display">Book a time</h1>
+      <hr class="hairline" />
+    </header>
+    <p class="bk-status" aria-live="polite">Loading…</p>
+
+    <section class="bk-step bk-types" hidden></section>
+
+    <section class="bk-step bk-times" hidden>
+      <button type="button" class="bk-back" data-back="types">‹ Choose something else</button>
+      <h2 class="bk-type-name"></h2>
+      <p class="bk-type-desc"></p>
+      <div class="bk-days" role="list"></div>
+      <div class="bk-slots" aria-live="polite"></div>
+    </section>
+
+    <section class="bk-step bk-form-wrap" hidden>
+      <button type="button" class="bk-back" data-back="times">‹ Choose another time</button>
+      <h2 class="bk-chosen"></h2>
+      <form class="bk-form" autocomplete="on">
+        <div class="two">
+          <label>First name<input name="first" autocomplete="given-name" required /></label>
+          <label>Last name<input name="last" autocomplete="family-name" /></label>
+        </div>
+        <label>Email<input name="email" type="email" autocomplete="email" required /></label>
+        <label>Phone <small>(optional)</small><input name="phone" type="tel" autocomplete="tel" /></label>
+        <div class="two bk-wedding">
+          <label>Your partner’s name <small>(optional)</small><input name="partner" /></label>
+          <label>Wedding date <small>(if you know it)</small><input name="event_date" type="date" /></label>
+        </div>
+        <label>Anything you’d like me to know? <small>(optional)</small><textarea name="message" rows="4"></textarea></label>
+        <input name="website" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true" />
+        <p class="bk-msg" role="alert" hidden></p>
+        <button class="btn" type="submit">Book it</button>
+        <p class="bk-small">Your details are used only to arrange this booking. See my <a href="/privacy">privacy page</a>.</p>
+      </form>
+    </section>
+
+    <section class="bk-step bk-done" hidden tabindex="-1">
+      <h2>You’re booked in</h2>
+      <p class="bk-done-text"></p>
+    </section>
+  </main>
+</BaseLayout>
+
+<script>
+  type Type = { key: string; name: string; minutes: number; price: number; where: string; description: string; wedding: boolean };
+  const $ = <T extends HTMLElement = HTMLElement>(s: string) => document.querySelector<T>(s)!;
+  const esc = (s: unknown) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
+  const price = (c: number) => (c ? `$${(c / 100).toLocaleString('en-NZ', { minimumFractionDigits: c % 100 ? 2 : 0 })}` : 'Free');
+  const dayName = (d: string) => new Date(`${d}T12:00:00Z`).toLocaleDateString('en-NZ', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' });
+  const longDay = (d: string) => new Date(`${d}T12:00:00Z`).toLocaleDateString('en-NZ', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' });
+  const timeText = (t: string) => new Date(`2000-01-01T${t}:00`).toLocaleTimeString('en-NZ', { hour: 'numeric', minute: '2-digit' });
+  const opened = Date.now();
+  let types: Type[] = [];
+  let type: Type | null = null;
+  let days: Record<string, string[]> = {};
+  let day = '', time = '';
+  const show = (name: string) => { document.querySelectorAll<HTMLElement>('.bk-step').forEach((s) => (s.hidden = !s.classList.contains(`bk-${name}`))); };
+
+  async function start() {
+    const r = await fetch('/api/book');
+    const d = await r.json().catch(() => null);
+    if (!r.ok || !d?.on) { $('.bk-status').innerHTML = 'Online booking isn’t open just now. Please <a href="/contact">get in touch</a> and I’ll find a time.'; return; }
+    types = d.types;
+    $('.bk-status').hidden = true;
+    const want = new URLSearchParams(location.search).get('type');
+    if (types.length === 1 || types.some((t) => t.key === want)) return choose(types.find((t) => t.key === want) ?? types[0]);
+    $('.bk-types').innerHTML = `<h2>What would you like to book?</h2><div class="bk-cards">${types.map((t) => `<button type="button" class="bk-card" data-type="${esc(t.key)}"><strong>${esc(t.name)}</strong><span>${t.minutes} minutes · ${price(t.price)}</span>${t.description ? `<small>${esc(t.description)}</small>` : ''}</button>`).join('')}</div>`;
+    show('types');
+  }
+  async function choose(t: Type) {
+    type = t;
+    $('.bk-type-name').textContent = `${t.name} · ${t.minutes} minutes${t.price ? ` · ${price(t.price)}` : ''}`;
+    $('.bk-type-desc').textContent = [t.description, t.where && `Where: ${t.where}`].filter(Boolean).join(' ');
+    $('.bk-days').innerHTML = '<p class="bk-small">Finding free times…</p>';
+    $('.bk-slots').innerHTML = '';
+    $<HTMLButtonElement>('[data-back="types"]').hidden = types.length < 2;
+    show('times');
+    const r = await fetch(`/api/book?type=${encodeURIComponent(t.key)}`);
+    const d = await r.json().catch(() => null);
+    days = d?.days ?? {};
+    const list = Object.keys(days);
+    $('.bk-days').innerHTML = list.length ? list.map((k) => `<button type="button" class="bk-day" role="listitem" data-day="${k}">${dayName(k)}</button>`).join('')
+      : '<p>No free times in the next few weeks, sorry. Please <a href="/contact">get in touch</a> and I’ll find one.</p>';
+    if (list.length) pickDay(list[0]);
+  }
+  function pickDay(d: string) {
+    day = d;
+    document.querySelectorAll<HTMLElement>('.bk-day').forEach((b) => b.classList.toggle('on', b.dataset.day === d));
+    $('.bk-slots').innerHTML = `<h3>${longDay(d)}</h3><div class="bk-times-list">${days[d].map((t) => `<button type="button" class="bk-time" data-time="${t}">${timeText(t)}</button>`).join('')}</div>`;
+  }
+  document.addEventListener('click', (e) => {
+    const t = e.target as HTMLElement;
+    const tb = t.closest<HTMLElement>('[data-type]');
+    if (tb) { const x = types.find((y) => y.key === tb.dataset.type); if (x) choose(x); return; }
+    const db = t.closest<HTMLElement>('[data-day]');
+    if (db) { pickDay(db.dataset.day!); return; }
+    const tm = t.closest<HTMLElement>('[data-time]');
+    if (tm) {
+      time = tm.dataset.time!;
+      $('.bk-chosen').textContent = `${type!.name}: ${longDay(day)} at ${timeText(time)}`;
+      $('.bk-wedding').hidden = !type!.wedding;
+      $<HTMLButtonElement>('.bk-form button[type=submit]').textContent = type!.price ? `Book and pay ${price(type!.price)}` : 'Book it';
+      show('form-wrap');
+      return;
+    }
+    const back = t.closest<HTMLElement>('[data-back]');
+    if (back) show(back.dataset.back!);
+  });
+  $<HTMLFormElement>('.bk-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const f = e.target as HTMLFormElement;
+    const msg = $('.bk-msg');
+    const btn = f.querySelector<HTMLButtonElement>('button[type=submit]')!;
+    const label = btn.textContent;
+    btn.disabled = true; btn.textContent = 'Booking…'; msg.hidden = true;
+    const r = await fetch('/api/book', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ ...Object.fromEntries(new FormData(f)), type: type!.key, date: day, time, ms: Date.now() - opened }) });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) {
+      msg.textContent = d.error || 'Something went wrong. Please try again.'; msg.hidden = false; btn.disabled = false; btn.textContent = label;
+      if (r.status === 409) choose(type!);
+      return;
+    }
+    if (d.pay_url) { btn.textContent = 'Taking you to payment…'; location.href = d.pay_url; return; }
+    $('.bk-done-text').textContent = `${type!.name}, ${d.when || `${longDay(day)} at ${timeText(time)}`}. A confirmation is on its way to your inbox. If anything changes, just reply to it.`;
+    show('done');
+    $('.bk-done').focus();
+  });
+  start();
+</script>
+
+<style>
+  .book-page { background: var(--champagne); padding: 48px var(--pad) 90px; min-height: 60vh; }
+  .bk-head { max-width: 760px; margin: 0 auto 20px; text-align: center; }
+  .bk-head h1 { margin: 0 0 16px; }
+  .bk-status { text-align: center; color: #666; }
+  .bk-step { max-width: 760px; margin: 0 auto; background: var(--white); border-radius: 28px 0; padding: 24px 26px; }
+  .bk-step[hidden] { display: none; }
+  .bk-step h2 { margin: 0 0 8px; font-weight: 300; font-size: 26px; color: var(--ink); }
+  .bk-step h3 { margin: 18px 0 8px; font-weight: 400; font-size: 18px; }
+  .bk-cards { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); margin-top: 12px; }
+  .bk-card { display: flex; flex-direction: column; gap: 4px; text-align: left; padding: 16px 18px; border: 1px solid #ddd3c4; border-radius: 18px 0; background: var(--white); font: inherit; cursor: pointer; color: var(--ink); transition: border-radius 0.35s var(--ease), border-color 0.2s; }
+  .bk-card:hover { border-radius: 0 18px; border-color: var(--green); }
+  .bk-card strong { font-size: 18px; font-weight: 500; }
+  .bk-card span { color: var(--green); font-size: 14px; }
+  .bk-card small { color: #666; line-height: 1.5; }
+  .bk-type-desc { color: #555; margin: 0 0 12px; }
+  .bk-days { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 6px; }
+  .bk-day, .bk-time { flex: none; padding: 9px 14px; border: 1px solid #ddd3c4; border-radius: 12px 0; background: var(--white); font: inherit; font-size: 14px; cursor: pointer; color: var(--ink); }
+  .bk-day.on { background: var(--green); border-color: var(--green); color: var(--white); }
+  .bk-time:hover, .bk-day:hover { border-color: var(--green); }
+  .bk-times-list { display: flex; flex-wrap: wrap; gap: 8px; }
+  .bk-back { border: 0; background: none; padding: 0; margin: 0 0 10px; font: inherit; font-size: 14px; color: var(--green); cursor: pointer; }
+  .bk-back[hidden] { display: none; }
+  .bk-form { display: flex; flex-direction: column; gap: 12px; }
+  .bk-form label { display: flex; flex-direction: column; gap: 4px; font-size: 14px; color: #444; }
+  .bk-form small { color: #888; }
+  .bk-form input, .bk-form textarea { font: inherit; font-size: 16px; padding: 10px 12px; border: 1px solid #ddd3c4; border-radius: 12px 0; background: var(--white); color: var(--ink); min-width: 0; }
+  .bk-form .two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .bk-form .two[hidden] { display: none; }
+  @media (max-width: 560px) { .bk-form .two { grid-template-columns: 1fr; } }
+  .bk-form .btn { align-self: flex-start; }
+  .bk-msg { margin: 0; color: #a8432a; }
+  .bk-small { font-size: 13px; color: #888; margin: 0; }
+  .hp { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
+</style>

@@ -53,6 +53,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       <div class="q-card q-done" hidden tabindex="-1">
         <h2>Thank you, it's accepted!</h2>
         <p class="q-done-text"></p>
+        <a class="btn q-next" hidden>Sign your contract now</a>
         <div class="q-buttons"><a class="btn btn--outline q-pdf" target="_blank" rel="noopener">Download the quote (PDF)</a></div>
       </div>
     </div>
@@ -144,7 +145,9 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       chosen = q.chosen_package; (q.chosen_extras || []).forEach((i: number) => extras.add(i));
       $('.q-accept').hidden = true;
       $('.q-done').hidden = false;
-      $('.q-done-text').textContent = `Accepted by ${q.accepted_name} on ${new Date(q.accepted_at).toLocaleDateString('en-NZ', { day: 'numeric', month: 'long', year: 'numeric' })}. Thank you! Your contract is on its way to your inbox to sign, with a copy of this quote attached.`;
+      $('.q-done-text').textContent = `Accepted by ${q.accepted_name} on ${new Date(q.accepted_at).toLocaleDateString('en-NZ', { day: 'numeric', month: 'long', year: 'numeric' })}. Thank you! ${q.sign_link ? 'Your contract is ready to sign now (a copy is on its way to your inbox too, with this quote attached).' : 'Your contract is on its way to your inbox to sign, with a copy of this quote attached.'}`;
+      const next = document.querySelector<HTMLAnchorElement>('.q-next');
+      if (next) { next.hidden = !q.sign_link; if (q.sign_link) next.href = q.sign_link; }
       $<HTMLAnchorElement>('.q-pdf').href = `/api/quote?t=${encodeURIComponent(token)}&pdf=1`;
       document.querySelectorAll<HTMLInputElement>('[data-pkg], [data-extra]').forEach((b) => (b.disabled = true));
     } else if (q.status === 'expired') {

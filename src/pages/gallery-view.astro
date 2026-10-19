@@ -95,7 +95,7 @@ import { site } from '../data/site';
   type View = {
     gallery: any; cover: any; sections: { id: number; name: string; is_bw: number }[]; images: Img[];
     rights: { downloads: 'none' | 'web' | 'highres'; watermark: boolean; kind: string; lists: boolean; hide: boolean; zip: boolean };
-    lists?: List[]; purposes?: Record<string, string>; me?: { name: string; kind: string };
+    lists?: List[]; purposes?: Record<string, string>; me?: { name: string; kind: string }; dropbox?: string | null;
     preview?: { status: string; link: string; gallery_id: string };
   };
   const $ = <T extends HTMLElement = HTMLElement>(s: string, el: ParentNode = document) => el.querySelector<T>(s)!;
@@ -504,8 +504,39 @@ import { site } from '../data/site';
     openDlg('dl', `<h2>Download ${esc(label)}</h2>
       <div class="dl-opts">${full ? `<a class="g-cta" href="${link('original')}" download>Full size <small>for printing</small></a>` : ''}<a class="g-cta g-cta--quiet" href="${link('web')}" download>Web size <small>for phones and sharing</small></a></div>
       ${secs.length ? `<p class="dlg-hint">On a slow connection? Download one section at a time:</p><div class="dl-secs">${secs.map((s) => `<a href="/api/gallery/zip?v=${encodeURIComponent(viewer)}&what=section:${s.id}&size=${full ? 'original' : 'web'}" download>${esc(s.name)}</a>`).join('')}</div>` : ''}
+      ${view.dropbox ? `<p class="dlg-hint">Or straight into your Dropbox, without using your phone or computer’s download:</p><div class="dl-opts"><button type="button" class="g-cta g-cta--quiet" data-dropbox="${esc(link(full ? 'original' : 'web'))}" data-name="${esc(`${view.gallery.name} - ${label}`)}">Save to Dropbox</button></div>` : ''}
       <p class="dlg-hint">Your photos come as one ZIP file with a print release. A whole gallery can be large and take a while: keep this page open until it finishes.</p>`);
   }
+  // "Save to Dropbox" (Dropbox's Saver): Dropbox fetches the ZIP from here into the person's Dropbox.
+  function loadDropbox(): Promise<any> {
+    const w = window as any;
+    if (w.Dropbox) return Promise.resolve(w.Dropbox);
+    return new Promise((ok, fail) => {
+      const sc = document.createElement('script');
+      sc.src = 'https://www.dropbox.com/static/api/2/dropins.js';
+      sc.id = 'dropboxjs';
+      sc.dataset.appKey = view.dropbox!;
+      sc.onload = () => ok(w.Dropbox);
+      sc.onerror = () => fail(new Error('Dropbox didn’t load.'));
+      document.head.append(sc);
+    });
+  }
+  document.addEventListener('click', async (e) => {
+    const b = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-dropbox]');
+    if (!b) return;
+    b.disabled = true;
+    try {
+      const Dropbox = await loadDropbox();
+      const name = `${(b.dataset.name || 'Photos').replace(/[\\/:*?"<>|]+/g, ' ').trim()}.zip`;
+      Dropbox.save(new URL(b.dataset.dropbox!, location.href).toString(), name, {
+        success: () => { toast('Saved to your Dropbox.'); b.disabled = false; },
+        progress: () => {},
+        cancel: () => { b.disabled = false; },
+        error: (msg: string) => { toast(`Dropbox couldn’t save it (${msg}). Try downloading instead.`); b.disabled = false; },
+      });
+      toast('Dropbox is saving your photos in the background. You can close this page once it says it’s started.');
+    } catch (err) { toast((err as Error).message); b.disabled = false; }
+  });
   function sendDlg(l: List) {
     const p = view.purposes ?? {};
     openDlg('send', `<h2>Send “${esc(l.name)}” to Tony</h2>

@@ -28,7 +28,13 @@ export async function onRequestGet({ request, env }) {
   if (!url.searchParams.has('preview') && !q.viewed_at) {
     await env.DB.prepare('UPDATE quotes SET viewed_at = ?2 WHERE id = ?1 AND viewed_at IS NULL').bind(q.id, new Date().toISOString()).run();
   }
-  return reply(publicQuote(q, job));
+  // One-step booking: once accepted, the contract to sign next (while it's unsigned).
+  let sign_link = null;
+  if (q.status === 'accepted' && !url.searchParams.has('preview')) {
+    const c = await env.DB.prepare(`SELECT token FROM contracts WHERE quote_id = ?1 AND status = 'sent' ORDER BY id DESC LIMIT 1`).bind(q.id).first();
+    if (c) sign_link = `/contract?t=${c.token}`;
+  }
+  return reply({ ...publicQuote(q, job), sign_link });
 }
 
 export async function onRequestPost({ request, env }) {

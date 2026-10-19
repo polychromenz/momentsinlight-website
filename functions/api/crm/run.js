@@ -45,6 +45,9 @@ import { adsWeekly } from '../../../functions-lib/ads-weekly.js';
 import { enquiryCleanup } from '../../../functions-lib/cleanup.js';
 import { socialTimer } from '../../../functions-lib/social.js';
 import { xeroTimer } from '../../../functions-lib/xero.js';
+import { hasReviewed } from '../../../functions-lib/reviewed.js';
+import { chargeDue } from '../../../functions-lib/autopay.js';
+import { lapseHolds } from '../../../functions-lib/booking.js';
 
 const reply = (data, status = 200) => new Response(JSON.stringify(data), { status, headers: { 'content-type': 'application/json' } });
 const stops = (step, ev) => (',' + step.stop_on + ',').includes(`,${ev},`);
@@ -95,6 +98,14 @@ export async function onRequestPost({ request, env }) {
   await db.prepare(`UPDATE steps SET status = 'failed', note = 'Stopped part-way through sending; check Sent before retrying' WHERE status = 'sending' AND done_at < ?1`)
     .bind(new Date(Date.now() - 30 * 60_000).toISOString()).run();
 
+  // 2a. Review requests and reminders (stop_on 'reviewed'): skipped once the client has left a Google review.
+  const reviewSteps = (await db.prepare(`SELECT s.id, s.job_id, c.first_name, c.last_name, j.partner_name FROM steps s JOIN jobs j ON j.id = s.job_id JOIN clients c ON c.id = j.client_id
+      WHERE s.status IN ('scheduled', 'due') AND (',' || s.stop_on || ',') LIKE '%,reviewed,%' AND s.due_at <= ?1 AND j.hold = 0 LIMIT 20`).bind(now).all()).results;
+  for (const st of reviewSteps) {
+    if (await hasReviewed(env, st).catch(() => false))
+      await db.prepare(`UPDATE steps SET status = 'skipped', done_at = ?2, note = 'Stopped: they’ve left a Google review' WHERE id = ?1 AND status IN ('scheduled', 'due')`).bind(st.id, now).run();
+  }
+
   // 2. Automatic emails that are due.
   const due = await db.prepare(
     `SELECT s.*, j.stage, j.replied_at, j.title AS job_title FROM steps s JOIN jobs j ON j.id = s.job_id
@@ -138,10 +149,16 @@ export async function onRequestPost({ request, env }) {
         `https://www.momentsinlight.co.nz/studio/crm/job?id=${inv.job_id}`);
     }
   }
+  // 4b. Automatic instalments due today (functions-lib/autopay.js), before any reminder goes.
+  log.autopay = await chargeDue(env).catch((e) => `error: ${e.message}`);
+  // 4c. Online bookings held for payment that weren't paid in time (functions-lib/booking.js).
+  log.lapsed = await lapseHolds(env).catch((e) => `error: ${e.message}`);
   // 5. Reminders for unpaid invoices: on the due date (if it was sent before then), and 3 days late.
+  //    Not for automatic payments, unless the card didn't go through.
   const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Pacific/Auckland' });
   const threeAgo = new Date(Date.now() - 3 * 86400_000).toLocaleDateString('en-CA', { timeZone: 'Pacific/Auckland' });
-  const unpaid = await db.prepare(`SELECT * FROM invoices WHERE status = 'sent' AND reminders < 2 AND due_date <= ?1 AND job_id NOT IN (SELECT id FROM jobs WHERE hold = 1) LIMIT 40`).bind(today).all();
+  const unpaid = await db.prepare(`SELECT * FROM invoices WHERE status = 'sent' AND reminders < 2 AND due_date <= ?1 AND job_id NOT IN (SELECT id FROM jobs WHERE hold = 1)
+      AND NOT (autopay_error IS NULL AND job_id IN (SELECT id FROM jobs WHERE autopay = 1 AND stripe_payment_method IS NOT NULL)) LIMIT 40`).bind(today).all();
   for (const inv of unpaid.results) {
     const sentDay = inv.sent_at ? new Date(inv.sent_at).toLocaleDateString('en-CA', { timeZone: 'Pacific/Auckland' }) : today;
     const onDue = inv.reminders === 0 && inv.due_date === today && sentDay < today;

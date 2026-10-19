@@ -16,7 +16,7 @@ import { planSteps } from './workflows.js';
 
 export const SITE = 'https://www.momentsinlight.co.nz';
 export const money = (c) => `$${(c / 100).toLocaleString('en-NZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-const token = () => [...crypto.getRandomValues(new Uint8Array(24))].map((b) => b.toString(16).padStart(2, '0')).join('');
+export const token = () => [...crypto.getRandomValues(new Uint8Array(24))].map((b) => b.toString(16).padStart(2, '0')).join('');
 const nzToday = () => new Date().toLocaleDateString('en-CA', { timeZone: 'Pacific/Auckland' });
 const DAY = 86400_000;
 
@@ -34,7 +34,7 @@ export function stripeReady(env) {
   return { ok: true, test: key.includes('_test_') };
 }
 
-async function nextNumber(db, year) {
+export async function nextNumber(db, year) {
   const last = await db.prepare(`SELECT number FROM invoices WHERE number LIKE ?1 ORDER BY number DESC LIMIT 1`).bind(`MIL-${year}-%`).first();
   const n = last ? Number(last.number.split('-')[2]) + 1 : 1;
   return `MIL-${year}-${String(n).padStart(4, '0')}`;
@@ -87,7 +87,10 @@ export async function sendInvoice(env, inv, kind = 'invoice') {
   const job = await loadJob(db, inv.job_id);
   const template = await db.prepare('SELECT * FROM templates WHERE key = ?1').bind(kind).first();
   if (!template) throw new Error(`The “${kind}” email template is missing (Settings).`);
-  const email = renderTemplate(template, { ...(await studioLinks(db)), ...invoiceValues(inv, job) });
+  // On automatic payments: say so at the top of the invoice email (functions-lib/autopay.js).
+  const auto = kind === 'invoice' && job.autopay && job.stripe_payment_method && inv.status !== 'paid';
+  const t = auto ? { ...template, body: `**This will be paid automatically** from your ${job.autopay_card || 'saved card'} on {{payment_due_date}}, so there’s nothing you need to do. If you’d rather pay another way, just reply to this email.\n\n${template.body}` } : template;
+  const email = renderTemplate(t, { ...(await studioLinks(db)), ...invoiceValues(inv, job) });
   if (email.missing.length) throw new Error(`The invoice email needs: ${email.missing.join(', ')}.`);
   const pdf = toBase64(await invoicePdf(inv, job, await paymentSettings(db)));
   const last = await db.prepare('SELECT gmail_thread_id FROM messages WHERE job_id = ?1 AND gmail_thread_id IS NOT NULL ORDER BY sent_at DESC LIMIT 1').bind(job.id).first();
@@ -131,7 +134,7 @@ export async function markPaid(env, inv, { method, note = '', stripeSession = nu
 }
 
 /** A Stripe Checkout page for paying an invoice by card. Returns its URL. */
-export async function checkout(env, inv, job) {
+export async function checkout(env, inv, job, { expiresMin = 0, saveCard = false } = {}) {
   const ready = stripeReady(env);
   if (!ready.ok) throw new Error(ready.why);
   const back = `${SITE}/invoice?t=${inv.token}`;
@@ -147,6 +150,10 @@ export async function checkout(env, inv, job) {
     'metadata[invoice_number]': inv.number,
     'payment_intent_data[description]': `Invoice ${inv.number}: ${inv.label}`,
     'payment_intent_data[metadata][invoice_id]': String(inv.id),
+    // A held online booking: the payment page closes before the hold lapses (Stripe's minimum is 30 minutes).
+    ...(expiresMin ? { expires_at: String(Math.floor(Date.now() / 1000) + expiresMin * 60) } : {}),
+    // They chose automatic payments for later instalments: Stripe keeps the card (functions-lib/autopay.js).
+    ...(saveCard ? { customer_creation: 'always', 'payment_intent_data[setup_future_usage]': 'off_session', 'metadata[autopay]': '1' } : {}),
     success_url: `${back}&paid=1`,
     cancel_url: back,
   });

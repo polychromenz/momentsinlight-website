@@ -3,7 +3,8 @@
 // PDF), so a couple can pay early; a paid invoice is never emailed later.
 //   GET  /api/invoice?t=…          the invoice (and bank transfer details)
 //   GET  /api/invoice?t=…&pdf=1    the invoice PDF (a receipt once paid)
-//   POST /api/invoice  { t }       a Stripe Checkout page to pay by card → { url }
+//   POST /api/invoice  { t, autopay? }   a Stripe Checkout page to pay by card → { url }
+//        autopay: keep the card and pay the later instalments automatically on their due dates
 import { loadJob } from '../../functions-lib/crm-send.js';
 import { paymentSettings, checkout, stripeReady } from '../../functions-lib/invoices.js';
 import { invoicePdf } from '../../functions-lib/pdf.js';
@@ -29,6 +30,10 @@ export async function onRequestGet({ request, env }) {
     bank: pay.account_number ? { account_name: pay.account_name, bank_name: pay.bank_name, account_number: pay.account_number, instructions: pay.instructions } : null,
     gst_number: pay.gst_number || '',
     card: stripeReady(env).ok,
+    // Automatic payments: offered when there are later instalments to pay; or already on.
+    autopay: job.autopay && job.stripe_payment_method ? { on: true, card: job.autopay_card } : null,
+    autopay_offer: !job.autopay && inv.status !== 'paid' && stripeReady(env).ok
+      && !!(await env.DB.prepare(`SELECT 1 FROM invoices WHERE job_id = ?1 AND id <> ?2 AND status IN ('scheduled', 'sent') AND due_date > ?3`).bind(inv.job_id, inv.id, inv.due_date).first()),
   });
 }
 
@@ -37,7 +42,7 @@ export async function onRequestPost({ request, env }) {
   const inv = await find(env, d?.t);
   if (!inv || !['sent', 'scheduled'].includes(inv.status)) return reply({ error: inv?.status === 'paid' ? 'This invoice is already paid. Thank you!' : 'This invoice isn’t available.' }, 409);
   try {
-    return reply({ url: await checkout(env, inv, await loadJob(env.DB, inv.job_id)) });
+    return reply({ url: await checkout(env, inv, await loadJob(env.DB, inv.job_id), { saveCard: !!d.autopay }) });
   } catch (e) {
     console.error('invoice checkout', e);
     return reply({ error: 'Card payment isn’t available right now. Please pay by bank transfer, or try again later.' }, 503);

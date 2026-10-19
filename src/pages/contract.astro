@@ -36,7 +36,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       <div class="c-card c-done" hidden tabindex="-1">
         <h2>Signed. Thank you!</h2>
         <p class="c-done-text"></p>
-        <div class="c-buttons"><a class="btn c-pdf" target="_blank" rel="noopener">Download your signed copy</a></div>
+        <div class="c-buttons"><a class="btn c-next" hidden>Pay your deposit now</a> <a class="btn c-pdf" target="_blank" rel="noopener">Download your signed copy</a></div>
       </div>
     </div>
   </main>
@@ -48,7 +48,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   const params = new URLSearchParams(location.search);
   const token = params.get('t') || '';
   const preview = params.has('preview');
-  let c: { name: string; status: string; details: any; body: string; fingerprint: string; signed_name: string | null; signed_at: string | null };
+  let c: { name: string; status: string; details: any; body: string; fingerprint: string; signed_name: string | null; signed_at: string | null; pay_link?: string | null };
 
   async function load() {
     const r = await fetch(`/api/contract?t=${encodeURIComponent(token)}${preview ? '&preview=1' : ''}`);
@@ -69,7 +69,9 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     if (c.status === 'signed') {
       $('.c-sign').hidden = true;
       $('.c-done').hidden = false;
-      $('.c-done-text').textContent = `Signed by ${c.signed_name} on ${new Date(c.signed_at!).toLocaleString('en-NZ', { dateStyle: 'long', timeStyle: 'short' })}. A signed copy has been emailed to you.`;
+      $('.c-done-text').textContent = `Signed by ${c.signed_name} on ${new Date(c.signed_at!).toLocaleString('en-NZ', { dateStyle: 'long', timeStyle: 'short' })}. A signed copy has been emailed to you.${c.pay_link ? ' The last step is your deposit, which secures your date: you can pay it now.' : ''}`;
+      const pay = document.querySelector<HTMLAnchorElement>('.c-next');
+      if (pay) { pay.hidden = !c.pay_link; if (c.pay_link) pay.href = c.pay_link; }
     }
     if (preview) { const b = $<HTMLButtonElement>('.c-sign button[type="submit"]'); b.disabled = true; b.textContent = 'Sign (preview only)'; }
     $('.c').hidden = false;

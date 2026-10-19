@@ -30,7 +30,13 @@ export async function onRequestGet({ request, env }) {
     return pdfResponse(bytes, `${c.name}${c.status === 'signed' ? ' (signed)' : ''}.pdf`);
   }
   if (!url.searchParams.has('preview') && !c.viewed_at) await env.DB.prepare('UPDATE contracts SET viewed_at = ?2 WHERE id = ?1 AND viewed_at IS NULL').bind(c.id, new Date().toISOString()).run();
-  return reply({ name: c.name, status: c.status, details: JSON.parse(c.details), body: c.body, fingerprint: c.fingerprint, signed_name: c.signed_name, signed_at: c.signed_at });
+  // One-step booking: once signed, the deposit invoice to pay next (while it's unpaid).
+  let pay_link = null;
+  if (c.status === 'signed') {
+    const inv = await env.DB.prepare(`SELECT token FROM invoices WHERE contract_id = ?1 AND status IN ('sent', 'scheduled') AND send_at <= ?2 ORDER BY due_date LIMIT 1`).bind(c.id, new Date().toISOString()).first();
+    if (inv) pay_link = `/invoice?t=${inv.token}`;
+  }
+  return reply({ name: c.name, status: c.status, details: JSON.parse(c.details), body: c.body, fingerprint: c.fingerprint, signed_name: c.signed_name, signed_at: c.signed_at, pay_link });
 }
 
 export async function onRequestPost({ request, env }) {

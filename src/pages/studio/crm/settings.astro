@@ -26,6 +26,7 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
       <button type="button" role="tab" data-tab="payments">Payments</button>
       <button type="button" role="tab" data-tab="contracts">Contracts</button>
       <p class="tab-group">Clients</p>
+      <button type="button" role="tab" data-tab="booking">Online booking</button>
       <button type="button" role="tab" data-tab="portal">Client portal</button>
       <button type="button" role="tab" data-tab="documents">Documents</button>
       <p class="tab-group">Import</p>
@@ -37,7 +38,7 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
       <optgroup label="Emails"><option value="templates">Email templates</option><option value="links">Your links</option></optgroup>
       <optgroup label="How you work"><option value="workflows">Workflows</option><option value="job_type">Job types</option><option value="lead_source">Lead sources</option><option value="questionnaires">Questionnaires</option></optgroup>
       <optgroup label="Money"><option value="schedules">Payment schedules</option><option value="payments">Payments</option><option value="contracts">Contracts</option></optgroup>
-      <optgroup label="Clients"><option value="portal">Client portal</option><option value="documents">Documents</option></optgroup>
+      <optgroup label="Clients"><option value="booking">Online booking</option><option value="portal">Client portal</option><option value="documents">Documents</option></optgroup>
       <optgroup label="Import"><option value="sn">Studio Ninja</option></optgroup>
       <optgroup label="Access"><option value="people">People</option></optgroup>
     </select>
@@ -177,6 +178,28 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
           <p class="hint">Changes apply to steps planned from now on; jobs already under way keep the steps they have. An email with a “[check: …]” note in it can’t be sent until it’s filled in.</p>
         </form>
       </div>
+    </section>
+
+    <section class="pane card booking-pane" data-pane="booking" hidden>
+      <h2>Online booking</h2>
+      <p class="muted">People pick a free time at <a href="https://www.momentsinlight.co.nz/book" target="_blank" rel="noopener">momentsinlight.co.nz/book</a>. Free times leave out your Google Calendar’s busy times (after you reconnect Google on the Clients page once, to allow “see when you’re free or busy”), the studio’s appointments and wedding days. To use it in your emails, set it as your booking link in Settings › Your links.</p>
+      <form class="booking-form" autocomplete="off">
+        <label class="tick"><input type="checkbox" name="on" /> <strong>Booking page is open</strong></label>
+        <h3>Your hours</h3>
+        <div class="bk-hours"></div>
+        <div class="bk-nums">
+          <label>Notice needed (hours)<input name="notice_hours" inputmode="numeric" /></label>
+          <label>Bookable this many days ahead<input name="ahead_days" inputmode="numeric" /></label>
+          <label>Gap between bookings (minutes)<input name="gap_min" inputmode="numeric" /></label>
+        </div>
+        <h3>Kinds of booking</h3>
+        <div class="bk-types"></div>
+        <p><button type="button" class="s-btn s-btn--quiet" data-bk-add>+ Another kind</button></p>
+        <p class="bk-stripe muted" hidden></p>
+        <button type="submit" class="s-btn s-btn--solid">Save</button>
+      </form>
+      <h3>Recent bookings</h3>
+      <ul class="bk-recent"></ul>
     </section>
 
     <section class="pane card people-pane" data-pane="people" hidden>
@@ -436,6 +459,7 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
         <div class="qn-flags">
           <label><input type="checkbox" data-s="stop_reply"${String(x.stop_on || '').includes('reply') ? ' checked' : ''} /> Stop if they reply</label>
           <label><input type="checkbox" data-s="stop_booked"${String(x.stop_on || '').includes('booked') ? ' checked' : ''} /> Stop if they book</label>
+          <label><input type="checkbox" data-s="stop_reviewed"${String(x.stop_on || '').includes('reviewed') ? ' checked' : ''} /> Stop if they’ve left a Google review</label>
           ${email ? `<label><input type="checkbox" data-s="gallery"${x.gallery ? ' checked' : ''} /> Asks for a gallery link</label>
           <label>Sends questionnaire <select data-s="questionnaire"><option value="">None</option>${opt(data.questionnaires.map((q) => [q.key, q.name]), x.questionnaire)}</select></label>` : ''}
         </div>
@@ -448,7 +472,7 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
     if (g('days')) x.days = Number(g('days')!.value) || 0;
     if (g('hours')) x.hours = Number(g('hours')!.value) || 0;
     if (g('after_step')) x.after_step = g('after_step')!.value;
-    x.stop_on = [g('stop_reply')?.checked && 'reply', g('stop_booked')?.checked && 'booked'].filter(Boolean).join(',');
+    x.stop_on = [g('stop_reply')?.checked && 'reply', g('stop_booked')?.checked && 'booked', g('stop_reviewed')?.checked && 'reviewed'].filter(Boolean).join(',');
     if (g('gallery')?.checked) x.gallery = true;
     if (g('questionnaire')?.value) x.questionnaire = g('questionnaire')!.value;
     return x;
@@ -661,6 +685,60 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
       await load(current?.key);
     }
   });
+
+  // ---- Online booking (functions/api/studio/booking.js) ----
+  {
+    const DAYS: [string, string][] = [['mon', 'Monday'], ['tue', 'Tuesday'], ['wed', 'Wednesday'], ['thu', 'Thursday'], ['fri', 'Friday'], ['sat', 'Saturday'], ['sun', 'Sunday']];
+    const f = document.querySelector<HTMLFormElement>('.booking-form')!;
+    let jobTypes: string[] = [];
+    const typeRow = (t: any) => `<fieldset class="bk-type"><legend><label class="tick"><input type="checkbox" data-k="on" ${t.on ? 'checked' : ''} /> On</label></legend>
+      <input type="hidden" data-k="key" value="${esc(t.key)}" />
+      <label>Name<input data-k="name" value="${esc(t.name)}" /></label>
+      <label>Minutes<input data-k="minutes" inputmode="numeric" value="${t.minutes}" /></label>
+      <label>Price <small>($, 0 = free)</small><input data-k="price" inputmode="decimal" value="${t.price / 100}" /></label>
+      <label>Makes a job of type<select data-k="job_type">${jobTypes.map((j) => `<option${j === t.job_type ? ' selected' : ''}>${esc(j)}</option>`).join('')}</select></label>
+      <label class="wide">Where<input data-k="where" value="${esc(t.where)}" placeholder="e.g. Video call (I’ll send the link)" /></label>
+      <label class="wide">About it<textarea data-k="description" rows="2">${esc(t.description)}</textarea></label>
+      <button type="button" class="s-btn s-btn--quiet" data-bk-remove>Remove</button></fieldset>`;
+    const read = () => ({
+      on: (f.elements.namedItem('on') as HTMLInputElement).checked,
+      hours: Object.fromEntries(DAYS.map(([k]) => [k, (f.querySelector<HTMLInputElement>(`[data-day="${k}"]`)!.value || '').trim()])),
+      notice_hours: (f.elements.namedItem('notice_hours') as HTMLInputElement).value,
+      ahead_days: (f.elements.namedItem('ahead_days') as HTMLInputElement).value,
+      gap_min: (f.elements.namedItem('gap_min') as HTMLInputElement).value,
+      types: [...f.querySelectorAll<HTMLElement>('.bk-type')].map((el) => {
+        const v = (k: string) => el.querySelector<HTMLInputElement>(`[data-k="${k}"]`)!;
+        return { key: v('key').value || v('name').value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''), name: v('name').value, minutes: v('minutes').value, price: Math.round(Number(v('price').value || 0) * 100), job_type: v('job_type').value, where: v('where').value, description: v('description').value, on: v('on').checked };
+      }),
+    });
+    const draw = (d: any) => {
+      const s = d.settings;
+      jobTypes = d.job_types;
+      (f.elements.namedItem('on') as HTMLInputElement).checked = s.on;
+      f.querySelector('.bk-hours')!.innerHTML = DAYS.map(([k, n]) => `<label>${n}<input data-day="${k}" value="${esc(s.hours[k] || '')}" placeholder="Closed, or e.g. 09:00-17:00" /></label>`).join('');
+      for (const k of ['notice_hours', 'ahead_days', 'gap_min']) (f.elements.namedItem(k) as HTMLInputElement).value = String(s[k]);
+      f.querySelector('.bk-types')!.innerHTML = s.types.map(typeRow).join('');
+      const st = f.querySelector<HTMLElement>('.bk-stripe')!;
+      st.hidden = d.stripe.ok;
+      st.textContent = d.stripe.ok ? '' : `Paid bookings need card payments: ${d.stripe.why}`;
+      document.querySelector('.bk-recent')!.innerHTML = d.recent.length ? d.recent.map((b: any) => `<li>${esc(b.date)} ${esc(b.time)} · <a href="/studio/crm/job?id=${b.job_id}">${esc(`${b.first_name} ${b.last_name}`)}</a> · ${esc(b.type_name)} · ${esc(b.status)}</li>`).join('') : '<li class="muted">None yet.</li>';
+    };
+    fetch('/api/studio/booking').then((r) => r.json()).then(draw).catch(() => {});
+    f.addEventListener('click', (e) => {
+      const t = e.target as HTMLElement;
+      if (t.closest('[data-bk-add]')) f.querySelector('.bk-types')!.insertAdjacentHTML('beforeend', typeRow({ key: '', name: '', minutes: 30, price: 0, job_type: jobTypes[0] ?? 'Wedding', where: '', description: '', on: true }));
+      if (t.closest('[data-bk-remove]') && confirm('Remove this kind of booking?')) t.closest('.bk-type')!.remove();
+    });
+    f.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const r = await fetch('/api/studio/booking', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(read()) });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) { alert(d.error || 'That didn’t save.'); return; }
+      const fresh = await (await fetch('/api/studio/booking')).json();
+      draw(fresh);
+      alert('Saved.');
+    });
+  }
 
   // ---- People: who else can use the studio (functions/api/studio/people.js) ----
   {
@@ -890,6 +968,14 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
   .settings .card { background: var(--white); border-radius: 24px 0; padding: 18px 20px; }
   .settings .hint { margin: 0 0 12px; font-size: 14px; color: #666; }
   .settings .send-mode { margin-bottom: 14px; font-size: 14px; }
+  .settings .booking-pane h3 { margin: 18px 0 8px; font-size: 13px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--green); }
+  .settings .bk-hours, .settings .bk-nums { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; }
+  .settings .bk-hours label, .settings .bk-nums label, .settings .bk-type label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: #555; }
+  .settings .booking-pane input, .settings .booking-pane select, .settings .booking-pane textarea { font: inherit; font-size: 14px; padding: 7px 10px; border: 1px solid #ddd3c4; border-radius: 10px 0; background: var(--white); min-width: 0; }
+  .settings .bk-type { border: 1px solid #ece4d7; border-radius: 14px 0; padding: 10px 14px; margin: 0 0 10px; display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; align-items: end; }
+  .settings .bk-type .wide { grid-column: 1 / -1; }
+  .settings .booking-pane .tick { flex-direction: row; align-items: center; gap: 6px; }
+  .settings .bk-recent { list-style: none; padding: 0; margin: 0; font-size: 14px; line-height: 1.9; }
   .settings .people-list { list-style: none; margin: 12px 0; padding: 0; display: grid; gap: 8px; }
   .settings .people-list li { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f3eee6; }
   .settings .people-list small { color: #888; }

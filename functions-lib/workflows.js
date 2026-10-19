@@ -9,7 +9,7 @@
 //         after    – days after the wedding/shoot date (9am NZ)
 //         step     – days after another step (after_step) is done or sent
 //         manual   – when Tony's ready: a button on the client page (e.g. "Practice photos ready")
-//   stop_on: 'reply', 'booked' or both: stops while it's still waiting
+//   stop_on: 'reply', 'booked' and/or 'reviewed' (they've left a Google review): stops while it's still waiting
 //   questionnaire: the questionnaire this email sends ({{questionnaire_link}})
 //   gallery: the email needs a gallery link, asked for when Tony sends it ({{gallery_link}})
 // Planned steps are rows in `steps` (step_key = workflow-key + '-' + step id, so nothing is planned
@@ -57,7 +57,7 @@ export function cleanSteps(list, templates, questionnaires) {
       if (hours) s.hours = hours;
     }
     if (when === 'step') s.after_step = text(x.after_step, 50);
-    const stops = ['reply', 'booked'].filter((k) => String(x.stop_on || '').includes(k));
+    const stops = ['reply', 'booked', 'reviewed'].filter((k) => String(x.stop_on || '').includes(k));
     if (stops.length) s.stop_on = stops.join(',');
     return s;
   });

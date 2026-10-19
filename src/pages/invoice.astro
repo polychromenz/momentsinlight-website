@@ -32,6 +32,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         <div class="i-card-pay" hidden>
           <p>Pay securely by card (Visa, Mastercard, Apple Pay or Google Pay).</p>
           <p class="i-msg" role="alert" hidden></p>
+          <label class="i-auto" hidden><input type="checkbox" name="autopay" /> Pay my remaining instalments automatically with this card on their due dates <small>(you’ll get each invoice two weeks before, and you can switch this off any time by replying to it)</small></label>
+          <p class="i-auto-on" hidden></p>
           <button class="btn i-pay-btn" type="button">Pay by card</button>
         </div>
         <div class="i-bank" hidden>
@@ -77,6 +79,9 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     ].map(([k, v], i, a) => `<tr${i === a.length - 1 ? ' class="total"' : ''}><td>${k}</td><td>${v}</td></tr>`).join('');
     $('.i-pay').hidden = paid;
     $('.i-card-pay').hidden = !d.card;
+    $('.i-auto').hidden = !d.autopay_offer;
+    $('.i-auto-on').hidden = !d.autopay;
+    if (d.autopay) $('.i-auto-on').textContent = `This will be paid automatically from your ${d.autopay.card || 'saved card'} on ${d.due_long}. You can also pay now if you’d like.`;
     $('.i-bank').hidden = !d.bank;
     $('.i-or').hidden = !(d.card && d.bank);
     $('.i-none').hidden = d.card || d.bank;
@@ -99,7 +104,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     const btn = $<HTMLButtonElement>('.i-pay-btn');
     const msg = $('.i-msg');
     btn.disabled = true; btn.textContent = 'Opening secure payment…'; msg.hidden = true;
-    const r = await fetch('/api/invoice', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ t: token }) });
+    const r = await fetch('/api/invoice', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ t: token, autopay: !!document.querySelector<HTMLInputElement>('.i-auto input')?.checked }) });
     const d = await r.json().catch(() => ({}));
     if (r.ok && d.url) { location.href = d.url; return; }
     msg.textContent = d.error || 'Something went wrong. Please try again.'; msg.hidden = false;
@@ -125,6 +130,10 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   .i-sum :global(tr.total td) { border-bottom: 0; font-weight: 600; color: var(--ink); font-size: 17px; }
   .i-pay { display: flex; flex-direction: column; gap: 14px; font-size: 15px; line-height: 1.7; color: #444; }
   .i-pay p { margin: 0 0 8px; }
+  .i-auto { display: flex; gap: 10px; align-items: flex-start; font-size: 14px; line-height: 1.5; margin: 0 0 12px; cursor: pointer; }
+  .i-auto input { margin-top: 4px; }
+  .i-auto small { display: block; color: #888; }
+  .i-auto[hidden], .i-auto-on[hidden] { display: none; }
   .i-bank-dl { display: grid; grid-template-columns: auto 1fr; gap: 2px 16px; margin: 0 0 8px; }
   .i-bank-dl :global(dt) { color: #777; }
   .i-bank-dl :global(dd) { margin: 0; font-weight: 500; color: var(--ink); }

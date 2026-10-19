@@ -23,7 +23,7 @@ export async function onRequestGet({ request, env }) {
      FROM jobs j JOIN clients c ON c.id = j.client_id WHERE j.id = ?1`,
   ).bind(id).first();
   if (!job) return json({ error: 'That job doesn’t exist (it may have been deleted).' }, 404);
-  const [steps, messages, others, quotes, contracts, invoices, questionnaires, qTemplates, qDefault, clash, appointments, gcal] = await Promise.all([
+  const [steps, messages, others, quotes, contracts, invoices, questionnaires, qTemplates, qDefault, clash, appointments, gcal, activity] = await Promise.all([
     env.DB.prepare('SELECT * FROM steps WHERE job_id = ?1 ORDER BY created_at, due_at, id').bind(id).all(),
     env.DB.prepare('SELECT id, direction, subject, body, sent_at, attachments, gmail_message_id FROM messages WHERE job_id = ?1 ORDER BY sent_at DESC').bind(id).all(),
     env.DB.prepare('SELECT id, title, job_type, stage, event_date FROM jobs WHERE client_id = ?1 AND id <> ?2 ORDER BY created_at DESC').bind(job.client_id, id).all(),
@@ -36,10 +36,11 @@ export async function onRequestGet({ request, env }) {
     clashes(env.DB, job.event_date, job.id),
     env.DB.prepare('SELECT id, title, date, start_time, end_time, location, notes FROM appointments WHERE job_id = ?1 ORDER BY date, start_time').bind(id).all(),
     calendarReady(env.DB),
+    env.DB.prepare('SELECT who, what, at FROM activity WHERE job_id = ?1 ORDER BY at DESC LIMIT 40').bind(id).all().catch(() => ({ results: [] })),
   ]);
   return json({ mode: sendMode(env), job, steps: steps.results, messages: messages.results, otherJobs: others.results, quotes: quotes.results, contracts: contracts.results, invoices: invoices.results,
     questionnaires: questionnaires.results, questionnaireTemplates: qTemplates.results, defaultQuestionnaire: qDefault?.questionnaire_key ?? null,
-    clashes: clash, appointments: appointments.results, googleCalendar: gcal });
+    clashes: clash, appointments: appointments.results, googleCalendar: gcal, activity: activity.results });
 }
 
 export async function onRequestPut(context) {
@@ -83,6 +84,7 @@ export async function onRequestPut(context) {
   // Whether their photos can be used in ads (some contracts say no).
   if (d.ads_ok !== undefined) stmts.push(env.DB.prepare('UPDATE clients SET ads_ok = ?2, updated_at = ?3 WHERE id = ?1').bind(job.client_id, d.ads_ok ? 1 : 0, now));
   // Kept even if they never book (the two-year clean-up, functions-lib/cleanup.js, leaves them alone).
+  if (d.autopay !== undefined) stmts.push(env.DB.prepare('UPDATE jobs SET autopay = ?2 WHERE id = ?1 AND (?2 = 0 OR stripe_payment_method IS NOT NULL)').bind(id, d.autopay ? 1 : 0));
   if (d.keep !== undefined) stmts.push(env.DB.prepare('UPDATE clients SET keep = ?2 WHERE id = ?1').bind(job.client_id, d.keep ? 1 : 0));
   // Booked or lost: steps waiting on a booking stop.
   if ((jobFields.stage === 'booked' || jobFields.stage === 'lost') && job.stage !== jobFields.stage) {

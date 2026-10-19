@@ -1,0 +1,90 @@
+---
+// Moments Studio > Payments > Booking reports: enquiries, bookings and booking value by month, by
+// where people heard about you and by type, with Google Ads spend. Data: functions/api/studio/reports.js.
+import StudioLayout from '../../layouts/StudioLayout.astro';
+---
+<StudioLayout title="Booking reports" section="reports">
+  <main class="rp">
+    <div class="rp-head">
+      <div><h1>Booking reports</h1><p class="intro">Where enquiries come from, how many book, and what they’re worth. Studio Ninja history included.</p></div>
+      <div class="rp-range">
+        <label>From <input type="month" name="from" /></label>
+        <label>To <input type="month" name="to" /></label>
+      </div>
+    </div>
+    <div class="rp-tiles"></div>
+    <section class="card"><h2>By month</h2><div class="rp-chart"></div><p class="rp-legend"><span class="k k-enq"></span> Enquiries <span class="k k-book"></span> Bookings (by the month they booked)</p>
+      <div class="tbl-wrap"><table class="rp-tbl rp-months"><thead><tr><th>Month</th><th class="r">Enquiries</th><th class="r">Bookings</th><th class="r">Booked value</th><th class="r">Paid in</th><th class="r">Google Ads</th></tr></thead><tbody></tbody></table></div></section>
+    <div class="rp-two">
+      <section class="card"><h2>Where they heard about you</h2><div class="tbl-wrap"><table class="rp-tbl rp-sources"><thead><tr><th>Source</th><th class="r">Enquiries</th><th class="r">Booked</th><th class="r">Rate</th><th class="r">Value</th></tr></thead><tbody></tbody></table></div></section>
+      <section class="card"><h2>By type</h2><div class="tbl-wrap"><table class="rp-tbl rp-types"><thead><tr><th>Type</th><th class="r">Enquiries</th><th class="r">Booked</th><th class="r">Rate</th><th class="r">Value</th></tr></thead><tbody></tbody></table></div></section>
+    </div>
+    <p class="muted">Enquiries count by the month they arrived; bookings by the month they booked. Booked value is the job’s invoices (not void). Sources and types count enquiries in the chosen months, and bookings among them.</p>
+  </main>
+</StudioLayout>
+
+<script>
+  const $ = <T extends HTMLElement = HTMLElement>(s: string) => document.querySelector<T>(s)!;
+  const esc = (s: unknown) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
+  const money = (c: number) => `$${Math.round(c / 100).toLocaleString('en-NZ')}`;
+  const pct = (n: number) => `${Math.round(n * 100)}%`;
+  const mon = (m: string) => new Date(`${m}-15T12:00:00Z`).toLocaleDateString('en-NZ', { month: 'short', year: '2-digit', timeZone: 'UTC' });
+  const from = $<HTMLInputElement>('[name=from]'), to = $<HTMLInputElement>('[name=to]');
+  async function load() {
+    const r = await fetch(`/api/studio/reports${from.value && to.value ? `?from=${from.value}&to=${to.value}` : ''}`);
+    const d = await r.json().catch(() => null);
+    if (!r.ok || !d) { $('.rp-tiles').textContent = d?.error || 'Couldn’t load the reports.'; return; }
+    from.value = d.from; to.value = d.to;
+    const t = d.totals;
+    const google = d.sources.find((s: any) => s.name.toLowerCase() === 'google');
+    $('.rp-tiles').innerHTML = [
+      ['Enquiries', t.enquiries.toLocaleString('en-NZ'), ''],
+      ['Bookings', t.booked.toLocaleString('en-NZ'), t.enquiries ? `${pct(t.booked / t.enquiries)} of enquiries` : ''],
+      ['Booked value', money(t.value), t.booked ? `${money(t.value / t.booked)} each on average` : ''],
+      ['Still to come', money(t.upcoming), 'invoices not yet paid'],
+      ['Google Ads', money(t.ad_cost), google?.booked && t.ad_cost ? `${money(t.ad_cost / google.booked)} per Google booking` : 'spend in these months'],
+      ['Enquiry to booking', t.median_days == null ? '–' : `${t.median_days} days`, 'typical (median)'],
+    ].map(([k, v, s]) => `<div class="tile"><span class="k">${k}</span><strong>${v}</strong><small>${s}</small></div>`).join('');
+    const max = Math.max(1, ...d.months.map((m: any) => Math.max(m.enquiries, m.booked)));
+    $('.rp-chart').innerHTML = d.months.map((m: any) => `<div class="col" title="${esc(mon(m.month))}: ${m.enquiries} enquiries, ${m.booked} bookings"><div class="bars"><span class="b b-enq" style="height:${(m.enquiries / max) * 100}%"></span><span class="b b-book" style="height:${(m.booked / max) * 100}%"></span></div><small>${mon(m.month)}</small></div>`).join('');
+    $('.rp-months tbody').innerHTML = [...d.months].reverse().map((m: any) => `<tr><td>${mon(m.month)}</td><td class="r">${m.enquiries}</td><td class="r">${m.booked}</td><td class="r">${m.value ? money(m.value) : '–'}</td><td class="r">${m.paid ? money(m.paid) : '–'}</td><td class="r">${m.ad_cost ? money(m.ad_cost) : '–'}</td></tr>`).join('');
+    const rows = (list: any[]) => list.map((g) => `<tr><td>${esc(g.name)}</td><td class="r">${g.enquiries}</td><td class="r">${g.booked}</td><td class="r">${pct(g.rate)}</td><td class="r">${g.value ? money(g.value) : '–'}</td></tr>`).join('') || '<tr><td colspan="5" class="muted">None in these months.</td></tr>';
+    $('.rp-sources tbody').innerHTML = rows(d.sources);
+    $('.rp-types tbody').innerHTML = rows(d.types);
+  }
+  for (const el of [from, to]) el.addEventListener('change', () => { if (from.value && to.value) load(); });
+  load();
+</script>
+
+<style is:global>
+  .rp { max-width: 1200px; margin: 0 auto; padding: 24px clamp(14px, 3vw, 32px) 80px; }
+  .rp-head { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 14px; }
+  .rp h1 { margin: 0; font-weight: 300; font-size: 32px; color: var(--ink); }
+  .rp .intro { color: #666; margin: 4px 0 0; }
+  .rp-range { display: flex; gap: 10px; }
+  .rp-range label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; font-weight: 600; color: #555; }
+  .rp-range input { font: inherit; font-size: 14px; padding: 7px 10px; border: 1px solid #ddd3c4; border-radius: 10px 0; background: var(--white); }
+  .rp .card { background: var(--white); border-radius: 24px 0; padding: 18px 22px; margin-bottom: 16px; min-width: 0; }
+  .rp h2 { margin: 0 0 10px; font-weight: 300; font-size: 22px; }
+  .rp .muted { color: #888; font-size: 14px; }
+  .rp-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin-bottom: 16px; }
+  .rp .tile { background: var(--white); border-radius: 18px 0; padding: 14px 16px; display: flex; flex-direction: column; gap: 2px; }
+  .rp .tile .k { font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--green); font-weight: 600; }
+  .rp .tile strong { font-size: 26px; font-weight: 400; color: var(--ink); font-variant-numeric: tabular-nums; }
+  .rp .tile small { color: #888; font-size: 12px; }
+  .rp-chart { display: flex; gap: 4px; align-items: stretch; height: 180px; overflow-x: auto; padding-bottom: 4px; }
+  .rp-chart .col { flex: 1 0 26px; display: flex; flex-direction: column; gap: 4px; align-items: center; }
+  .rp-chart .bars { flex: 1; width: 100%; display: flex; gap: 2px; align-items: flex-end; justify-content: center; border-bottom: 1px solid #ece4d7; }
+  .rp-chart .b { width: 40%; max-width: 14px; border-radius: 3px 3px 0 0; min-height: 1px; }
+  .rp-chart small { font-size: 10px; color: #888; white-space: nowrap; }
+  .b-enq, .k-enq { background: #d9cdb8; } .b-book, .k-book { background: var(--green); }
+  .rp-legend { display: flex; gap: 6px; align-items: center; font-size: 13px; color: #777; margin: 8px 0 12px; }
+  .rp-legend .k { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-left: 8px; }
+  .rp-two { display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 16px; }
+  @media (max-width: 480px) { .rp-two { grid-template-columns: 1fr; } }
+  .rp .tbl-wrap { overflow-x: auto; }
+  .rp-tbl { width: 100%; border-collapse: collapse; font-size: 14px; }
+  .rp-tbl th { text-align: left; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--green); padding: 7px 8px; border-bottom: 1px solid #ece4d7; }
+  .rp-tbl td { padding: 7px 8px; border-bottom: 1px solid #f3eee6; }
+  .rp-tbl .r { text-align: right; font-variant-numeric: tabular-nums; }
+</style>

@@ -1,5 +1,6 @@
 // The client gallery: everything a visitor may see, and their own favourites and lists.
-//   GET /api/gallery/view?v=<visitor token>  -> { gallery, cover, rights, sections, images, lists, me }  (401 if the token no longer works)
+//   GET /api/gallery/view?v=<visitor token>  -> { gallery, cover, rights, sections, images, lists, me, dropbox }  (401 if the token no longer works)
+// dropbox: the Dropbox app key (public) for "Save to Dropbox", when DROPBOX_APP_KEY is set.
 import { json } from '../../../functions-lib/studio.js';
 import { viewerAccess, galleryView } from '../../../functions-lib/gallery-access.js';
 import { myLists, PURPOSES } from '../../../functions-lib/gallery-lists.js';
@@ -12,5 +13,6 @@ export async function onRequestGet({ request, env }) {
     lists: await myLists(env, a),
     purposes: PURPOSES,
     me: { name: a.viewer.name || a.link.name || '', kind: a.link.kind },
+    dropbox: env.DROPBOX_APP_KEY || null,
   });
 }
