@@ -71,6 +71,21 @@ async function saveConn(db, v) {
 }
 export const disconnect = (db) => saveConn(db, null);
 
+/** Connected to Xero's Demo Company (for safety testing): Stripe test payments count too. */
+export async function isDemo(db) {
+  return /^demo company/i.test((await xeroConnection(db))?.tenant_name ?? '');
+}
+
+/** A different Xero organisation: forget everything sent to the last one, so nothing is skipped as "already in Xero". */
+async function forgetOtherOrg(db) {
+  await db.batch([
+    db.prepare('DELETE FROM xero_queue'),
+    db.prepare('UPDATE invoices SET xero_invoice_id = NULL, xero_payment_id = NULL WHERE xero_invoice_id IS NOT NULL OR xero_payment_id IS NOT NULL'),
+    db.prepare('UPDATE stripe_payouts SET xero_transfer_id = NULL WHERE xero_transfer_id IS NOT NULL'),
+    db.prepare(`UPDATE settings SET value = json_set(value, '$.start', '') WHERE key = 'xero'`),
+  ]);
+}
+
 const basic = (env) => `Basic ${btoa(`${env.XERO_CLIENT_ID}:${env.XERO_CLIENT_SECRET}`)}`;
 /** After Tony allows the studio in Xero: swap the code for tokens and pick his organisation. */
 export async function finishConnect(env, code) {
@@ -83,6 +98,8 @@ export async function finishConnect(env, code) {
   const orgs = await (await fetch('https://api.xero.com/connections', { headers: { authorization: `Bearer ${d.access_token}` } })).json().catch(() => []);
   const org = (orgs ?? []).find((o) => o.tenantType === 'ORGANISATION') ?? orgs?.[0];
   if (!org) throw new Error('No Xero organisation was shared with the studio.');
+  const before = await xeroConnection(env.DB);
+  if (before?.tenant_id && before.tenant_id !== org.tenantId) await forgetOtherOrg(env.DB);
   await saveConn(env.DB, { refresh: await seal(env, d.refresh_token), tenant_id: org.tenantId, tenant_name: org.tenantName, connected_at: new Date().toISOString() });
   cached = { token: d.access_token, until: Date.now() + (d.expires_in - 120) * 1000 };
   return org.tenantName;
@@ -134,10 +151,12 @@ export async function queueNew(env) {
   const add = (kind, ref, summary) => db.prepare(`INSERT OR IGNORE INTO xero_queue (kind, ref, summary, created_at) VALUES (?1, ?2, ?3, ?4)`).bind(kind, String(ref), summary, now);
   const base = `FROM invoices i JOIN jobs j ON j.id = i.job_id JOIN clients c ON c.id = j.client_id WHERE COALESCE(j.hold, 0) = 0 AND i.sent_at >= ?1`;
   const name = (r) => `${r.first_name} ${r.last_name}`.trim();
+  // Real card payments only, except while testing with Xero's Demo Company.
+  const live = (await isDemo(db)) ? '1 = 1' : 'i.stripe_live = 1';
   const inv = (await db.prepare(`SELECT i.id, i.number, i.label, i.amount, c.first_name, c.last_name ${base} AND i.status IN ('sent', 'paid') AND i.xero_invoice_id IS NULL`).bind(s.start).all()).results;
   const pay = (await db.prepare(`SELECT i.id, i.number, i.amount, i.paid_method, c.first_name, c.last_name ${base} AND i.status = 'paid' AND i.xero_invoice_id IS NOT NULL AND i.xero_payment_id IS NULL
-      AND (i.paid_method <> 'card' OR i.stripe_live = 1)`).bind(s.start).all()).results;
-  const fee = (await db.prepare(`SELECT i.id, i.number, i.stripe_fee ${base} AND i.paid_method = 'card' AND i.stripe_live = 1 AND i.stripe_fee > 0 AND i.xero_payment_id IS NOT NULL`).bind(s.start).all()).results;
+      AND (i.paid_method <> 'card' OR ${live})`).bind(s.start).all()).results;
+  const fee = (await db.prepare(`SELECT i.id, i.number, i.stripe_fee ${base} AND i.paid_method = 'card' AND ${live} AND i.stripe_fee > 0 AND i.xero_payment_id IS NOT NULL`).bind(s.start).all()).results;
   const out = (await db.prepare(`SELECT * FROM stripe_payouts WHERE xero_transfer_id IS NULL AND arrival_date >= ?1`).bind(s.start).all()).results;
   const stmts = [
     ...inv.map((r) => add('invoice', r.id, `Invoice ${r.number}: ${r.label}, ${money(r.amount)} to ${name(r)}`)),

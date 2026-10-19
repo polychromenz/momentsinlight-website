@@ -1,7 +1,9 @@
 // What Stripe tells the studio about money (for the Xero link, functions-lib/xero.js):
 //   recordFee()     after a card payment: Stripe's fee on it
 //   recordPayout()  when a payout reaches the bank: which payments, fees and refunds made it up
-// Both use the Stripe secret key; Stripe test payments are marked so they never go to Xero.
+// Both use the Stripe secret key; Stripe test payments are marked so they never go to real books
+// (only to Xero's Demo Company, for testing).
+import { isDemo } from './xero.js';
 const stripe = async (env, path) => {
   const r = await fetch(`https://api.stripe.com/v1${path}`, { headers: { authorization: `Bearer ${env.STRIPE_SECRET_KEY}` } });
   const d = await r.json().catch(() => ({}));
@@ -19,7 +21,8 @@ export async function recordFee(env, invoiceId, paymentIntent, live) {
 
 /** A payout that arrived: its parts, and each studio invoice it paid out. */
 export async function recordPayout(env, payout, live) {
-  if (!live || payout.status !== 'paid') return;
+  // Stripe test payouts only while testing with Xero's Demo Company.
+  if (payout.status !== 'paid' || (!live && !(await isDemo(env.DB)))) return;
   const db = env.DB;
   let gross = 0, fees = 0, other = 0, payments = 0, unmatched = 0, after = '';
   for (let page = 0; page < 20; page++) {
