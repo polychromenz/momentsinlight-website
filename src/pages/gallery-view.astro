@@ -259,6 +259,11 @@ import { site } from '../data/site';
         const big = tile(i, ar(i) * H, H);
         const col = `<div class="stack" style="gap:${GAP}px">${stack.map((s) => tile(s, c, c / ar(s))).join('')}</div>`;
         out.push(`<div class="row row--block" style="gap:${GAP}px;margin-bottom:${GAP}px;justify-content:center">${side++ % 2 ? col + big : big + col}</div>`);
+      } else if (stack.length === 1) {
+        // Only one photo to go with the highlight (e.g. two highlights in a row): side by side at the
+        // same height, filling the width together, rather than a lone photo with a gap beside it.
+        const H = Math.min((width - GAP) / (ar(i) + ar(stack[0])), innerHeight * 0.9);
+        out.push(line(side++ % 2 ? [stack[0], i] : [i, stack[0]], H, ' row--block'));
       } else {
         row.push(...stack);
         flush(true);
