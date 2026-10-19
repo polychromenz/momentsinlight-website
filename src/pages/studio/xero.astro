@@ -145,6 +145,8 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
       if (btn.matches('[data-disconnect]')) { if (!await ask('Disconnect Xero? Nothing more goes to Xero until you connect again.')) return; await post({ action: 'disconnect' }); }
       load();
     } catch (err) { toast((err as Error).message, true); load(); }
+    // The buttons at the top of the list stay on the page, so they need switching back on.
+    if (btn.matches("[data-run], [data-approve-all]")) { btn.disabled = false; if (btn.matches("[data-approve-all]")) btn.textContent = "Approve all"; }
   });
   $<HTMLFormElement>('.xe-set').addEventListener('submit', async (e) => {
     e.preventDefault();
