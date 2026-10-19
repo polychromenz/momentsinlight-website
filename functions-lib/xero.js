@@ -43,7 +43,7 @@ export async function xeroSettings(db) {
 }
 export async function saveXeroSettings(db, d) {
   const s = await xeroSettings(db);
-  const code = (v, was) => (v === undefined ? was : String(v).trim().slice(0, 20));
+  const code = (v, was) => (v === undefined ? was : String(v).trim().slice(0, 40)); // (account ids are 36 characters)
   const next = {
     style: ['match', 'clearing'].includes(d.style) ? d.style : s.style,
     start: /^\d{4}-\d{2}-\d{2}$/.test(d.start ?? '') ? d.start : s.start,
