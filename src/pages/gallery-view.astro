@@ -234,7 +234,8 @@ import { site } from '../data/site';
       if (!row.length) return;
       const sum = row.reduce((a, i) => a + ar(i), 0);
       const full = (width - GAP * (row.length - 1)) / sum;
-      out.push(line(row, last ? Math.min(target, full) : full));
+      // A last row that doesn't fill the width sits in the middle rather than against the left.
+      out.push(line(row, last ? Math.min(target, full) : full, last && full > target ? ' row--end' : ''));
       row = [];
     };
     for (let n = 0; n < list.length; n++) {
@@ -644,7 +645,7 @@ import { site } from '../data/site';
   .g-sec { scroll-margin-top: 60px; }
   .g-sec h2 { margin: 42px 0 18px; text-align: center; font-weight: 300; font-size: clamp(20px, 2.4vw, 28px); letter-spacing: 0.24em; text-transform: uppercase; }
   .row { display: flex; }
-  .row--hero, .row--block { justify-content: center; }
+  .row--hero, .row--block, .row--end { justify-content: center; }
   .stack { display: flex; flex-direction: column; flex: none; }
   .ph { padding: 0; border: 0; background: #eeefe9; cursor: zoom-in; flex: none; overflow: hidden; }
   .ph img { display: block; width: 100%; height: 100%; transition: opacity 0.4s var(--ease), transform 0.8s var(--ease); -webkit-user-drag: none; user-select: none; }
