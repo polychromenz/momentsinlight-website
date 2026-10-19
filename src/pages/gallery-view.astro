@@ -217,11 +217,16 @@ import { site } from '../data/site';
   const thumbW = (i: Img) => (i.w >= i.h ? Math.min(600, i.w) : Math.round((Math.min(600, i.h) * i.w) / i.h));
   const webW = (i: Img) => (i.w >= i.h ? Math.min(2048, i.w) : Math.round((Math.min(2048, i.h) * i.w) / i.h));
   const ar = (i: Img) => i.w / i.h;
+  // Preview's size buttons: arrows pointing out (show it big) or in (back to normal), which nudge
+  // that way when hovered.
+  const arrows = (a: string, b: string) => `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path class="ar ar--a" d="${a}"/><path class="ar ar--b" d="${b}"/></svg>`;
+  const GROW = `<span class="sz sz--grow">${arrows('M14 4h6v6M20 4l-6.5 6.5', 'M10 20H4v-6M4 20l6.5-6.5')}</span>`;
+  const SHRINK = `<span class="sz sz--shrink">${arrows('M14 4.5V10h5.5M20 4l-6 6', 'M10 19.5V14H4.5M4 20l6-6')}</span>`;
   function tile(i: Img, w: number, h: number) {
     const n = current.indexOf(i);
     const tools = live() ? `<span class="ph-tools">${view.rights.lists ? `<span class="pt pt-fav${isFav(i.id) ? ' on' : ''}" data-fav="${i.id}" role="button" tabindex="0" aria-label="Favourite">${isFav(i.id) ? '♥' : '♡'}</span>` : ''}${view.rights.hide ? `<span class="pt" data-hide="${i.id}" role="button" tabindex="0" title="${i.ch ? 'Show it again' : 'Hide it from anyone you share with'}">${i.ch ? '◉' : '⊘'}</span>` : ''}</span>` : '';
     return `<button type="button" class="ph${i.ch ? ' ph--hidden' : ''}${selected.has(i.id) ? ' sel' : ''}" data-n="${n}" data-id="${i.id}" style="width:${w}px;height:${h}px" aria-label="Open photo ${n + 1}">${selecting ? '<span class="ph-tick" aria-hidden="true">✓</span>' : ''}${i.ch ? '<span class="ph-hid">Hidden</span>' : ''}${tools}
-      <img src="${esc(i.thumb)}" srcset="${esc(i.thumb)} ${thumbW(i)}w, ${esc(i.web)} ${webW(i)}w" sizes="${Math.ceil(w)}px" width="${Math.round(w)}" height="${Math.round(h)}" alt="" loading="lazy" decoding="async" />${view.preview ? `<span class="ph-star" data-star="${i.id}" role="button" tabindex="0" title="${i.hero ? 'Make it normal size' : 'Show it big (a highlight)'}">${i.hero ? '⤡' : '⤢'}</span>` : ''}</button>`;
+      <img src="${esc(i.thumb)}" srcset="${esc(i.thumb)} ${thumbW(i)}w, ${esc(i.web)} ${webW(i)}w" sizes="${Math.ceil(w)}px" width="${Math.round(w)}" height="${Math.round(h)}" alt="" loading="lazy" decoding="async" />${view.preview ? `<span class="ph-star" data-star="${i.id}" role="button" tabindex="0" title="${i.hero ? 'Make it normal size' : 'Show it big (a highlight)'}">${i.hero ? SHRINK : GROW}</span>` : ''}</button>`;
   }
   function rows(list: Img[], width: number) {
     const phone = width < 600;
@@ -401,7 +406,7 @@ import { site } from '../data/site';
         .then((r) => { if (!r.ok) throw new Error(); img.hero = img.hero ? 0 : 1; draw();
           // Keep that photo where it was on screen.
           const again = document.querySelector<HTMLElement>(`[data-star="${img.id}"]`)?.closest('.ph');
-          if (again) scrollBy(0, again.getBoundingClientRect().top - before); })
+          if (again) { scrollBy(0, again.getBoundingClientRect().top - before); again.classList.add(img.hero ? 'ph--grew' : 'ph--shrank'); } })
         .catch(() => alert('Couldn’t save that. Are you still signed in to the studio?'));
       return;
     }
@@ -682,6 +687,18 @@ import { site } from '../data/site';
   .ph { position: relative; }
   .ph-star { position: absolute; top: 8px; right: 8px; width: 34px; height: 34px; display: grid; place-items: center; border-radius: 50%; background: rgb(255 255 255 / 0.9); color: var(--ink); font-size: 18px; cursor: pointer; opacity: 0; transition: opacity 0.25s; box-shadow: 0 4px 12px -6px rgb(0 0 0 / 0.5); }
   .ph:hover .ph-star, .ph-star:focus { opacity: 1; }
+  .ph-star .sz { display: grid; place-items: center; transition: transform 0.35s var(--ease); }
+  .ph-star:hover .sz { transform: scale(1.08); }
+  .ph-star .ar { transition: transform 0.35s var(--ease); }
+  .ph-star:hover .sz--grow .ar--a, .ph-star:hover .sz--shrink .ar--b { animation: sz-a 1.1s var(--ease) infinite; }
+  .ph-star:hover .sz--grow .ar--b, .ph-star:hover .sz--shrink .ar--a { animation: sz-b 1.1s var(--ease) infinite; }
+  @keyframes sz-a { 50% { transform: translate(1.5px, -1.5px); } }
+  @keyframes sz-b { 50% { transform: translate(-1.5px, 1.5px); } }
+  .ph--grew { animation: ph-grew 0.6s var(--ease) both; }
+  .ph--shrank { animation: ph-shrank 0.6s var(--ease) both; }
+  @keyframes ph-grew { from { transform: scale(0.9); opacity: 0.6; } }
+  @keyframes ph-shrank { from { transform: scale(1.08); opacity: 0.6; } }
+  @media (prefers-reduced-motion: reduce) { .ph-star .ar, .ph--grew, .ph--shrank { animation: none !important; } }
   @media (hover: none) { .ph-star { opacity: 0.85; } }
   .g-foot { text-align: center; font-size: 13px; color: #888; padding: 20px 16px 40px; }
   .g-foot a { color: var(--green); }
