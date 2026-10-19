@@ -155,16 +155,18 @@ export async function queueNew(env) {
   const db = env.DB;
   const s = await xeroSettings(db);
   if (!s.start) return 0;
+  // The start date is a NZ date; invoice times are stored in UTC.
+  const nzMidnight = (() => { const g = new Date(`${s.start}T00:00:00Z`); const nz = new Date(g.toLocaleString('en-US', { timeZone: 'Pacific/Auckland' })); const utc = new Date(g.toLocaleString('en-US', { timeZone: 'UTC' })); return new Date(g.valueOf() - (nz - utc)).toISOString(); })();
   const now = new Date().toISOString();
   const add = (kind, ref, summary) => db.prepare(`INSERT OR IGNORE INTO xero_queue (kind, ref, summary, created_at) VALUES (?1, ?2, ?3, ?4)`).bind(kind, String(ref), summary, now);
-  const base = `FROM invoices i JOIN jobs j ON j.id = i.job_id JOIN clients c ON c.id = j.client_id WHERE COALESCE(j.hold, 0) = 0 AND i.sent_at >= ?1`;
+  const base = `FROM invoices i JOIN jobs j ON j.id = i.job_id JOIN clients c ON c.id = j.client_id WHERE COALESCE(j.hold, 0) = 0 AND COALESCE(i.sent_at, i.paid_at, i.created_at) >= ?1`; // (an invoice paid before it was emailed has no sent_at)
   const name = (r) => `${r.first_name} ${r.last_name}`.trim();
   // Real card payments only, except while testing with Xero's Demo Company.
   const live = (await isDemo(db)) ? '1 = 1' : 'i.stripe_live = 1';
-  const inv = (await db.prepare(`SELECT i.id, i.number, i.label, i.amount, c.first_name, c.last_name ${base} AND i.status IN ('sent', 'paid') AND i.xero_invoice_id IS NULL`).bind(s.start).all()).results;
+  const inv = (await db.prepare(`SELECT i.id, i.number, i.label, i.amount, c.first_name, c.last_name ${base} AND i.status IN ('sent', 'paid') AND i.xero_invoice_id IS NULL`).bind(nzMidnight).all()).results;
   const pay = (await db.prepare(`SELECT i.id, i.number, i.amount, i.paid_method, c.first_name, c.last_name ${base} AND i.status = 'paid' AND i.xero_invoice_id IS NOT NULL AND i.xero_payment_id IS NULL
-      AND (i.paid_method <> 'card' OR ${live})`).bind(s.start).all()).results;
-  const fee = (await db.prepare(`SELECT i.id, i.number, i.stripe_fee ${base} AND i.paid_method = 'card' AND ${live} AND i.stripe_fee > 0 AND i.xero_payment_id IS NOT NULL`).bind(s.start).all()).results;
+      AND (i.paid_method <> 'card' OR ${live})`).bind(nzMidnight).all()).results;
+  const fee = (await db.prepare(`SELECT i.id, i.number, i.stripe_fee ${base} AND i.paid_method = 'card' AND ${live} AND i.stripe_fee > 0 AND i.xero_payment_id IS NOT NULL`).bind(nzMidnight).all()).results;
   const out = (await db.prepare(`SELECT * FROM stripe_payouts WHERE xero_transfer_id IS NULL AND arrival_date >= ?1`).bind(s.start).all()).results;
   // The accountant's way: Tony reconciles payments in Xero himself, so only invoices go.
   if (s.style !== 'clearing') { pay.length = 0; fee.length = 0; out.length = 0; }
