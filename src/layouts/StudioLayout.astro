@@ -71,6 +71,7 @@ const areaAttr = (href: string) => areaOfPage(href) ?? undefined;
               <div class="nav-menu">{(target as Item[]).map(([k, l, h]) => <a href={h} data-area={areaAttr(h)} aria-current={k === section ? 'page' : undefined}>{l}</a>)}</div></details>
           : <a href={target as string} data-area={areaAttr(target as string)} aria-current={key === section ? 'page' : undefined}>{label}</a>)}
       </nav>
+      <button type="button" class="studio-write" data-write-email data-area="clients" title="Write a one-off email in your design, with your signature">✉ Write email</button>
       <div class="studio-actions"><slot name="bar" /></div>
     </header>
     {showCrumbs && (
@@ -103,6 +104,11 @@ const areaAttr = (href: string) => areaOfPage(href) ?? undefined;
         sync();
         new MutationObserver(sync).observe(titleEl, { childList: true, characterData: true, subtree: true });
       }
+      // "✉ Write email": the composer loads the first time it's opened (src/studio/compose.ts).
+      document.querySelector('[data-write-email]')?.addEventListener('click', async () => {
+        const { openCompose } = await import('../studio/compose');
+        openCompose();
+      });
       // The Website menu closes when you click elsewhere.
       document.addEventListener('click', (e) => {
         document.querySelectorAll<HTMLDetailsElement>('.nav-group[open]').forEach((d) => { if (!d.contains(e.target as Node)) d.open = false; });
@@ -168,6 +174,9 @@ const areaAttr = (href: string) => areaOfPage(href) ?? undefined;
   .studio-nav a { padding: 8px 12px; border-radius: 10px 0; font-size: 14px; font-weight: 500; color: #555; text-decoration: none; white-space: nowrap; }
   .studio-nav a:hover { background: rgb(90 94 59 / 0.08); opacity: 1; }
   .studio-nav a[aria-current='page'] { background: var(--green); color: var(--white); }
+  .studio-write { margin-left: auto; font: inherit; font-size: 14px; font-weight: 500; padding: 8px 14px; border: 1px solid #ddd3c4; border-radius: 10px 0; background: var(--white); color: var(--green); cursor: pointer; white-space: nowrap; transition: border-radius 0.35s, background 0.2s; }
+  .studio-write:hover { background: rgb(90 94 59 / 0.08); border-radius: 0 10px; }
+  .studio-write + .studio-actions { margin-left: 0; }
   .studio-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-left: auto; }
   .studio-version { text-align: center; color: #aaa; font-size: 12px; margin: 40px 0 20px; }
   .studio-actions:empty { display: none; }
