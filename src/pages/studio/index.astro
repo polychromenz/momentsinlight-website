@@ -350,5 +350,8 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
   @keyframes bar-grow { from { transform: scaleX(0); } }
   .dash .bar-n { text-align: right; font-weight: 600; color: var(--ink); }
   .dash .bar-n small { font-weight: 400; color: #999; font-size: 12px; }
-  @media (min-width: 900px) { .dash .charts { grid-template-columns: 1.6fr 1fr; } .dash .lists { grid-template-columns: 1fr 1fr; align-items: start; } }
+  @media (min-width: 900px) { .dash .charts { grid-template-columns: 1.6fr 1fr; } .dash .lists { grid-template-columns: 1fr 1fr; align-items: stretch; } }
+  /* Cards side by side are the same height, with their page buttons along the bottom. */
+  .dash .lists > .card { display: flex; flex-direction: column; }
+  .dash .lists > .card > ul { flex: 1; }
 </style>
