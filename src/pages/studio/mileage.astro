@@ -210,12 +210,16 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
       // Trips from jobs keep the job's date and place, so only their km and note change.
       const dup = t.closest('[data-dup]'), ed = t.closest('[data-edit]');
       if (dup || ed) {
-        const v = await askFields(dup ? 'Same place, another day. Change anything that’s different.' : '', [
+        const asking = askFields(dup ? 'Same place, another day. Change anything that’s different.' : '', [
           { name: 'date', label: 'Date', type: 'date', value: trip.date },
           { name: 'purpose', label: 'What for', value: trip.purpose },
           { name: 'destination', label: 'Where', value: trip.destination },
           { name: 'km', label: 'Km (return; blank = Google)', value: trip.km == null ? '' : String(trip.km) },
         ], { title: dup ? 'Duplicate trip' : 'Edit trip', ok: dup ? 'Add trip' : 'Save' });
+        // Google place suggestions in the Where box, like Add a trip.
+        const where = document.querySelector<HTMLInputElement>('dialog.mdlg [name=destination]');
+        if (where) attachAddressLookup(where, { ...api, onPick: pickPlace });
+        const v = await asking;
         if (!v) return;
         // A new place with the old km left in: let Google work the km out again.
         if (v.destination.trim() !== trip.destination && v.km.trim() === String(trip.km ?? '')) v.km = '';
@@ -253,8 +257,9 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
     catch (err) { toast((err as Error).message, true); }
   });
   const api = { endpoint: '/api/studio/address' };
+  const pickPlace = (p: any, el: HTMLInputElement | HTMLTextAreaElement) => { el.value = p.business && p.name ? `${p.name}, ${p.address}` : p.address; };
   attachAddressLookup($<HTMLInputElement>('.mi-set [name=base]'), api);
-  attachAddressLookup($<HTMLInputElement>('.mi-add [name=destination]'), { ...api, onPick: (p, el) => { el.value = p.business && p.name ? `${p.name}, ${p.address}` : p.address; } });
+  attachAddressLookup($<HTMLInputElement>('.mi-add [name=destination]'), { ...api, onPick: pickPlace });
   setPreset();
   load();
 </script>
