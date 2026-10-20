@@ -77,7 +77,7 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
 </StudioLayout>
 
 <script>
-  import { ask, askText } from '../../studio/dialogs';
+  import { ask, askText, askFields } from '../../studio/dialogs';
   import { attachAddressLookup } from '../../studio/address-lookup';
   const $ = <T extends HTMLElement = HTMLElement>(s: string) => document.querySelector<T>(s)!;
   const esc = (s: unknown) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
@@ -137,7 +137,7 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
       <td><strong>${esc(t.purpose)}</strong><br><span class="muted">${esc(t.destination)}</span>${t.error ? `<br><span class="warn">${esc(t.error)}</span>` : ''}${t.note ? `<br><em class="muted">${esc(t.note)}</em>` : ''}</td>
       <td class="r"><input class="km${t.km_edited ? ' typed' : ''}" value="${t.km ?? ''}" inputmode="decimal" aria-label="Km" title="${t.km_edited ? 'You typed this' : 'From Google'}" ${t.skip ? 'disabled' : ''} /></td>
       <td class="r">${t.amount ? `${money(t.amount)}<br><small class="muted">${t.tier}</small>` : '<span class="muted">–</span>'}</td>
-      <td class="acts"><button type="button" class="s-btn s-btn--quiet" data-skip>${t.skip ? 'Include' : 'Skip'}</button>${t.km_edited && t.key ? '<button type="button" class="s-btn s-btn--quiet" data-recalc title="Use Google’s distance again">Google km</button>' : ''}<button type="button" class="s-btn s-btn--quiet" data-note>Note</button>${t.key ? '' : '<button type="button" class="s-btn s-btn--quiet" data-del>Delete</button>'}</td></tr>`).join('')
+      <td class="acts"><button type="button" class="s-btn s-btn--quiet" data-skip>${t.skip ? 'Include' : 'Skip'}</button>${t.km_edited && t.key ? '<button type="button" class="s-btn s-btn--quiet" data-recalc title="Use Google’s distance again">Google km</button>' : ''}<button type="button" class="s-btn s-btn--quiet" data-note>Note</button><button type="button" class="s-btn s-btn--quiet" data-dup title="Another trip to the same place, e.g. a practice shoot at the venue">Duplicate</button>${t.key ? '' : '<button type="button" class="s-btn s-btn--quiet" data-edit>Edit</button><button type="button" class="s-btn s-btn--quiet" data-del>Delete</button>'}</td></tr>`).join('')
       : '<tr><td colspan="5" class="muted">No trips in these dates. Weddings and appointments with a venue or place appear here once their day has passed.</td></tr>';
     const f = $<HTMLFormElement>('.mi-set');
     const veh = f.elements.namedItem('vehicle') as HTMLSelectElement;
@@ -205,6 +205,23 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
         const note = await askText('A note for this trip (e.g. combined with another trip)', trip.note ?? '');
         if (note === null) return;
         await post({ action: 'edit', id, note });
+      }
+      // Duplicate: a new trip (added by hand) to the same place; Edit: change a trip added by hand.
+      // Trips from jobs keep the job's date and place, so only their km and note change.
+      const dup = t.closest('[data-dup]'), ed = t.closest('[data-edit]');
+      if (dup || ed) {
+        const v = await askFields(dup ? 'Same place, another day. Change anything that’s different.' : '', [
+          { name: 'date', label: 'Date', type: 'date', value: trip.date },
+          { name: 'purpose', label: 'What for', value: trip.purpose },
+          { name: 'destination', label: 'Where', value: trip.destination },
+          { name: 'km', label: 'Km (return; blank = Google)', value: trip.km == null ? '' : String(trip.km) },
+        ], { title: dup ? 'Duplicate trip' : 'Edit trip', ok: dup ? 'Add trip' : 'Save' });
+        if (!v) return;
+        // A new place with the old km left in: let Google work the km out again.
+        if (v.destination.trim() !== trip.destination && v.km.trim() === String(trip.km ?? '')) v.km = '';
+        if (dup) await post({ action: 'add', ...v });
+        else await post({ action: 'edit', id, ...v, km: v.km.trim() });
+        toast(dup ? 'Trip added.' : 'Trip saved.');
       }
       if (t.closest('[data-del]')) { if (!await ask('Delete this trip?')) return; await post({ action: 'delete', id }); }
       load();
