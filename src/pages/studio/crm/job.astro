@@ -520,8 +520,8 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
   }
 
   // ---- Review and send ----
-  const dlg = $<HTMLDialogElement>('dialog.review');
-  const rf = $<HTMLFormElement>('.review-form');
+  const dlg = $<HTMLDialogElement>('dialog.review:not(.add-inv)');
+  const rf = $<HTMLFormElement>('.review-form:not(.add-inv-form)');
   const preview = dlg.querySelector('iframe')!;
   let reviewStep = 0;
   const showPreview = () => {
