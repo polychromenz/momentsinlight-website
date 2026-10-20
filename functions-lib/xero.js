@@ -104,7 +104,9 @@ export async function finishConnect(env, code) {
   const d = await r.json().catch(() => ({}));
   if (!r.ok || !d.refresh_token) throw new Error(`Xero said ${r.status}: ${d.error ?? ''}`);
   const orgs = await (await fetch('https://api.xero.com/connections', { headers: { authorization: `Bearer ${d.access_token}` } })).json().catch(() => []);
-  const org = (orgs ?? []).find((o) => o.tenantType === 'ORGANISATION') ?? orgs?.[0];
+  // With both the Demo Company and the real books allowed, the real ones win.
+  const all = (orgs ?? []).filter((o) => o.tenantType === 'ORGANISATION');
+  const org = all.find((o) => !/^demo company/i.test(o.tenantName ?? '')) ?? all[0] ?? orgs?.[0];
   if (!org) throw new Error('No Xero organisation was shared with the studio.');
   const before = await xeroConnection(env.DB);
   if (before?.tenant_id && before.tenant_id !== org.tenantId) await forgetOtherOrg(env.DB);
