@@ -221,7 +221,8 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
         if (v.destination.trim() !== trip.destination && v.km.trim() === String(trip.km ?? '')) v.km = '';
         if (dup) await post({ action: 'add', ...v });
         else await post({ action: 'edit', id, ...v, km: v.km.trim() });
-        toast(dup ? 'Trip added.' : 'Trip saved.');
+        const outside = v.date < from.value || v.date > to.value;
+        toast(`${dup ? 'Trip added' : 'Trip saved'}${outside ? ` for ${day(v.date)}, which is outside these dates, so it isn’t in this list. Choose a period that includes it to see it.` : '.'}`, outside);
       }
       if (t.closest('[data-del]')) { if (!await ask('Delete this trip?')) return; await post({ action: 'delete', id }); }
       load();
@@ -237,7 +238,13 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
   $<HTMLFormElement>('.mi-add').addEventListener('submit', async (e) => {
     e.preventDefault();
     const f = e.target as HTMLFormElement;
-    try { await post({ action: 'add', ...Object.fromEntries(new FormData(f)) }); f.reset(); toast('Trip added.'); load(); }
+    try {
+      const v = Object.fromEntries(new FormData(f)) as Record<string, string>;
+      await post({ action: 'add', ...v }); f.reset();
+      const outside = v.date < from.value || v.date > to.value;
+      toast(outside ? `Trip added for ${day(v.date)}, which is outside these dates, so it isn’t in this list. Choose a period that includes it to see it.` : 'Trip added.', outside);
+      load();
+    }
     catch (err) { toast((err as Error).message, true); }
   });
   $<HTMLFormElement>('.mi-set').addEventListener('submit', async (e) => {
