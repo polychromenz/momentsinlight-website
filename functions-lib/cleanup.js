@@ -26,8 +26,12 @@ export async function dueForCleanup(db, now = new Date()) {
       ORDER BY last_enquiry`).bind(c).all()).results;
 }
 
-// Everything hanging off a job.
-const JOB_TABLES = ['uploads', 'job_documents', 'documents', 'steps', 'quotes', 'contracts', 'invoices', 'questionnaires', 'appointments', 'galleries', 'enquiry_spam', 'activity', 'bookings', 'mileage_trips'];
+// Everything hanging off a job, in an order the database's links allow: whatever points at another row
+// goes first (messages → steps, invoices → contracts and quotes, contracts → quotes). Messages are
+// removed before these, and Xero items still waiting for one of their invoices with them.
+const JOB_TABLES = ['activity', 'bookings', 'mileage_trips', 'enquiry_spam', 'uploads', 'job_documents', 'documents', 'invoices', 'contracts', 'quotes', 'questionnaires', 'appointments', 'galleries', 'steps'];
+const xeroWaiting = (db, jobsJson) => db.prepare(`DELETE FROM xero_queue WHERE status <> 'done' AND kind IN ('invoice', 'payment', 'fee', 'paid_in_xero')
+  AND ref IN (SELECT CAST(id AS TEXT) FROM invoices WHERE job_id IN (SELECT value FROM json_each(?1)))`).bind(jobsJson);
 
 /** Everything about one client, gone (their files too). Galleries linked to them are kept, unlinked. */
 export async function deleteClient(db, clientId) {
@@ -37,8 +41,9 @@ export async function deleteClient(db, clientId) {
   await db.batch([
     db.prepare(`DELETE FROM files WHERE name IN (SELECT 'upload-' || id FROM uploads WHERE job_id IN (SELECT value FROM json_each(?1)))`).bind(J),
     db.prepare(`DELETE FROM files WHERE name IN (SELECT 'doc-' || id FROM documents WHERE job_id IN (SELECT value FROM json_each(?1)))`).bind(J),
-    ...JOB_TABLES.map(inJobs),
     db.prepare(`DELETE FROM messages WHERE client_id = ?1 OR job_id IN (SELECT value FROM json_each(?2))`).bind(clientId, J),
+    xeroWaiting(db, J),
+    ...JOB_TABLES.map(inJobs),
     db.prepare(`UPDATE photo_galleries SET client_id = NULL, job_id = NULL WHERE client_id = ?1 OR job_id IN (SELECT value FROM json_each(?2))`).bind(clientId, J),
     db.prepare('DELETE FROM jobs WHERE client_id = ?1').bind(clientId),
     db.prepare('DELETE FROM clients WHERE id = ?1').bind(clientId),
@@ -51,8 +56,9 @@ export async function deleteJob(db, jobId) {
   await db.batch([
     db.prepare(`DELETE FROM files WHERE name IN (SELECT 'upload-' || id FROM uploads WHERE job_id = ?1)`).bind(jobId),
     db.prepare(`DELETE FROM files WHERE name IN (SELECT 'doc-' || id FROM documents WHERE job_id = ?1)`).bind(jobId),
-    ...JOB_TABLES.map((t) => db.prepare(`DELETE FROM ${t} WHERE job_id IN (SELECT value FROM json_each(?1))`).bind(J)),
     db.prepare('DELETE FROM messages WHERE job_id = ?1').bind(jobId),
+    xeroWaiting(db, J),
+    ...JOB_TABLES.map((t) => db.prepare(`DELETE FROM ${t} WHERE job_id IN (SELECT value FROM json_each(?1))`).bind(J)),
     db.prepare('UPDATE photo_galleries SET job_id = NULL WHERE job_id = ?1').bind(jobId),
     db.prepare('DELETE FROM jobs WHERE id = ?1').bind(jobId),
   ]);
