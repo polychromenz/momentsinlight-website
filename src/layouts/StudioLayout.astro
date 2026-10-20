@@ -88,6 +88,7 @@ const areaAttr = (href: string) => areaOfPage(href) ?? undefined;
     <script>
       // Per-person access (Settings > People): hidden areas leave the menu; a note on look-only pages.
       import { areaOfPage, levelFor } from '../../functions-lib/areas.js';
+      import '../studio/date-picker'; // the site-styled calendar for date boxes
       fetch('/api/studio/people').then((r) => (r.ok ? r.json() : null)).then((d) => {
         const me = d?.me;
         if (!me || me.access === 'owner') return;
