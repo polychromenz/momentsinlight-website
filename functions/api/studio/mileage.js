@@ -1,6 +1,7 @@
 // Studio > Mileage (functions-lib/mileage.js).
 //   GET  /api/studio/mileage?from=YYYY-MM-DD&to=YYYY-MM-DD        -> { trips, settings, totals, maps, vehicles }
 //   GET  /api/studio/mileage?from=…&to=…&export=journal|log       a CSV: Xero manual journal, or the trip log
+//   GET  /api/studio/mileage?from=…&to=…&preview=journal          the journal's lines, to check before downloading
 //   POST /api/studio/mileage { action: 'settings', base, vehicle, debit, credit, tax, tier1_km }
 //   POST /api/studio/mileage { action: 'add', date, purpose, destination, km? }
 //   POST /api/studio/mileage { action: 'edit', id, km?, skip?, note?, purpose?, destination?, date? }
@@ -8,7 +9,7 @@
 //   POST /api/studio/mileage { action: 'delete', id }      only trips added by hand
 import { json } from '../../../functions-lib/studio.js';
 import { mapsReady } from '../../../functions-lib/places.js';
-import { syncTrips, fillDistances, pricedTrips, mileageSettings, saveSettings, journalCsv, logCsv, VEHICLES } from '../../../functions-lib/mileage.js';
+import { syncTrips, fillDistances, pricedTrips, mileageSettings, saveSettings, journal, journalCsv, logCsv, VEHICLES } from '../../../functions-lib/mileage.js';
 
 const isDate = (s) => /^\d{4}-\d{2}-\d{2}$/.test(s ?? '');
 
@@ -17,6 +18,7 @@ export async function onRequestGet({ request, env }) {
   const from = q.get('from'), to = q.get('to');
   if (!isDate(from) || !isDate(to) || from > to) return json({ error: 'Which dates?' }, 400);
   const s = await mileageSettings(env.DB);
+  if (q.get('preview') === 'journal') return json(journal(await pricedTrips(env.DB, from, to, s), s, from, to));
   const kind = q.get('export');
   if (kind) {
     const trips = await pricedTrips(env.DB, from, to, s);

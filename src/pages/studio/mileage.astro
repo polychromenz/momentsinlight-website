@@ -16,6 +16,8 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
             <option value="this-month">This month</option>
             <option value="last-month">Last month</option>
             <option value="this-quarter">This quarter</option>
+            <option value="this-half">This GST period (Apr–Sep or Oct–Mar)</option>
+            <option value="last-half">Last GST period</option>
             <option value="this-year" selected>This income year (from 1 April)</option>
             <option value="last-year">Last income year</option>
             <option value="custom">Choose dates</option>
@@ -26,7 +28,7 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
       </div>
       <p class="mi-total"></p>
       <div class="mi-dl">
-        <a class="s-btn s-btn--solid" data-dl="journal" href="#">Download Xero journal</a>
+        <button type="button" class="s-btn s-btn--solid" data-preview>Check the Xero journal</button>
         <a class="s-btn" data-dl="log" href="#">Download trip log</a>
       </div>
       <div class="mi-notes"></div>
@@ -52,7 +54,7 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
       <form class="mi-set" autocomplete="off">
         <label class="wide">Your base (where trips start and end; private, never on the website)<input name="base" placeholder="Start typing your address" /></label>
         <label>Vehicle <select name="vehicle"></select></label>
-        <label>Expense account code <input name="debit" placeholder="e.g. 449 Motor Vehicle Expenses" /></label>
+        <label>Expense account code <input name="debit" placeholder="400 Motor Vehicle Expenses" /></label>
         <label>Shareholder account code <input name="credit" placeholder="504 Shareholder Current Account" /></label>
         <label>Tax rate <input name="tax" placeholder="No GST" /></label>
         <label>Tier 1 km a year <small>(the business share of 14,000)</small><input name="tier1_km" inputmode="numeric" /></label>
@@ -61,6 +63,15 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
       <p class="muted">IRD's kilometre rate covers all your car's costs, so there's no GST to claim on it. Tier 1 applies to the business share of the car's first 14,000 km each income year (private driving counts towards the 14,000): if about 60% of your driving is for work, set 8,400. Your accountant’s way: debit Motor Vehicle Expenses, credit 504 Shareholder Current Account (the company owes you the claim), No GST.</p>
     </section>
   </main>
+  <dialog class="mi-prev" aria-label="Xero journal">
+    <div class="mi-prev-in">
+      <h2>Xero journal</h2>
+      <p class="mi-prev-head"></p>
+      <div class="tbl-wrap"><table class="mi-tbl"><thead><tr><th>Description</th><th>Account</th><th>Tax</th><th class="r">Debit</th><th class="r">Credit</th></tr></thead><tbody></tbody><tfoot></tfoot></table></div>
+      <p class="muted">Check it matches, then download and import it in Xero (Accounting › Manual journals › Import). It comes in as a draft, so you can look again before posting.</p>
+      <div class="mi-prev-acts"><button type="button" class="s-btn s-btn--quiet" data-close>Close</button><a class="s-btn s-btn--solid" data-dl="journal" href="#">Download Xero journal</a></div>
+    </div>
+  </dialog>
   <div class="s-toast" role="status"></div>
 </StudioLayout>
 
@@ -92,6 +103,9 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
       'this-quarter': [new Date(y, m - (m % 3), 1), new Date(y, m - (m % 3) + 3, 0)],
       'this-year': [new Date(startYear, 3, 1), new Date(startYear + 1, 2, 31)],
       'last-year': [new Date(startYear - 1, 3, 1), new Date(startYear, 2, 31)],
+      // GST periods: six months, April to September and October to March.
+      'this-half': m >= 3 && m < 9 ? [new Date(y, 3, 1), new Date(y, 8, 30)] : [new Date(m >= 9 ? y : y - 1, 9, 1), new Date(m >= 9 ? y + 1 : y, 2, 31)],
+      'last-half': m >= 3 && m < 9 ? [new Date(y - 1, 9, 1), new Date(y, 2, 31)] : [new Date(m >= 9 ? y : y - 1, 3, 1), new Date(m >= 9 ? y : y - 1, 8, 30)],
     };
     const r = ranges[preset.value];
     if (r) { from.value = iso(r[0]); to.value = iso(r[1]); }
@@ -136,6 +150,19 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
   for (const el of [from, to]) el.addEventListener('change', () => { preset.value = 'custom'; if (from.value && to.value) load(); });
   document.addEventListener('click', async (e) => {
     const t = e.target as HTMLElement;
+    if (t.closest('[data-preview]')) {
+      if (!data.settings.debit || !data.settings.credit) { toast('Add your Xero account codes in the settings first.', true); return; }
+      const j = await fetch(`/api/studio/mileage?from=${from.value}&to=${to.value}&preview=journal`).then((r) => r.json()).catch(() => null);
+      if (!j?.lines) { toast('Couldn’t make the journal.', true); return; }
+      const dlg = $<HTMLDialogElement>('.mi-prev');
+      dlg.querySelector('.mi-prev-head')!.innerHTML = `<strong>${esc(j.narration)}</strong> · dated ${day(j.date)}`;
+      dlg.querySelector('tbody')!.innerHTML = j.lines.length ? j.lines.map((l: any) => `<tr><td>${esc(l.description)}</td><td>${esc(l.account)}</td><td>${esc(l.tax)}</td><td class="r">${l.amount > 0 ? money(l.amount) : ''}</td><td class="r">${l.amount < 0 ? money(-l.amount) : ''}</td></tr>`).join('')
+        : '<tr><td colspan="5" class="muted">No trips to claim in these dates.</td></tr>';
+      dlg.querySelector('tfoot')!.innerHTML = `<tr><th colspan="3">Total</th><th class="r">${money(j.total)}</th><th class="r">${money(j.total)}</th></tr>`;
+      dlg.showModal();
+      return;
+    }
+    if (t.closest('.mi-prev [data-close]')) { $<HTMLDialogElement>('.mi-prev').close(); return; }
     const dl = t.closest<HTMLAnchorElement>('[data-dl]');
     if (dl && dl.classList.contains('off')) { e.preventDefault(); toast('Add your Xero account codes in the settings first.', true); return; }
     const row = t.closest<HTMLElement>('tr[data-id]');
@@ -180,6 +207,14 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
 </script>
 
 <style is:global>
+  .mi-prev { width: min(900px, calc(100vw - 24px)); max-height: calc(100dvh - 24px); border: 0; border-radius: 28px 0; padding: 0; box-shadow: 0 30px 60px -30px rgb(0 0 0 / .5); }
+  .mi-prev::backdrop { background: rgb(30 30 20 / .45); }
+  .mi-prev-in { padding: 22px 24px; }
+  .mi-prev h2 { margin: 0 0 4px; font-weight: 300; font-size: 24px; }
+  .mi-prev tfoot th { text-align: left; border-top: 2px solid #ddd3c4; padding-top: 8px; }
+  .mi-prev tfoot th.r { text-align: right; }
+  .mi-prev td.r, .mi-prev th.r { font-variant-numeric: tabular-nums; }
+  .mi-prev-acts { display: flex; justify-content: flex-end; gap: 8px; }
   .mi { max-width: 1100px; margin: 0 auto; padding: 24px clamp(14px, 3vw, 32px) 80px; }
   .mi h1 { margin: 0; font-weight: 300; font-size: 32px; color: var(--ink); }
   .mi .intro { color: #666; margin: 4px 0 14px; max-width: 720px; }

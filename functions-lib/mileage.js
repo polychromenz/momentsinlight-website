@@ -122,15 +122,35 @@ const csv = (rows) => rows.map((r) => r.map((v) => { const x = String(v ?? ''); 
 const nzDate = (d) => `${d.slice(8, 10)}/${d.slice(5, 7)}/${d.slice(0, 4)}`;
 const longDate = (d) => new Date(`${d}T12:00:00Z`).toLocaleDateString('en-NZ', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' });
 
-/** Xero's manual journal import file: one debit line per trip, one credit line for the total. */
-export function journalCsv(trips, s, from, to) {
+const monYear = (d) => new Date(`${d}T12:00:00Z`).toLocaleDateString('en-NZ', { month: 'short', year: '2-digit', timeZone: 'UTC' }).replace(/\s+/, ' ');
+
+/** "Wedding: Julia Passmore" -> "Julia Passmore wedding 150.8km", the way Tony writes them in Xero. */
+function tripLabel(t) {
+  const [kind, ...rest] = String(t.purpose ?? '').split(': ');
+  const name = rest.join(': ').trim();
+  const what = !name ? kind : name.toLowerCase().includes(kind.toLowerCase()) ? name : `${name} ${kind.toLowerCase()}`;
+  return `${what} ${t.km}km`;
+}
+
+/**
+ * The manual journal Tony makes by hand: dated the period's last day, and for each trip a debit
+ * (Motor Vehicle Expenses) and a matching credit (Shareholder Current Account), No GST.
+ */
+export function journal(trips, s, from, to) {
   const claim = trips.filter((t) => !t.skip && t.amount > 0);
-  const narration = `Mileage claim ${longDate(from)} to ${longDate(to)} (IRD kilometre rate, ${VEHICLES[s.vehicle].toLowerCase()})`;
-  const date = nzDate(to);
-  const rows = [['*Narration', '*Date', 'Description', '*AccountCode', '*TaxRate', '*Amount', 'TrackingName1', 'TrackingOption1', 'TrackingName2', 'TrackingOption2']];
-  for (const t of claim) rows.push([narration, date, `${longDate(t.date)}: ${t.purpose} (${t.destination}), ${t.km} km, ${t.tier}`, s.debit, s.tax, t.amount.toFixed(2), '', '', '', '']);
+  const lines = claim.flatMap((t) => [
+    { description: tripLabel(t), account: s.debit, tax: s.tax, amount: t.amount },
+    { description: tripLabel(t), account: s.credit, tax: s.tax, amount: -t.amount },
+  ]);
   const total = claim.reduce((a, t) => a + Math.round(t.amount * 100), 0) / 100;
-  rows.push([narration, date, `Mileage claim: ${claim.length} trip${claim.length === 1 ? '' : 's'}, ${Math.round(claim.reduce((a, t) => a + t.km, 0) * 10) / 10} km`, s.credit, s.tax, (-total).toFixed(2), '', '', '', '']);
+  return { narration: `Mileage ${monYear(from)} - ${monYear(to)}`, date: to, lines, total };
+}
+
+/** Xero's manual journal import file (Accounting › Manual journals › Import). */
+export function journalCsv(trips, s, from, to) {
+  const j = journal(trips, s, from, to);
+  const rows = [['*Narration', '*Date', 'Description', '*AccountCode', '*TaxRate', '*Amount', 'TrackingName1', 'TrackingOption1', 'TrackingName2', 'TrackingOption2']];
+  for (const l of j.lines) rows.push([j.narration, nzDate(j.date), l.description, l.account, l.tax, l.amount.toFixed(2), '', '', '', '']);
   return csv(rows);
 }
 
