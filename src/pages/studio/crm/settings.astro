@@ -602,7 +602,7 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
   const catForm = $<HTMLFormElement>('.cat-editor');
   const cf = (n: string) => catForm.elements.namedItem(n) as HTMLInputElement;
   const catRich = attachRich(cf('cat_description') as unknown as HTMLTextAreaElement, { minHeight: 200 });
-  const catMoney = (c: number) => `${(c / 100).toLocaleString('en-NZ', { minimumFractionDigits: c % 100 ? 2 : 0 })}`;
+  const catMoney = (c: number) => `$${(c / 100).toLocaleString('en-NZ', { minimumFractionDigits: c % 100 ? 2 : 0 })}`;
   function drawCat() {
     for (const [kind, list] of [['package', cat.packages], ['product', cat.products]] as const)
       $(`.cat-list[data-kind="${kind}"]`).innerHTML = list.map((x) => `<li data-cat="${x.id}" class="${catOpen?.id === x.id ? 'on' : ''}"><button type="button">${esc(x.name)}${x.subtitle ? ` · ${esc(x.subtitle)}` : ''}<small>${catMoney(x.price)}${x.recommended ? ' · ♥' : ''}</small></button></li>`).join('') || '<li class="muted">None yet.</li>';

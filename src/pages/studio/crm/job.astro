@@ -340,7 +340,7 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
   let jobEventDate: string | null = null;
   const aiDlg = $<HTMLDialogElement>('dialog.add-inv');
   const aiForm = $<HTMLFormElement>('.add-inv-form');
-  const aiMoney = (c: number) => `${(c / 100).toLocaleString('en-NZ', { minimumFractionDigits: 2 })}`;
+  const aiMoney = (c: number) => `$${(c / 100).toLocaleString('en-NZ', { minimumFractionDigits: 2 })}`;
   const aiRow = (name = '', qty = 1, price = 0) => `<tr><td><input data-ai="name" value="${esc(name)}" placeholder="e.g. Second shooter" /></td><td><input data-ai="qty" type="number" min="1" step="1" value="${qty}" /></td><td><input data-ai="price" type="number" min="0" step="0.01" value="${price ? (price / 100).toFixed(2) : ''}" /></td><td><button type="button" class="s-btn s-btn--quiet" data-ai-remove aria-label="Remove">✕</button></td></tr>`;
   const aiLines = () => [...aiForm.querySelectorAll<HTMLTableRowElement>('.ai-lines tbody tr')].map((tr) => ({
     name: tr.querySelector<HTMLInputElement>('[data-ai="name"]')!.value.trim(),
@@ -946,8 +946,8 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
   .add-inv .ai-add { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
   .add-inv .ai-pick { font: inherit; font-size: 14px; padding: 7px 10px; border: 1px solid #ddd3c4; border-radius: 10px 0; max-width: 100%; }
   .add-inv .ai-total { font-weight: 500; margin: 12px 0 4px; }
-  .add-inv .ai-due input, .add-inv .ai-sch select { font: inherit; font-size: 15px; }
-  .add-inv .ai-sch { display: block; margin-bottom: 10px; }
+  .add-inv .ai-due input, .add-inv .ai-sch select { font: inherit; font-weight: 400; font-size: 15px; padding: 9px 11px; border: 1px solid #ddd3c4; border-radius: 10px 0; background: #fff; color: inherit; }
+  .add-inv .ai-sch { margin-bottom: 10px; }
   .add-inv .ai-split { margin: 8px 0 0; padding-left: 18px; font-size: 14px; color: #555; }
   .review-gallery input, .review-gallery select { font: inherit; font-size: 15px; }
   .review-gallery label { display: block; margin-bottom: 10px; }
