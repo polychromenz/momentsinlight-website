@@ -22,7 +22,7 @@ export async function onRequestGet({ env }) {
        WHERE s.status = 'scheduled' AND s.due_at > ?1 AND s.due_at <= ?2 ORDER BY s.due_at LIMIT 50`,
     ).bind(now, soon).all(),
     env.DB.prepare(
-      `SELECT j.id, j.title, j.job_type, j.stage, j.event_date, j.venue, j.lead_source, j.created_at, c.email, c.phone
+      `SELECT j.id, j.title, j.job_type, j.stage, j.event_date, j.venue, j.lead_source, j.created_at, c.email, c.phone, c.test
        FROM jobs j JOIN clients c ON c.id = j.client_id
        WHERE j.stage IN ('lead', 'booked') ORDER BY j.created_at DESC LIMIT 200`,
     ).all(),

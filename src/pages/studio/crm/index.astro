@@ -148,6 +148,8 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
   const other: Record<string, any[]> = {};
   const money = (c: number) => (c ? `$${(c / 100).toLocaleString('en-NZ', { maximumFractionDigits: 0 })}` : '–');
   const STAGE: Record<string, string> = { lead: 'Lead', booked: 'Booked', completed: 'Past', lost: 'Not going ahead' };
+  // Test clients (ticked on their page) never go to Xero; the label makes them easy to spot.
+  const testTag = (x: any) => (x.test ? ' <span class="test-tag" title="Test client: never sent to Xero">Test</span>' : '');
   const matches = (q: string, ...parts: unknown[]) => !q || parts.join(' ').toLowerCase().includes(q);
   const head = (cols: string[]) => { $('.jobs thead').innerHTML = `<tr>${cols.map((c) => `<th>${c}</th>`).join('')}</tr>`; };
   const renderJobs = async () => {
@@ -157,7 +159,7 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
       head(['Name', 'Type', 'Date', 'Venue', 'Enquired']);
       const list = jobs.filter((j) => j.stage === stage && matches(q, j.title, j.venue, j.job_type, (j as any).email));
       body.innerHTML = list.length
-        ? list.map((j) => `<tr><td><a href="/studio/crm/job?id=${j.id}">${esc(j.title)}</a></td><td>${esc(j.job_type)}</td><td>${nzDate(j.event_date)}</td><td>${esc(j.venue)}</td><td>${when(j.created_at)}</td></tr>`).join('')
+        ? list.map((j) => `<tr><td><a href="/studio/crm/job?id=${j.id}">${esc(j.title)}</a>${testTag(j)}</td><td>${esc(j.job_type)}</td><td>${nzDate(j.event_date)}</td><td>${esc(j.venue)}</td><td>${when(j.created_at)}</td></tr>`).join('')
         : `<tr><td colspan="5" class="empty">${q ? 'Nothing matches.' : `No ${stage === 'lead' ? 'open leads' : 'booked jobs'} yet.`}</td></tr>`;
       return;
     }
@@ -171,7 +173,7 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
     if (stage === 'all') {
       head(['Name', 'Email', 'Phone', 'Jobs', 'Added']);
       const list = other.all.filter((c) => matches(q, c.first_name, c.last_name, c.email, c.phone, c.notes, ...c.jobs.map((j: any) => j.title)));
-      body.innerHTML = list.length ? list.map((c) => `<tr><td><strong>${esc(`${c.first_name} ${c.last_name}`.trim())}</strong>${c.notes ? `<br><small class="note" title="${esc(c.notes)}">${esc(c.notes.slice(0, 90))}${c.notes.length > 90 ? '…' : ''}</small>` : ''}</td>
+      body.innerHTML = list.length ? list.map((c) => `<tr><td><strong>${esc(`${c.first_name} ${c.last_name}`.trim())}</strong>${testTag(c)}${c.notes ? `<br><small class="note" title="${esc(c.notes)}">${esc(c.notes.slice(0, 90))}${c.notes.length > 90 ? '…' : ''}</small>` : ''}</td>
         <td>${c.email.endsWith('.invalid') ? '<small class="muted">no email</small>' : `<a href="mailto:${esc(c.email)}">${esc(c.email)}</a>`}</td><td>${esc(c.phone)}</td>
         <td>${c.jobs.length ? c.jobs.map((j: any) => `<a href="/studio/crm/job?id=${j.id}">${esc(j.title)}</a> <small class="muted">${STAGE[j.stage] ?? j.stage}${j.event_date ? ` · ${nzDate(j.event_date)}` : ''}</small>`).join('<br>') : '<small class="muted">No jobs</small>'}</td>
         <td>${when(c.created_at)}</td></tr>`).join('') : `<tr><td colspan="5" class="empty">${q ? 'Nobody matches.' : 'Nobody yet.'}</td></tr>`;
@@ -181,7 +183,7 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
     const past = stage === 'past';
     head(past ? ['Name', 'Type', 'Date', 'Venue', 'Paid'] : ['Name', 'Type', 'Their date', 'Venue', 'Enquired']);
     const list = other[stage].filter((j) => matches(q, j.title, j.venue, j.job_type, j.email, j.first_name, j.last_name, j.lead_source));
-    body.innerHTML = list.length ? list.map((j) => `<tr><td><a href="/studio/crm/job?id=${j.id}">${esc(j.title)}</a>${j.lead_source ? `<br><small class="muted">${esc(j.lead_source)}</small>` : ''}</td><td>${esc(j.job_type)}</td><td>${nzDate(j.event_date)}</td><td>${esc(j.venue)}</td>
+    body.innerHTML = list.length ? list.map((j) => `<tr><td><a href="/studio/crm/job?id=${j.id}">${esc(j.title)}</a>${testTag(j)}${j.lead_source ? `<br><small class="muted">${esc(j.lead_source)}</small>` : ''}</td><td>${esc(j.job_type)}</td><td>${nzDate(j.event_date)}</td><td>${esc(j.venue)}</td>
       <td>${past ? money(j.paid) : when(j.created_at)}</td></tr>`).join('') : `<tr><td colspan="5" class="empty">${q ? 'Nothing matches.' : 'None yet.'}</td></tr>`;
     $('.list-count').textContent = `${list.length} ${past ? 'past job' : 'not going ahead'}${list.length === 1 || !past ? '' : 's'}${past && list.length ? ` · ${money(list.reduce((a, j) => a + j.paid, 0))} paid` : ''}`;
   };
@@ -309,4 +311,5 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
   .crm .jobs td a { color: var(--ink); font-weight: 600; }
   .crm .jobs .empty { color: #888; text-align: center; }
   @media (max-width: 640px) { .crm .jobs th:nth-child(4), .crm .jobs td:nth-child(4) { display: none; } }
+  .test-tag { display: inline-block; margin-left: 6px; padding: 1px 7px; border-radius: 8px 0; background: #fbf3df; color: #6b5310; font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; vertical-align: 1px; }
 </style>

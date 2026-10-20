@@ -9,7 +9,7 @@ export async function onRequestGet({ request, env }) {
   const db = env.DB;
   if (view === 'past' || view === 'lost') {
     const rows = (await db.prepare(`SELECT j.id, j.title, j.job_type, j.stage, j.event_date, j.venue, j.lead_source, j.created_at, j.lost_at, j.import_batch,
-        c.first_name, c.last_name, c.email,
+        c.first_name, c.last_name, c.email, c.test,
         (SELECT COALESCE(SUM(amount), 0) FROM invoices i WHERE i.job_id = j.id AND i.status = 'paid') paid
       FROM jobs j JOIN clients c ON c.id = j.client_id WHERE j.stage = ?1
       ORDER BY ${view === 'past' ? 'COALESCE(j.event_date, j.created_at)' : 'j.created_at'} DESC`).bind(view === 'past' ? 'completed' : 'lost').all()).results;
@@ -17,7 +17,7 @@ export async function onRequestGet({ request, env }) {
   }
   if (view === 'all') {
     const [clients, jobs] = await Promise.all([
-      db.prepare(`SELECT id, first_name, last_name, email, phone, address, notes, created_at, import_batch FROM clients ORDER BY lower(first_name), lower(last_name)`).all(),
+      db.prepare(`SELECT id, first_name, last_name, email, phone, address, notes, created_at, import_batch, test FROM clients ORDER BY lower(first_name), lower(last_name)`).all(),
       db.prepare(`SELECT id, client_id, title, job_type, stage, event_date FROM jobs ORDER BY COALESCE(event_date, created_at) DESC`).all(),
     ]);
     const by = new Map();
