@@ -42,7 +42,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
       <form class="q-card q-accept" novalidate>
         <h2>Ready to go ahead?</h2>
-        <p>Add your name and address, then click Accept. Next, I'll send your contract to sign and your deposit invoice.</p>
+        <p class="q-accept-intro">Add your name and address, then click Accept. Next, I'll send your contract to sign and your deposit invoice.</p>
         <label>Your full name<input name="name" autocomplete="name" required /></label>
         <label>Your address<textarea name="address" rows="3" autocomplete="street-address" required placeholder="Street, suburb, town and postcode"></textarea></label>
         <label>Your phone number <span class="opt">(optional)</span><input name="phone" type="tel" autocomplete="tel" /></label>
@@ -77,6 +77,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     const box = document.querySelector<HTMLTextAreaElement>('.q-accept textarea[name="address"]');
     if (box) attachAddressLookup(box, { endpoint: '/api/address', extra: `t=${token}` });
   });
+  let needPhone = false;
   let q: { status: string; packages: Pkg[]; extras: Extra[]; discount: number; discount_label: string; schedule: Part[]; event_date: string | null; today: string; [k: string]: any };
   let chosen = -1;
   const extras = new Set<number>();
@@ -121,6 +122,12 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     const d = await r.json().catch(() => ({}));
     if (!r.ok) { $('.q-status').textContent = d.error || 'This quote isn’t available.'; return; }
     q = d;
+    // No phone number on file yet: it's needed to go ahead.
+    needPhone = !!q.need_phone;
+    const ph = $<HTMLInputElement>('.q-accept input[name="phone"]');
+    ph.required = needPhone;
+    ph.previousElementSibling!.hidden = needPhone;
+    $('.q-accept-intro').textContent = `Add your name, address${needPhone ? ' and phone number' : ''}, then click Accept. Next, I'll send your contract to sign and your deposit invoice.`;
     document.title = `Quote ${q.number} | Moments In Light`;
     $('.q-eyebrow').textContent = [q.event_date_long, q.venue].filter(Boolean).join(' · ');
     $('.q-title').textContent = `A quote for ${q.names}`;
@@ -181,6 +188,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     const address = ($<HTMLTextAreaElement>('.q-accept textarea[name="address"]')).value.trim();
     const phone = ($<HTMLInputElement>('.q-accept input[name="phone"]')).value.trim();
     if (address.length < 8) { msg.textContent = 'Please add your address.'; msg.hidden = false; return; }
+    if (needPhone && phone.replace(/\D/g, '').length < 7) { msg.textContent = 'Please add your phone number.'; msg.hidden = false; return; }
     const btn = $<HTMLButtonElement>('.q-accept button[type="submit"]');
     btn.disabled = true; btn.textContent = 'Accepting…'; msg.hidden = true;
     const r = await fetch('/api/quote', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ t: token, package: chosen, extras: [...extras], name, address, phone }) });

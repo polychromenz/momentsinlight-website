@@ -28,8 +28,8 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
         <div class="list-head">
           <h2>Leads and jobs</h2>
           <div class="tabs" role="group" aria-label="Show">
-            <button type="button" data-stage="lead" class="on">Leads</button>
-            <button type="button" data-stage="booked">Booked</button>
+            <button type="button" data-stage="lead">Leads</button>
+            <button type="button" data-stage="booked" class="on">Booked</button>
             <button type="button" data-stage="past">Past</button>
             <button type="button" data-stage="lost">Not going ahead</button>
             <button type="button" data-stage="all">Everyone</button>
@@ -134,7 +134,7 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
     setTimeout(() => t.classList.remove('show'), 4000);
   };
   let jobs: Job[] = [];
-  let stage = 'lead';
+  let stage = 'booked';
 
   const stepRow = (s: Step, actions: boolean) => `<li class="${s.status === 'failed' ? 'failed' : ''}">
     <span class="kind kind--${s.kind}">${kindLabel[s.kind] ?? s.kind}</span>

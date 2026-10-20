@@ -54,6 +54,7 @@ export async function onRequestPost({ request, env }) {
   const address = (d.address ?? '').toString().replace(/\r\n/g, '\n').replace(/[\u0000-\u0009\u000b-\u001f]/g, ' ').trim().slice(0, 300);
   const phone = (d.phone ?? '').toString().replace(/[^\d +()-]/g, '').trim().slice(0, 40);
   if (address.length < 8) return reply({ error: 'Please add your address.' }, 400);
+  if (!String(job.phone ?? '').trim() && phone.replace(/\D/g, '').length < 7) return reply({ error: 'Please add your phone number.' }, 400);
 
   const now = new Date();
   const at = now.toISOString();

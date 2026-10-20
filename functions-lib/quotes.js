@@ -88,6 +88,7 @@ export function publicQuote(q, job) {
     number: quoteNumber(q), issued: longDate((q.sent_at || q.created_at).slice(0, 10)),
     from: { name: 'Moments in Light', person: 'Tony Gorham', phone: '021 625 943', email: 'tony@momentsinlight.co.nz', address: '985a Hibiscus Coast Highway, Waiwera, Auckland 0994' },
     client: { name: `${job.first_name} ${job.last_name}`.trim(), email: job.email, address: q.status === 'accepted' ? job.address || '' : '' },
+    need_phone: !String(job.phone ?? '').trim(), // no phone on file: asked for when they accept
     names: job.partner_name ? `${job.first_name} & ${job.partner_name}` : job.first_name,
     event_date: job.event_date, event_date_long: longDate(job.event_date), venue: job.venue,
     intro: quoteText(q.intro, q, job), packages: q.packages.map((p) => ({ ...p, description: clean(toHtml(p.description)) })), extras: q.extras, discount: q.discount, discount_label: q.discount_label,
