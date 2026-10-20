@@ -14,7 +14,7 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
     <h1>Settings</h1>
     <nav class="tabs" role="tablist" aria-label="Settings">
       <p class="tab-group">Emails</p>
-      <button type="button" role="tab" data-tab="templates" class="on">Email templates</button>
+      <button type="button" role="tab" data-tab="templates">Email templates</button>
       <button type="button" role="tab" data-tab="links">Your links</button>
       <p class="tab-group">How you work</p>
       <button type="button" role="tab" data-tab="workflows">Workflows</button>
@@ -22,6 +22,7 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
       <button type="button" role="tab" data-tab="lead_source">Lead sources</button>
       <button type="button" role="tab" data-tab="questionnaires">Questionnaires</button>
       <p class="tab-group">Money</p>
+      <button type="button" role="tab" data-tab="catalogue">Packages &amp; products</button>
       <button type="button" role="tab" data-tab="schedules">Payment schedules</button>
       <button type="button" role="tab" data-tab="payments">Payments</button>
       <button type="button" role="tab" data-tab="contracts">Contracts</button>
@@ -35,14 +36,20 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
       <button type="button" role="tab" data-tab="people">People</button>
     </nav>
     <select class="tabs-select" aria-label="Settings section">
+      <option value="home">Choose a section…</option>
       <optgroup label="Emails"><option value="templates">Email templates</option><option value="links">Your links</option></optgroup>
       <optgroup label="How you work"><option value="workflows">Workflows</option><option value="job_type">Job types</option><option value="lead_source">Lead sources</option><option value="questionnaires">Questionnaires</option></optgroup>
-      <optgroup label="Money"><option value="schedules">Payment schedules</option><option value="payments">Payments</option><option value="contracts">Contracts</option></optgroup>
+      <optgroup label="Money"><option value="catalogue">Packages &amp; products</option><option value="schedules">Payment schedules</option><option value="payments">Payments</option><option value="contracts">Contracts</option></optgroup>
       <optgroup label="Clients"><option value="booking">Online booking</option><option value="portal">Client portal</option><option value="documents">Documents</option></optgroup>
       <optgroup label="Import"><option value="sn">Studio Ninja</option></optgroup>
       <optgroup label="Access"><option value="people">People</option></optgroup>
     </select>
     <p class="status" aria-live="polite">Loading…</p>
+
+    <section class="pane card settings-home" data-pane="home" hidden>
+      <h2>Settings</h2>
+      <p>Choose a section on the left (or from the list above on a phone). Nothing opens for editing until you do.</p>
+    </section>
 
     <section class="pane" data-pane="templates" hidden>
       <div class="card send-mode">
@@ -81,6 +88,23 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
       <table class="list-table"><thead><tr><th></th><th>Name</th><th>Wording on the form</th><th>On the form</th><th></th></tr></thead><tbody></tbody></table>
       <div class="actions"><button type="button" class="s-btn s-btn--quiet" data-act="add">+ Add</button><button type="button" class="s-btn s-btn--solid" data-act="save-list">Save</button></div>
     </section>
+    <section class="pane" data-pane="catalogue" hidden>
+      <p class="hint">Your packages and add-on products, to build quotes from. On a quote, swap a package for one of these or add products (second shooter, prints…). A quote keeps its own copy, so changing these never alters a quote you’ve sent. Prices include GST.</p>
+      <div class="tpl-layout">
+        <div class="card">
+          <h3 class="cat-h">Packages</h3><ul class="tpl-list cat-list" data-kind="package"></ul><button type="button" class="s-btn s-btn--quiet" data-cat-new="package">+ New package</button>
+          <h3 class="cat-h">Products <small>(add-ons)</small></h3><ul class="tpl-list cat-list" data-kind="product"></ul><button type="button" class="s-btn s-btn--quiet" data-cat-new="product">+ New product</button>
+        </div>
+        <form class="card cat-editor" autocomplete="off" hidden>
+          <h3 class="cat-kind"></h3>
+          <div class="row"><label>Name<input name="cat_name" required /></label><label class="cat-pkg">Subtitle<input name="cat_subtitle" placeholder="e.g. 8+ hours" /></label><label>Price ($, incl. GST)<input name="cat_price" type="number" min="0" step="0.01" /></label></div>
+          <label>Description <small class="cat-desc-hint"></small><textarea name="cat_description" rows="8"></textarea></label>
+          <label class="check cat-pkg"><input type="checkbox" name="cat_recommended" /> Recommended (shown with a ♥ on the quote)</label>
+          <div class="actions"><button type="button" class="s-btn s-btn--danger" data-cat-delete>Delete</button><button type="submit" class="s-btn s-btn--solid">Save</button></div>
+        </form>
+      </div>
+    </section>
+
     <section class="pane" data-pane="schedules" hidden>
       <div class="tpl-layout">
         <div class="card"><ul class="tpl-list sch-list"></ul><button type="button" class="s-btn s-btn--quiet" data-act="new-schedule">+ New schedule</button></div>
@@ -254,7 +278,7 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
   type Schedule = { key: string; name: string; parts: Part[] };
   let data: { job_type: Item[]; lead_source: Item[]; templates: Template[]; workflows: Wf[]; documents: LibraryDoc[]; schedules: Schedule[]; contracts: ContractT[]; payments: Record<string, string>; stripe: { ok: boolean; test?: boolean; why?: string }; questionnaires: Qn[]; portal: Record<string, string>; links: Record<string, string> };
   let current: Template | null = null;
-  let tab = 'templates';
+  let tab = 'home'; // a start page, so nothing editable is open by accident
   const editor = $<HTMLFormElement>('.tpl-editor');
   const field = (n: string) => editor.elements.namedItem(n) as HTMLInputElement;
 
@@ -571,6 +595,58 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
   function renderSchedules() {
     $('.sch-list').innerHTML = data.schedules.map((x) => `<li data-key="${esc(x.key)}"><button type="button">${esc(x.name)}<small>${x.parts.map((p) => p.percent + '%').join(' / ')}</small></button></li>`).join('');
   }
+  // ---- Packages & products (functions/api/studio/crm/catalogue.js) ----
+  type Cat = { id: number; kind: string; name: string; subtitle: string; description: string; price: number; recommended: number };
+  let cat: { packages: Cat[]; products: Cat[] } = { packages: [], products: [] };
+  let catOpen: Cat | null = null, catKind = 'package';
+  const catForm = $<HTMLFormElement>('.cat-editor');
+  const cf = (n: string) => catForm.elements.namedItem(n) as HTMLInputElement;
+  const catRich = attachRich(cf('cat_description') as unknown as HTMLTextAreaElement, { minHeight: 200 });
+  const catMoney = (c: number) => `${(c / 100).toLocaleString('en-NZ', { minimumFractionDigits: c % 100 ? 2 : 0 })}`;
+  function drawCat() {
+    for (const [kind, list] of [['package', cat.packages], ['product', cat.products]] as const)
+      $(`.cat-list[data-kind="${kind}"]`).innerHTML = list.map((x) => `<li data-cat="${x.id}" class="${catOpen?.id === x.id ? 'on' : ''}"><button type="button">${esc(x.name)}${x.subtitle ? ` · ${esc(x.subtitle)}` : ''}<small>${catMoney(x.price)}${x.recommended ? ' · ♥' : ''}</small></button></li>`).join('') || '<li class="muted">None yet.</li>';
+  }
+  function openCat(x: Cat | null, kind = x?.kind ?? 'package') {
+    catOpen = x; catKind = kind;
+    catForm.hidden = false;
+    $('.cat-kind').textContent = x ? `${kind === 'package' ? 'Package' : 'Product'}: ${x.name}` : `New ${kind}`;
+    catForm.querySelectorAll<HTMLElement>('.cat-pkg').forEach((el) => (el.hidden = kind !== 'package'));
+    $('.cat-desc-hint').textContent = kind === 'package' ? '(what’s included)' : '(shown under the add-on on the quote)';
+    cf('cat_name').value = x?.name ?? ''; cf('cat_subtitle').value = x?.subtitle ?? ''; cf('cat_price').value = x ? String(x.price / 100) : '';
+    cf('cat_recommended').checked = !!x?.recommended;
+    catRich.set(x?.description ?? '');
+    $<HTMLButtonElement>('[data-cat-delete]').hidden = !x;
+    drawCat();
+  }
+  async function loadCat() {
+    const r = await fetch('/api/studio/crm/catalogue');
+    if (r.ok) { cat = await r.json(); drawCat(); }
+  }
+  document.addEventListener('click', async (e) => {
+    const t = e.target as HTMLElement;
+    const li = t.closest<HTMLElement>('[data-cat]');
+    if (li) { const x = [...cat.packages, ...cat.products].find((y) => y.id === Number(li.dataset.cat)); if (x) openCat(x); return; }
+    const nw = t.closest<HTMLElement>('[data-cat-new]');
+    if (nw) { openCat(null, nw.dataset.catNew); cf('cat_name').focus(); return; }
+    if (t.closest('[data-cat-delete]') && catOpen) {
+      if (!await ask(`Delete “${catOpen.name}”? Quotes that already use it keep their copy.`, { ok: 'Delete', danger: true })) return;
+      await fetch(`/api/studio/crm/catalogue?id=${catOpen.id}`, { method: 'DELETE' });
+      catForm.hidden = true; catOpen = null; toast('Deleted.'); loadCat();
+    }
+  });
+  catForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const body = { id: catOpen?.id, kind: catKind, name: cf('cat_name').value, subtitle: catKind === 'package' ? cf('cat_subtitle').value : '', price: Math.round(Number(cf('cat_price').value || 0) * 100), description: cf('cat_description').value, recommended: catKind === 'package' && cf('cat_recommended').checked };
+    const r = await fetch('/api/studio/crm/catalogue', { method: catOpen ? 'PUT' : 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) { toast(d.error || 'Couldn’t save.', true); return; }
+    toast('Saved.');
+    await loadCat();
+    openCat(d.item);
+  });
+  loadCat();
+
   sch.addEventListener('input', schExample);
   sch.addEventListener('change', schExample);
   sch.addEventListener('submit', async (e) => {

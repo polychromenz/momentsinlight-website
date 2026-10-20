@@ -25,12 +25,12 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
       <section class="card">
         <h2>Packages <small>(they choose one; prices include GST)</small></h2>
         <div class="packages"></div>
-        <button type="button" class="s-btn s-btn--quiet" data-add="package">+ Add package</button>
+        <div class="lib-row"><select class="lib-pick" data-lib="package" aria-label="Add one of your packages"></select><button type="button" class="s-btn s-btn--quiet" data-add="package">+ Add a blank package</button></div>
       </section>
       <section class="card">
         <h2>Extras <small>(optional add-ons they can tick)</small></h2>
         <div class="extras"></div>
-        <button type="button" class="s-btn s-btn--quiet" data-add="extra">+ Add extra</button>
+        <div class="lib-row"><select class="lib-pick" data-lib="product" aria-label="Add one of your products"></select><button type="button" class="s-btn s-btn--quiet" data-add="extra">+ Add a blank extra</button></div>
       </section>
       <section class="card two-col">
         <div>
@@ -100,13 +100,49 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
       pkgEditors.push(attachRich(t, { fields: [], minHeight: 160 }));
     });
   };
+  // Your packages and products (Settings > Packages & products), to add or swap in. Copied into the quote.
+  type LibItem = { id: number; name: string; subtitle: string; description: string; price: number; recommended: number };
+  let lib: { packages: LibItem[]; products: LibItem[] } = { packages: [], products: [] };
+  const libOptions = (list: LibItem[]) => list.map((x) => `<option value="${x.id}">${esc(x.name)}${x.subtitle ? ` · ${esc(x.subtitle)}` : ''} (${money(x.price)})</option>`).join('');
+  const plain = (t: string) => t.replace(/<[^>]+>/g, ' ').replace(/[*_#>]+/g, '').replace(/\s+/g, ' ').trim();
+  const asPkg = (x: LibItem): Pkg => ({ name: x.name, subtitle: x.subtitle, price: x.price, description: x.description, recommended: !!x.recommended });
+  const drawLib = () => {
+    document.querySelector<HTMLSelectElement>('[data-lib="package"]')!.innerHTML = `<option value="">+ Add one of your packages…</option>${libOptions(lib.packages)}`;
+    document.querySelector<HTMLSelectElement>('[data-lib="product"]')!.innerHTML = `<option value="">+ Add one of your products…</option>${libOptions(lib.products)}`;
+    document.querySelectorAll<HTMLElement>('.lib-pick').forEach((el) => (el.hidden = !(el.dataset.lib === 'package' ? lib.packages : lib.products).length));
+  };
+  const libReady = fetch('/api/studio/crm/catalogue').then((r) => (r.ok ? r.json() : null)).then((d) => { if (d) lib = d; drawLib(); }).catch(() => {});
+  document.addEventListener('change', (e) => {
+    const t = e.target as HTMLSelectElement;
+    if (t.matches('.lib-pick') && t.value) {
+      const x = (t.dataset.lib === 'package' ? lib.packages : lib.products).find((y) => y.id === Number(t.value));
+      t.value = '';
+      if (!x) return;
+      if (t.dataset.lib === 'package') { $('.packages').insertAdjacentHTML('beforeend', pkgRow(asPkg(x))); attachPackages(); }
+      else $('.extras').insertAdjacentHTML('beforeend', extraRow({ name: x.name, price: x.price, description: plain(x.description) }));
+      dirty = true; $('.save-state').textContent = 'Unsaved changes';
+      toast(`Added “${x.name}”. Save to keep it.`);
+    }
+    if (t.matches('.lib-swap') && t.value) {
+      const x = lib.packages.find((y) => y.id === Number(t.value));
+      const item = t.closest<HTMLElement>('.item')!;
+      if (!x) return;
+      // Replace this package with the chosen one (its rich editor too).
+      const ed = pkgEditors.find((r) => item.contains((r.editor as any).options?.element ?? null));
+      if (ed) { ed.editor.destroy(); pkgEditors = pkgEditors.filter((r) => r !== ed); }
+      item.outerHTML = pkgRow(asPkg(x));
+      attachPackages();
+      dirty = true; $('.save-state').textContent = 'Unsaved changes';
+      toast(`Swapped in “${x.name}”. Save to keep it.`);
+    }
+  });
   let dirty = false;
   const editable = () => ['draft', 'sent'].includes(data?.quote.status);
 
   const pkgRow = (p: Pkg) => `<div class="item pkg">
     <div class="row"><label>Name<input data-k="name" value="${esc(p.name)}" /></label><label>Subtitle<input data-k="subtitle" value="${esc(p.subtitle)}" placeholder="e.g. 8+ hours" /></label><label class="price">Price ($)<input data-k="price" type="number" min="0" step="1" value="${p.price / 100}" /></label></div>
     <label>What's included<textarea data-k="description" rows="8">${esc(p.description)}</textarea></label>
-    <div class="row-end"><label class="check"><input type="checkbox" data-k="recommended"${p.recommended ? ' checked' : ''} /> Recommended</label><button type="button" class="s-btn s-btn--quiet" data-remove>Remove</button></div>
+    <div class="row-end"><label class="check"><input type="checkbox" data-k="recommended"${p.recommended ? ' checked' : ''} /> Recommended</label>${lib.packages.length ? `<select class="lib-swap" aria-label="Swap for one of your packages"><option value="">Swap for…</option>${libOptions(lib.packages)}</select>` : ''}<button type="button" class="s-btn s-btn--quiet" data-remove>Remove</button></div>
   </div>`;
   const extraRow = (x: Extra) => `<div class="item extra">
     <div class="row"><label>Name<input data-k="name" value="${esc(x.name)}" /></label><label class="price">Price ($)<input data-k="price" type="number" min="0" step="1" value="${x.price / 100}" /></label></div>
@@ -135,6 +171,7 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
     const match = data.schedules.find((s: any) => JSON.stringify(s.parts) === JSON.stringify(q.schedule));
     sel.innerHTML = (match ? '' : '<option value="">(this quote’s own)</option>') + data.schedules.map((s: any) => `<option value="${esc(s.key)}"${match?.key === s.key ? ' selected' : ''}>${esc(s.name)}</option>`).join('');
     pkgEditors.forEach((r) => r.editor.destroy()); pkgEditors = [];
+    await libReady;
     $('.packages').innerHTML = q.packages.map(pkgRow).join('');
     attachPackages();
     $('.extras').innerHTML = q.extras.map(extraRow).join('');
@@ -271,5 +308,7 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
   .review-form label { display: flex; flex-direction: column; gap: 5px; font-size: 13px; font-weight: 600; color: #555; }
   .review-to { margin: 0; font-size: 14px; color: #555; }
   .review-actions { display: flex; justify-content: flex-end; gap: 8px; }
+  .quote-ed .lib-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 8px; }
+  .quote-ed .lib-pick, .quote-ed .lib-swap { font: inherit; font-size: 14px; padding: 7px 10px; border: 1px solid #ddd3c4; border-radius: 10px 0; background: #fff; max-width: 100%; }
   @media (min-width: 800px) { .quote-ed .two-col { grid-template-columns: 1fr 1fr; } }
 </style>

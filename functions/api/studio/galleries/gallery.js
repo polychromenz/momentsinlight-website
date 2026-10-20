@@ -48,12 +48,12 @@ export async function onRequestPut({ request, env }) {
   return json({ ok: true });
 }
 
-// DELETE /api/studio/galleries/gallery { id, confirm: <the gallery's name> }   (everything, files too)
+// DELETE /api/studio/galleries/gallery { id, confirm: 'DELETE' }   (everything, files too)
 export async function onRequestDelete({ request, env }) {
   const d = await request.json().catch(() => ({}));
   const g = await env.DB.prepare('SELECT id, name FROM photo_galleries WHERE id = ?1').bind(String(d.id ?? '')).first();
   if (!g) return json({ error: 'That gallery doesn’t exist.' }, 404);
-  if (String(d.confirm ?? '').trim().toLowerCase() !== g.name.trim().toLowerCase()) return json({ error: 'Type the gallery’s name to delete it.' }, 400);
+  if (String(d.confirm ?? '').trim() !== 'DELETE') return json({ error: 'Type DELETE to delete it.' }, 400);
   await deleteGallery(env, g.id);
   return json({ ok: true });
 }

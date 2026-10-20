@@ -705,9 +705,9 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
     if (t.closest('[data-delete-job]')) {
       const j = lastJob;
       const name = `${j.first_name} ${j.last_name}`.trim();
-      const typed = await askText(`This deletes ${name} for good: their details, emails in the studio, quotes, contracts, invoices, questionnaires, files and appointments (your Gmail isn’t touched). Type their name to confirm:`, '', { title: 'Delete permanently?', ok: 'Delete permanently' });
+      const typed = await askText(`This deletes ${name} for good: their details, emails in the studio, quotes, contracts, invoices, questionnaires, files and appointments (your Gmail isn’t touched). Type DELETE to confirm:`, '', { title: 'Delete permanently?', ok: 'Delete permanently', danger: true });
       if (typed === null) return;
-      if (typed.trim().toLowerCase() !== name.toLowerCase()) { toast('The name didn’t match, so nothing was deleted.', true); return; }
+      if (typed.trim() !== 'DELETE') { toast('You didn’t type DELETE, so nothing was deleted.', true); return; }
       const r = await fetch(`/api/studio/crm/job?id=${id}`, { method: 'DELETE' });
       const d = await r.json().catch(() => ({}));
       if (!r.ok) { await tell(d.error || 'That didn’t delete.', 'Not deleted'); return; }

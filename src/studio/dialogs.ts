@@ -19,7 +19,8 @@ const css = `.mdlg{border:0;padding:0;border-radius:24px 0;max-width:min(460px,c
 .mdlg button{font:inherit;font-size:14px;padding:9px 18px;border-radius:12px 0;border:1px solid var(--green,#5a5e3b);background:var(--white,#fff);color:var(--green,#5a5e3b);cursor:pointer;transition:border-radius .35s,background .2s}
 .mdlg button:hover{border-radius:0 12px}
 .mdlg button.mdlg-ok{background:var(--green,#5a5e3b);color:#fff}
-.mdlg button.mdlg-ok.danger{background:#a8432a;border-color:#a8432a}
+.mdlg button.mdlg-ok.danger{background:#c62828;border-color:#c62828;color:#fff}
+.mdlg button.mdlg-ok.danger:hover{background:#a31f1f;border-color:#a31f1f}
 .mdlg button.mdlg-cancel{border-color:transparent}
 @media (prefers-reduced-motion:reduce){.mdlg button{transition:none}}`;
 
@@ -61,7 +62,7 @@ export async function tell(message: string, title = ''): Promise<void> {
 /** A line of text (null if cancelled). */
 export async function askText(message: string, value = '', o: AskOpts = {}): Promise<string | null> {
   const r = await open(`${o.title ? `<h2>${esc(o.title)}</h2>` : ''}<p>${esc(message)}</p><input type="${o.type ?? 'text'}" value="${esc(value)}" />
-    <div class="mdlg-acts"><button type="submit" class="mdlg-cancel">${esc(o.cancel ?? 'Cancel')}</button><button type="submit" class="mdlg-ok">${esc(o.ok ?? 'OK')}</button></div>`, 'input');
+    <div class="mdlg-acts"><button type="submit" class="mdlg-cancel">${esc(o.cancel ?? 'Cancel')}</button><button type="submit" class="mdlg-ok${o.danger ? ' danger' : ''}">${esc(o.ok ?? 'OK')}</button></div>`, 'input');
   return r.ok ? r.value : null;
 }
 

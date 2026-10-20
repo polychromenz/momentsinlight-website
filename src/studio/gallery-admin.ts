@@ -477,7 +477,7 @@ document.addEventListener('click', async (e) => {
     return;
   }
   if (t.closest('[data-delete]')) {
-    const name = await askText(`This deletes every photo in “${d.gallery.name}”. Type the gallery’s name to confirm:`);
+    const name = await askText(`This deletes “${d.gallery.name}” and every photo in it, for good. Type DELETE to confirm:`, '', { title: 'Delete this gallery?', ok: 'Delete gallery', danger: true });
     if (name === null) return;
     if (await tryApi('/api/studio/galleries/gallery', 'DELETE', { id, confirm: name })) location.href = '/studio/galleries';
     return;
