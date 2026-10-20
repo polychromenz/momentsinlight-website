@@ -132,7 +132,9 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
       <table class="ai-lines"><thead><tr><th>Item</th><th>Qty</th><th>Price ($ each, incl. GST)</th><th></th></tr></thead><tbody></tbody></table>
       <div class="ai-add"><select class="ai-pick" aria-label="Add one of your products or packages"></select><button type="button" class="s-btn s-btn--quiet" data-ai-custom>+ Your own item</button></div>
       <p class="ai-total"></p>
+      <label class="ai-sch">Payment schedule<select name="schedule_key"><option value="">One payment, due on the date below</option></select></label>
       <label class="ai-due">Due date<input name="due_date" type="date" /></label>
+      <ul class="ai-split"></ul>
       <div class="review-actions"><button type="button" class="s-btn s-btn--quiet" data-ai-close>Cancel</button><button type="button" class="s-btn" data-ai-save="later">Save (sends 2 weeks before it’s due)</button><button type="button" class="s-btn s-btn--solid" data-ai-save="now">Send now</button></div>
     </form>
   </dialog>
@@ -200,6 +202,7 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
 
 <script>
   import { ask, askText, guardLeaving, tell } from '../../../studio/dialogs';
+  import { payments as schPayments } from '../../../../functions-lib/quotes.js';
   import { emailHtml } from '../../../../functions-lib/email-render.js';
   import { formHtml } from '../../../../functions-lib/questionnaire-form.js';
   import { attachRich } from '../../../studio/rich-editor';
@@ -332,6 +335,9 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
   // ---- Add an invoice (add-ons after booking), from Settings > Packages & products or typed ----
   type CatItem = { id: number; kind: string; name: string; subtitle: string; price: number };
   let catItems: CatItem[] = [];
+  type Sch = { key: string; name: string; parts: { percent: number; label: string; when: string; days?: number; months?: number }[] };
+  let catSchedules: Sch[] = [];
+  let jobEventDate: string | null = null;
   const aiDlg = $<HTMLDialogElement>('dialog.add-inv');
   const aiForm = $<HTMLFormElement>('.add-inv-form');
   const aiMoney = (c: number) => `${(c / 100).toLocaleString('en-NZ', { minimumFractionDigits: 2 })}`;
@@ -341,15 +347,24 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
     qty: Number(tr.querySelector<HTMLInputElement>('[data-ai="qty"]')!.value) || 1,
     price: Math.round(Number(tr.querySelector<HTMLInputElement>('[data-ai="price"]')!.value || 0) * 100),
   }));
-  const aiTotal = () => { const t = aiLines().reduce((a, l) => a + l.qty * l.price, 0); $('.ai-total').textContent = `Total ${aiMoney(t)} (GST included)`; };
+  const aiTotal = () => {
+    const t = aiLines().reduce((a, l) => a + l.qty * l.price, 0);
+    $('.ai-total').textContent = `Total ${aiMoney(t)} (GST included)`;
+    // With a schedule: how it splits, and the date box isn't needed.
+    const sch = catSchedules.find((s) => s.key === (aiForm.elements.namedItem('schedule_key') as HTMLSelectElement).value);
+    $('.ai-due').hidden = !!sch;
+    const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Pacific/Auckland' });
+    $('.ai-split').innerHTML = sch && t ? schPayments(sch.parts, t, jobEventDate, today).map((p: any) => `<li>${esc(p.label)} (${p.percent}%): ${aiMoney(p.amount)} · ${p.onAccept ? 'due now' : `due ${new Date(`${p.due}T12:00:00Z`).toLocaleDateString('en-NZ', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' })}`}</li>`).join('') : '';
+  };
   async function openAddInvoice() {
     if (!catItems.length) {
       const r = await fetch('/api/studio/crm/catalogue');
-      if (r.ok) { const d = await r.json(); catItems = [...d.products, ...d.packages]; }
+      if (r.ok) { const d = await r.json(); catItems = [...d.products, ...d.packages]; catSchedules = d.schedules ?? []; }
     }
     const opt = (k: string) => catItems.filter((x) => x.kind === k).map((x) => `<option value="${x.id}">${esc(x.name)}${x.subtitle ? ` · ${esc(x.subtitle)}` : ''} (${aiMoney(x.price)})</option>`).join('');
     $<HTMLSelectElement>('.ai-pick').innerHTML = `<option value="">+ Add one of your products or packages…</option><optgroup label="Products">${opt('product')}</optgroup><optgroup label="Packages">${opt('package')}</optgroup>`;
     aiForm.reset();
+    (aiForm.elements.namedItem('schedule_key') as HTMLSelectElement).innerHTML = `<option value="">One payment, due on the date below</option>${catSchedules.map((s) => `<option value="${esc(s.key)}">${esc(s.name)}</option>`).join('')}`;
     $('.ai-lines tbody').innerHTML = '';
     (aiForm.elements.namedItem('due_date') as HTMLInputElement).value = new Date(Date.now() + 14 * 86400_000).toLocaleDateString('en-CA', { timeZone: 'Pacific/Auckland' });
     aiTotal();
@@ -363,6 +378,7 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
     sel.value = '';
     if (x) { $('.ai-lines tbody').insertAdjacentHTML('beforeend', aiRow(`${x.name}${x.subtitle ? ` (${x.subtitle})` : ''}`, 1, x.price)); aiTotal(); }
   });
+  aiForm.addEventListener('change', (e) => { if ((e.target as HTMLElement).matches('select[name="schedule_key"]')) aiTotal(); });
   aiForm.addEventListener('click', async (e) => {
     const t = e.target as HTMLElement;
     if (t.closest('[data-ai-close]')) { aiDlg.close(); return; }
@@ -374,12 +390,12 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
     if (!lines.length) { toast('Add at least one item.', true); return; }
     const now = sv.dataset.aiSave === 'now';
     sv.disabled = true; const was = sv.textContent; sv.textContent = now ? 'Sending…' : 'Saving…';
-    const r = await fetch('/api/studio/crm/invoice', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'add', job_id: id, label: (aiForm.elements.namedItem('label') as HTMLInputElement).value, lines, due_date: (aiForm.elements.namedItem('due_date') as HTMLInputElement).value, send: now }) });
+    const r = await fetch('/api/studio/crm/invoice', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'add', job_id: id, label: (aiForm.elements.namedItem('label') as HTMLInputElement).value, lines, schedule_key: (aiForm.elements.namedItem('schedule_key') as HTMLSelectElement).value || undefined, due_date: (aiForm.elements.namedItem('due_date') as HTMLInputElement).value, send: now }) });
     const d = await r.json().catch(() => ({}));
     sv.disabled = false; sv.textContent = was;
     if (!r.ok) { toast(d.error || 'Couldn’t make the invoice.', true); return; }
     aiDlg.close();
-    toast(d.warning ?? (d.sent ? `${d.number} sent.` : `${d.number} saved. It goes out 2 weeks before it’s due (or Send now on it).`), !!d.warning);
+    toast(d.warning ?? (d.made > 1 ? `Made ${d.number}.${d.sent ? ' The first one has been sent.' : ''} The rest go out 2 weeks before they’re due.` : d.sent ? `${d.number} sent.` : `${d.number} saved. It goes out 2 weeks before it’s due (or Send now on it).`), !!d.warning);
     load();
   });
   document.addEventListener('click', (e) => { if ((e.target as HTMLElement).closest('[data-add-invoice]')) openAddInvoice(); });
@@ -391,6 +407,7 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
     if (!r.ok) { $('.status').textContent = d.error || `Something went wrong (${r.status}).`; return; }
     $('.test-banner').hidden = d.mode === 'live';
     const j = d.job;
+    jobEventDate = j.event_date ?? null;
     lastJob = j;
     document.title = `${j.title} · Moments Studio`;
     $('.title').textContent = j.title;
@@ -929,7 +946,9 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
   .add-inv .ai-add { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
   .add-inv .ai-pick { font: inherit; font-size: 14px; padding: 7px 10px; border: 1px solid #ddd3c4; border-radius: 10px 0; max-width: 100%; }
   .add-inv .ai-total { font-weight: 500; margin: 12px 0 4px; }
-  .add-inv .ai-due input { font: inherit; font-size: 15px; }
+  .add-inv .ai-due input, .add-inv .ai-sch select { font: inherit; font-size: 15px; }
+  .add-inv .ai-sch { display: block; margin-bottom: 10px; }
+  .add-inv .ai-split { margin: 8px 0 0; padding-left: 18px; font-size: 14px; color: #555; }
   .review-gallery input, .review-gallery select { font: inherit; font-size: 15px; }
   .review-gallery label { display: block; margin-bottom: 10px; }
   .gallery-link { display: flex; gap: 8px; flex-wrap: wrap; margin: 6px 0 12px; }

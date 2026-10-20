@@ -1,5 +1,5 @@
 // Packages and products (Settings > Packages & products): Tony's library for building quotes.
-//   GET    /api/studio/crm/catalogue                -> { packages, products }
+//   GET    /api/studio/crm/catalogue                -> { packages, products, schedules }   (schedules: for the Add invoice pop-up)
 //   POST   /api/studio/crm/catalogue { kind, name, subtitle?, description?, price, recommended? }   add one
 //   PUT    /api/studio/crm/catalogue { id, … }      change one
 //   DELETE /api/studio/crm/catalogue?id=4
@@ -14,7 +14,8 @@ const values = (d) => ({
 
 export async function onRequestGet({ env }) {
   const rows = (await env.DB.prepare('SELECT * FROM catalogue ORDER BY sort, name, id').all()).results;
-  return json({ packages: rows.filter((r) => r.kind === 'package'), products: rows.filter((r) => r.kind === 'product') });
+  const schedules = (await env.DB.prepare('SELECT key, name, parts FROM payment_schedules ORDER BY name').all()).results.map((s) => ({ ...s, parts: JSON.parse(s.parts) }));
+  return json({ packages: rows.filter((r) => r.kind === 'package'), products: rows.filter((r) => r.kind === 'product'), schedules });
 }
 
 export async function onRequestPost({ request, env }) {

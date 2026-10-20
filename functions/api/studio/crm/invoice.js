@@ -4,15 +4,17 @@
 //                                 { id, action: 'send' }      send it now (or again)
 //                                 { id, action: 'void' }      cancel an unpaid invoice
 //                                 { id, action: 'edit', amount?, due_date?, label? }   change an unpaid one
-//                                 { job_id, action: 'add', label, lines: [{ name, qty, price }], due_date, send }
+//                                 { job_id, action: 'add', label, lines: [{ name, qty, price }], due_date, send, schedule_key? }
 //                                     an extra invoice (add-ons after booking: second shooter, prints…);
-//                                     send: true emails it now, otherwise it goes 2 weeks before it's due
+//                                     send: true emails it now, otherwise it goes 2 weeks before it's due;
+//                                     schedule_key: split it by a payment schedule (one invoice per payment,
+//                                     dated from today and their event date, like a booking's)
 //                                 { contract_id, action: 'create' }   make a signed contract's invoices
 //                                                                     (if they weren't made automatically)
 import { json } from '../../../../functions-lib/studio.js';
 import { loadJob } from '../../../../functions-lib/crm-send.js';
 import { markPaid, sendInvoice, paymentSettings, createInvoices, nextNumber, token } from '../../../../functions-lib/invoices.js';
-import { money } from '../../../../functions-lib/quotes.js';
+import { money, payments } from '../../../../functions-lib/quotes.js';
 import { invoicePdf } from '../../../../functions-lib/pdf.js';
 
 export async function onRequestGet({ request, env }) {
@@ -27,7 +29,7 @@ export async function onRequestGet({ request, env }) {
 export async function onRequestPost({ request, env }) {
   const d = await request.json().catch(() => null);
   if (d?.action === 'add') {
-    const job = await env.DB.prepare('SELECT id, hold FROM jobs WHERE id = ?1').bind(Number(d.job_id)).first();
+    const job = await env.DB.prepare('SELECT id, hold, event_date FROM jobs WHERE id = ?1').bind(Number(d.job_id)).first();
     if (!job) return json({ error: 'That client doesn’t exist.' }, 404);
     const lines = (Array.isArray(d.lines) ? d.lines : []).map((l) => ({ name: String(l?.name ?? '').trim().slice(0, 160), qty: Math.max(1, Math.min(999, Math.round(Number(l?.qty) || 1))), price: Math.max(0, Math.round(Number(l?.price) || 0)) }))
       .filter((l) => l.name).slice(0, 30);
@@ -35,24 +37,34 @@ export async function onRequestPost({ request, env }) {
     const amount = lines.reduce((t, l) => t + l.qty * l.price, 0);
     if (!amount) return json({ error: 'The total is $0.' }, 400);
     const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Pacific/Auckland' });
-    const due = /^\d{4}-\d{2}-\d{2}$/.test(d.due_date ?? '') && d.due_date >= today ? d.due_date : today;
     const now = new Date();
-    // Later: 2 weeks before it's due, about 9am NZ (or now, if that's already passed).
-    const sendDay = new Date(Date.parse(`${due}T12:00:00Z`) - 14 * 86400_000).toISOString().slice(0, 10);
-    const sendAt = d.send || sendDay <= today ? now.toISOString() : `${sendDay}T20:00:00.000Z`;
     const label = String(d.label ?? '').trim().slice(0, 120) || (lines.length === 1 ? lines[0].name : 'Add-ons');
     const description = lines.map((l) => `${l.name}${l.qty > 1 ? ` × ${l.qty}` : ''} (${money(l.qty * l.price)})`).join(' + ');
-    let inv;
-    for (let tries = 0; tries < 5 && !inv; tries++) {
-      try {
-        inv = await env.DB.prepare(`INSERT INTO invoices (job_id, number, label, description, amount, due_date, send_at, token, created_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9) RETURNING *`)
-          .bind(job.id, await nextNumber(env.DB, today.slice(0, 4)), label, description, amount, due, sendAt, token(), now.toISOString()).first();
-      } catch (e) { if (!String(e).includes('UNIQUE') || tries === 4) throw e; }
+    // The payments: one on the chosen date, or split by a payment schedule.
+    const sch = d.schedule_key ? await env.DB.prepare('SELECT * FROM payment_schedules WHERE key = ?1').bind(String(d.schedule_key)).first() : null;
+    if (d.schedule_key && !sch) return json({ error: 'That payment schedule isn’t there any more.' }, 400);
+    const due = /^\d{4}-\d{2}-\d{2}$/.test(d.due_date ?? '') && d.due_date >= today ? d.due_date : today;
+    const parts = sch
+      ? payments(JSON.parse(sch.parts), amount, job.event_date, today).map((p) => ({ label: `${label}: ${p.label} (${p.percent}%)`, amount: p.amount, due: p.due }))
+      : [{ label, amount, due }];
+    const made = [];
+    for (const [n, p] of parts.entries()) {
+      // The first goes now if asked; the rest (and "save") 2 weeks before they're due, about 9am NZ.
+      const sendDay = new Date(Date.parse(`${p.due}T12:00:00Z`) - 14 * 86400_000).toISOString().slice(0, 10);
+      const sendAt = (d.send && n === 0) || sendDay <= today ? now.toISOString() : `${sendDay}T20:00:00.000Z`;
+      let inv;
+      for (let tries = 0; tries < 5 && !inv; tries++) {
+        try {
+          inv = await env.DB.prepare(`INSERT INTO invoices (job_id, number, label, description, amount, due_date, send_at, token, created_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9) RETURNING *`)
+            .bind(job.id, await nextNumber(env.DB, today.slice(0, 4)), p.label, description, p.amount, p.due, sendAt, token(), now.toISOString()).first();
+        } catch (e) { if (!String(e).includes('UNIQUE') || tries === 4) throw e; }
+      }
+      made.push(inv);
     }
     if (d.send && !job.hold) {
-      try { await sendInvoice(env, inv); } catch (e) { return json({ ok: true, id: inv.id, warning: `Made ${inv.number}, but it didn’t send: ${e.message}` }); }
+      try { await sendInvoice(env, made[0]); } catch (e) { return json({ ok: true, made: made.length, warning: `Made ${made.map((i) => i.number).join(', ')}, but the first didn’t send: ${e.message}` }); }
     }
-    return json({ ok: true, id: inv.id, number: inv.number, sent: !!d.send && !job.hold });
+    return json({ ok: true, made: made.length, number: made.map((i) => i.number).join(', '), sent: !!d.send && !job.hold });
   }
   if (d?.action === 'create') {
     const c = await env.DB.prepare(`SELECT * FROM contracts WHERE id = ?1 AND status = 'signed'`).bind(Number(d.contract_id)).first();
