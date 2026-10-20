@@ -81,6 +81,11 @@ export async function onRequestPut(context) {
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return json({ error: 'That email address doesn’t look right.' }, 400);
     stmts.push(env.DB.prepare('UPDATE clients SET first_name = ?2, last_name = ?3, email = ?4, phone = ?5, address = ?7, updated_at = ?6 WHERE id = ?1')
       .bind(c.id, d.first_name !== undefined ? text(d.first_name, 100) || c.first_name : c.first_name, d.last_name !== undefined ? text(d.last_name, 100) : c.last_name, email, d.phone !== undefined ? text(d.phone, 40) : c.phone, now, d.address !== undefined ? text(d.address, 300) : c.address));
+    // A renamed client: their jobs still named after them (the usual title) follow, e.g. "jane smith" -> "Jane Smith".
+    const was = `${c.first_name} ${c.last_name}`.trim();
+    const now2 = `${d.first_name !== undefined ? text(d.first_name, 100) || c.first_name : c.first_name} ${d.last_name !== undefined ? text(d.last_name, 100) : c.last_name}`.trim();
+    // (Also a title that differs from their name only in capitals, from before this was added.)
+    stmts.push(env.DB.prepare('UPDATE jobs SET title = ?3 WHERE client_id = ?1 AND (lower(title) = lower(?2) OR lower(title) = lower(?3)) AND title <> ?3').bind(c.id, was, now2));
   }
   // Whether their photos can be used in ads (some contracts say no).
   if (d.ads_ok !== undefined) stmts.push(env.DB.prepare('UPDATE clients SET ads_ok = ?2, updated_at = ?3 WHERE id = ?1').bind(job.client_id, d.ads_ok ? 1 : 0, now));

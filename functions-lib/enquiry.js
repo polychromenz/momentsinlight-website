@@ -1,13 +1,14 @@
 // A new enquiry becoming a lead: the client and the job in the CRM tables, the workflow's first
 // steps (the automatic reply and the follow-ups), and an alert to Tony. Used by the enquiry form
 // (functions/api/enquiry.js) and by "Not spam" in the studio (functions/api/studio/crm/spam.js).
-import { planEnquirySteps, alertTony } from './crm.js';
+import { planEnquirySteps, alertTony, tidyName } from './crm.js';
 import { loadWorkflow } from './workflows.js';
 import { clashes, clashText, syncSoon } from './calendar.js';
 
 /** f = { first, last, email, phone, service, date, venue, message, source }. Returns the job id.
  *  context = the Pages Function context (for env and waitUntil); origin = the site's address for links. */
 export async function createLead(context, f, origin, note = '') {
+  f = { ...f, first: tidyName(f.first), last: tidyName(f.last) }; // "jane smith" from a form as "Jane Smith"
   const { env } = context;
   // The job type must be one from the studio's list (Settings); it decides the workflow.
   const type = await env.DB.prepare(`SELECT value, workflow FROM lists WHERE kind = 'job_type' AND value = ?1`).bind(f.service).first().catch(() => null);

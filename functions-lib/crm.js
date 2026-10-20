@@ -43,6 +43,14 @@ export async function liveForNew(env, to) {
   return !old;
 }
 
+/** A name typed all in small letters or all in capitals ("jane smith", "JANE SMITH") as "Jane Smith",
+ *  including after a hyphen or apostrophe (Mary-Jane, O'Brien). Names already mixed are left alone. */
+export function tidyName(s) {
+  const v = String(s ?? '').trim().replace(/\s+/g, ' ');
+  if (v !== v.toLowerCase() && v !== v.toUpperCase()) return v;
+  return v.toLowerCase().replace(/(^|[\s'’-])(\p{L})/gu, (m, a, b) => a + b.toUpperCase());
+}
+
 /** Is this address a test client's (Tony's own tests, ticked on their client page)? Pass to outgoing(). */
 export async function testClient(env, to) {
   const email = String(to ?? '').trim().toLowerCase();

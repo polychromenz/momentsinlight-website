@@ -7,7 +7,7 @@
 // calendar and the Google "Moments in Light" calendar), a confirmation email and an alert to Tony.
 // Paid sessions are held for 30 minutes while they pay (Stripe Checkout); unpaid holds lapse.
 import { googleToken, sendEmail } from './gmail.js';
-import { alertTony } from './crm.js';
+import { alertTony, tidyName } from './crm.js';
 import { renderTemplate, fields } from './email-render.js';
 import { jobLinks } from './crm-send.js';
 import { unsyncAppointment, syncJob, addMeet } from './calendar.js';
@@ -122,6 +122,7 @@ export async function freeSlots(env, type, s, onlyDate = null) {
 
 // ---- Making a booking ----
 export async function makeBooking(context, type, s, f) {
+  f = { ...f, first: tidyName(f.first), last: tidyName(f.last) };
   const { env } = context;
   const db = env.DB;
   const free = await freeSlots(env, type, s, f.date);
