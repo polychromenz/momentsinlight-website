@@ -25,6 +25,7 @@ const API = [
   [/^\/api\/studio\/crm\/(seo|rankings)\b|^\/api\/studio\/(seo|stats)\b/, 'seo'],
   [/^\/api\/studio\/crm\/(dashboard|today|tasks)\b/, null],
   [/^\/api\/studio\/crm\//, 'clients'],
+  [/^\/api\/studio\/email\b/, 'clients'], // ✉ Write email: sending needs "Can change" on Clients
   [/^\/api\/studio\/galleries\/insights\b/, null],
   [/^\/api\/studio\/galleries\b/, 'galleries'],
   [/^\/api\/studio\/social\b/, 'social'],
