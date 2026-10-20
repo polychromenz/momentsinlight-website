@@ -139,7 +139,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   start();
 </script>
 
-<style>
+<style is:global>
   .book-page { background: var(--champagne); padding: 48px var(--pad) 90px; min-height: 60vh; }
   .bk-head { max-width: 760px; margin: 0 auto 20px; text-align: center; }
   .bk-head h1 { margin: 0 0 16px; }
@@ -156,9 +156,11 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   .bk-card small { color: #666; line-height: 1.5; }
   .bk-type-desc { color: #555; margin: 0 0 12px; }
   .bk-days { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 6px; }
-  .bk-day, .bk-time { flex: none; padding: 9px 14px; border: 1px solid #ddd3c4; border-radius: 12px 0; background: var(--white); font: inherit; font-size: 14px; cursor: pointer; color: var(--ink); }
+  .bk-day, .bk-time { flex: none; padding: 10px 16px; border: 1px solid #ddd3c4; border-radius: 12px 0; background: var(--white); font: inherit; font-size: 14px; cursor: pointer; color: var(--ink); transition: border-radius 0.35s var(--ease), border-color 0.2s, background-color 0.2s, color 0.2s; }
   .bk-day.on { background: var(--green); border-color: var(--green); color: var(--white); }
-  .bk-time:hover, .bk-day:hover { border-color: var(--green); }
+  .bk-time:hover, .bk-day:hover { border-color: var(--green); border-radius: 0 12px; }
+  .bk-time:hover { background: var(--green); color: var(--white); }
+  .bk-card:focus-visible, .bk-day:focus-visible, .bk-time:focus-visible, .bk-back:focus-visible { outline: 2px solid var(--green); outline-offset: 2px; }
   .bk-times-list { display: flex; flex-wrap: wrap; gap: 8px; }
   .bk-back { border: 0; background: none; padding: 0; margin: 0 0 10px; font: inherit; font-size: 14px; color: var(--green); cursor: pointer; }
   .bk-back[hidden] { display: none; }
