@@ -22,6 +22,11 @@ export const WHEN = {
 };
 export const KINDS = { auto_email: 'Automatic email', ready_email: 'Email you review and send', todo: 'To-do' };
 export const MANUAL_DUE = '9999-01-01T00:00:00.000Z';
+// Steps that stop once they book (or are marked lost): any with 'booked' in stop_on, and every
+// "After the enquiry" step whatever its settings (a quick booker mustn't get the enquiry reply).
+export const STOPS_ON_BOOKING = `((',' || stop_on || ',') LIKE '%,booked,%' OR CASE WHEN json_valid(config) THEN json_extract(config, '$.when') END = 'enquiry')`;
+export const stopsOnBooking = (step) => (',' + (step.stop_on ?? '') + ',').includes(',booked,')
+  || (() => { try { return JSON.parse(step.config || '{}').when === 'enquiry'; } catch { return false; } })();
 const HOUR = 3600_000; const DAY = 24 * HOUR;
 const text = (v, max) => (v ?? '').toString().trim().slice(0, max);
 

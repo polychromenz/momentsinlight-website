@@ -12,7 +12,7 @@ import { alertTony } from '../../functions-lib/crm.js';
 import { quotePdf } from '../../functions-lib/pdf.js';
 import { quoteNumber } from '../../functions-lib/quotes.js';
 import { makeContract, sendContract } from '../../functions-lib/contracts.js';
-import { planBooking } from '../../functions-lib/workflows.js';
+import { planBooking, STOPS_ON_BOOKING } from '../../functions-lib/workflows.js';
 
 const reply = (data, status = 200) => new Response(JSON.stringify(data), { status, headers: { 'content-type': 'application/json', 'cache-control': 'no-store' } });
 const find = async (env, t) => (/^[a-f0-9]{48}$/.test(t || '') ? parseQuote(await env.DB.prepare('SELECT * FROM quotes WHERE token = ?1').bind(t).first()) : null);
@@ -66,7 +66,7 @@ export async function onRequestPost({ request, env }) {
   await env.DB.batch([
     env.DB.prepare(`UPDATE clients SET address = ?2, phone = CASE WHEN ?3 <> '' THEN ?3 ELSE phone END, updated_at = ?4 WHERE id = ?1`).bind(job.client_id, address, phone, at),
     env.DB.prepare(`UPDATE jobs SET stage = 'booked', booked_at = COALESCE(booked_at, ?2), updated_at = ?2 WHERE id = ?1 AND stage = 'lead'`).bind(job.id, at),
-    env.DB.prepare(`UPDATE steps SET status = 'skipped', done_at = ?2, note = 'Stopped: booked' WHERE job_id = ?1 AND status IN ('scheduled', 'due') AND (',' || stop_on || ',') LIKE '%,booked,%'`).bind(job.id, at),
+    env.DB.prepare(`UPDATE steps SET status = 'skipped', done_at = ?2, note = 'Stopped: booked' WHERE job_id = ?1 AND status IN ('scheduled', 'due') AND ${STOPS_ON_BOOKING}`).bind(job.id, at),
   ]);
   await planBooking(env.DB, await env.DB.prepare('SELECT * FROM jobs WHERE id = ?1').bind(job.id).first()).catch((e) => console.error('quote accept: planning', e));
   // The contract, sent automatically with the quote as a PDF.

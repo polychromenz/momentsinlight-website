@@ -458,7 +458,9 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
         </div>
         <div class="qn-flags">
           <label><input type="checkbox" data-s="stop_reply"${String(x.stop_on || '').includes('reply') ? ' checked' : ''} /> Stop if they reply</label>
-          <label><input type="checkbox" data-s="stop_booked"${String(x.stop_on || '').includes('booked') ? ' checked' : ''} /> Stop if they book</label>
+          ${x.when === 'enquiry'
+            ? '<label title="Every “After the enquiry” step stops once they book or you mark them lost"><input type="checkbox" data-s="stop_booked" checked disabled /> Stops if they book (always, before booking)</label>'
+            : `<label><input type="checkbox" data-s="stop_booked"${String(x.stop_on || '').includes('booked') ? ' checked' : ''} /> Stop if they book</label>`}
           <label><input type="checkbox" data-s="stop_reviewed"${String(x.stop_on || '').includes('reviewed') ? ' checked' : ''} /> Stop if they’ve left a Google review</label>
           ${email ? `<label><input type="checkbox" data-s="gallery"${x.gallery ? ' checked' : ''} /> Asks for a gallery link</label>
           <label>Sends questionnaire <select data-s="questionnaire"><option value="">None</option>${opt(data.questionnaires.map((q) => [q.key, q.name]), x.questionnaire)}</select></label>` : ''}

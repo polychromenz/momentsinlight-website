@@ -12,7 +12,7 @@ import { json } from '../../../../functions-lib/studio.js';
 import { sendMode } from '../../../../functions-lib/crm.js';
 import { clashes, syncSoon, calendarReady, unsyncAppointment } from '../../../../functions-lib/calendar.js';
 import { deleteClient, deleteJob } from '../../../../functions-lib/cleanup.js';
-import { planBooking, replanDates, planSteps, loadWorkflow } from '../../../../functions-lib/workflows.js';
+import { planBooking, replanDates, planSteps, loadWorkflow, STOPS_ON_BOOKING } from '../../../../functions-lib/workflows.js';
 
 const STAGES = ['lead', 'booked', 'completed', 'lost'];
 
@@ -90,7 +90,7 @@ export async function onRequestPut(context) {
   // Booked or lost: steps waiting on a booking stop.
   if ((jobFields.stage === 'booked' || jobFields.stage === 'lost') && job.stage !== jobFields.stage) {
     stmts.push(env.DB.prepare(
-      `UPDATE steps SET status = 'skipped', note = ?2, done_at = ?3 WHERE job_id = ?1 AND status IN ('scheduled', 'due') AND (',' || stop_on || ',') LIKE '%,booked,%'`,
+      `UPDATE steps SET status = 'skipped', note = ?2, done_at = ?3 WHERE job_id = ?1 AND status IN ('scheduled', 'due') AND ${STOPS_ON_BOOKING}`,
     ).bind(id, jobFields.stage === 'booked' ? 'Stopped: booked' : 'Stopped: not going ahead', now));
   }
   try {

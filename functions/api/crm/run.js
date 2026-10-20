@@ -32,6 +32,7 @@
 import { sendStep } from '../../../functions-lib/crm-send.js';
 import { thread, connection } from '../../../functions-lib/gmail.js';
 import { alertTony } from '../../../functions-lib/crm.js';
+import { stopsOnBooking } from '../../../functions-lib/workflows.js';
 import { sendInvoice } from '../../../functions-lib/invoices.js';
 import { calendarReady, syncJob, noteSync } from '../../../functions-lib/calendar.js';
 import { maybeSendDigest } from '../../../functions-lib/digest.js';
@@ -113,7 +114,7 @@ export async function onRequestPost({ request, env }) {
   ).bind(now).all();
   for (const step of due.results) {
     // Stop conditions.
-    const why = (['booked', 'completed', 'lost'].includes(step.stage) && stops(step, 'booked')) ? 'Stopped: booked'
+    const why = (['booked', 'completed', 'lost'].includes(step.stage) && stopsOnBooking(step)) ? (step.stage === 'lost' ? 'Stopped: not going ahead' : 'Stopped: booked')
       : (step.replied_at && stops(step, 'reply')) ? 'Stopped: they replied' : null;
     if (why) {
       await db.prepare(`UPDATE steps SET status = 'skipped', done_at = ?2, note = ?3 WHERE id = ?1 AND status = 'scheduled'`).bind(step.id, now, why).run();
