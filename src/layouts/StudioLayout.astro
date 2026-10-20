@@ -33,6 +33,21 @@ const menu: (Item | [string, string, Item[]])[] = [
   ['settings', 'Settings', '/studio/crm/settings'],
 ];
 const inGroup = (items: Item[]) => items.some(([k]) => k === section);
+// Breadcrumbs under the menu: Dashboard › (its menu group) › the section › this page. A page about one
+// thing (a client, a gallery) names it in document.title once it loads; the last crumb follows that.
+const groups: [Item[], string, string | null][] = [[money, 'Payments', '/studio/payments'], [seo, 'SEO', '/studio/seo'], [website, 'Website', null]];
+const flat = menu.flatMap((m) => (Array.isArray(m[2]) ? (m[2] as Item[]) : [m as Item]));
+const here = flat.find(([k]) => k === section);
+const path = Astro.url.pathname.replace(/(\/index)?\.html$/, '').replace(/\/$/, '') || '/studio'; // (built pages end .html)
+const crumbs: [string, string | null][] = [['Dashboard', '/studio']];
+if (here && section !== 'dashboard') {
+  const g = groups.find(([items]) => items.some(([k]) => k === section));
+  if (g && g[2] !== here[2]) crumbs.push([g[1], g[2]]);
+  crumbs.push([here[1], here[2]]);
+}
+const onSection = here ? path === here[2] : path === '/studio';
+if (!onSection) crumbs.push([title, null]);
+const showCrumbs = crumbs.length > 1;
 // Each menu link's area (functions-lib/areas.js), so a person's hidden areas drop out of their menu.
 const areaAttr = (href: string) => areaOfPage(href) ?? undefined;
 ---
@@ -58,6 +73,13 @@ const areaAttr = (href: string) => areaOfPage(href) ?? undefined;
       </nav>
       <div class="studio-actions"><slot name="bar" /></div>
     </header>
+    {showCrumbs && (
+      <nav class="studio-crumbs" aria-label="Breadcrumb"><ol>
+        {crumbs.map(([label, href], n) => (n === crumbs.length - 1
+          ? <li><span class={onSection ? undefined : 'crumb-here'} aria-current="page">{label}</span></li>
+          : <li><a href={href ?? undefined}>{label}</a></li>))}
+      </ol></nav>
+    )}
     <p class="studio-ro" hidden>You can look at this part of the studio but not change it. Ask Tony if you need to.</p>
     <p class="studio-ro studio-hidden-note" hidden>That part of the studio isn’t part of your access, so you’ve been brought back here.</p>
     <slot />
@@ -73,6 +95,14 @@ const areaAttr = (href: string) => areaOfPage(href) ?? undefined;
         if (levelFor(me, areaOfPage(location.pathname)) === 'look') { document.body.classList.add('studio-read-only'); document.querySelector<HTMLElement>('.studio-ro')!.hidden = false; }
         if (new URLSearchParams(location.search).has('hidden')) document.querySelector<HTMLElement>('.studio-hidden-note')!.hidden = false;
       }).catch(() => {});
+      // The last breadcrumb follows the page's title (a client's or gallery's name, once it loads).
+      const crumb = document.querySelector<HTMLElement>('.crumb-here');
+      const titleEl = document.querySelector('title');
+      if (crumb && titleEl) {
+        const sync = () => { const t = document.title.replace(/\s*·\s*Moments Studio$/, '').trim(); if (t) crumb.textContent = t; };
+        sync();
+        new MutationObserver(sync).observe(titleEl, { childList: true, characterData: true, subtree: true });
+      }
       // The Website menu closes when you click elsewhere.
       document.addEventListener('click', (e) => {
         document.querySelectorAll<HTMLDetailsElement>('.nav-group[open]').forEach((d) => { if (!d.contains(e.target as Node)) d.open = false; });
@@ -83,6 +113,14 @@ const areaAttr = (href: string) => areaOfPage(href) ?? undefined;
 
 <style is:global>
   .studio-body { background: var(--champagne); min-height: 100vh; }
+  .studio-crumbs { padding: 9px clamp(14px, 3vw, 32px); background: var(--champagne); border-bottom: 1px solid #efe7db; font-size: 13px; }
+  .studio-crumbs ol { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 0; margin: 0; padding: 0; list-style: none; }
+  .studio-crumbs li { display: flex; align-items: center; color: #777; }
+  .studio-crumbs li + li::before { content: '›'; margin: 0 9px; color: #b5aa98; }
+  .studio-crumbs a { color: var(--green); text-decoration: none; }
+  .studio-crumbs a[href]:hover { text-decoration: underline; text-underline-offset: 3px; }
+  .studio-crumbs a:not([href]) { color: #777; }
+  .studio-crumbs [aria-current] { color: var(--ink); font-weight: 500; }
   .studio-ro { margin: 0; padding: 8px 16px; text-align: center; font-size: 14px; background: #fbf3df; color: #6b5310; }
   /* Motion, like the website (its --ease): cards rise in as a page shows them, a little
      staggered; tabs and dialogs ease in. Plain CSS, so it also works on content drawn later.
