@@ -13,7 +13,12 @@ import { attachmentsFor, listDocuments } from '../../../functions-lib/documents.
 
 const okEmail = (e) => /^[^\s@,;<>]+@[^\s@,;<>]+\.[^\s@,;<>]+$/.test(e);
 
-export async function onRequestGet({ request, env }) {
+/** Who it's from: Tony as usual, or a person from their own address with their own signature. */
+const sender = (user) => (user?.access === 'person' && user.signature?.name
+  ? { signature: user.signature, from: `${user.signature.name.replace(/[<>"]/g, '')} - Moments in Light <${user.email}>`, replyTo: user.email }
+  : { signature: null, from: undefined, replyTo: undefined });
+
+export async function onRequestGet({ request, env, data }) {
   const q = (new URL(request.url).searchParams.get('q') ?? '').trim().toLowerCase();
   if (q) {
     const like = `%${q.replace(/[%_]/g, '')}%`;
@@ -24,10 +29,11 @@ export async function onRequestGet({ request, env }) {
     return json({ people: [...clients.results.map((c) => ({ ...c, kind: 'client' })), ...contacts.results.map((c) => ({ ...c, kind: 'contact' }))] });
   }
   const [docs, gmail] = await Promise.all([listDocuments(env.DB), connection(env.DB)]);
-  return json({ documents: docs.map(({ id, name, size }) => ({ id, name, size })), gmail: !!gmail });
+  return json({ documents: docs.map(({ id, name, size }) => ({ id, name, size })), gmail: !!gmail, signature: sender(data?.user).signature, from: sender(data?.user).from ?? null });
 }
 
-export async function onRequestPost({ request, env }) {
+export async function onRequestPost({ request, env, data }) {
+  const me = sender(data?.user);
   const d = await request.json().catch(() => null);
   const to = String(d?.to ?? '').trim().toLowerCase();
   if (!okEmail(to)) return json({ error: 'Who is it to? Add an email address.' }, 400);
@@ -35,9 +41,9 @@ export async function onRequestPost({ request, env }) {
   const body = String(d.body ?? '').trim().slice(0, 50000);
   if (!subject || !body.replace(/<[^>]+>/g, '').trim()) return json({ error: 'The email needs a subject and some text.' }, 400);
   try {
-    const email = renderTemplate({ subject, body }, await studioLinks(env.DB));
+    const email = renderTemplate({ subject, body }, await studioLinks(env.DB), {}, me.signature);
     const attachments = await attachmentsFor(env.DB, Array.isArray(d.attachments) ? d.attachments : []);
-    const sent = await sendEmail({ ...env, CRM_SEND_MODE: 'live' }, { to, subject: email.subject, html: email.html, attachments });
+    const sent = await sendEmail({ ...env, CRM_SEND_MODE: 'live' }, { to, subject: email.subject, html: email.html, attachments, from: me.from, replyTo: me.replyTo });
     const now = new Date().toISOString();
     // On their page: a client's latest job, or a contact.
     const client = await env.DB.prepare(`SELECT c.id, (SELECT j.id FROM jobs j WHERE j.client_id = c.id ORDER BY j.id DESC LIMIT 1) job_id FROM clients c WHERE lower(c.email) = ?1`).bind(to).first();

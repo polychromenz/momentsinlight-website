@@ -98,12 +98,14 @@ const wrap76 = (s) => s.replace(/.{76}/g, '$&\r\n');
 export async function sendEmail(env, msg) {
   const out = outgoing(env, { to: msg.to, subject: msg.subject, html: msg.html }, await liveForNew(env, msg.to));
   const conn = await connection(env.DB);
-  const from = conn?.email ? `Tony Gorham <${conn.email}>` : 'Tony Gorham <tony@momentsinlight.co.nz>';
+  // msg.from: e.g. Mel's one-off emails, "Mel <mel@…>", which Gmail sends only if it's a verified
+  // "Send mail as" address of the connected account (otherwise Gmail uses the account's own).
+  const from = msg.from || (conn?.email ? `Tony Gorham <${conn.email}>` : 'Tony Gorham <tony@momentsinlight.co.nz>');
   const boundary = `b${crypto.randomUUID().replace(/-/g, '')}`;
   const alt = `a${crypto.randomUUID().replace(/-/g, '')}`;
   const text = msg.text ?? out.html.replace(/<style[\s\S]*?<\/style>/gi, '').replace(/<br\s*\/?>/gi, '\n').replace(/<\/(p|div|h\d|li|tr)>/gi, '\n').replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/\n{3,}/g, '\n\n').trim();
   const parts = [
-    `From: ${from}`, `To: ${out.to}`, `Subject: ${header(out.subject)}`, 'MIME-Version: 1.0',
+    `From: ${from}`, ...(msg.replyTo ? [`Reply-To: ${msg.replyTo}`] : []), `To: ${out.to}`, `Subject: ${header(out.subject)}`, 'MIME-Version: 1.0',
     // A reply: these make it thread in their email program too, not just in Gmail.
     ...(msg.inReplyTo ? [`In-Reply-To: ${msg.inReplyTo}`, `References: ${msg.references || msg.inReplyTo}`] : []),
     `Content-Type: multipart/mixed; boundary="${boundary}"`, '',

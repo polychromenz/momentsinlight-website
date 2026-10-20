@@ -30,7 +30,8 @@ export async function onRequest(context) {
     const area = areaOfApi(path);
     const level = levelFor(user, area);
     if (level === 'hidden') return json({ error: `You don’t have access to ${AREAS[area] ?? 'this part of the studio'}. Ask Tony if you need it.` }, 403);
-    if (level === 'look' && writes) return json({ error: `Your access to ${AREAS[area] ?? 'this part of the studio'} is look-only, so this can’t be changed. Ask Tony if you need it.` }, 403);
+    const mayEmail = path === '/api/studio/email' && user.send_email; // their "send one-off emails" switch
+    if (level === 'look' && writes && !mayEmail) return json({ error: `Your access to ${AREAS[area] ?? 'this part of the studio'} is look-only, so this can’t be changed. Ask Tony if you need it.` }, 403);
   }
   // A change to a client: note who made it, once it has worked.
   const logIt = writes && path.startsWith('/api/studio/crm/') && request.method !== 'GET';

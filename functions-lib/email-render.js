@@ -53,8 +53,23 @@ export function merge(text, values, { html = false } = {}) {
 /** Template body (rich HTML, or older Markdown) → the inner HTML of the card, email-safe. */
 export const bodyHtml = (text) => emailify(toHtml(text));
 
-/** The whole email, in the approved design, with the photo signature. */
-export function emailHtml({ subject, body, preheader = '' }) {
+/** The signature block: Tony's, or a person's own (Settings > People: name, role, phone, photo). */
+function signatureHtml(sig) {
+  const s = sig?.name ? sig : { name: 'Tony Gorham', role: 'Wedding & portrait photographer', phone: '021 625 943', photo: `${SITE}/email/tony.jpg` };
+  const tel = String(s.phone || '').replace(/[^\d+]/g, '').replace(/^0/, '+64');
+  return `<table role="presentation" cellpadding="0" cellspacing="0"><tr>
+${s.photo ? `<td valign="top" style="padding-right:16px;"><img src="${esc(s.photo)}" width="72" alt="${esc(s.name)}" style="display:block;width:72px;height:auto;border:0;border-radius:18px 0;"></td>` : ''}
+<td valign="top" style="font-family:${FONT};">
+<p style="margin:0;font-size:18px;font-weight:400;color:#1a1a1a;">${esc(s.name)}</p>
+${s.role ? `<p style="margin:2px 0 8px;font-size:11px;font-weight:500;letter-spacing:2px;text-transform:uppercase;color:#5a5e3b;">${esc(s.role)}</p>` : ''}
+<p style="margin:0;font-size:14px;line-height:1.7;color:#555555;">${s.phone ? `<a href="tel:${esc(tel)}" style="color:#555555;text-decoration:none;">${esc(s.phone)}</a><br>` : ''}
+<a href="${SITE}" style="color:#555555;text-decoration:none;">momentsinlight.co.nz</a> &nbsp;·&nbsp; <a href="https://www.instagram.com/momentsinlightnz" style="color:#5a5e3b;text-decoration:none;">Instagram</a></p>
+<img src="${SITE}/email/logo.png" width="84" alt="Moments in Light" style="display:block;width:84px;height:auto;border:0;margin-top:12px;">
+</td></tr></table>`;
+}
+
+/** The whole email, in the approved design, with the photo signature (signature: a person's own). */
+export function emailHtml({ subject, body, preheader = '', signature = null }) {
   return `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${esc(subject)}</title>
 <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -67,15 +82,7 @@ ${preheader ? `<div style="display:none;max-height:0;overflow:hidden;">${esc(pre
 <tr><td class="pad" style="background:#ffffff;border-radius:32px 0;padding:40px 44px 36px;">
 ${bodyHtml(body)}
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:26px;border-top:1px solid #ece4d7;"><tr><td style="padding-top:22px;">
-<table role="presentation" cellpadding="0" cellspacing="0"><tr>
-<td valign="top" style="padding-right:16px;"><img src="${SITE}/email/tony.jpg" width="72" alt="Tony Gorham" style="display:block;width:72px;height:auto;border:0;border-radius:18px 0;"></td>
-<td valign="top" style="font-family:${FONT};">
-<p style="margin:0;font-size:18px;font-weight:400;color:#1a1a1a;">Tony Gorham</p>
-<p style="margin:2px 0 8px;font-size:11px;font-weight:500;letter-spacing:2px;text-transform:uppercase;color:#5a5e3b;">Wedding &amp; portrait photographer</p>
-<p style="margin:0;font-size:14px;line-height:1.7;color:#555555;"><a href="tel:+6421625943" style="color:#555555;text-decoration:none;">021 625 943</a><br>
-<a href="${SITE}" style="color:#555555;text-decoration:none;">momentsinlight.co.nz</a> &nbsp;·&nbsp; <a href="https://www.instagram.com/momentsinlightnz" style="color:#5a5e3b;text-decoration:none;">Instagram</a></p>
-<img src="${SITE}/email/logo.png" width="84" alt="Moments in Light" style="display:block;width:84px;height:auto;border:0;margin-top:12px;">
-</td></tr></table>
+${signatureHtml(signature)}
 </td></tr></table>
 </td></tr>
 <tr><td align="center" style="padding:20px 10px 0;font-family:${FONT};font-size:12px;color:#8a8a8a;">Moments in Light · Auckland wedding &amp; portrait photography</td></tr>
@@ -84,13 +91,13 @@ ${bodyHtml(body)}
 
 /** Template + values → { subject, body (HTML, filled in), html (whole email), missing }.
  *  edits = Tony's reviewed { subject, body } (already filled in; any [gaps] still count). */
-export function renderTemplate(template, values, edits = {}) {
+export function renderTemplate(template, values, edits = {}, signature = null) {
   const s = merge(edits.subject ?? template.subject, values);
   // HTML fields (tables) would be stripped by the editor and the email cleaner, so they stay as
   // {{payment_plan}} in the body Tony reviews and are put in only in the final email.
   const keep = Object.fromEntries(HTML_FIELDS.filter((k) => values[k]).map((k) => [k, `{{${k}}}`]));
   const b = merge(toHtml(edits.body ?? template.body), { ...values, ...keep }, { html: true });
-  let html = emailHtml({ subject: s.text, body: b.text });
+  let html = emailHtml({ subject: s.text, body: b.text, signature });
   for (const k of Object.keys(keep)) {
     html = html.replace(new RegExp(`<p[^>]*>\\s*\\{\\{${k}\\}\\}\\s*</p>`, 'g'), values[k]).replaceAll(`{{${k}}}`, values[k]);
   }

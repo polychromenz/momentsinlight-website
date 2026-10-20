@@ -820,7 +820,8 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
 
   // ---- People: who else can use the studio (functions/api/studio/people.js) ----
   {
-    let people: { email: string; name: string; areas: Record<string, string> }[] = [];
+    type Sig = { name: string; role: string; phone: string; photo: string };
+    let people: { email: string; name: string; areas: Record<string, string>; send_email?: boolean; signature?: Sig }[] = [];
     let AREAS: Record<string, string> = {}, LEVELS: Record<string, string> = {};
     const list = document.querySelector<HTMLElement>('.people-list')!;
     const save = async (next: typeof people) => {
@@ -832,12 +833,40 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
     const drawPeople = () => {
       list.innerHTML = people.length ? people.map((p, n) => `<li data-n="${n}" class="person"><div class="person-head"><span><strong>${esc(p.name || p.email)}</strong> <small>${esc(p.email)}</small></span>
         <button type="button" class="s-btn s-btn--quiet" data-remove>Remove</button></div>
-        <div class="person-areas">${Object.entries(AREAS).map(([a, label]) => `<label>${esc(label)}<select data-area="${a}">${Object.entries(LEVELS).map(([v, l]) => `<option value="${v}"${p.areas[a] === v ? ' selected' : ''}>${esc(l)}</option>`).join('')}</select></label>`).join('')}</div></li>`).join('') : '<li class="muted">Nobody else yet.</li>';
+        <div class="person-areas">${Object.entries(AREAS).map(([a, label]) => `<label>${esc(label)}<select data-area="${a}">${Object.entries(LEVELS).map(([v, l]) => `<option value="${v}"${p.areas[a] === v ? ' selected' : ''}>${esc(l)}</option>`).join('')}</select></label>`).join('')}</div>
+        <label class="person-send"><input type="checkbox" data-send${p.send_email ? ' checked' : ''} /> Can send one-off emails (✉ Write email), from ${esc(p.email)} with their own signature</label>
+        <div class="person-sig">
+          <div class="sig-photo">${p.signature?.photo ? `<img src="${esc(p.signature.photo)}" alt="" />` : '<span>No photo</span>'}<label class="s-btn s-btn--quiet">Choose photo<input type="file" accept="image/*" data-sig-photo hidden /></label></div>
+          <div class="sig-fields"><label>Name in signature<input data-sig="name" value="${esc(p.signature?.name ?? p.name)}" /></label><label>Role<input data-sig="role" value="${esc(p.signature?.role ?? '')}" placeholder="e.g. Studio manager" /></label><label>Phone <small>(optional)</small><input data-sig="phone" value="${esc(p.signature?.phone ?? '')}" /></label></div>
+        </div></li>`).join('') : '<li class="muted">Nobody else yet.</li>';
     };
     fetch('/api/studio/people').then((r) => r.json()).then((d) => {
       if (d.me?.access !== 'owner') { list.innerHTML = '<li class="muted">Only Tony can see and change this list.</li>'; document.querySelector<HTMLElement>('.people-add')!.hidden = true; return; }
       AREAS = d.areas; LEVELS = d.levels;
       people = d.people; drawPeople();
+    });
+    // The email switch, signature fields and photo.
+    const sigOf = (n: number): Sig => ({ name: '', role: '', phone: '', photo: '', ...(people[n].signature ?? {}) });
+    list.addEventListener('change', async (e) => {
+      const t = e.target as HTMLInputElement;
+      const li = t.closest<HTMLElement>('[data-n]');
+      if (!li) return;
+      const n = Number(li.dataset.n);
+      if (t.matches('[data-send]')) { save(people.map((p, i) => (i === n ? { ...p, send_email: t.checked } : p))); return; }
+      if (t.matches('[data-sig]')) { save(people.map((p, i) => (i === n ? { ...p, signature: { ...sigOf(n), [t.dataset.sig!]: t.value } } : p))); return; }
+      if (t.matches('[data-sig-photo]') && t.files?.[0]) {
+        // Square-ish, 288px wide JPEG: plenty for the 72px signature photo on sharp screens.
+        const img = new Image(); img.src = URL.createObjectURL(t.files[0]); await img.decode();
+        const k = 288 / img.naturalWidth; const cv = document.createElement('canvas');
+        cv.width = 288; cv.height = Math.round(img.naturalHeight * k);
+        cv.getContext('2d')!.drawImage(img, 0, 0, cv.width, cv.height);
+        const blob: Blob = await new Promise((r) => cv.toBlob((b) => r(b!), 'image/jpeg', 0.9));
+        const fd = new FormData(); fd.append('file', blob, 'photo.jpg');
+        const r = await fetch('/api/studio/people/photo', { method: 'POST', body: fd });
+        const d = await r.json().catch(() => ({}));
+        if (!r.ok) { tell(d.error || 'The photo didn’t upload.'); return; }
+        save(people.map((p, i) => (i === n ? { ...p, signature: { ...sigOf(n), photo: d.url } } : p)));
+      }
     });
     list.addEventListener('change', (e) => {
       const sel = (e.target as HTMLElement).closest<HTMLSelectElement>('[data-area]');
@@ -1061,6 +1090,13 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
   .settings .person-head { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; }
   .settings .person-areas { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 8px 14px; margin-top: 8px; }
   .settings .person-areas label { display: flex; flex-direction: column; gap: 3px; font-size: 13px; color: #555; }
+  .settings .person-send { display: flex; gap: 8px; align-items: center; margin: 12px 0 6px; font-size: 14px; }
+  .settings .person-sig { display: flex; gap: 16px; flex-wrap: wrap; align-items: flex-start; padding: 10px 0 4px; }
+  .settings .sig-photo { display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
+  .settings .sig-photo img, .settings .sig-photo span { width: 72px; height: 72px; object-fit: cover; border-radius: 18px 0; background: #f3eee6; display: flex; align-items: center; justify-content: center; font-size: 11px; color: #999; }
+  .settings .sig-fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 8px 12px; flex: 1; }
+  .settings .sig-fields label { display: flex; flex-direction: column; gap: 3px; font-size: 13px; color: #555; }
+  .settings .sig-fields input { font: inherit; font-size: 14px; padding: 7px 10px; border: 1px solid #ddd3c4; border-radius: 10px 0; }
   .settings .people-list small { color: #888; }
   .settings .people-add { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
   .settings .people-add input, .settings .people-add select, .settings .people-list select { font: inherit; font-size: 14px; padding: 7px 10px; border: 1px solid #ddd3c4; border-radius: 10px 0; background: var(--white); }

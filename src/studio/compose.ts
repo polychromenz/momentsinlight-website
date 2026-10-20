@@ -32,12 +32,16 @@ export async function openCompose(prefill: { to?: string } = {}) {
   preview();
   const d = await fetch('/api/studio/email').then((r) => r.json()).catch(() => ({}));
   docs.set(d.documents ?? [], []);
+  mySignature = d.signature ?? null;
+  dlg!.querySelector<HTMLElement>('.cmp-from')!.textContent = d.from ? `From: ${d.from}` : '';
+  preview();
   dlg!.querySelector<HTMLElement>('.cmp-gmail')!.hidden = d.gmail !== false;
   dlg!.showModal();
   (f.elements.namedItem(prefill.to ? 'subject' : 'to') as HTMLInputElement).focus();
 }
 
 let rich: ReturnType<typeof attachRich>;
+let mySignature: { name: string; role: string; phone: string; photo: string } | null = null;
 let docs: ReturnType<typeof attachPicker>;
 let preview = () => {};
 
@@ -48,6 +52,7 @@ function build() {
   dlg.setAttribute('aria-label', 'Write an email');
   dlg.innerHTML = `<form method="dialog" autocomplete="off">
     <h2>Write an email</h2>
+    <p class="cmp-note cmp-from"></p>
     <p class="cmp-note cmp-gmail" hidden>Connect Gmail first (on the Clients page), so it can send.</p>
     <label class="cmp-to">To<input name="to" type="email" placeholder="Start typing a client or contact, or an email address" autocomplete="off" /><ul class="cmp-sugg" hidden></ul></label>
     <label>Subject<input name="subject" /></label>
@@ -62,7 +67,7 @@ function build() {
   rich = attachRich(f.elements.namedItem('body') as HTMLTextAreaElement, { minHeight: 360 });
   docs = attachPicker(dlg.querySelector<HTMLElement>('.cmp-attach')!);
   const frame = dlg.querySelector('iframe')!;
-  preview = () => { frame.srcdoc = emailHtml({ subject: field('subject').value, body: field('body').value }); };
+  preview = () => { frame.srcdoc = emailHtml({ subject: field('subject').value, body: field('body').value, signature: mySignature }); };
   f.addEventListener('input', preview);
 
   // Suggestions for the To box: clients and contacts by name or email.
