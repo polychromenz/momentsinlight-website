@@ -353,7 +353,10 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
       `<li><a href="/api/studio/crm/contract?id=${c.id}&pdf=1" target="_blank" rel="noopener"><strong>${esc(c.name)}</strong></a> <small>${cs[c.status] ?? c.status}${c.status === 'signed' ? ` by ${esc(c.signed_name)} · ${dateTime(c.signed_at!)}` : c.sent_at ? ` · sent ${dateTime(c.sent_at)}${c.viewed_at ? ' · opened' : ''}` : ''}</small></li>`).join('')
       : '<li class="empty">No contracts yet. One is sent automatically when they accept a quote.</li>';
     const money = (c: number) => `${(c / 100).toLocaleString('en-NZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-    const day = (x: string) => new Date(`${x.slice(0, 10)}T12:00:00Z`).toLocaleDateString('en-NZ', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' });
+    // A plain date (due dates) as it is; a time (sent, paid) as its NZ day.
+    const day = (x: string) => (x.length > 10
+      ? new Date(x).toLocaleDateString('en-NZ', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Pacific/Auckland' })
+      : new Date(`${x}T12:00:00Z`).toLocaleDateString('en-NZ', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }));
     const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Pacific/Auckland' });
     const signed = d.contracts.filter((c: { status: string }) => c.status === 'signed');
     invoices = d.invoices;
