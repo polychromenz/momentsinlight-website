@@ -33,6 +33,7 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
         <div class="tile"><span class="tile-label">Value booked</span><strong class="t-value"></strong><small class="c-value"></small></div>
       </div>
 
+      <section class="card ads-home" hidden></section>
       <section class="card gi-home"></section>
 
       <div class="charts">
@@ -72,6 +73,22 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
   import { askText, askFields } from '../../studio/dialogs';
   import { drawGalleryInsights } from '../../studio/gallery-insights';
   drawGalleryInsights(document.querySelector<HTMLElement>('.gi-home')!);
+  // Google Ads at a glance (functions-lib/ads-summary.js); hidden for anyone without the Ads area.
+  fetch('/api/studio/crm/ads-summary').then((r) => (r.ok ? r.json() : null)).then((s) => {
+    if (!s) return;
+    const el = document.querySelector<HTMLElement>('.ads-home')!;
+    const m = (c: number) => `${(c / 100).toLocaleString('en-NZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    const each = (cost: number, conv: number) => (conv >= 1 ? `${m(cost / conv)} each` : 'no enquiries yet');
+    const y = s.yesterday, w = s.week, mo = s.month;
+    el.innerHTML = `<div class="card-head"><h2>Google Ads</h2><a class="s-btn s-btn--quiet" href="/studio/seo/ads">Details</a></div>
+      ${s.warnings.map((x: string) => `<p class="ads-warn">${x.replace(/[&<>]/g, '')}</p>`).join('')}
+      <div class="ads-tiles">
+        <div><span>Yesterday</span><strong>${y.has ? y.impr : '–'}</strong><small>impressions · ${y.has ? `${y.clicks} clicks · ${m(y.cost)}` : 'no data'}</small></div>
+        <div><span>A usual day (last 7)</span><strong>${w.days ? Math.round(w.avg.impr) : '–'}</strong><small>impressions · ${m(w.avg.cost)} a day</small></div>
+        <div><span>This month</span><strong>${m(mo.cost)}</strong><small>${Math.round(mo.conv * 10) / 10} enquiries · ${each(mo.cost, mo.conv)}</small></div>
+      </div>`;
+    el.hidden = false;
+  }).catch(() => {});
   const $ = <T extends HTMLElement = HTMLElement>(s: string, root: ParentNode = document) => root.querySelector<T>(s)!;
   const esc = (s: unknown) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
   const money = (c: number) => `$${Math.round(c / 100).toLocaleString('en-NZ')}`;
@@ -280,6 +297,13 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
   .dash-ranges button.on { background: var(--green); border-color: var(--green); color: var(--white); }
   .dash-custom { display: flex; gap: 8px; align-items: center; font-size: 14px; color: #555; }
   .dash-custom input { font: inherit; font-size: 14px; padding: 6px 8px; border: 1px solid #ddd3c4; border-radius: 8px 0; }
+  .dash .ads-home .card-head { display: flex; justify-content: space-between; align-items: center; }
+  .dash .ads-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin-top: 6px; }
+  .dash .ads-tiles div { display: flex; flex-direction: column; gap: 2px; }
+  .dash .ads-tiles span { font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--green); font-weight: 600; }
+  .dash .ads-tiles strong { font-size: 26px; font-weight: 400; font-variant-numeric: tabular-nums; }
+  .dash .ads-tiles small { color: #888; font-size: 12px; }
+  .dash .ads-warn { margin: 0 0 8px; padding: 8px 12px; background: #fbeee9; color: #8c1d18; border-radius: 10px 0; font-size: 14px; }
   .dash .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 14px; margin-bottom: 16px; }
   .dash .tile { display: flex; flex-direction: column; gap: 4px; background: var(--white); border-radius: 24px 0; padding: 18px 22px; color: inherit; text-decoration: none; }
   .dash a.tile:hover { opacity: 1; box-shadow: 0 10px 24px -18px rgb(0 0 0 / 0.5); }

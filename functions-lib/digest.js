@@ -5,6 +5,7 @@
 import { emailTony } from './crm.js';
 import { nzNine, MANUAL_DUE } from './workflows.js';
 import { yesterday, activityLine } from './gallery-insights.js';
+import { adsSummary, adsLines } from './ads-summary.js';
 
 const SITE = 'https://www.momentsinlight.co.nz';
 const HOUR = 3600_000;
@@ -61,8 +62,11 @@ export async function buildDigest(db, today = nzDate()) {
     ...fresh.results.map((j) => `New ${esc(j.job_type.toLowerCase())} enquiry: ${jobLink(j.id, j.title)}${j.event_date ? ` for ${esc(longDay(j.event_date))}` : ''} · ${leadNow(j)}`),
     ...answers.results.map((q) => `${jobLink(q.job_id, q.who)} sent in their ${esc(q.name.toLowerCase())}`),
   ]);
+  // Google Ads yesterday, with warnings (functions-lib/ads-summary.js). Not a reason to email on its own.
+  const ads = await adsSummary(db, today).catch(() => null);
   add('Galleries yesterday', galleries.map((r) => `<a href="${SITE}/studio/gallery?id=${r.gallery_id}&tab=activity" style="color:#2b2d1f">${esc(r.name)}</a>: ${esc(activityLine(r))}`));
-  const count = sections.reduce((a, s) => a + s.items.length, 0);
+  const count = sections.reduce((a, s) => a + s.items.length, 0) + (ads?.warnings.length ?? 0);
+  if (ads) add('Google Ads', adsLines(ads));
   // Going out by themselves today: worth knowing, but not a reason to email on its own.
   add('Going out by itself today', [
     ...autos.results.map((s) => `${esc(s.title)} to ${jobLink(s.job_id, s.who)}`),
