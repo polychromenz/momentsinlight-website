@@ -212,8 +212,8 @@ const inFolder = (item: (typeof nav)[number]) => item.children?.some((c) => isCu
     .top:hover::before, .has-sub:hover > .top::before, .top[aria-expanded='true']::before { transform: scaleX(1); }
     .top:hover { opacity: 1; color: var(--green); }
 
-    /* Hearts rise from a menu's name as its dropdown opens, like the buttons' hearts. */
-    .has-sub > .top::after {
+    /* Hearts rise from a menu name on hover (or as its dropdown opens), like the buttons' hearts. */
+    .top::after {
       content: '';
       position: absolute;
       left: calc(50% - 7px);
@@ -227,7 +227,7 @@ const inFolder = (item: (typeof nav)[number]) => item.children?.some((c) => isCu
       pointer-events: none;
     }
     @media (hover: hover) {
-      .has-sub:hover > .top::after { animation: heart-float 1.4s var(--ease) forwards; }
+      .top:hover::after, .has-sub:hover > .top::after { animation: heart-float 1.4s var(--ease) forwards; }
     }
     .top[aria-expanded='true']::after { animation: heart-float 1.4s var(--ease) forwards; }
 
@@ -304,6 +304,6 @@ const inFolder = (item: (typeof nav)[number]) => item.children?.some((c) => isCu
   @media (min-width: 1000px) and (prefers-reduced-motion: reduce) {
     .sub, .sub li, .sub a, .sub a::before, .top::before { transition: none; }
     .sub li { transition-delay: 0s !important; }
-    .has-sub:hover > .top::after, .top[aria-expanded='true']::after { animation: none; }
+    .top:hover::after, .has-sub:hover > .top::after, .top[aria-expanded='true']::after { animation: none; }
   }
 </style>
