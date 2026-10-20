@@ -160,7 +160,7 @@ export async function queueNew(env) {
   const nzMidnight = (() => { const g = new Date(`${s.start}T00:00:00Z`); const nz = new Date(g.toLocaleString('en-US', { timeZone: 'Pacific/Auckland' })); const utc = new Date(g.toLocaleString('en-US', { timeZone: 'UTC' })); return new Date(g.valueOf() - (nz - utc)).toISOString(); })();
   const now = new Date().toISOString();
   const add = (kind, ref, summary) => db.prepare(`INSERT OR IGNORE INTO xero_queue (kind, ref, summary, created_at) VALUES (?1, ?2, ?3, ?4)`).bind(kind, String(ref), summary, now);
-  const base = `FROM invoices i JOIN jobs j ON j.id = i.job_id JOIN clients c ON c.id = j.client_id WHERE COALESCE(j.hold, 0) = 0 AND COALESCE(i.sent_at, i.paid_at, i.created_at) >= ?1`; // (an invoice paid before it was emailed has no sent_at)
+  const base = `FROM invoices i JOIN jobs j ON j.id = i.job_id JOIN clients c ON c.id = j.client_id WHERE COALESCE(j.hold, 0) = 0 AND c.test = 0 AND COALESCE(i.sent_at, i.paid_at, i.created_at) >= ?1`; // (an invoice paid before it was emailed has no sent_at)
   const name = (r) => `${r.first_name} ${r.last_name}`.trim();
   // Real card payments only, except while testing with Xero's Demo Company.
   const live = (await isDemo(db)) ? '1 = 1' : 'i.stripe_live = 1';
@@ -177,8 +177,11 @@ export async function queueNew(env) {
     ...fee.map((r) => add('fee', r.id, `Stripe fee ${money(r.stripe_fee)} on ${r.number}`)),
     ...out.map((p) => add('payout', p.id, `Stripe payout ${money(p.amount)} to the bank on ${p.arrival_date} (${p.payments} payment${p.payments === 1 ? '' : 's'}, ${money(p.fees)} fees${p.other ? `, ${money(p.other)} other` : ''})${p.unmatched ? `: ${p.unmatched} payment${p.unmatched === 1 ? '' : 's'} not from a studio invoice` : ''}`)),
   ];
+  // Ticked as a test client after they were queued: take them off the list.
+  stmts.push(db.prepare(`DELETE FROM xero_queue WHERE status <> 'done' AND kind IN ('invoice', 'payment', 'fee', 'paid_in_xero')
+    AND CAST(ref AS INTEGER) IN (SELECT i.id FROM invoices i JOIN jobs j ON j.id = i.job_id JOIN clients c ON c.id = j.client_id WHERE c.test = 1)`));
   for (let n = 0; n < stmts.length; n += 50) await db.batch(stmts.slice(n, n + 50));
-  return stmts.length;
+  return stmts.length - 1;
 }
 
 /** Invoices Tony reconciled in Xero (bank transfers): queue "mark paid in the studio". Hourly. */
@@ -225,8 +228,9 @@ async function doItem(env, q, s) {
     await db.prepare('UPDATE stripe_payouts SET xero_transfer_id = ?2 WHERE id = ?1').bind(p.id, id).run();
     return id;
   }
-  const inv = await db.prepare(`SELECT i.*, j.title job_title, c.first_name, c.last_name, c.email, c.address FROM invoices i JOIN jobs j ON j.id = i.job_id JOIN clients c ON c.id = j.client_id WHERE i.id = ?1`).bind(Number(q.ref)).first();
+  const inv = await db.prepare(`SELECT i.*, j.title job_title, c.first_name, c.last_name, c.email, c.address, c.test FROM invoices i JOIN jobs j ON j.id = i.job_id JOIN clients c ON c.id = j.client_id WHERE i.id = ?1`).bind(Number(q.ref)).first();
   if (!inv) throw new Error('That invoice isn’t in the studio any more.');
+  if (inv.test) throw new Error('A test client: never sent to Xero.');
   if (q.kind === 'invoice') {
     if (inv.xero_invoice_id) return inv.xero_invoice_id;
     // Already in Xero (made by hand, or an earlier try that timed out)? Link to it rather than make a second.

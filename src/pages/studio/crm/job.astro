@@ -105,6 +105,7 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
           <label class="tick"><input type="checkbox" name="ads_ok" value="1" /> Their photos can be used in ads and marketing <small>(untick if their contract says no)</small></label>
           <label class="tick autopay-tick" hidden><input type="checkbox" name="autopay" value="1" /> <span class="autopay-text">Pay their instalments automatically</span></label>
           <label class="tick"><input type="checkbox" name="keep" value="1" /> Keep their details <small>(old enquiries that never book are deleted after two years, as your privacy page says; tick to keep this one)</small></label>
+          <label class="tick"><input type="checkbox" name="test" value="1" /> Test client <small>(one of your own tests: their invoices and payments are never sent to Xero)</small></label>
           <p class="export"><a data-export href="#" download>Download everything held about them</a> <small>(a ZIP, for a privacy request)</small></p>
           <p class="export"><button type="button" class="link-danger" data-delete-job>Delete permanently</button> <small>(e.g. a test lead: gone completely, so it isn’t counted as a lost lead)</small></p>
           <div class="two">
@@ -428,6 +429,7 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
     for (const el of Array.from(form.elements) as HTMLInputElement[]) if (el.name && el.type !== 'checkbox') el.value = j[el.name] ?? '';
     (form.elements.namedItem('ads_ok') as HTMLInputElement).checked = j.ads_ok !== 0;
     (form.elements.namedItem('keep') as HTMLInputElement).checked = j.keep === 1;
+    (form.elements.namedItem('test') as HTMLInputElement).checked = j.test === 1;
     // Automatic payments (functions-lib/autopay.js): shown once they've saved a card.
     $('.autopay-tick').hidden = !j.stripe_payment_method;
     (form.elements.namedItem('autopay') as HTMLInputElement).checked = j.autopay === 1;
@@ -526,7 +528,7 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
   }
 
   async function save(extra: Record<string, unknown> = {}) {
-    const body: Record<string, unknown> = { id, stage, ...Object.fromEntries(new FormData(form)), ads_ok: (form.elements.namedItem('ads_ok') as HTMLInputElement).checked, keep: (form.elements.namedItem('keep') as HTMLInputElement).checked, ...($('.autopay-tick').hidden ? {} : { autopay: (form.elements.namedItem('autopay') as HTMLInputElement).checked }), ...extra };
+    const body: Record<string, unknown> = { id, stage, ...Object.fromEntries(new FormData(form)), ads_ok: (form.elements.namedItem('ads_ok') as HTMLInputElement).checked, keep: (form.elements.namedItem('keep') as HTMLInputElement).checked, test: (form.elements.namedItem('test') as HTMLInputElement).checked, ...($('.autopay-tick').hidden ? {} : { autopay: (form.elements.namedItem('autopay') as HTMLInputElement).checked }), ...extra };
     saveBtn.disabled = true;
     $('.save-state').textContent = 'Saving…';
     const r = await fetch('/api/studio/crm/job', { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });

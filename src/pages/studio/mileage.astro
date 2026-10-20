@@ -38,6 +38,7 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
       <div class="tbl-wrap"><table class="mi-tbl">
         <thead><tr><th>Date</th><th>Trip</th><th class="r">Km (return)</th><th class="r">Claim</th><th></th></tr></thead>
         <tbody><tr><td colspan="5" class="muted">Loading…</td></tr></tbody>
+        <tfoot class="mi-sum"></tfoot>
       </table></div>
       <h2>Add a trip</h2>
       <form class="mi-add" autocomplete="off">
@@ -132,6 +133,8 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
     $<HTMLAnchorElement>('[data-dl=journal]').href = `/api/studio/mileage?${q}&export=journal`;
     $<HTMLAnchorElement>('[data-dl=log]').href = `/api/studio/mileage?${q}&export=log`;
     $('[data-dl=journal]').classList.toggle('off', !s.debit || !s.credit);
+    // The claim total under the Claim column (skipped trips left out).
+    $('.mi-sum').innerHTML = totals.trips ? `<tr><th></th><th>Total claim (${totals.trips} trip${totals.trips === 1 ? '' : 's'})</th><th class="r">${totals.km.toLocaleString('en-NZ')} km</th><th class="r">${money(totals.amount)}</th><th></th></tr>` : '';
     $('.mi-tbl tbody').innerHTML = trips.length ? trips.map((t: any) => `<tr data-id="${t.id}" class="${t.skip ? 'skip' : ''}">
       <td>${day(t.date)}</td>
       <td><strong>${esc(t.purpose)}</strong><br><span class="muted">${esc(t.destination)}</span>${t.guessed ? '<br><span class="warn">Place guessed from the venue: if it was somewhere else, add the place to the appointment on their client page.</span>' : ''}${t.error ? `<br><span class="warn">${esc(t.error)}</span>` : ''}${t.note ? `<br><em class="muted">${esc(t.note)}</em>` : ''}</td>
@@ -305,4 +308,7 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
   .mi-tbl .acts { white-space: nowrap; text-align: right; }
   .mi-tbl .acts .s-btn { padding: 4px 8px; font-size: 13px; }
   .mi-tbl tr.skip td { opacity: 0.5; }
+  .mi-tbl .mi-sum th { font-size: 15px; letter-spacing: 0; text-transform: none; color: var(--ink); border-top: 2px solid #ddd3c4; border-bottom: 0; padding-top: 12px; }
+  .mi-tbl .mi-sum th.r { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .mi-tbl .mi-sum th:nth-child(4) { color: var(--green); font-weight: 700; }
 </style>
