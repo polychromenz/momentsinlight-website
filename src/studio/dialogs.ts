@@ -5,7 +5,7 @@
 //   await askText('Section name:', 'Ceremony')                   -> the text, or null if cancelled
 // guardLeaving(() => dirty): a styled "unsaved changes" box when a link inside the site is clicked
 // (the browser's own box still covers closing the tab or reloading; websites can't restyle that one).
-type AskOpts = { ok?: string; cancel?: string; danger?: boolean; title?: string };
+type AskOpts = { ok?: string; cancel?: string; danger?: boolean; title?: string; type?: 'text' | 'date' };
 
 const css = `.mdlg{border:0;padding:0;border-radius:24px 0;max-width:min(460px,calc(100vw - 32px));width:100%;box-shadow:0 30px 70px -30px rgb(0 0 0/.55);background:var(--white,#fff);color:var(--ink,#2b2a24)}
 .mdlg::backdrop{background:rgb(30 30 20/.45)}
@@ -14,6 +14,7 @@ const css = `.mdlg{border:0;padding:0;border-radius:24px 0;max-width:min(460px,c
 .mdlg p{margin:0;font-size:15px;line-height:1.6;white-space:pre-line;color:#444}
 .mdlg input{font:inherit;font-size:15px;padding:9px 12px;border:1px solid #ddd3c4;border-radius:12px 0;background:var(--white,#fff);color:inherit;width:100%;box-sizing:border-box}
 .mdlg input:focus{outline:2px solid var(--green,#5a5e3b);outline-offset:1px}
+.mdlg .mdlg-field{display:flex;flex-direction:column;gap:5px;font-size:13px;color:#666}
 .mdlg .mdlg-acts{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;margin-top:4px}
 .mdlg button{font:inherit;font-size:14px;padding:9px 18px;border-radius:12px 0;border:1px solid var(--green,#5a5e3b);background:var(--white,#fff);color:var(--green,#5a5e3b);cursor:pointer;transition:border-radius .35s,background .2s}
 .mdlg button:hover{border-radius:0 12px}
@@ -24,18 +25,18 @@ const css = `.mdlg{border:0;padding:0;border-radius:24px 0;max-width:min(460px,c
 
 const esc = (s: unknown) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
 
-function open(html: string, focus: string): Promise<{ ok: boolean; value: string }> {
+function open(html: string, focus: string): Promise<{ ok: boolean; value: string; values: Record<string, string> }> {
   if (!document.getElementById('mdlg-css')) { const s = document.createElement('style'); s.id = 'mdlg-css'; s.textContent = css; document.head.append(s); }
   const d = document.createElement('dialog');
   d.className = 'mdlg';
   d.innerHTML = `<form method="dialog">${html}</form>`;
   document.body.append(d);
   return new Promise((done) => {
-    let result = { ok: false, value: '' };
+    let result = { ok: false, value: '', values: {} as Record<string, string> };
     d.querySelector('form')!.addEventListener('submit', (e) => {
       e.preventDefault();
       const ok = (e as SubmitEvent).submitter?.classList.contains('mdlg-ok') ?? true;
-      result = { ok, value: d.querySelector('input')?.value ?? '' };
+      result = { ok, value: d.querySelector('input')?.value ?? '', values: Object.fromEntries([...d.querySelectorAll('input')].map((i) => [i.name, i.value])) };
       d.close();
     });
     d.addEventListener('close', () => { d.remove(); done(result); });
@@ -59,9 +60,17 @@ export async function tell(message: string, title = ''): Promise<void> {
 
 /** A line of text (null if cancelled). */
 export async function askText(message: string, value = '', o: AskOpts = {}): Promise<string | null> {
-  const r = await open(`${o.title ? `<h2>${esc(o.title)}</h2>` : ''}<p>${esc(message)}</p><input value="${esc(value)}" />
+  const r = await open(`${o.title ? `<h2>${esc(o.title)}</h2>` : ''}<p>${esc(message)}</p><input type="${o.type ?? 'text'}" value="${esc(value)}" />
     <div class="mdlg-acts"><button type="submit" class="mdlg-cancel">${esc(o.cancel ?? 'Cancel')}</button><button type="submit" class="mdlg-ok">${esc(o.ok ?? 'OK')}</button></div>`, 'input');
   return r.ok ? r.value : null;
+}
+
+/** A few labelled fields in one pop-up (null if cancelled). */
+export async function askFields(message: string, fields: { name: string; label: string; type?: string; value?: string; placeholder?: string }[], o: AskOpts = {}): Promise<Record<string, string> | null> {
+  const r = await open(`${o.title ? `<h2>${esc(o.title)}</h2>` : ''}${message ? `<p>${esc(message)}</p>` : ''}
+    ${fields.map((f) => `<label class="mdlg-field"><span>${esc(f.label)}</span><input name="${esc(f.name)}" type="${esc(f.type ?? 'text')}" value="${esc(f.value ?? '')}" placeholder="${esc(f.placeholder ?? '')}" /></label>`).join('')}
+    <div class="mdlg-acts"><button type="submit" class="mdlg-cancel">${esc(o.cancel ?? 'Cancel')}</button><button type="submit" class="mdlg-ok">${esc(o.ok ?? 'OK')}</button></div>`, 'input');
+  return r.ok ? r.values : null;
 }
 
 /** "Unsaved changes" when a link inside the site is clicked, and the browser's box for closing the tab. */

@@ -69,7 +69,7 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
 </StudioLayout>
 
 <script>
-  import { askText } from '../../studio/dialogs';
+  import { askText, askFields } from '../../studio/dialogs';
   import { drawGalleryInsights } from '../../studio/gallery-insights';
   drawGalleryInsights(document.querySelector<HTMLElement>('.gi-home')!);
   const $ = <T extends HTMLElement = HTMLElement>(s: string, root: ParentNode = document) => root.querySelector<T>(s)!;
@@ -204,7 +204,7 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
         // Your own tasks (not about a client), soonest first; then the clients' to-dos and emails.
         ...(d.own || []).map((t: any) => {
           const late = t.due_date && t.due_date < d.today;
-          return `<li class="${late ? 'late' : ''}"><span class="when">${t.due_date ? (late ? `Due ${ago(`${t.due_date}T12:00:00`)}` : ago(`${t.due_date}T12:00:00`)) : 'Any time'}</span><span class="what">${t.contact_id ? `<a href="/studio/contacts/contact?id=${t.contact_id}">${esc(t.title)}</a>` : `<strong class="own">${esc(t.title)}</strong>`}<small>${t.business ? esc(t.business) : 'Your task'}</small></span><button type="button" class="tick" data-done-task="${t.id}" title="Done" aria-label="Mark done">✓</button></li>`;
+          return `<li class="${late ? 'late' : ''}"><button type="button" class="when when-btn" data-due-task="${t.id}" data-due="${t.due_date ?? ''}" title="Change the due date">${t.due_date ? (late ? `Due ${ago(`${t.due_date}T12:00:00`)}` : ago(`${t.due_date}T12:00:00`)) : 'Any time'}</button><span class="what">${t.contact_id ? `<a href="/studio/contacts/contact?id=${t.contact_id}">${esc(t.title)}</a>` : `<strong class="own">${esc(t.title)}</strong>`}<small>${t.business ? esc(t.business) : 'Your task'}</small></span><button type="button" class="tick" data-done-task="${t.id}" title="Done" aria-label="Mark done">✓</button></li>`;
         }),
         ...d.tasks.map((s: any) => {
           const overdue = s.due_at < d.now;
@@ -233,15 +233,26 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
     }
     const pb = t.closest<HTMLButtonElement>('[data-page]');
     if (pb) { const name = pb.closest<HTMLElement>('[data-list]')!.dataset.list!; pages[name] += Number(pb.dataset.page); renderList(name); }
+    const du = t.closest<HTMLButtonElement>('[data-due-task]');
+    if (du) {
+      const due = await askText('When is it due? (clear the date for “any time”)', du.dataset.due || new Date().toLocaleDateString('en-CA'), { type: 'date', ok: 'Save' });
+      if (due === null) return;
+      await fetch('/api/studio/crm/tasks', { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ id: Number(du.dataset.dueTask), due_date: due.trim() || null }) });
+      return load();
+    }
     const dt = t.closest<HTMLButtonElement>('[data-done-task]');
     if (dt) {
       dt.disabled = true;
       fetch('/api/studio/crm/tasks', { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ id: Number(dt.dataset.doneTask), action: 'done' }) }).then(() => load());
     }
     if (t.closest('[data-add-task]')) {
-      const title = await askText('What’s the task? (e.g. Write a blog post about Kumeu Valley)');
+      const f = await askFields('', [
+        { name: 'title', label: 'What’s the task?', placeholder: 'e.g. Write a blog post about Kumeu Valley' },
+        { name: 'due', label: 'Due date (clear it for “any time”)', type: 'date', value: new Date(Date.now() + 7 * 86400_000).toLocaleDateString('en-CA') },
+      ], { title: 'Add a task', ok: 'Add task' });
+      const title = f?.title.trim();
       if (!title) return;
-      const due = await askText('Due date (YYYY-MM-DD), or leave empty:', new Date(Date.now() + 7 * 86400_000).toLocaleDateString('en-CA')) ?? '';
+      const due = f!.due;
       fetch('/api/studio/crm/tasks', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ title, due_date: due.trim() }) }).then(() => load());
     }
   });
@@ -304,6 +315,8 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
   .dash [data-list] li { display: flex; gap: 14px; padding: 10px 0; border-bottom: 1px solid #f1ebe1; font-size: 14px; }
   .dash [data-list] li:last-child { border-bottom: 0; }
   .dash [data-list] .when { flex: 0 0 104px; color: #777; font-size: 13px; padding-top: 1px; }
+  .dash [data-list] .when-btn { font: inherit; font-size: 13px; text-align: left; background: none; border: 0; padding: 1px 0 0; cursor: pointer; text-decoration: underline dotted; text-underline-offset: 3px; }
+  .dash [data-list] .late .when-btn { color: inherit; }
   .dash [data-list] .what { flex: 1; min-width: 0; }
   .dash [data-list] .what a { color: var(--ink); font-weight: 500; }
   .dash [data-list] .what small { display: block; color: #777; font-size: 13px; margin-top: 2px; }
