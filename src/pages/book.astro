@@ -53,6 +53,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 </BaseLayout>
 
 <script>
+  import '../studio/date-picker'; // the site-styled calendar for the wedding date
   type Type = { key: string; name: string; minutes: number; price: number; where: string; description: string; wedding: boolean };
   const $ = <T extends HTMLElement = HTMLElement>(s: string) => document.querySelector<T>(s)!;
   const esc = (s: unknown) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
