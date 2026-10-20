@@ -268,6 +268,8 @@ document.addEventListener('click', async (e) => {
       toast(auto(p.platform) ? 'Approved: it goes out on its own at its time.' : 'Approved.');
     }
     if (a === 'post_now') {
+      // Approved before Facebook/Instagram was connected: make its photo files first.
+      if (!open.media || open.media === '[]') { act.textContent = 'Making the photos…'; await upload(open); }
       act.textContent = 'Posting…';
       try { replace((await api({ action: 'post_now', id: open.id })).post); toast(`Posted to ${platforms[open.platform].name}.`); }
       catch (err) { await load(); const p = posts.find((x) => x.id === open!.id); if (p) openPost(p); throw err; }
