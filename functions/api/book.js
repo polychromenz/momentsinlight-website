@@ -1,7 +1,8 @@
 // Online booking for the public page src/pages/book.astro (functions-lib/booking.js).
 //   GET  /api/book                    -> { on, types }   the kinds of booking that are on
+//   GET  /api/book?c=<portal token>   -> also { me }   their details, from the personal link in the studio's emails
 //   GET  /api/book?type=wedding-chat  -> { type, days: { 'YYYY-MM-DD': ['HH:MM', …] } }   free times
-//   POST /api/book { type, date, time, first, last, email, phone, partner, event_date, message, website, ms }
+//   POST /api/book { type, date, time, first, last, email, phone, partner, event_date, message, website, ms, c? }
 //        -> { ok, when } booked; or { pay_url } for a paid session (held 30 minutes while they pay)
 // Spam: the hidden "website" field and functions-lib/spam.js, as on the enquiry form.
 import { bookingSettings, freeSlots, makeBooking, whenText } from '../../functions-lib/booking.js';
@@ -12,11 +13,20 @@ import { loadJob } from '../../functions-lib/crm-send.js';
 const reply = (data, status = 200) => new Response(JSON.stringify(data), { status, headers: { 'content-type': 'application/json', 'cache-control': 'no-store' } });
 const pub = (t) => ({ key: t.key, name: t.name, minutes: t.minutes, price: t.price, where: t.where, description: t.description, wedding: /wedding/i.test(t.job_type) });
 
+/** The client a personal booking link (?c=, their portal token) belongs to. */
+const known = (db, c) => (c && /^[\w-]{16,}$/.test(c) ? db.prepare(`SELECT j.id job_id, j.partner_name, j.event_date, cl.first_name, cl.last_name, cl.email, cl.phone
+    FROM jobs j JOIN clients cl ON cl.id = j.client_id WHERE j.portal_token = ?1 AND j.stage IN ('lead', 'booked')`).bind(c).first() : null);
+
 export async function onRequestGet({ request, env }) {
   const s = await bookingSettings(env.DB);
   const types = s.on ? s.types.filter((t) => t.on) : [];
-  const key = new URL(request.url).searchParams.get('type');
-  if (!key) return reply({ on: !!types.length, types: types.map(pub) });
+  const q = new URL(request.url).searchParams;
+  const key = q.get('type');
+  if (!key) {
+    const k = await known(env.DB, q.get('c'));
+    const me = k && { first: k.first_name, last: k.last_name, email: k.email, phone: k.phone ?? '', partner: k.partner_name ?? '', event_date: k.event_date ?? '' };
+    return reply({ on: !!types.length, types: types.map(pub), ...(me ? { me } : {}) });
+  }
   const type = types.find((t) => t.key === key);
   if (!type) return reply({ error: 'That kind of booking isn’t available.' }, 404);
   return reply({ type: pub(type), days: await freeSlots(env, type, s) });
@@ -38,7 +48,10 @@ export async function onRequestPost(context) {
   };
   if (!f.first || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f.email)) return reply({ error: 'Please add your name and email.' }, 400);
   if (!f.date || !f.time) return reply({ error: 'Please choose a time.' }, 400);
-  const spam = await spamCheck(env, f, Number.isFinite(Number(d.ms)) ? Number(d.ms) : null).catch(() => ({ spam: false }));
+  // From their personal link: book onto their own client page.
+  const k = await known(env.DB, String(d.c ?? ''));
+  if (k) f.job_id = k.job_id;
+  const spam = k ? { spam: false } : await spamCheck(env, f, Number.isFinite(Number(d.ms)) ? Number(d.ms) : null).catch(() => ({ spam: false }));
   if (spam.spam) { console.log('book: spam', spam.reason); return reply({ ok: true, when: whenText(f.date, f.time) }); }
   if (type.price > 0 && !stripeReady(env).ok) return reply({ error: 'Online payment isn’t available just now, so this can’t be booked online. Please get in touch instead.' }, 503);
   try {

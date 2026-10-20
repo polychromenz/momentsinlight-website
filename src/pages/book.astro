@@ -67,12 +67,18 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   let day = '', time = '';
   const show = (name: string) => { document.querySelectorAll<HTMLElement>('.bk-step').forEach((s) => (s.hidden = !s.classList.contains(`bk-${name}`))); };
 
+  // A personal link from the studio's emails (?c=…): their details are filled in for them.
+  const known = new URLSearchParams(location.search).get('c') || '';
   async function start() {
-    const r = await fetch('/api/book');
+    const r = await fetch(`/api/book${known ? `?c=${encodeURIComponent(known)}` : ''}`);
     const d = await r.json().catch(() => null);
     if (!r.ok || !d?.on) { $('.bk-status').innerHTML = 'Online booking isn’t open just now. Please <a href="/contact">get in touch</a> and I’ll find a time.'; return; }
     types = d.types;
     $('.bk-status').hidden = true;
+    if (d.me) {
+      const form = $<HTMLFormElement>('.bk-form');
+      for (const [k, v] of Object.entries(d.me as Record<string, string>)) { const el = form.elements.namedItem(k) as HTMLInputElement | null; if (el && v) el.value = v; }
+    }
     const want = new URLSearchParams(location.search).get('type');
     if (types.length === 1 || types.some((t) => t.key === want)) return choose(types.find((t) => t.key === want) ?? types[0]);
     $('.bk-types').innerHTML = `<h2>What would you like to book?</h2><div class="bk-cards">${types.map((t) => `<button type="button" class="bk-card" data-type="${esc(t.key)}"><strong>${esc(t.name)}</strong><span>${t.minutes} minutes · ${price(t.price)}</span>${t.description ? `<small>${esc(t.description)}</small>` : ''}</button>`).join('')}</div>`;
@@ -124,7 +130,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     const btn = f.querySelector<HTMLButtonElement>('button[type=submit]')!;
     const label = btn.textContent;
     btn.disabled = true; btn.textContent = 'Booking…'; msg.hidden = true;
-    const r = await fetch('/api/book', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ ...Object.fromEntries(new FormData(f)), type: type!.key, date: day, time, ms: Date.now() - opened }) });
+    const r = await fetch('/api/book', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ ...Object.fromEntries(new FormData(f)), type: type!.key, date: day, time, ms: Date.now() - opened, c: known }) });
     const d = await r.json().catch(() => ({}));
     if (!r.ok) {
       msg.textContent = d.error || 'Something went wrong. Please try again.'; msg.hidden = false; btn.disabled = false; btn.textContent = label;

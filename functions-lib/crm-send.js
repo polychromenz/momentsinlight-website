@@ -23,7 +23,10 @@ export const loadJob = (db, jobId) => db.prepare(
 /** Links for a job's emails: {{portal_link}} is their client portal. For a step that sends a
  *  questionnaire, {{questionnaire_link}} (made now if they don't have that one yet). */
 export async function jobLinks(db, job, step = null, env = null) {
-  const out = { ...(await studioLinks(db)), portal_link: portalLink(await portalToken(db, job.id)) };
+  const t = await portalToken(db, job.id);
+  const out = { ...(await studioLinks(db)), portal_link: portalLink(t) };
+  // The studio's own booking page knows them from this (their details filled in, booked onto their page).
+  if (/^https:\/\/www\.momentsinlight\.co\.nz\/book\/?(\?|$)/.test(out.booking_link || '')) out.booking_link = `${out.booking_link.replace(/\/$/, '')}${out.booking_link.includes('?') ? '&' : '?'}c=${t}`;
   const want = ruleOf(step).questionnaire;
   const any = await db.prepare(`SELECT * FROM questionnaires WHERE job_id = ?1 ${want ? 'AND template_key = ?2' : ''} ORDER BY id DESC LIMIT 1`).bind(...(want ? [job.id, want] : [job.id])).first();
   if (any) out.questionnaire_link = questionnaireLink(any);

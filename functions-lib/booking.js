@@ -127,11 +127,14 @@ export async function makeBooking(context, type, s, f) {
   const free = await freeSlots(env, type, s, f.date);
   if (!free[f.date]?.includes(f.time)) throw Object.assign(new Error('Sorry, that time has just gone. Please choose another.'), { status: 409 });
   const now = new Date().toISOString();
-  const client = await db.prepare(`INSERT INTO clients (first_name, last_name, email, phone, created_at, updated_at) VALUES (?1, ?2, ?3, ?4, ?5, ?5)
+  // From their personal link (f.job_id): their own client page, with a new phone number kept if they gave one.
+  const mine = f.job_id ? await db.prepare('SELECT id, client_id FROM jobs WHERE id = ?1').bind(f.job_id).first() : null;
+  if (mine && f.phone) await db.prepare(`UPDATE clients SET phone = ?2, updated_at = ?3 WHERE id = ?1 AND COALESCE(phone, '') = ''`).bind(mine.client_id, f.phone, now).run();
+  const client = mine ? { id: mine.client_id } : await db.prepare(`INSERT INTO clients (first_name, last_name, email, phone, created_at, updated_at) VALUES (?1, ?2, ?3, ?4, ?5, ?5)
       ON CONFLICT (lower(email)) DO UPDATE SET phone = CASE WHEN excluded.phone <> '' THEN excluded.phone ELSE clients.phone END, updated_at = excluded.updated_at RETURNING id`)
     .bind(f.first, f.last, f.email, f.phone, now).first();
   // Their open job if they have one (a lead or a booking), otherwise a new lead for this kind of booking.
-  let job = await db.prepare(`SELECT id FROM jobs WHERE client_id = ?1 AND stage IN ('lead', 'booked') ORDER BY id DESC LIMIT 1`).bind(client.id).first();
+  let job = mine ? { id: mine.id } : await db.prepare(`SELECT id FROM jobs WHERE client_id = ?1 AND stage IN ('lead', 'booked') ORDER BY id DESC LIMIT 1`).bind(client.id).first();
   if (!job) {
     const wf = await db.prepare(`SELECT workflow FROM lists WHERE kind = 'job_type' AND value = ?1`).bind(type.job_type).first().catch(() => null);
     job = await db.prepare(`INSERT INTO jobs (client_id, title, job_type, event_date, partner_name, lead_source, message, workflow, created_at, updated_at) VALUES (?1, ?2, ?3, ?4, ?5, 'Online booking', ?6, ?7, ?8, ?8) RETURNING id`)
