@@ -1,7 +1,7 @@
 {
   "items": [
     {
-      "label": "Weddings",
+      "label": "Wedding Pricing",
       "href": "/weddings"
     },
     {
@@ -23,7 +23,7 @@
       ]
     },
     {
-      "label": "Portraits",
+      "label": "Portraits and More",
       "href": "/portraits-1",
       "children": [
         {
