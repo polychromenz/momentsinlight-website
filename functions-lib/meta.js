@@ -21,7 +21,10 @@ export const SCOPES = ['pages_show_list', 'pages_read_engagement', 'pages_manage
 export const MEDIA_ORIGIN = 'https://photos.momentsinlight.co.nz';
 
 export const metaReady = (env) => !!(env.META_APP_ID && env.META_APP_SECRET);
-export const loginUrl = (env, state) => `https://www.facebook.com/${V}/dialog/oauth?${new URLSearchParams({ client_id: env.META_APP_ID, redirect_uri: REDIRECT, state, scope: SCOPES.join(','), response_type: 'code' })}`;
+// Business apps using "Facebook Login for Business" choose their permissions in a configuration
+// (META_CONFIG_ID); otherwise the permissions are asked for here.
+export const loginUrl = (env, state) => `https://www.facebook.com/${V}/dialog/oauth?${new URLSearchParams({ client_id: env.META_APP_ID, redirect_uri: REDIRECT, state, response_type: 'code',
+  ...(env.META_CONFIG_ID ? { config_id: env.META_CONFIG_ID, override_default_response_type: 'true' } : { scope: SCOPES.join(',') }) })}`;
 
 // ---- Tokens, kept encrypted (key from META_APP_SECRET) ----
 const enc = new TextEncoder();
