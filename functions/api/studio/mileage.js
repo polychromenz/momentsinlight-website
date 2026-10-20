@@ -2,6 +2,7 @@
 //   GET  /api/studio/mileage?from=YYYY-MM-DD&to=YYYY-MM-DD        -> { trips, settings, totals, maps, vehicles }
 //   GET  /api/studio/mileage?from=…&to=…&export=journal|log       a CSV: Xero manual journal, or the trip log
 //   GET  /api/studio/mileage?from=…&to=…&preview=journal          the journal's lines, to check before downloading
+//   POST /api/studio/mileage { action: 'xero', from, to, again? }  the journal to Xero as a draft (once per period unless again)
 //   POST /api/studio/mileage { action: 'settings', base, vehicle, debit, credit, tax, tier1_km }
 //   POST /api/studio/mileage { action: 'add', date, purpose, destination, km? }
 //   POST /api/studio/mileage { action: 'edit', id, km?, skip?, note?, purpose?, destination?, date? }
@@ -9,7 +10,8 @@
 //   POST /api/studio/mileage { action: 'delete', id }      only trips added by hand
 import { json } from '../../../functions-lib/studio.js';
 import { mapsReady } from '../../../functions-lib/places.js';
-import { syncTrips, fillDistances, pricedTrips, mileageSettings, saveSettings, journal, journalCsv, logCsv, VEHICLES } from '../../../functions-lib/mileage.js';
+import { xero, xeroConnection } from '../../../functions-lib/xero.js';
+import { syncTrips, fillDistances, pricedTrips, mileageSettings, saveSettings, journal, journalCsv, logCsv, VEHICLES, sentJournals, overlapping, sendJournal } from '../../../functions-lib/mileage.js';
 
 const isDate = (s) => /^\d{4}-\d{2}-\d{2}$/.test(s ?? '');
 
@@ -18,7 +20,11 @@ export async function onRequestGet({ request, env }) {
   const from = q.get('from'), to = q.get('to');
   if (!isDate(from) || !isDate(to) || from > to) return json({ error: 'Which dates?' }, 400);
   const s = await mileageSettings(env.DB);
-  if (q.get('preview') === 'journal') return json(journal(await pricedTrips(env.DB, from, to, s), s, from, to));
+  if (q.get('preview') === 'journal') {
+    const conn = await xeroConnection(env.DB);
+    return json({ ...journal(await pricedTrips(env.DB, from, to, s), s, from, to),
+      xero: conn?.refresh ? conn.tenant_name : null, sent: overlapping(await sentJournals(env.DB), from, to) });
+  }
   const kind = q.get('export');
   if (kind) {
     const trips = await pricedTrips(env.DB, from, to, s);
@@ -44,6 +50,13 @@ export async function onRequestPost({ request, env }) {
   const text = (v, n) => String(v ?? '').trim().slice(0, n);
   const km = (v) => (v === '' || v == null ? null : Number.isFinite(Number(v)) && Number(v) >= 0 && Number(v) < 5000 ? Math.round(Number(v) * 10) / 10 : undefined);
   if (d.action === 'settings') return json({ settings: await saveSettings(db, d) });
+  if (d.action === 'xero') {
+    if (!isDate(d.from) || !isDate(d.to) || d.from > d.to) return json({ error: 'Which dates?' }, 400);
+    const s = await mileageSettings(db);
+    if (!s.debit || !s.credit) return json({ error: 'Add your Xero account codes in the settings first.' }, 400);
+    try { return json(await sendJournal(env, xero, d.from, d.to, s, !!d.again)); }
+    catch (err) { return json({ error: err.message }, 400); }
+  }
   if (d.action === 'add') {
     if (!isDate(d.date)) return json({ error: 'Which day was the trip?' }, 400);
     if (!text(d.destination, 300)) return json({ error: 'Where did you go?' }, 400);

@@ -146,6 +146,33 @@ export function journal(trips, s, from, to) {
   return { narration: `Mileage ${monYear(from)} - ${monYear(to)}`, date: to, lines, total };
 }
 
+// ---- Sending to Xero ----
+// Each journal sent is remembered (settings 'mileage_xero'), so a period can't go twice by accident.
+export async function sentJournals(db) {
+  const r = await db.prepare(`SELECT value FROM settings WHERE key = 'mileage_xero'`).first();
+  return r ? JSON.parse(r.value) : [];
+}
+export const overlapping = (sent, from, to) => sent.filter((x) => x.from <= to && x.to >= from);
+
+/** The journal as a Xero draft manual journal. Tony checks and posts it in Xero. */
+export async function sendJournal(env, xero, from, to, s, again = false) {
+  const sent = await sentJournals(env.DB);
+  const before = overlapping(sent, from, to);
+  if (before.length && !again) return { already: before };
+  const j = journal(await pricedTrips(env.DB, from, to, s), s, from, to);
+  if (!j.lines.length) throw new Error('No trips to claim in these dates.');
+  const taxType = /no gst|none|exempt/i.test(s.tax) ? 'NONE' : undefined;
+  const d = await xero(env, 'PUT', '/ManualJournals', { ManualJournals: [{
+    Narration: j.narration, Date: j.date, Status: 'DRAFT', LineAmountTypes: 'NoTax',
+    JournalLines: j.lines.map((l) => ({ Description: l.description, AccountCode: l.account, LineAmount: Math.round(l.amount * 100) / 100, ...(taxType ? { TaxType: taxType } : {}) })),
+  }] });
+  const id = d.ManualJournals?.[0]?.ManualJournalID ?? null;
+  const row = { from, to, id, total: j.total, at: new Date().toISOString() };
+  await env.DB.prepare(`INSERT INTO settings (key, value, updated_at) VALUES ('mileage_xero', ?1, ?2) ON CONFLICT (key) DO UPDATE SET value = ?1, updated_at = ?2`)
+    .bind(JSON.stringify([...sent, row]), row.at).run();
+  return { sent: row };
+}
+
 /** Xero's manual journal import file (Accounting › Manual journals › Import). */
 export function journalCsv(trips, s, from, to) {
   const j = journal(trips, s, from, to);

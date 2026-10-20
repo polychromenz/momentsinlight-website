@@ -20,7 +20,7 @@ import { money, markPaid } from './invoices.js';
 export const SITE = 'https://www.momentsinlight.co.nz';
 export const REDIRECT = `${SITE}/api/studio/xero/callback`;
 // Xero's granular scopes (apps made from March 2026).
-export const SCOPES = ['offline_access', 'accounting.invoices', 'accounting.payments', 'accounting.banktransactions', 'accounting.contacts', 'accounting.settings.read'];
+export const SCOPES = ['offline_access', 'accounting.invoices', 'accounting.payments', 'accounting.banktransactions', 'accounting.contacts', 'accounting.settings.read', 'accounting.manualjournals'];
 export const KINDS = { invoice: 'Invoices', payment: 'Payments', fee: 'Stripe fees', payout: 'Stripe payouts', paid_in_xero: 'Paid in Xero' };
 const API = 'https://api.xero.com/api.xro/2.0';
 
@@ -140,6 +140,7 @@ export async function xero(env, method, path, body) {
     body: body ? JSON.stringify(body) : undefined,
   });
   const d = await r.json().catch(() => ({}));
+  if (r.status === 401 || r.status === 403) throw new Error('Xero didn’t allow that: click Connect on the Xero page again and allow everything it asks for (journals were added later).');
   if (!r.ok) {
     const errs = [d.Message, ...(d.Elements ?? []).flatMap((e) => (e.ValidationErrors ?? []).map((v) => v.Message))].filter(Boolean);
     throw new Error(`Xero: ${errs.join(' ') || r.status}`);

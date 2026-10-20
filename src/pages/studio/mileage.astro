@@ -68,8 +68,9 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
       <h2>Xero journal</h2>
       <p class="mi-prev-head"></p>
       <div class="tbl-wrap"><table class="mi-tbl"><thead><tr><th>Description</th><th>Account</th><th>Tax</th><th class="r">Debit</th><th class="r">Credit</th></tr></thead><tbody></tbody><tfoot></tfoot></table></div>
-      <p class="muted">Check it matches, then download and import it in Xero (Accounting › Manual journals › Import). It comes in as a draft, so you can look again before posting.</p>
-      <div class="mi-prev-acts"><button type="button" class="s-btn s-btn--quiet" data-close>Close</button><a class="s-btn s-btn--solid" data-dl="journal" href="#">Download Xero journal</a></div>
+      <p class="mi-prev-sent mi-note" hidden></p>
+      <p class="muted">Check it matches, then send it to Xero. It arrives as a draft (Accounting › Manual journals › Draft), so you look again and post it there. Or download it and import it in Xero yourself.</p>
+      <div class="mi-prev-acts"><button type="button" class="s-btn s-btn--quiet" data-close>Close</button><a class="s-btn" data-dl="journal" href="#">Download</a><button type="button" class="s-btn s-btn--solid" data-send-xero>Send to Xero</button></div>
     </div>
   </dialog>
   <div class="s-toast" role="status"></div>
@@ -159,7 +160,35 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
       dlg.querySelector('tbody')!.innerHTML = j.lines.length ? j.lines.map((l: any) => `<tr><td>${esc(l.description)}</td><td>${esc(l.account)}</td><td>${esc(l.tax)}</td><td class="r">${l.amount > 0 ? money(l.amount) : ''}</td><td class="r">${l.amount < 0 ? money(-l.amount) : ''}</td></tr>`).join('')
         : '<tr><td colspan="5" class="muted">No trips to claim in these dates.</td></tr>';
       dlg.querySelector('tfoot')!.innerHTML = `<tr><th colspan="3">Total</th><th class="r">${money(j.total)}</th><th class="r">${money(j.total)}</th></tr>`;
+      const sentNote = dlg.querySelector<HTMLElement>('.mi-prev-sent')!;
+      const when = (x: any) => `${day(x.from)} to ${day(x.to)} went to Xero on ${new Date(x.at).toLocaleDateString('en-NZ', { day: 'numeric', month: 'short', year: 'numeric' })} (${money(x.total)})`;
+      sentNote.textContent = j.sent.length ? `Already sent: ${j.sent.map(when).join('; ')}.` : '';
+      sentNote.hidden = !j.sent.length;
+      const send = dlg.querySelector<HTMLButtonElement>('[data-send-xero]')!;
+      send.hidden = !j.xero || !j.lines.length;
+      send.title = j.xero ? `To ${j.xero}` : '';
       dlg.showModal();
+      return;
+    }
+    const sendBtn = t.closest<HTMLButtonElement>('[data-send-xero]');
+    if (sendBtn) {
+      const go = async (again: boolean) => {
+        sendBtn.disabled = true; sendBtn.textContent = 'Sending…';
+        try { return await post({ action: 'xero', from: from.value, to: to.value, again }); }
+        finally { sendBtn.disabled = false; sendBtn.textContent = 'Send to Xero'; }
+      };
+      try {
+        let r = await go(false);
+        if (r.already) {
+          if (!await ask('Part of these dates has already gone to Xero. Send another journal anyway? (Delete the old one in Xero first if it’s being replaced.)')) return;
+          r = await go(true);
+        }
+        $<HTMLDialogElement>('.mi-prev').close();
+        toast(`Sent to Xero as a draft (${money(r.sent.total)}). Post it in Xero: Accounting › Manual journals › Draft.`);
+      } catch (err) {
+        // Shown in the preview itself: the toast would sit behind the open dialog.
+        const n = $('.mi-prev-sent'); n.textContent = (err as Error).message; n.hidden = false;
+      }
       return;
     }
     if (t.closest('.mi-prev [data-close]')) { $<HTMLDialogElement>('.mi-prev').close(); return; }
