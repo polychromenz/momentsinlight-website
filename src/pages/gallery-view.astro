@@ -108,6 +108,8 @@ import { site } from '../data/site';
   const store = `mil-gallery-${slug}`;
   const saved = () => { try { return localStorage.getItem(store) ?? ''; } catch { return ''; } };
   const save = (v: string) => { try { v ? localStorage.setItem(store, v) : localStorage.removeItem(store); } catch {} };
+  // Tony's "Open as client" pass from the studio (?sv=…): kept like any visitor's, then off the address bar.
+  if (params.get('sv')) { save(params.get('sv')!); params.delete('sv'); history.replaceState(null, '', location.pathname + (params.size ? `?${params}` : '')); }
   const day = (d: string) => new Date(`${d}T12:00:00Z`).toLocaleDateString('en-NZ', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
   let viewer = '';
   let view: View;

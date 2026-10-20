@@ -96,10 +96,12 @@ async function frontCover(env, g, watermark) {
 export async function enterGallery(env, d) {
   const db = env.DB;
   const g = await db.prepare('SELECT * FROM photo_galleries WHERE slug = ?1').bind(String(d.slug ?? '')).first();
-  if (!g || g.status !== 'online') return { status: 'gone' };
+  let viewer = g && d.viewer ? await db.prepare('SELECT * FROM gallery_viewers WHERE token = ?1 AND gallery_id = ?2').bind(String(d.viewer), g.id).first() : null;
+  // Tony's "Open as client" pass (role 'studio', from the studio): drafts and expired galleries open too.
+  const studio = viewer?.role === 'studio';
+  if (!g || (g.status !== 'online' && !studio)) return { status: 'gone' };
   const info = publicInfo(g);
-  if (g.expires_at && g.expires_at < today()) return { status: 'expired', gallery: info, cover: await frontCover(env, g, false) };
-  let viewer = d.viewer ? await db.prepare('SELECT * FROM gallery_viewers WHERE token = ?1 AND gallery_id = ?2').bind(String(d.viewer), g.id).first() : null;
+  if (g.expires_at && g.expires_at < today() && !studio) return { status: 'expired', gallery: info, cover: await frontCover(env, g, false) };
   let link = null;
   if (d.key) link = await db.prepare('SELECT * FROM gallery_links WHERE token = ?1 AND gallery_id = ?2').bind(String(d.key), g.id).first();
   else if (d.code) link = await db.prepare('SELECT * FROM gallery_links WHERE gallery_id = ?1 AND access_code IS NOT NULL AND lower(access_code) = lower(?2)').bind(g.id, String(d.code).trim()).first();
@@ -107,7 +109,7 @@ export async function enterGallery(env, d) {
   const ask = async (status, error, extra = {}) => ({ status, gallery: info, cover: await frontCover(env, g, status !== 'email' || !!link?.watermark), error, ...extra });
   if (d.code && !link) return ask('code', 'That code isn’t right. Please check it and try again.');
   if (!link) return ask('code', d.key ? 'This link no longer works. Please ask Tony for a new one.' : undefined);
-  if (link.expires_at && link.expires_at < today()) return ask('code', 'This link has expired. Please ask Tony for a new one.');
+  if (link.expires_at && link.expires_at < today() && !studio) return ask('code', 'This link has expired. Please ask Tony for a new one.');
   // Rights belong to the link, so a different link means a different visitor record.
   if (viewer && viewer.link_id !== link.id) viewer = null;
   if (!viewer && link.require_email) {
@@ -123,7 +125,7 @@ export async function enterGallery(env, d) {
   }
   await db.batch([
     db.prepare('UPDATE gallery_viewers SET last_seen = ?2 WHERE id = ?1').bind(viewer.id, now),
-    db.prepare(`INSERT INTO gallery_events (gallery_id, viewer_id, link_id, type, at) VALUES (?1, ?2, ?3, 'view', ?4)`).bind(g.id, viewer.id, link.id, now),
+    ...(studio ? [] : [db.prepare(`INSERT INTO gallery_events (gallery_id, viewer_id, link_id, type, at) VALUES (?1, ?2, ?3, 'view', ?4)`).bind(g.id, viewer.id, link.id, now)]),
   ]);
   return { status: 'in', viewer: viewer.token };
 }
@@ -135,7 +137,8 @@ export async function viewerAccess(env, token) {
   if (!v) return null;
   const l = await env.DB.prepare('SELECT * FROM gallery_links WHERE id = ?1').bind(v.link_id).first();
   const g = await env.DB.prepare('SELECT * FROM photo_galleries WHERE id = ?1').bind(v.gallery_id).first();
-  if (!l || !g || g.status !== 'online' || (g.expires_at && g.expires_at < today()) || (l.expires_at && l.expires_at < today())) return null;
+  if (!l || !g) return null;
+  if (v.role !== 'studio' && (g.status !== 'online' || (g.expires_at && g.expires_at < today()) || (l.expires_at && l.expires_at < today()))) return null;
   return { viewer: v, link: l, gallery: g };
 }
 
@@ -175,6 +178,6 @@ export async function galleryView(env, g, link, viewerToken) {
 }
 
 /** Log something a visitor did (views, downloads…), for the gallery dashboard later. */
-export const logEvent = (env, a, type, imageId = null, meta = {}) =>
+export const logEvent = (env, a, type, imageId = null, meta = {}) => a.viewer.role === 'studio' ? Promise.resolve() : // Tony trying it out: not counted
   env.DB.prepare('INSERT INTO gallery_events (gallery_id, viewer_id, link_id, type, image_id, meta, at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)')
     .bind(a.gallery.id, a.viewer.id, a.link.id, type, imageId, JSON.stringify(meta), new Date().toISOString()).run();

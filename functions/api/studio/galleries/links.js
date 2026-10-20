@@ -12,8 +12,8 @@ export async function onRequestGet({ request, env }) {
   const id = new URL(request.url).searchParams.get('gallery_id') ?? '';
   const g = await env.DB.prepare('SELECT id, slug FROM photo_galleries WHERE id = ?1').bind(id).first();
   if (!g) return json({ error: 'That gallery doesn’t exist.' }, 404);
-  const links = (await env.DB.prepare(`SELECT l.*, (SELECT count(*) FROM gallery_viewers v WHERE v.link_id = l.id) visitors,
-      (SELECT max(last_seen) FROM gallery_viewers v WHERE v.link_id = l.id) last_seen,
+  const links = (await env.DB.prepare(`SELECT l.*, (SELECT count(*) FROM gallery_viewers v WHERE v.link_id = l.id AND v.role <> 'studio') visitors,
+      (SELECT max(last_seen) FROM gallery_viewers v WHERE v.link_id = l.id AND v.role <> 'studio') last_seen,
       (SELECT count(*) FROM gallery_list_items i WHERE i.list_id = l.list_id) photos
     FROM gallery_links l WHERE l.gallery_id = ?1 AND l.kind IN ('main_client', 'invited', 'guest', 'vendor') ORDER BY l.id`).bind(g.id).all()).results;
   return json({

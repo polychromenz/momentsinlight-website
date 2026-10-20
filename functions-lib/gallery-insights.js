@@ -18,7 +18,7 @@ export async function activityBetween(db, fromDate, toDate) {
   const [events, guests] = await Promise.all([
     db.prepare(`SELECT e.gallery_id, e.viewer_id, e.type, e.image_id, e.meta, g.name FROM gallery_events e JOIN photo_galleries g ON g.id = e.gallery_id WHERE e.at >= ?1 AND e.at < ?2`).bind(from, to).all(),
     db.prepare(`SELECT v.gallery_id, v.name, v.email, v.role, v.consent_marketing, g.name gallery FROM gallery_viewers v JOIN photo_galleries g ON g.id = v.gallery_id
-      WHERE v.first_seen >= ?1 AND v.first_seen < ?2 AND v.role NOT IN ('main_client') ORDER BY v.first_seen`).bind(from, to).all(),
+      WHERE v.first_seen >= ?1 AND v.first_seen < ?2 AND v.role NOT IN ('main_client', 'studio') ORDER BY v.first_seen`).bind(from, to).all(),
   ]);
   const by = new Map();
   const row = (id, name) => by.get(id) ?? by.set(id, { gallery_id: id, name, views: 0, visitors: new Set(), downloads: 0, photos: 0, zips: 0, guests: [] }).get(id);
@@ -51,7 +51,7 @@ export async function galleryActivity(db, galleryId) {
     db.prepare(`SELECT v.id, v.name, v.email, v.role, v.consent_marketing, v.first_seen, v.last_seen, l.name link_name,
         (SELECT count(*) FROM gallery_events e WHERE e.viewer_id = v.id AND e.type = 'view') views,
         (SELECT COALESCE(sum(CASE WHEN e.image_id IS NOT NULL THEN 1 ELSE CAST(COALESCE(json_extract(e.meta, '$.n'), 0) AS INTEGER) END), 0) FROM gallery_events e WHERE e.viewer_id = v.id AND e.type = 'download') photos
-      FROM gallery_viewers v LEFT JOIN gallery_links l ON l.id = v.link_id WHERE v.gallery_id = ?1 ORDER BY v.last_seen DESC LIMIT 200`).bind(galleryId).all(),
+      FROM gallery_viewers v LEFT JOIN gallery_links l ON l.id = v.link_id WHERE v.gallery_id = ?1 AND v.role <> 'studio' ORDER BY v.last_seen DESC LIMIT 200`).bind(galleryId).all(),
     db.prepare(`SELECT e.type, e.image_id, e.meta, e.at, v.name, v.email FROM gallery_events e LEFT JOIN gallery_viewers v ON v.id = e.viewer_id WHERE e.gallery_id = ?1 ORDER BY e.at DESC LIMIT 40`).bind(galleryId).all(),
   ]);
   return {

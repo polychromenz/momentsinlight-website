@@ -42,7 +42,7 @@ async function ownList(env, a, id) {
   return l;
 }
 const editable = (l) => { if (l.status !== 'open') throw new Error('This list has been sent to Tony, so it can’t be changed now. Ask him to reopen it.'); };
-const event = (env, a, type, meta = {}, imageId = null) => env.DB.prepare('INSERT INTO gallery_events (gallery_id, viewer_id, link_id, type, image_id, meta, at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)')
+const event = (env, a, type, meta = {}, imageId = null) => a.viewer.role === 'studio' ? Promise.resolve() : env.DB.prepare('INSERT INTO gallery_events (gallery_id, viewer_id, link_id, type, image_id, meta, at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)')
   .bind(a.gallery.id, a.viewer.id, a.link.id, type, imageId, JSON.stringify(meta), new Date().toISOString()).run();
 
 /** Photo ids that belong to this gallery (and that this visitor can see). */
