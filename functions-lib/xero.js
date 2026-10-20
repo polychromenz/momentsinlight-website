@@ -235,7 +235,7 @@ async function doItem(env, q, s) {
       const contact = await contactFor(env, inv);
       const d = await xero(env, 'PUT', '/Invoices', { Invoices: [{
         Type: 'ACCREC', Contact: { ContactID: contact }, InvoiceNumber: inv.number, Reference: inv.job_title,
-        Date: day(inv.sent_at), DueDate: inv.due_date, LineAmountTypes: 'Inclusive', Status: 'AUTHORISED',
+        Date: day(inv.sent_at ?? inv.paid_at ?? inv.created_at), DueDate: inv.due_date, LineAmountTypes: 'Inclusive', Status: 'AUTHORISED',
         LineItems: [{ Description: [inv.label, inv.description].filter(Boolean).join(': '), Quantity: 1, UnitAmount: inv.amount / 100, AccountCode: s.sales_code, TaxType: s.sales_tax }],
       }] });
       id = d.Invoices[0].InvoiceID;
