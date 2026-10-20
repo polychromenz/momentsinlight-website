@@ -11,7 +11,7 @@
 import { json } from '../../../functions-lib/studio.js';
 import { mapsReady } from '../../../functions-lib/places.js';
 import { xero, xeroConnection } from '../../../functions-lib/xero.js';
-import { syncTrips, fillDistances, pricedTrips, mileageSettings, saveSettings, journal, journalCsv, logCsv, VEHICLES, sentJournals, overlapping, sendJournal } from '../../../functions-lib/mileage.js';
+import { syncTrips, fillDistances, pricedTrips, mileageSettings, saveSettings, journal, journalCsv, logCsv, VEHICLES, sentJournals, overlapping, sendJournal, guessedTrips } from '../../../functions-lib/mileage.js';
 
 const isDate = (s) => /^\d{4}-\d{2}-\d{2}$/.test(s ?? '');
 
@@ -34,7 +34,8 @@ export async function onRequestGet({ request, env }) {
     return new Response(body, { headers: { 'content-type': 'text/csv; charset=utf-8', 'content-disposition': `attachment; filename="${name}"`, 'cache-control': 'no-store' } });
   }
   await syncTrips(env, from, to);
-  const trips = await pricedTrips(env.DB, from, to, s);
+  const guessed = await guessedTrips(env.DB);
+  const trips = (await pricedTrips(env.DB, from, to, s)).map((t) => ({ ...t, guessed: guessed.has(t.key) }));
   const claim = trips.filter((t) => !t.skip && t.amount > 0);
   return json({
     trips, settings: s, maps: mapsReady(env), vehicles: VEHICLES,

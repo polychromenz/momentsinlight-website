@@ -51,6 +51,12 @@ export async function saveSettings(db, s) {
   return next;
 }
 
+export const SHOOT = /shoot|practice|engagement|session/i;
+/** Trips to an appointment with no place of its own: they went to the job's venue as a guess. */
+export async function guessedTrips(db) {
+  return new Set((await db.prepare(`SELECT 'appt:' || id k FROM appointments WHERE location = ''`).all()).results.map((r) => r.k));
+}
+
 const today = () => new Date().toLocaleDateString('en-CA', { timeZone: 'Pacific/Auckland' });
 
 /** Make or update the trips for jobs and appointments between two dates (up to today). */
@@ -60,8 +66,11 @@ export async function syncTrips(env, from, to) {
   const now = new Date().toISOString();
   const jobs = (await db.prepare(`SELECT id, title, job_type, event_date, venue, venue_address FROM jobs
       WHERE stage IN ('booked', 'completed') AND event_date BETWEEN ?1 AND ?2 AND (venue <> '' OR venue_address <> '')`).bind(from, until).all()).results;
-  const appts = (await db.prepare(`SELECT a.id, a.title, a.date, a.location, a.job_id, j.title job_title FROM appointments a JOIN jobs j ON j.id = a.job_id
-      WHERE a.date BETWEEN ?1 AND ?2 AND a.location <> '' AND j.stage <> 'lost'`).bind(from, until).all()).results;
+  // Appointments with a place make a trip (video calls don't). A shoot with no place (a practice or
+  // couple shoot) goes to the job's venue as a guess, flagged on the Mileage page for Tony to check.
+  const appts = (await db.prepare(`SELECT a.id, a.title, a.date, a.location, a.job_id, j.title job_title, j.venue, j.venue_address FROM appointments a JOIN jobs j ON j.id = a.job_id
+      WHERE a.date BETWEEN ?1 AND ?2 AND j.stage <> 'lost' AND a.location NOT LIKE 'Google Meet%'`).bind(from, until).all()).results
+    .map((a) => ({ ...a, place: a.location || (SHOOT.test(a.title) ? a.venue_address || a.venue : '') })).filter((a) => a.place);
   const upsert = (key, date, jobId, purpose, dest) => db.prepare(`INSERT INTO mileage_trips (key, date, job_id, purpose, destination, created_at, updated_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?6)
       ON CONFLICT (key) DO UPDATE SET date = excluded.date, purpose = excluded.purpose,
         km = CASE WHEN mileage_trips.km_edited = 1 OR mileage_trips.destination = excluded.destination THEN mileage_trips.km ELSE NULL END,
@@ -69,7 +78,7 @@ export async function syncTrips(env, from, to) {
         destination = excluded.destination, updated_at = ?6`).bind(key, date, jobId, purpose, dest, now);
   const stmts = [
     ...jobs.map((j) => upsert(`job:${j.id}`, j.event_date, j.id, `${j.job_type || 'Shoot'}: ${j.title}`, j.venue_address || j.venue)),
-    ...appts.map((a) => upsert(`appt:${a.id}`, a.date, a.job_id, `${a.title}: ${a.job_title}`, a.location)),
+    ...appts.map((a) => upsert(`appt:${a.id}`, a.date, a.job_id, `${a.title}: ${a.job_title}`, a.place)),
     // Jobs that are no longer booked (or appointments that went) lose their trip, unless Tony changed it.
     db.prepare(`DELETE FROM mileage_trips WHERE km_edited = 0 AND note = '' AND key LIKE 'job:%' AND CAST(substr(key, 5) AS INTEGER) NOT IN (SELECT id FROM jobs WHERE stage IN ('booked', 'completed'))`),
     db.prepare(`DELETE FROM mileage_trips WHERE km_edited = 0 AND note = '' AND key LIKE 'appt:%' AND CAST(substr(key, 6) AS INTEGER) NOT IN (SELECT id FROM appointments)`),
