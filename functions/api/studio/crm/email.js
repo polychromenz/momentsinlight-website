@@ -10,7 +10,7 @@ import { loadJob, jobLinks, hasCheck } from '../../../../functions-lib/crm-send.
 import { renderTemplate, fields } from '../../../../functions-lib/email-render.js';
 import { sendEmail, message, connection } from '../../../../functions-lib/gmail.js';
 import { attachmentsFor, listDocuments } from '../../../../functions-lib/documents.js';
-import { outgoing, sendMode, liveForNew } from '../../../../functions-lib/crm.js';
+import { outgoing, sendMode, liveForNew, testClient } from '../../../../functions-lib/crm.js';
 
 const GAPS = /\[(first_name|last_name|partner_name|couple|event_date|venue|portal_link|gallery_link|contract_link|payment_amount|payment_due_date|questionnaire_link|shoot_date|shoot_time|location|booking_link)\]/;
 const row = (env, id) => env.DB.prepare('SELECT * FROM messages WHERE id = ?1').bind(Number(id)).first();
@@ -48,7 +48,7 @@ export async function onRequestGet({ request, env }) {
     return json({
       subject: draft.subject, body: draft.body, missing: draft.missing, attachments,
       templates: templates.results, documents: docs.map(({ id, name, size }) => ({ id, name, size })),
-      to: job.email, deliversTo: outgoing(env, { to: job.email, subject: '', html: '' }, await liveForNew(env, job.email)).to, mode: sendMode(env), gmail: !!gmail,
+      to: job.email, deliversTo: outgoing(env, { to: job.email, subject: '', html: '' }, await liveForNew(env, job.email), await testClient(env, job.email)).to, mode: sendMode(env), gmail: !!gmail,
     });
   } catch (e) {
     return json({ error: e.message }, 400);

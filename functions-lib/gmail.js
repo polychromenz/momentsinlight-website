@@ -9,7 +9,7 @@
 //
 // SAFETY: sendEmail() always passes the message through outgoing() (the test-mode lock in
 // crm.js) before anything leaves; nothing else in the CRM sends client email.
-import { outgoing, liveForNew } from './crm.js';
+import { outgoing, liveForNew, testClient } from './crm.js';
 
 // gmail.send/readonly: send as Tony and see replies. calendar.app.created: the studio's own
 // "Moments in Light" calendar only (functions-lib/calendar.js); it can't see his other calendars.
@@ -96,7 +96,7 @@ const wrap76 = (s) => s.replace(/.{76}/g, '$&\r\n');
  * @returns {{ id: string, threadId: string, to: string, redirected: boolean, intended: string }}
  */
 export async function sendEmail(env, msg) {
-  const out = outgoing(env, { to: msg.to, subject: msg.subject, html: msg.html }, await liveForNew(env, msg.to));
+  const out = outgoing(env, { to: msg.to, subject: msg.subject, html: msg.html }, await liveForNew(env, msg.to), await testClient(env, msg.to));
   const conn = await connection(env.DB);
   // msg.from: e.g. Mel's one-off emails, "Mel <mel@…>", which Gmail sends only if it's a verified
   // "Send mail as" address of the connected account (otherwise Gmail uses the account's own).

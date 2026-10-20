@@ -7,7 +7,7 @@ import { json } from '../../../../functions-lib/studio.js';
 import { sendStep, draftFor, loadJob, templateAttachments, hasCheck } from '../../../../functions-lib/crm-send.js';
 import { ruleOf } from '../../../../functions-lib/workflows.js';
 import { listDocuments } from '../../../../functions-lib/documents.js';
-import { outgoing, sendMode, liveForNew } from '../../../../functions-lib/crm.js';
+import { outgoing, sendMode, liveForNew, testClient } from '../../../../functions-lib/crm.js';
 import { connection } from '../../../../functions-lib/gmail.js';
 
 const OPEN = ['scheduled', 'due', 'failed'];
@@ -20,7 +20,7 @@ export async function onRequestGet({ request, env }) {
   const job = await loadJob(env.DB, step.job_id);
   try {
     const d = await draftFor(env.DB, step, job, env, ruleOf(step).gallery ? { gallery_link: '{{gallery_link}}' } : {});
-    const lock = outgoing(env, { to: job.email, subject: '', html: '' }, await liveForNew(env, job.email));
+    const lock = outgoing(env, { to: job.email, subject: '', html: '' }, await liveForNew(env, job.email), await testClient(env, job.email));
     return json({
       step: { id: step.id, title: step.title, status: step.status },
       // The template text with {{fields}} filled in where known; gaps show as [field].
