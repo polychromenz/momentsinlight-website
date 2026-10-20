@@ -41,7 +41,11 @@ function open(html: string, focus: string): Promise<{ ok: boolean; value: string
       d.close();
     });
     d.addEventListener('close', () => { d.remove(); done(result); });
-    d.addEventListener('click', (e) => { if (e.target === d) d.close(); }); // a click outside = cancel
+    // A click outside = cancel. Only when the press started outside too: picking an address
+    // suggestion hides the list on mousedown, so its click would otherwise land on the dialog.
+    let downOn: EventTarget | null = null;
+    d.addEventListener('mousedown', (e) => { downOn = e.target; });
+    d.addEventListener('click', (e) => { if (e.target === d && downOn === d) d.close(); });
     d.showModal();
     d.querySelector<HTMLElement>(focus)?.focus();
   });
