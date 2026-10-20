@@ -448,10 +448,16 @@ import { site } from '../data/site';
     if (!d.open) d.showModal();
   }
   const closeDlgs = () => document.querySelectorAll<HTMLDialogElement>('.g-dlg[open]').forEach((d) => d.close());
+  let shownN = 0; // photos selected when the bar was last drawn
   function drawCounts() {
     $('.fav-n').textContent = String(favList()?.ids.length ?? 0);
     const n = selected.size;
     const bar = $('.selbar');
+    // Make the bar hard to miss: it slides up when selecting starts, and pops on the first photo picked.
+    const nudge = (c: string) => { bar.classList.remove('sb-in', 'sb-pop'); void bar.offsetWidth; bar.classList.add(c); };
+    if (selecting && bar.hidden) nudge('sb-in');
+    else if (selecting && n && !shownN) nudge('sb-pop');
+    shownN = n;
     bar.hidden = !selecting;
     $('.sel-n').textContent = n ? `${plural(n)} selected` : 'Tap photos to select them';
     $('[data-sel-dl]').hidden = !view.rights.zip || !n;
@@ -760,8 +766,14 @@ import { site } from '../data/site';
   .ph.sel img { opacity: 0.8; }
   .ph.sel { outline: 3px solid var(--green); outline-offset: -3px; }
   .g-filter { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: center; margin: 14px auto 0; padding: 10px 16px; max-width: 900px; background: var(--griseo); border-radius: 14px 0; font-size: 14px; }
-  .selbar { position: fixed; left: 50%; bottom: 16px; transform: translateX(-50%); z-index: 50; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: center; padding: 10px 14px; max-width: calc(100vw - 24px); background: var(--olive); color: var(--cream); border-radius: 18px 0; box-shadow: 0 16px 34px -18px rgb(0 0 0 / 0.6); font-size: 14px; }
-  .sb-btn { font: inherit; font-size: 13px; font-weight: 600; padding: 7px 12px; border: 1px solid rgb(255 255 255 / 0.35); border-radius: 10px 0; background: transparent; color: var(--cream); cursor: pointer; }
+  .selbar { position: fixed; left: 50%; bottom: 16px; transform: translateX(-50%); z-index: 50; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: center; padding: 10px 14px; max-width: calc(100vw - 24px); background: var(--light-gold); color: var(--olive); border-radius: 18px 0; box-shadow: 0 18px 38px -16px rgb(0 0 0 / 0.55); font-size: 14px; }
+  .selbar.sb-in { animation: sb-in 0.45s cubic-bezier(0.2, 1.4, 0.4, 1); }
+  .selbar.sb-pop { animation: sb-pop 0.6s ease-out; }
+  @keyframes sb-in { from { transform: translate(-50%, 140%); opacity: 0; } to { transform: translate(-50%, 0); opacity: 1; } }
+  @keyframes sb-pop { 0% { transform: translateX(-50%) scale(1); box-shadow: 0 0 0 0 rgb(216 199 159 / 0.9); } 35% { transform: translateX(-50%) scale(1.08); } 100% { transform: translateX(-50%) scale(1); box-shadow: 0 0 0 18px rgb(216 199 159 / 0); } }
+  @media (prefers-reduced-motion: reduce) { .selbar.sb-in, .selbar.sb-pop { animation: none; } }
+  .sb-btn { font: inherit; font-size: 13px; font-weight: 600; padding: 7px 12px; border: 1px solid rgb(62 66 41 / 0.45); border-radius: 10px 0; background: transparent; color: var(--olive); cursor: pointer; }
+  .sb-btn:not(.sb-x):not(:disabled):hover { background: var(--olive); color: var(--light-gold); }
   .sb-btn:disabled { opacity: 0.45; cursor: default; }
   .sb-x { border-color: transparent; }
   .g-dlg { border: 0; padding: 0; border-radius: 22px 0; width: min(520px, calc(100vw - 24px)); max-height: calc(100svh - 40px); color: var(--ink); }
