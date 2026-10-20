@@ -60,7 +60,7 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
             <ul class="quotes questionnaires"></ul>
           </section>
           <section class="card">
-            <h2>Invoices</h2>
+            <div class="card-head"><h2>Invoices</h2><button type="button" class="s-btn s-btn--quiet" data-add-invoice>+ Add invoice</button></div>
             <ul class="quotes invoices"></ul>
           </section>
           <section class="card portal-card">
@@ -124,6 +124,19 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
       </div>
     </div>
   </main>
+  <dialog class="review add-inv" aria-label="Add an invoice">
+    <form method="dialog" class="review-form add-inv-form" autocomplete="off">
+      <h2>Add an invoice</h2>
+      <p class="hint">For things they add after booking: a second shooter, prints, an album… Pick from your packages and products, or type your own.</p>
+      <label>Invoice title <small>(optional; e.g. “Add-ons”)</small><input name="label" maxlength="120" /></label>
+      <table class="ai-lines"><thead><tr><th>Item</th><th>Qty</th><th>Price ($ each, incl. GST)</th><th></th></tr></thead><tbody></tbody></table>
+      <div class="ai-add"><select class="ai-pick" aria-label="Add one of your products or packages"></select><button type="button" class="s-btn s-btn--quiet" data-ai-custom>+ Your own item</button></div>
+      <p class="ai-total"></p>
+      <label class="ai-due">Due date<input name="due_date" type="date" /></label>
+      <div class="review-actions"><button type="button" class="s-btn s-btn--quiet" data-ai-close>Cancel</button><button type="button" class="s-btn" data-ai-save="later">Save (sends 2 weeks before it’s due)</button><button type="button" class="s-btn s-btn--solid" data-ai-save="now">Send now</button></div>
+    </form>
+  </dialog>
+
   <dialog class="review" aria-label="Review and send">
     <form method="dialog" class="review-form">
       <h2 class="review-title">Review and send</h2>
@@ -315,6 +328,61 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
     toast('Saved. It’s in the calendar.');
     await load();
   });
+
+  // ---- Add an invoice (add-ons after booking), from Settings > Packages & products or typed ----
+  type CatItem = { id: number; kind: string; name: string; subtitle: string; price: number };
+  let catItems: CatItem[] = [];
+  const aiDlg = $<HTMLDialogElement>('dialog.add-inv');
+  const aiForm = $<HTMLFormElement>('.add-inv-form');
+  const aiMoney = (c: number) => `${(c / 100).toLocaleString('en-NZ', { minimumFractionDigits: 2 })}`;
+  const aiRow = (name = '', qty = 1, price = 0) => `<tr><td><input data-ai="name" value="${esc(name)}" placeholder="e.g. Second shooter" /></td><td><input data-ai="qty" type="number" min="1" step="1" value="${qty}" /></td><td><input data-ai="price" type="number" min="0" step="0.01" value="${price ? (price / 100).toFixed(2) : ''}" /></td><td><button type="button" class="s-btn s-btn--quiet" data-ai-remove aria-label="Remove">✕</button></td></tr>`;
+  const aiLines = () => [...aiForm.querySelectorAll<HTMLTableRowElement>('.ai-lines tbody tr')].map((tr) => ({
+    name: tr.querySelector<HTMLInputElement>('[data-ai="name"]')!.value.trim(),
+    qty: Number(tr.querySelector<HTMLInputElement>('[data-ai="qty"]')!.value) || 1,
+    price: Math.round(Number(tr.querySelector<HTMLInputElement>('[data-ai="price"]')!.value || 0) * 100),
+  }));
+  const aiTotal = () => { const t = aiLines().reduce((a, l) => a + l.qty * l.price, 0); $('.ai-total').textContent = `Total ${aiMoney(t)} (GST included)`; };
+  async function openAddInvoice() {
+    if (!catItems.length) {
+      const r = await fetch('/api/studio/crm/catalogue');
+      if (r.ok) { const d = await r.json(); catItems = [...d.products, ...d.packages]; }
+    }
+    const opt = (k: string) => catItems.filter((x) => x.kind === k).map((x) => `<option value="${x.id}">${esc(x.name)}${x.subtitle ? ` · ${esc(x.subtitle)}` : ''} (${aiMoney(x.price)})</option>`).join('');
+    $<HTMLSelectElement>('.ai-pick').innerHTML = `<option value="">+ Add one of your products or packages…</option><optgroup label="Products">${opt('product')}</optgroup><optgroup label="Packages">${opt('package')}</optgroup>`;
+    aiForm.reset();
+    $('.ai-lines tbody').innerHTML = '';
+    (aiForm.elements.namedItem('due_date') as HTMLInputElement).value = new Date(Date.now() + 14 * 86400_000).toLocaleDateString('en-CA', { timeZone: 'Pacific/Auckland' });
+    aiTotal();
+    aiDlg.showModal();
+  }
+  aiForm.addEventListener('input', aiTotal);
+  aiForm.addEventListener('change', (e) => {
+    const sel = (e.target as HTMLElement).closest<HTMLSelectElement>('.ai-pick');
+    if (!sel?.value) return;
+    const x = catItems.find((y) => y.id === Number(sel.value));
+    sel.value = '';
+    if (x) { $('.ai-lines tbody').insertAdjacentHTML('beforeend', aiRow(`${x.name}${x.subtitle ? ` (${x.subtitle})` : ''}`, 1, x.price)); aiTotal(); }
+  });
+  aiForm.addEventListener('click', async (e) => {
+    const t = e.target as HTMLElement;
+    if (t.closest('[data-ai-close]')) { aiDlg.close(); return; }
+    if (t.closest('[data-ai-custom]')) { $('.ai-lines tbody').insertAdjacentHTML('beforeend', aiRow()); aiForm.querySelector<HTMLInputElement>('.ai-lines tbody tr:last-child input')?.focus(); return; }
+    if (t.closest('[data-ai-remove]')) { t.closest('tr')!.remove(); aiTotal(); return; }
+    const sv = t.closest<HTMLButtonElement>('[data-ai-save]');
+    if (!sv) return;
+    const lines = aiLines().filter((l) => l.name);
+    if (!lines.length) { toast('Add at least one item.', true); return; }
+    const now = sv.dataset.aiSave === 'now';
+    sv.disabled = true; const was = sv.textContent; sv.textContent = now ? 'Sending…' : 'Saving…';
+    const r = await fetch('/api/studio/crm/invoice', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'add', job_id: id, label: (aiForm.elements.namedItem('label') as HTMLInputElement).value, lines, due_date: (aiForm.elements.namedItem('due_date') as HTMLInputElement).value, send: now }) });
+    const d = await r.json().catch(() => ({}));
+    sv.disabled = false; sv.textContent = was;
+    if (!r.ok) { toast(d.error || 'Couldn’t make the invoice.', true); return; }
+    aiDlg.close();
+    toast(d.warning ?? (d.sent ? `${d.number} sent.` : `${d.number} saved. It goes out 2 weeks before it’s due (or Send now on it).`), !!d.warning);
+    load();
+  });
+  document.addEventListener('click', (e) => { if ((e.target as HTMLElement).closest('[data-add-invoice]')) openAddInvoice(); });
 
   async function load() {
     await loadLists();
@@ -852,6 +920,16 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
   .review-form { display: flex; flex-direction: column; gap: 12px; padding: 22px 24px; }
   .review-title { margin: 0; font-weight: 300; font-size: 24px; color: var(--ink); }
   .review-to { margin: 0; font-size: 14px; color: #555; }
+  .add-inv .ai-lines { width: 100%; border-collapse: collapse; margin: 8px 0; }
+  .add-inv .ai-lines th { text-align: left; font-size: 12px; font-weight: 500; color: #777; padding: 4px; }
+  .add-inv .ai-lines td { padding: 4px; }
+  .add-inv .ai-lines input { width: 100%; font: inherit; font-size: 14px; padding: 7px 9px; border: 1px solid #ddd3c4; border-radius: 10px 0; box-sizing: border-box; }
+  .add-inv .ai-lines td:nth-child(2) { width: 70px; }
+  .add-inv .ai-lines td:nth-child(3) { width: 150px; }
+  .add-inv .ai-add { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .add-inv .ai-pick { font: inherit; font-size: 14px; padding: 7px 10px; border: 1px solid #ddd3c4; border-radius: 10px 0; max-width: 100%; }
+  .add-inv .ai-total { font-weight: 500; margin: 12px 0 4px; }
+  .add-inv .ai-due input { font: inherit; font-size: 15px; }
   .review-gallery input, .review-gallery select { font: inherit; font-size: 15px; }
   .review-gallery label { display: block; margin-bottom: 10px; }
   .gallery-link { display: flex; gap: 8px; flex-wrap: wrap; margin: 6px 0 12px; }
