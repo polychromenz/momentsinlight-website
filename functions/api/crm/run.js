@@ -26,6 +26,7 @@
 //      collecting results as they finish.
 //  13. The two-year clean-up of old enquiries promised on /privacy (functions-lib/cleanup.js).
 //  14. Social drafts for the week ahead, a few per run, for Tony to approve (functions-lib/social.js).
+//  14b. Approved Facebook and Instagram posts publish at their time (functions-lib/meta.js).
 //  15. Xero: queue new invoices, payments, Stripe fees and payouts; send the approved ones (functions-lib/xero.js).
 // Ready-to-send emails and to-dos need nothing here: they appear on Today when due.
 // Jobs on hold (jobs.hold: the Studio Ninja import until switch-over) are skipped by every step.
@@ -45,6 +46,7 @@ import { gscSync } from '../../../functions-lib/ads.js';
 import { adsWeekly } from '../../../functions-lib/ads-weekly.js';
 import { enquiryCleanup } from '../../../functions-lib/cleanup.js';
 import { socialTimer } from '../../../functions-lib/social.js';
+import { publishDue } from '../../../functions-lib/meta.js';
 import { xeroTimer } from '../../../functions-lib/xero.js';
 import { hasReviewed } from '../../../functions-lib/reviewed.js';
 import { chargeDue } from '../../../functions-lib/autopay.js';
@@ -206,8 +208,10 @@ export async function onRequestPost({ request, env }) {
   log.ads_weekly = await adsWeekly(env).catch((e) => `error: ${e.message}`);
   // 13. Monthly: old enquiries that never booked, warned on the 1st and deleted from the 8th (functions-lib/cleanup.js).
   log.cleanup = await enquiryCleanup(env).catch((e) => `error: ${e.message}`);
-  // 14. Social drafts for the week ahead (functions-lib/social.js); nothing is posted.
+  // 14. Social drafts for the week ahead (functions-lib/social.js).
   log.social = await socialTimer(env).catch((e) => `error: ${e.message}`);
+  // 14b. Approved Facebook and Instagram posts whose time has come publish themselves (functions-lib/meta.js).
+  log.published = await publishDue(env).catch((e) => `error: ${e.message}`);
   // 15. Xero (functions-lib/xero.js): nothing is sent without Tony's approval unless he switched that kind to automatic.
   log.xero = await xeroTimer(env).catch((e) => `error: ${e.message}`);
 

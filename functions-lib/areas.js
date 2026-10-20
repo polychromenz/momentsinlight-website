@@ -28,6 +28,7 @@ const API = [
   [/^\/api\/studio\/galleries\/insights\b/, null],
   [/^\/api\/studio\/galleries\b/, 'galleries'],
   [/^\/api\/studio\/social\b/, 'social'],
+  [/^\/api\/studio\/meta\b/, 'settings'], // connecting Facebook and Instagram is the account owner's job
   [/^\/api\/studio\/(post|page|menu|reviews|upload|describe)\b/, 'website'],
 ];
 const PAGES = [

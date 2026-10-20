@@ -1,11 +1,15 @@
 // Studio > Social (src/pages/studio/social.astro): two weeks of drafts by day, and the editor where
-// Tony crops the photos, edits the caption and approves. Until each platform is connected he
-// copies the caption and downloads the photos (made here in the browser at each platform's size).
+// Tony crops the photos, edits the caption and approves. Facebook and Instagram, once connected
+// (functions-lib/meta.js), publish approved posts themselves at their time: approving makes the photo
+// files here (his crop, the platform's size) and uploads them. Other platforms: he copies the caption
+// and downloads the photos to post them himself.
 type Crop = { x: number; y: number; w: number; h: number };
 type Photo = { src: string; w: number; h: number; image_id?: string; gallery_id?: string; alt?: string; crop?: Crop };
-type Post = { id: number; platform: string; post_at: string; status: string; source: string; label: string; caption: string; link: string | null; photos: Photo[]; ai: number; error: string | null };
+type Post = { id: number; platform: string; post_at: string; status: string; source: string; label: string; caption: string; link: string | null; photos: Photo[]; ai: number; error: string | null; media: string | null; remote_url: string | null };
+type Meta = { ready: boolean; connection: null | { page_id: string; page_name: string; ig_id: string | null; ig_username: string | null; pages: { id: string; name: string; ig_username: string | null }[]; connected_at: string } };
 type Platform = { name: string; ratio: number | null; out: [number, number]; max: number; link: boolean; chars: number };
 
+import { ask } from './dialogs';
 const $ = <T extends HTMLElement = HTMLElement>(s: string, root: ParentNode = document) => root.querySelector<T>(s)!;
 const esc = (s: unknown) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
 function toast(msg: string, error = false) {
@@ -20,7 +24,7 @@ const api = async (body: unknown) => {
 };
 const iso = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 const today = iso(new Date());
-const STATUS: Record<string, string> = { draft: 'Draft', approved: 'Approved', posted: 'Posted', skipped: 'Skipped', failed: 'Didn’t post' };
+const STATUS: Record<string, string> = { draft: 'Draft', approved: 'Approved', posted: 'Posted', skipped: 'Skipped', failed: 'Didn’t post', posting: 'Posting…' };
 const SHORT: Record<string, string> = { instagram: 'IG', facebook: 'FB', google: 'G', pinterest: 'P' };
 // Small copies for the calendar and strip: gallery photos have a 600px copy; Cloudflare Images a variant.
 const small = (p: Photo) => (p.image_id ? p.src.replace(/_2048\.jpg/, '_600.jpg') : p.src);
@@ -30,6 +34,9 @@ let posts: Post[] = [];
 let platforms: Record<string, Platform> = {};
 let open: Post | null = null;
 let at = 0; // the photo being cropped in the editor
+let meta: Meta = { ready: false, connection: null };
+/** Does this platform post itself (connected)? */
+const auto = (platform: string) => !!meta.connection && ((platform === 'facebook' && !!meta.connection.page_id) || (platform === 'instagram' && !!meta.connection.ig_id));
 
 function monday(d: Date) { const m = new Date(d.getFullYear(), d.getMonth(), d.getDate()); m.setDate(m.getDate() - ((m.getDay() + 6) % 7)); return m; }
 
@@ -38,11 +45,24 @@ async function load() {
   const r = await fetch(`/api/studio/social?from=${iso(start)}&to=${iso(end)}`);
   const d = await r.json().catch(() => null);
   if (!r.ok || !d) { $('.so-weeks').innerHTML = `<p class="muted">${esc(d?.error || 'Couldn’t load the drafts.')}</p>`; return; }
-  posts = d.posts; platforms = d.platforms;
+  posts = d.posts; platforms = d.platforms; meta = d.meta;
+  drawMeta();
   $<HTMLInputElement>('[data-auto]').checked = d.drafts_on;
   $('.idea-list').innerHTML = d.ideas.length ? d.ideas.map((i: any) => `<li>${esc(i.text)}${i.link ? ` <a href="${esc(i.link)}">Open</a>` : ''}</li>`).join('') : '<li class="muted">Nothing new right now.</li>';
   $('.so-marked').textContent = `${d.marked} gallery photo${d.marked === 1 ? '' : 's'} marked Social. In a gallery’s Photos tab, select photos (or a whole section) and click Social.`;
   draw();
+}
+
+// The Facebook and Instagram connection card.
+function drawMeta() {
+  const box = $('.so-meta-body');
+  const c = meta.connection;
+  if (!meta.ready) { box.innerHTML = '<p class="muted">Not set up yet: the Meta app’s ID and secret need adding in Cloudflare (META_APP_ID, META_APP_SECRET).</p>'; return; }
+  if (!c) { box.innerHTML = '<p>Connect your Facebook Page and Instagram, and approved posts go out on their own at their time.</p><a class="s-btn s-btn--solid" href="/api/studio/meta/connect">Connect Facebook and Instagram</a>'; return; }
+  box.innerHTML = `<p><strong>Facebook:</strong> ${esc(c.page_name)} · <strong>Instagram:</strong> ${c.ig_username ? `@${esc(c.ig_username)}` : '<span class="warn">none linked to this Page</span> (link them in Instagram’s settings, then Reconnect)'}</p>
+    ${c.pages.length > 1 ? `<label>Page <select data-meta-page>${c.pages.map((p) => `<option value="${esc(p.id)}"${p.id === c.page_id ? ' selected' : ''}>${esc(p.name)}${p.ig_username ? ` (@${esc(p.ig_username)})` : ''}</option>`).join('')}</select></label>` : ''}
+    <p class="muted">Approved Facebook and Instagram posts go out on their own at their time. Nothing goes without your approval.</p>
+    <a class="s-btn s-btn--quiet" href="/api/studio/meta/connect">Reconnect</a> <button type="button" class="s-btn s-btn--quiet" data-meta-off>Disconnect</button>`;
 }
 
 function draw() {
@@ -120,12 +140,16 @@ function drawEditor() {
   const b = (act: string, text: string, cls = '') => `<button type="button" class="s-btn ${cls}" data-act="${act}">${text}</button>`;
   const acts: string[] = [];
   if (p.status === 'draft') acts.push(b('approve', 'Approve', 's-btn--solid'), b('save', 'Save'), b('recaption', 'New caption'), b('swap', 'Different idea'), b('skip', 'Skip', 's-btn--quiet'));
-  if (p.status === 'approved') acts.push(b('copy', 'Copy caption', 's-btn--solid'), b('download', `Download photo${p.photos.length > 1 ? 's' : ''}`), b('posted', 'I’ve posted it'), b('save', 'Save changes'), b('unapprove', 'Back to draft', 's-btn--quiet'));
-  if (p.status === 'posted' || p.status === 'failed') acts.push(b('copy', 'Copy caption'), b('download', 'Download photos'));
+  const self = auto(p.platform);
+  if (p.status === 'approved' && self) acts.push(b('post_now', 'Post now', 's-btn--solid'), b('save', 'Save changes'), b('unapprove', 'Back to draft', 's-btn--quiet'));
+  else if (p.status === 'approved') acts.push(b('copy', 'Copy caption', 's-btn--solid'), b('download', `Download photo${p.photos.length > 1 ? 's' : ''}`), b('posted', 'I’ve posted it'), b('save', 'Save changes'), b('unapprove', 'Back to draft', 's-btn--quiet'));
+  if (p.status === 'failed') acts.push(...(self ? [b('post_now', 'Try again', 's-btn--solid')] : []), b('unapprove', 'Back to draft'), b('posted', 'I posted it myself', 's-btn--quiet'), b('copy', 'Copy caption'), b('download', 'Download photos'));
+  if (p.status === 'posted') acts.push(...(p.remote_url ? [`<a class="s-btn s-btn--solid" href="${esc(p.remote_url)}" target="_blank" rel="noopener">See it on ${esc(pf.name)}</a>`] : []), b('copy', 'Copy caption'), b('download', 'Download photos'));
   if (p.status === 'skipped') acts.push(b('restore', 'Bring it back'));
   $('.ed-acts').innerHTML = acts.join('');
-  $('.ed-how').textContent = p.status === 'approved'
-    ? `${pf.name} isn’t connected yet, so post it yourself: copy the caption, download the photo${p.photos.length > 1 ? 's' : ''}, post${p.link && pf.link ? ' with the link' : ''}, then click “I’ve posted it”. Once ${pf.name} is connected, approved posts go out on their own at their time.`
+  $('.ed-how').textContent = p.status === 'failed' ? `It didn’t post: ${p.error ?? 'no reason given'}`
+    : p.status === 'approved' && self ? `It goes out on its own on ${new Date(`${p.post_at}:00`).toLocaleString('en-NZ', { weekday: 'long', day: 'numeric', month: 'long', hour: 'numeric', minute: '2-digit' })}, or click Post now. Change something? Save changes (the photos are made again).`
+    : p.status === 'approved' ? `${pf.name} isn’t connected yet, so post it yourself: copy the caption, download the photo${p.photos.length > 1 ? 's' : ''}, post${p.link && pf.link ? ' with the link' : ''}, then click “I’ve posted it”. Once ${pf.name} is connected, approved posts go out on their own at their time.`
     : p.status === 'draft' ? `${pf.ratio ? `Photos are cropped to ${p.platform === 'instagram' ? '4:5 portrait' : p.platform === 'pinterest' ? '2:3 tall' : '4:3'} for ${pf.name}: click a photo, then nudge the frame. ` : ''}Edits are kept when you Save or Approve.` : '';
   form.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>('input, textarea').forEach((el) => (el.disabled = !editable));
 }
@@ -157,6 +181,16 @@ async function save() {
   const d = await api({ action: 'save', id: p.id, caption: field('caption').value, post_at: field('post_at').value, link: field('link').value || null, label: field('label').value, photos: p.photos });
   replace(d.post);
   return d.post as Post;
+}
+/** Make the photo files and upload them, for a platform that posts itself. */
+async function upload(p: Post) {
+  const pf = platforms[p.platform];
+  const fd = new FormData();
+  fd.append('id', String(p.id));
+  for (let n = 0; n < p.photos.length; n++) fd.append('files', await photoFile(p.photos[n], pf), `${n + 1}.jpg`);
+  const r = await fetch('/api/studio/social/media', { method: 'POST', body: fd });
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(d.error || 'The photos didn’t upload.');
 }
 function replace(p: Post) {
   posts = posts.map((x) => (x.id === p.id ? p : x));
@@ -222,8 +256,22 @@ document.addEventListener('click', async (e) => {
   const a = act.dataset.act!;
   act.disabled = true;
   try {
-    if (a === 'save') { await save(); toast('Saved.'); }
-    if (a === 'approve') { await save(); replace((await api({ action: 'approve', id: open.id })).post); toast('Approved.'); }
+    if (a === 'save') {
+      const p = await save();
+      if (p.status === 'approved' && auto(p.platform)) { act.textContent = 'Making the photos…'; await upload({ ...p, photos: open.photos }); }
+      toast('Saved.');
+    }
+    if (a === 'approve') {
+      const p = await save();
+      if (auto(p.platform)) { act.textContent = 'Making the photos…'; await upload({ ...p, photos: open.photos }); }
+      replace((await api({ action: 'approve', id: open.id })).post);
+      toast(auto(p.platform) ? 'Approved: it goes out on its own at its time.' : 'Approved.');
+    }
+    if (a === 'post_now') {
+      act.textContent = 'Posting…';
+      try { replace((await api({ action: 'post_now', id: open.id })).post); toast(`Posted to ${platforms[open.platform].name}.`); }
+      catch (err) { await load(); const p = posts.find((x) => x.id === open!.id); if (p) openPost(p); throw err; }
+    }
     if (a === 'unapprove' || a === 'skip' || a === 'restore' || a === 'posted') {
       replace((await api({ action: a, id: open.id })).post);
       toast({ unapprove: 'Back to draft.', skip: 'Skipped.', restore: 'Back as a draft.', posted: 'Marked as posted.' }[a]!);
@@ -256,6 +304,28 @@ document.addEventListener('keydown', (e) => {
   if (th && (e.key === 'Enter' || e.key === ' ') && !(e.target as HTMLElement).matches('button')) { e.preventDefault(); (th as HTMLElement).click(); }
 });
 form.addEventListener('input', (e) => { if ((e.target as HTMLElement).matches('[name=caption]')) count(); });
+document.addEventListener('change', async (e) => {
+  const sel = (e.target as HTMLElement).closest<HTMLSelectElement>('[data-meta-page]');
+  if (!sel) return;
+  const r = await fetch('/api/studio/meta', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'page', id: sel.value }) });
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok) { toast(d.error || 'That didn’t change.', true); return; }
+  meta = d; drawMeta(); toast('Page changed.');
+});
+document.addEventListener('click', async (e) => {
+  if (!(e.target as HTMLElement).closest('[data-meta-off]')) return;
+  if (!await ask('Disconnect Facebook and Instagram? Approved posts will wait for you to post them yourself.')) return;
+  const r = await fetch('/api/studio/meta', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'disconnect' }) });
+  if (r.ok) { meta = await r.json(); drawMeta(); draw(); toast('Disconnected.'); }
+});
+// Back from Facebook's login.
+{
+  const m = new URLSearchParams(location.search).get('meta');
+  if (m) {
+    toast(m === 'connected' ? 'Facebook and Instagram are connected.' : m === 'cancelled' ? 'Connecting was cancelled.' : m === 'expired' ? 'That took too long. Please try Connect again.' : `Connecting didn’t work. ${m.replace(/^failed:/, '')}`, m !== 'connected');
+    history.replaceState(null, '', location.pathname);
+  }
+}
 $<HTMLInputElement>('[data-auto]').addEventListener('change', async (e) => {
   const on = (e.target as HTMLInputElement).checked;
   try { await api({ action: 'drafts', on }); toast(on ? 'Drafts are made automatically again.' : 'Automatic drafts paused. Existing drafts stay.'); }

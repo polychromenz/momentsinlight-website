@@ -1,9 +1,10 @@
 // Studio > Social (functions-lib/social.js): the drafts, Tony's edits and approvals, and the Social
 // mark on gallery photos.
-//   GET  /api/studio/social?from=YYYY-MM-DD&to=YYYY-MM-DD   -> { posts, platforms, ideas, marked, drafts_on }
+//   GET  /api/studio/social?from=YYYY-MM-DD&to=YYYY-MM-DD   -> { posts, platforms, ideas, marked, drafts_on, meta }
 //   POST /api/studio/social { action: 'mark', gallery_id, image_ids, on? }   mark photos Social (on omitted = toggle one)
 //   POST /api/studio/social { action: 'save', id, caption, post_at, link, label, photos }
 //   POST /api/studio/social { action: 'approve' | 'unapprove' | 'skip' | 'restore' | 'posted', id }
+//   POST /api/studio/social { action: 'post_now', id }      publish an approved Facebook/Instagram post now (functions-lib/meta.js)
 //   POST /api/studio/social { action: 'recaption', id }     a fresh AI caption (not saved until Save)
 //   POST /api/studio/social { action: 'swap', id }          a different idea in the same slot
 //   POST /api/studio/social { action: 'draft_now' }         fill the week ahead now rather than on the timer
@@ -11,6 +12,7 @@
 import { json } from '../../../../functions-lib/studio.js';
 import { adsBlocked } from '../../../../functions-lib/picks.js';
 import { PLATFORMS, ideas, recaption, swapDraft, socialTimer } from '../../../../functions-lib/social.js';
+import { metaStatus, connectedFor, publishPost } from '../../../../functions-lib/meta.js';
 
 const shape = (p) => ({ ...p, photos: JSON.parse(p.photos || '[]') });
 
@@ -20,13 +22,14 @@ export async function onRequestGet({ request, env }) {
   const from = ok(q.get('from')) ? q.get('from') : new Date().toISOString().slice(0, 10);
   const to = ok(q.get('to')) ? q.get('to') : from;
   const db = env.DB;
-  const [posts, marked, set, idea] = await Promise.all([
+  const [posts, marked, set, idea, meta] = await Promise.all([
     db.prepare(`SELECT * FROM social_posts WHERE post_at >= ?1 AND post_at <= ?2 AND source <> 'none' ORDER BY post_at, platform`).bind(from, `${to}T23:59`).all(),
     db.prepare(`SELECT count(*) n FROM photo_picks WHERE purpose = 'social'`).first(),
     db.prepare(`SELECT value FROM settings WHERE key = 'social'`).first(),
     ideas(env).catch(() => []),
+    metaStatus(env),
   ]);
-  return json({ posts: posts.results.map(shape), platforms: PLATFORMS, ideas: idea, marked: marked.n, drafts_on: !set || JSON.parse(set.value).drafts !== false });
+  return json({ posts: posts.results.map(shape), platforms: PLATFORMS, ideas: idea, marked: marked.n, drafts_on: !set || JSON.parse(set.value).drafts !== false, meta });
 }
 
 const cropOk = (c) => c && ['x', 'y', 'w', 'h'].every((k) => Number.isFinite(c[k])) && c.x >= -0.001 && c.y >= -0.001 && c.w > 0.05 && c.h > 0.05 && c.x + c.w <= 1.001 && c.y + c.h <= 1.001;
@@ -85,9 +88,17 @@ export async function onRequestPost({ request, env }) {
     if (d.action === 'approve') {
       if (p.status !== 'draft') return json({ error: 'Only a draft can be approved.' }, 400);
       if (!p.caption.trim()) return json({ error: 'Write a caption first.' }, 400);
+      if (await connectedFor(db, p.platform) && !JSON.parse(p.media || '[]').length) return json({ error: 'The photos didn’t upload. Try Approve again.' }, 400);
       return set(`status = 'approved', approved_at = ?2`, now);
     }
-    if (d.action === 'unapprove') return p.status === 'approved' ? set(`status = 'draft', approved_at = NULL`) : json({ error: 'It isn’t approved.' }, 400);
+    if (d.action === 'unapprove') return ['approved', 'failed'].includes(p.status) ? set(`status = 'draft', approved_at = NULL, media = NULL, error = NULL`) : json({ error: 'It isn’t approved.' }, 400);
+    if (d.action === 'post_now') {
+      if (!['approved', 'failed'].includes(p.status)) return json({ error: 'Approve it first.' }, 400);
+      if (!await connectedFor(db, p.platform)) return json({ error: `${PLATFORMS[p.platform].name} isn’t connected.` }, 400);
+      const r = await publishPost(env, p);
+      if (!r.ok) return json({ error: r.error, post: shape(await db.prepare('SELECT * FROM social_posts WHERE id = ?1').bind(p.id).first()) }, 502);
+      return json({ post: shape(await db.prepare('SELECT * FROM social_posts WHERE id = ?1').bind(p.id).first()) });
+    }
     if (d.action === 'skip') return p.status === 'posted' ? json({ error: 'That one has already been posted.' }, 400) : set(`status = 'skipped'`);
     if (d.action === 'restore') return p.status === 'skipped' ? set(`status = 'draft'`) : json({ error: 'It isn’t skipped.' }, 400);
     if (d.action === 'posted') return ['approved', 'failed'].includes(p.status) ? set(`status = 'posted', posted_at = ?2`, now) : json({ error: 'Approve it first.' }, 400);

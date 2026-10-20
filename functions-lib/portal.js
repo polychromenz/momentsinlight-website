@@ -1,6 +1,7 @@
 // The client portal: each job's private link, the portal's settings (Settings > Portal), and
 // everything a couple sees, gathered for /portal (functions/api/portal.js).
 import { loadJob } from './crm-send.js';
+import { jobGalleries, GALLERY_ORIGIN } from './gallery-access.js';
 import { parseQuote, longDate, payments, quoteNumber } from './quotes.js';
 
 export const SITE = 'https://www.momentsinlight.co.nz';
@@ -69,7 +70,8 @@ export async function portalData(db, job) {
     quote, contracts: contracts.results.map(({ id, ...c }) => c),
     questionnaires: questionnaires.results.map(({ id, ...q }) => ({ ...q, started: q.updated_at > q.created_at })),
     invoices: inv.map(({ id, ...i }) => ({ ...i, due_long: longDate(i.due_date), payable: i.status !== 'paid' })), owing, paid,
-    galleries: galleries.results.map(({ id, ...g }) => g),
+    galleries: [...(await jobGalleries(db, job.id)).filter((g) => g.online && g.url).map((g) => ({ title: g.name, url: g.url, note: '' })),
+      ...galleries.results.filter((g) => !g.url.startsWith(GALLERY_ORIGIN)).map(({ id, ...g }) => g)],
     documents: docs.results, uploads: uploads.results,
   };
 }

@@ -67,8 +67,12 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
             <div class="card-head"><h2>Client portal</h2><span class="portal-actions"><a class="s-btn portal-open" href="#" target="_blank" rel="noopener">Open their portal ↗</a><button type="button" class="s-btn s-btn--quiet" data-portal-copy>Copy link</button></span></div>
             <p class="hint">What they see: their booking, quote, contract, questionnaire, payments, plus the files and galleries below.</p>
             <h3 class="sub">Galleries</h3>
+            <ul class="quotes studio-galleries"></ul>
+            <form class="gallery-link" autocomplete="off"><select name="gallery_id" aria-label="A gallery to link to them"></select><button type="submit" class="s-btn s-btn--quiet">Link gallery</button></form>
             <ul class="quotes portal-galleries"></ul>
+            <details class="pictime-add"><summary>Add a Pic-Time link</summary>
             <form class="portal-add" autocomplete="off"><input name="title" placeholder="Name, e.g. Your practice shoot" aria-label="Gallery name" /><input name="url" placeholder="Pic-Time link" aria-label="Gallery link" /><button type="submit" class="s-btn s-btn--quiet">+ Add gallery</button></form>
+            </details>
             <h3 class="sub">Files from you <small>(tick to share from your Documents)</small></h3>
             <div class="portal-docs"></div>
             <h3 class="sub">Files from them</h3>
@@ -125,7 +129,10 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
       <h2 class="review-title">Review and send</h2>
       <p class="review-to"></p>
       <p class="review-missing" hidden></p>
-      <label class="review-gallery" hidden>Gallery link <small>(Pic-Time; it goes into the email and onto their portal)</small><input name="gallery_link" type="url" placeholder="https://…" /></label>
+      <div class="review-gallery" hidden>
+        <label>Their gallery <small>(its link goes into the email; it must be online)</small><select name="gallery_pick"></select></label>
+        <label class="review-gallery-url">Gallery link <small>(e.g. Pic-Time; it goes into the email and onto their portal)</small><input name="gallery_link" type="url" placeholder="https://…" /></label>
+      </div>
       <label>Subject<input name="subject" /></label>
       <div class="review-cols">
         <label>Email<textarea name="body" rows="18"></textarea></label>
@@ -219,7 +226,8 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
   type Message = { id: number; direction: string; subject: string; body: string; sent_at: string; attachments: string; gmail_message_id: string | null };
   let messages: Message[] = [];
   // ---- Portal ----
-  let portal: { link: string; path: string; galleries: { id: number; title: string; url: string }[]; documents: { id: number; name: string; size: number; shared: boolean }[]; uploads: { id: number; name: string; size: number; created_at: string; questionnaire_id: number | null }[] };
+  type StudioGallery = { id: string; name: string; status: string; expires_at: string | null; photos: number; link_id: number | null; url: string | null; online: boolean };
+  let portal: { link: string; path: string; galleries: { id: number; title: string; url: string }[]; studio_galleries: StudioGallery[]; unlinked: { id: string; name: string; status: string }[]; documents: { id: number; name: string; size: number; shared: boolean }[]; uploads: { id: number; name: string; size: number; created_at: string; questionnaire_id: number | null }[] };
   const kb = (n: number) => (n > 1048576 ? `${(n / 1048576).toFixed(1)} MB` : `${Math.max(1, Math.round(n / 1024))} KB`);
   async function loadPortal() {
     const r = await fetch(`/api/studio/crm/portal?job=${id}`);
@@ -227,7 +235,14 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
     if (!r.ok) return;
     portal = p;
     document.querySelectorAll<HTMLAnchorElement>('.portal-open').forEach((a) => { a.href = p.path; a.hidden = false; });
-    $('.portal-galleries').innerHTML = p.galleries.map((g: any) => `<li class="inv"><span class="what"><a href="${esc(g.url)}" target="_blank" rel="noopener"><strong>${esc(g.title)}</strong></a><br><small>${esc(g.url)}</small></span><button type="button" class="s-btn s-btn--quiet" data-gallery-remove="${g.id}">Remove</button></li>`).join('') || '<li class="empty">None yet. Add the Pic-Time link when their gallery is ready.</li>';
+    // Their studio galleries (linked here or on the gallery's settings), then any Pic-Time links.
+    const state = (g: StudioGallery) => (g.online ? 'Online' : g.status === 'online' ? 'Expired' : g.status === 'draft' ? 'Draft (only you can see it)' : 'Offline');
+    $('.studio-galleries').innerHTML = p.studio_galleries.map((g: StudioGallery) => `<li class="inv"><span class="what"><a href="/studio/gallery?id=${esc(g.id)}"><strong>${esc(g.name)}</strong></a><br><small>${state(g)} · ${g.photos} photo${g.photos === 1 ? '' : 's'}${g.online ? ' · on their portal' : ''}</small></span>
+      <span class="inv-acts">${g.link_id ? `<a class="s-btn s-btn--quiet" href="/api/studio/galleries/try?link=${g.link_id}" target="_blank" rel="noopener">Open as client</a>` : ''}${g.url ? `<button type="button" class="s-btn s-btn--quiet" data-copy-gallery="${esc(g.url)}">Copy link</button>` : ''}<button type="button" class="s-btn s-btn--quiet" data-unlink-gallery="${esc(g.id)}">Unlink</button></span></li>`).join('')
+      || '<li class="empty">No galleries linked yet. Link one below once it’s made in Galleries.</li>';
+    $<HTMLSelectElement>('.gallery-link select').innerHTML = `<option value="">Link a gallery…</option>${p.unlinked.map((g: any) => `<option value="${esc(g.id)}">${esc(g.name)}${g.status === 'online' ? '' : ` (${esc(g.status)})`}</option>`).join('')}`;
+    $('.gallery-link').hidden = !p.unlinked.length;
+    $('.portal-galleries').innerHTML = p.galleries.map((g: any) => `<li class="inv"><span class="what"><a href="${esc(g.url)}" target="_blank" rel="noopener"><strong>${esc(g.title)}</strong></a><br><small>${esc(g.url)}</small></span><button type="button" class="s-btn s-btn--quiet" data-gallery-remove="${g.id}">Remove</button></li>`).join('');
     $('.portal-docs').innerHTML = p.documents.length ? p.documents.map((x: any) => `<span class="pdoc"><input type="checkbox" value="${x.id}"${x.shared ? ' checked' : ''} aria-label="Share ${esc(x.name)} in their portal" /> <a href="/api/studio/crm/documents?id=${x.id}" target="_blank" rel="noopener">${esc(x.name)}</a> <small>${kb(x.size)}${x.own ? ' · just for them' : ''}</small></span>`).join('') : '<p class="empty">Upload files in Settings &gt; Documents first.</p>';
     $('.portal-uploads').innerHTML = p.uploads.map((u: any) => `<li class="inv"><span class="what"><a href="/api/studio/crm/portal?job=${id}&upload=${u.id}" target="_blank" rel="noopener">${esc(u.name)}</a><br><small>${kb(u.size)} · ${u.questionnaire_id ? 'from their questionnaire' : 'added in their portal'} · ${dateTime(u.created_at)}</small></span>${u.questionnaire_id ? '' : `<button type="button" class="s-btn s-btn--quiet" data-upload-remove="${u.id}">Remove</button>`}</li>`).join('') || '<li class="empty">Nothing yet.</li>';
   }
@@ -238,6 +253,24 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
     await loadPortal();
     return true;
   }
+  // Review and send: "Paste a link instead…" shows the link box.
+  document.addEventListener('change', (e) => {
+    const sel = (e.target as HTMLElement).closest<HTMLSelectElement>('select[name="gallery_pick"]');
+    if (sel) $('.review-gallery-url').hidden = !!sel.value;
+  });
+  $<HTMLFormElement>('.gallery-link').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const gid = $<HTMLSelectElement>('.gallery-link select').value;
+    if (!gid) { toast('Choose a gallery first.', true); return; }
+    if (await portalPost({ action: 'link-gallery', gallery_id: gid })) toast('Gallery linked. It shows on their portal once it’s online.');
+  });
+  $('.studio-galleries').addEventListener('click', async (e) => {
+    const t = e.target as HTMLElement;
+    const cp = t.closest<HTMLElement>('[data-copy-gallery]');
+    if (cp) { await navigator.clipboard.writeText(cp.dataset.copyGallery!); toast('Gallery link copied.'); return; }
+    const un = t.closest<HTMLElement>('[data-unlink-gallery]');
+    if (un && await ask('Unlink this gallery from them? The gallery itself isn’t changed.')) { if (await portalPost({ action: 'unlink-gallery', gallery_id: un.dataset.unlinkGallery })) toast('Unlinked.'); }
+  });
   $<HTMLFormElement>('.portal-add').addEventListener('submit', async (e) => {
     e.preventDefault();
     const fm = e.target as HTMLFormElement;
@@ -446,6 +479,13 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
     miss.textContent = d.missing.length ? `Fill in the gaps in [square brackets]: ${d.missing.join(', ')}` : '';
     $('.review-gallery').hidden = !d.gallery;
     (rf.elements.namedItem('gallery_link') as HTMLInputElement).value = '';
+    // Their studio galleries to choose from (online ones first); or paste a link for an older Pic-Time one.
+    const choices = [...(portal?.studio_galleries ?? [])].filter((g) => g.url).sort((a, b) => Number(b.online) - Number(a.online));
+    const pick = rf.elements.namedItem('gallery_pick') as HTMLSelectElement;
+    pick.innerHTML = choices.map((g) => `<option value="${esc(g.url!)}"${g.online ? '' : ' disabled'}>${esc(g.name)}${g.online ? '' : ' (not online yet)'}</option>`).join('') + '<option value="">Paste a link instead…</option>';
+    pick.value = choices.find((g) => g.online)?.url ?? '';
+    pick.closest('label')!.hidden = !choices.length;
+    $('.review-gallery-url').hidden = !!pick.value;
     reviewDocs.set(d.documents, d.attachments);
     (rf.elements.namedItem('subject') as HTMLInputElement).value = d.subject;
     reviewRich.set(d.body);
@@ -501,7 +541,7 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
     const r = await fetch('/api/studio/crm/send', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({
       step: reviewStep,
       attachments: reviewDocs.get(),
-      gallery_link: (rf.elements.namedItem('gallery_link') as HTMLInputElement).value.trim(),
+      gallery_link: (rf.elements.namedItem('gallery_pick') as HTMLSelectElement).value || (rf.elements.namedItem('gallery_link') as HTMLInputElement).value.trim(),
       subject: (rf.elements.namedItem('subject') as HTMLInputElement).value,
       body: (rf.elements.namedItem('body') as HTMLTextAreaElement).value,
     }) });
@@ -812,7 +852,12 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
   .review-form { display: flex; flex-direction: column; gap: 12px; padding: 22px 24px; }
   .review-title { margin: 0; font-weight: 300; font-size: 24px; color: var(--ink); }
   .review-to { margin: 0; font-size: 14px; color: #555; }
-  .review-gallery input { font: inherit; font-size: 15px; }
+  .review-gallery input, .review-gallery select { font: inherit; font-size: 15px; }
+  .review-gallery label { display: block; margin-bottom: 10px; }
+  .gallery-link { display: flex; gap: 8px; flex-wrap: wrap; margin: 6px 0 12px; }
+  .gallery-link select { flex: 1 1 220px; font: inherit; font-size: 14px; }
+  .studio-galleries .inv-acts { display: flex; gap: 4px; flex-wrap: wrap; justify-content: flex-end; }
+  .pictime-add summary { cursor: pointer; font-size: 13px; color: #777; margin: 4px 0 8px; }
   .review-missing { margin: 0; padding: 10px 14px; background: #fff4d6; color: #5c4400; border-radius: 10px 0; font-size: 14px; }
   .review-attach { margin: 0; font-size: 14px; color: #555; }
   .review-form label { display: flex; flex-direction: column; gap: 5px; font-size: 13px; font-weight: 600; color: #555; }

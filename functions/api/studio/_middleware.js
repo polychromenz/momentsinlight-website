@@ -8,7 +8,7 @@ import { areaOfApi, levelFor, AREAS } from '../../../functions-lib/areas.js';
 import { recordActivity } from '../../../functions-lib/activity.js';
 
 // Reads that still change something (connecting Google or Xero), so they count as changes.
-const READ_BUT_CHANGES = /^\/api\/studio\/(crm\/(gmail-connect|gmail-callback)|xero\/(connect|callback))/;
+const READ_BUT_CHANGES = /^\/api\/studio\/(crm\/(gmail-connect|gmail-callback)|xero\/(connect|callback)|meta\/(connect|callback))/;
 
 export async function onRequest(context) {
   const { request, env } = context;

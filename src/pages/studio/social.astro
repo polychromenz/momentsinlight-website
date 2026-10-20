@@ -1,7 +1,8 @@
 ---
 // Moments Studio > Social (docs/social-media-manager-plan.md, milestone 1): the drafts the studio
 // makes a week ahead for Instagram, Facebook, Google and Pinterest. Tony edits and approves each
-// one; for now he copies the caption and downloads the photos to post them himself. Script in
+// one. Facebook and Instagram, once connected (milestone 2, functions-lib/meta.js), post themselves at
+// their time; for the others he copies the caption and downloads the photos to post them himself. Script in
 // src/studio/social.ts; data from functions/api/studio/social.
 import StudioLayout from '../../layouts/StudioLayout.astro';
 ---
@@ -10,7 +11,7 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
     <div class="so-head">
       <div>
         <h1>Social</h1>
-        <p class="intro">Drafts for the week ahead. Edit each one, approve it, then copy the caption and download the photos to post. Nothing goes out without your approval.</p>
+        <p class="intro">Drafts for the week ahead. Edit each one and approve it. Facebook and Instagram, once connected, post approved ones on their own; for the others, copy the caption and download the photos. Nothing goes out without your approval.</p>
       </div>
       <div class="so-tools">
         <button type="button" class="s-btn s-btn--quiet" data-move="-7" aria-label="Earlier">‹</button>
@@ -19,6 +20,11 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
         <button type="button" class="s-btn" data-draft-now>Make drafts now</button>
       </div>
     </div>
+
+    <section class="card so-meta">
+      <h2>Facebook and Instagram</h2>
+      <div class="so-meta-body"><p class="muted">Loading…</p></div>
+    </section>
 
     <div class="so-weeks"><p class="muted">Loading…</p></div>
     <p class="so-key"><span class="pf pf-instagram">IG</span> Instagram <span class="pf pf-facebook">FB</span> Facebook <span class="pf pf-google">G</span> Google <span class="pf pf-pinterest">P</span> Pinterest
@@ -68,6 +74,12 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
 </script>
 
 <style is:global>
+  .so-meta { margin: 0 0 18px; }
+  .so-meta h2 { margin: 0 0 6px; }
+  .so-meta p { margin: 0 0 10px; }
+  .so-meta select { margin-left: 6px; }
+  .so-meta .warn { color: #a0522d; }
+  .post.st-posting { opacity: 0.7; }
   .so { max-width: 1300px; margin: 0 auto; padding: 24px clamp(14px, 3vw, 32px) 80px; }
   .so-head { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 14px; }
   .so h1 { margin: 0; font-weight: 300; font-size: 32px; color: var(--ink); }

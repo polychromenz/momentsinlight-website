@@ -47,6 +47,18 @@ export async function deleteGallery(env, galleryId) {
 export const GALLERY_ORIGIN = 'https://galleries.momentsinlight.co.nz';
 export const LINK_KINDS = { main_client: 'Couple / client', invited: 'Invited', guest: 'Guests', vendor: 'Vendor / venue' };
 export const linkUrl = (slug, token) => `${GALLERY_ORIGIN}/${slug}${token ? `?k=${token}` : ''}`;
+
+/** A client's studio galleries (linked on the gallery's settings or their client page), each with the
+ *  couple's own link: { id, name, status, expires_at, photos, link_id, url, online }. */
+export async function jobGalleries(db, jobId) {
+  const rows = (await db.prepare(`SELECT g.id, g.name, g.slug, g.status, g.expires_at,
+      (SELECT count(*) FROM gallery_images i WHERE i.gallery_id = g.id AND i.hidden = 0 AND i.status = 'ready') photos,
+      (SELECT l.id FROM gallery_links l WHERE l.gallery_id = g.id AND l.kind = 'main_client' ORDER BY l.id LIMIT 1) link_id,
+      (SELECT l.token FROM gallery_links l WHERE l.gallery_id = g.id AND l.kind = 'main_client' ORDER BY l.id LIMIT 1) token
+    FROM photo_galleries g WHERE g.job_id = ?1 ORDER BY g.created_at`).bind(jobId).all()).results;
+  const t = today();
+  return rows.map(({ slug, token, ...g }) => ({ ...g, url: token ? linkUrl(slug, token) : null, online: g.status === 'online' && !(g.expires_at && g.expires_at < t) }));
+}
 const today = () => new Date().toLocaleDateString('en-CA', { timeZone: 'Pacific/Auckland' });
 
 /** Clean values for a link. Defaults by kind: guests give their email first and get web-size downloads;

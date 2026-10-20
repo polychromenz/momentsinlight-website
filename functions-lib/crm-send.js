@@ -4,6 +4,7 @@
 // and send" in the studio (functions/api/studio/crm/send.js) for ready-to-send ones.
 // Every send goes through sendEmail(), so the test-mode lock always applies.
 import { sendEmail } from './gmail.js';
+import { jobGalleries, GALLERY_ORIGIN } from './gallery-access.js';
 import { renderTemplate, fields, studioLinks } from './email-render.js';
 import { attachmentsFor } from './documents.js';
 import { portalToken, portalLink } from './portal.js';
@@ -53,7 +54,13 @@ export async function sendStep(env, step, edits = {}) {
   if (!job) throw new Error('That job no longer exists.');
   const rule = ruleOf(step);
   const gallery = (edits.gallery_link ?? '').toString().trim();
-  if (rule.gallery && !/^https?:\/\/\S+$/i.test(gallery)) throw new Error('Paste the gallery link first.');
+  if (rule.gallery && !/^https?:\/\/\S+$/i.test(gallery)) throw new Error('Choose their gallery (or paste a link) first.');
+  // A studio gallery (galleries.momentsinlight.co.nz) must be online, or the link won't open for them.
+  const studioGallery = gallery.startsWith(GALLERY_ORIGIN);
+  if (studioGallery) {
+    const g = (await jobGalleries(db, job.id)).find((x) => x.url === gallery);
+    if (g && !g.online) throw new Error(`“${g.name}” isn’t online yet. Put it online (Galleries), then send.`);
+  }
   const { template } = await draftFor(db, step, job, env);
   const email = renderTemplate(template, fields(job, { ...(await jobLinks(db, job, step, env)), ...(gallery ? { gallery_link: gallery } : {}) }), edits);
   if (email.missing.length) throw new Error(`It needs: ${email.missing.join(', ')}. Fill those in before sending.`);
@@ -68,7 +75,7 @@ export async function sendStep(env, step, edits = {}) {
       VALUES (?1, ?2, ?3, 'out', ?4, ?5, ?6, ?7, ?8, ?9)`).bind(job.id, job.client_id, step.id, email.subject, email.body, sent.id, sent.threadId, now, attachments.map((a) => a.name).join('\n')),
     db.prepare(`UPDATE steps SET status = 'done', done_at = ?2, note = ?3 WHERE id = ?1`)
       .bind(step.id, now, sent.redirected ? `Test mode: sent to ${sent.to} instead of ${sent.intended}` : `Sent to ${sent.to}`),
-    ...(gallery ? [db.prepare('INSERT INTO galleries (job_id, title, url, created_at) VALUES (?1, ?2, ?3, ?4)').bind(job.id, galleryName(step.title), gallery, now)] : []),
+    ...(gallery && !studioGallery ? [db.prepare('INSERT INTO galleries (job_id, title, url, created_at) VALUES (?1, ?2, ?3, ?4)').bind(job.id, galleryName(step.title), gallery, now)] : []),
   ]);
   await planAfter(db, job.id, step.step_key).catch((e) => console.error('planAfter', e.message));
   return sent;
