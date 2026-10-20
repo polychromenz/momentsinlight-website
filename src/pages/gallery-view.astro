@@ -53,10 +53,10 @@ import { site } from '../data/site';
       <main class="g-main"></main>
       <div class="selbar" hidden>
         <strong class="sel-n"></strong>
-        <button type="button" class="sb-btn" data-sel-list>Save to list</button>
-        <button type="button" class="sb-btn" data-sel-dl hidden>Download</button>
-        <button type="button" class="sb-btn" data-sel-hide hidden>Hide</button>
-        <button type="button" class="sb-btn" data-sel-unhide hidden>Show again</button>
+        <button type="button" class="btn sb-btn" data-sel-list>Save to list</button>
+        <button type="button" class="btn sb-btn" data-sel-dl hidden>Download</button>
+        <button type="button" class="btn sb-btn" data-sel-hide hidden>Hide</button>
+        <button type="button" class="btn sb-btn" data-sel-unhide hidden>Show again</button>
         <button type="button" class="sb-btn sb-x" data-sel-done aria-label="Stop selecting">✕</button>
       </div>
       <footer class="g-foot">
@@ -459,12 +459,15 @@ import { site } from '../data/site';
     if (selecting && bar.hidden) nudge('sb-in');
     else if (selecting && n > shownN) {
       nudge('sb-pop');
-      const h = document.createElement('span');
-      h.className = 'sb-heart'; h.textContent = '♥'; h.setAttribute('aria-hidden', 'true');
-      h.style.left = `${30 + Math.random() * 40}%`;
-      bar.append(h);
-      h.addEventListener('animationend', () => h.remove());
-      setTimeout(() => h.remove(), 1500);
+      const left = 30 + Math.random() * 40;
+      for (const small of [false, true]) {
+        const h = document.createElement('span');
+        h.className = small ? 'sb-heart sb-heart--small' : 'sb-heart';
+        h.setAttribute('aria-hidden', 'true');
+        h.style.left = `${left + (small ? -7 : 0)}%`;
+        bar.append(h);
+        setTimeout(() => h.remove(), 1900);
+      }
     }
     shownN = n;
     bar.hidden = !selecting;
@@ -775,18 +778,21 @@ import { site } from '../data/site';
   .ph.sel img { opacity: 0.8; }
   .ph.sel { outline: 3px solid var(--green); outline-offset: -3px; }
   .g-filter { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: center; margin: 14px auto 0; padding: 10px 16px; max-width: 900px; background: var(--griseo); border-radius: 14px 0; font-size: 14px; }
-  .selbar { position: fixed; left: 50%; bottom: 16px; transform: translateX(-50%); z-index: 50; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: center; padding: 10px 14px; max-width: calc(100vw - 24px); background: var(--light-gold); color: var(--olive); border-radius: 18px 0; box-shadow: 0 18px 38px -16px rgb(0 0 0 / 0.55); font-size: 14px; }
+  .selbar { position: fixed; left: 50%; bottom: 16px; transform: translateX(-50%); z-index: 50; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: center; padding: 10px 14px; max-width: calc(100vw - 24px); background: var(--champagne); color: var(--olive); border-radius: 18px 0; box-shadow: 0 0 0 1px rgb(62 66 41 / 0.12), 0 18px 40px -14px rgb(0 0 0 / 0.6); font-size: 14px; }
   .selbar.sb-in { animation: sb-in 0.45s cubic-bezier(0.2, 1.4, 0.4, 1); }
   .selbar.sb-pop { animation: sb-pop 0.6s ease-out; }
   @keyframes sb-in { from { transform: translate(-50%, 140%); opacity: 0; } to { transform: translate(-50%, 0); opacity: 1; } }
-  @keyframes sb-pop { 0% { transform: translateX(-50%) scale(1); box-shadow: 0 0 0 0 rgb(216 199 159 / 0.9); } 35% { transform: translateX(-50%) scale(1.08); } 100% { transform: translateX(-50%) scale(1); box-shadow: 0 0 0 18px rgb(216 199 159 / 0); } }
-  .sb-heart { position: absolute; bottom: 70%; color: var(--olive); font-size: 22px; pointer-events: none; animation: sb-heart 1.1s ease-out forwards; }
-  @keyframes sb-heart { 0% { transform: translateY(0) scale(0.4); opacity: 0; } 20% { transform: translateY(-10px) scale(1.15); opacity: 1; } 100% { transform: translateY(-70px) scale(0.9) rotate(-12deg); opacity: 0; } }
+  @keyframes sb-pop { 0% { transform: translateX(-50%) scale(1); box-shadow: 0 0 0 0 rgb(246 241 234 / 0.95); } 35% { transform: translateX(-50%) scale(1.08); } 100% { transform: translateX(-50%) scale(1); box-shadow: 0 0 0 18px rgb(246 241 234 / 0); } }
+  /* The website buttons' floating hearts (global.css), bigger and pink. */
+  .sb-heart { position: absolute; bottom: calc(100% - 10px); width: 34px; height: 34px; background-color: #e89aae; -webkit-mask: var(--heart-shape) center / contain no-repeat; mask: var(--heart-shape) center / contain no-repeat; opacity: 0; pointer-events: none; animation: sb-heart 1.6s ease-out forwards; }
+  .sb-heart--small { width: 20px; height: 20px; background-color: #f2b8c6; animation-name: sb-heart-small; animation-delay: 0.2s; }
+  @keyframes sb-heart { 0% { opacity: 0; transform: translate(0, 10px) scale(0.4) rotate(0deg); } 20% { opacity: 1; transform: translate(-4px, -12px) scale(1) rotate(-10deg); } 60% { opacity: 0.9; transform: translate(9px, -48px) scale(1.05) rotate(8deg); } 100% { opacity: 0; transform: translate(-5px, -84px) scale(0.85) rotate(-6deg); } }
+  @keyframes sb-heart-small { 0% { opacity: 0; transform: translate(0, 8px) scale(0.4); } 25% { opacity: 0.9; transform: translate(4px, -8px) scale(1) rotate(10deg); } 65% { opacity: 0.75; transform: translate(-6px, -36px) rotate(-8deg); } 100% { opacity: 0; transform: translate(4px, -62px) scale(0.8) rotate(4deg); } }
   @media (prefers-reduced-motion: reduce) { .selbar.sb-in, .selbar.sb-pop { animation: none; } .sb-heart { display: none; } }
-  .sb-btn { font: inherit; font-size: 13px; font-weight: 600; padding: 7px 12px; border: 1px solid rgb(62 66 41 / 0.45); border-radius: 10px 0; background: transparent; color: var(--olive); cursor: pointer; }
-  .sb-btn:not(.sb-x):not(:disabled):hover { background: var(--olive); color: var(--light-gold); }
-  .sb-btn:disabled { opacity: 0.45; cursor: default; }
-  .sb-x { border-color: transparent; }
+  /* The bar's buttons are the website's buttons (global.css .btn: sheen, lift and floating hearts), just smaller. */
+  .sb-btn.btn { padding: 11px 20px; font-size: 13px; }
+  .sb-btn.btn:disabled { opacity: 0.45; cursor: default; transform: none; }
+  .sb-x { font: inherit; font-size: 16px; padding: 6px 10px; border: 0; background: none; color: var(--olive); cursor: pointer; }
   .g-dlg { border: 0; padding: 0; border-radius: 22px 0; width: min(520px, calc(100vw - 24px)); max-height: calc(100svh - 40px); color: var(--ink); }
   .g-dlg::backdrop { background: rgb(0 0 0 / 0.45); }
   .g-dlg--side { margin-right: 0; margin-top: 0; height: 100svh; max-height: 100svh; border-radius: 0; width: min(440px, 100vw); }
