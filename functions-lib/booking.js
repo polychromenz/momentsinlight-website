@@ -10,7 +10,7 @@ import { googleToken, sendEmail } from './gmail.js';
 import { alertTony } from './crm.js';
 import { renderTemplate, fields } from './email-render.js';
 import { jobLinks } from './crm-send.js';
-import { unsyncAppointment } from './calendar.js';
+import { unsyncAppointment, syncJob, addMeet } from './calendar.js';
 
 export const SITE = 'https://www.momentsinlight.co.nz';
 const DAYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
@@ -151,6 +151,10 @@ export async function makeBooking(context, type, s, f) {
   return { id: b.id, job_id: job.id, held: false };
 }
 
+/** Where, for the email: escaped, with any link (e.g. the Google Meet) clickable. */
+const whereHtml = (text) => String(text).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c])
+  .replace(/https:\/\/[^\s<)]+/g, (u) => `<a href="${u}" style="color:#5a5e3b;">${u}</a>`);
+
 /** A booking is on: the confirmation email (through the usual safety switch) and Tony's alert. */
 export async function confirmBooking(context, bookingId) {
   const { env } = context;
@@ -159,6 +163,13 @@ export async function confirmBooking(context, bookingId) {
   if (!b) return;
   await db.prepare(`UPDATE bookings SET status = 'confirmed' WHERE id = ?1`).bind(b.id).run();
   await db.prepare(`UPDATE appointments SET notes = replace(notes, 'Waiting for payment (held 30 minutes). ', 'Paid. '), updated_at = ?2 WHERE id = ?1`).bind(b.appointment_id, new Date().toISOString()).run();
+  // Into Tony's Google Calendar now (not on the next timer run), with a Google Meet link for a video call.
+  let calNote = '';
+  try {
+    await syncJob(env, b.job_id);
+    const a = await db.prepare('SELECT location FROM appointments WHERE id = ?1').bind(b.appointment_id).first();
+    if (/video/i.test(a?.location || '') && !(await addMeet(env, b.appointment_id))) calNote = 'No Google Meet link was made: send them one yourself.';
+  } catch (e) { calNote = `Google Calendar didn’t update (${e.message}); the timer will try again. Send the video link yourself.`; }
   const job = await db.prepare(`SELECT j.*, c.first_name, c.last_name, c.email, c.phone FROM jobs j JOIN clients c ON c.id = j.client_id WHERE j.id = ?1`).bind(b.job_id).first();
   const appt = await db.prepare('SELECT * FROM appointments WHERE id = ?1').bind(b.appointment_id).first();
   const when = whenText(b.date, b.time);
@@ -166,7 +177,7 @@ export async function confirmBooking(context, bookingId) {
   try {
     const t = await db.prepare(`SELECT * FROM templates WHERE key = 'booking-confirmed'`).first();
     if (!t) throw new Error('the “Booking confirmed” email template is missing');
-    const e = renderTemplate(t, fields(job, { ...(await jobLinks(db, job)), booking_name: b.type_name, booking_when: when, booking_where: appt?.location || 'I’ll be in touch with the details' }));
+    const e = renderTemplate(t, fields(job, { ...(await jobLinks(db, job)), booking_name: b.type_name, booking_when: when, booking_where: whereHtml(appt?.location || 'I’ll be in touch with the details') }));
     const s = await sendEmail(env, { to: job.email, subject: e.subject, html: e.html });
     await db.prepare(`INSERT INTO messages (job_id, client_id, direction, subject, body, gmail_message_id, gmail_thread_id, sent_at) VALUES (?1, ?2, 'out', ?3, ?4, ?5, ?6, ?7)`)
       .bind(job.id, job.client_id, e.subject, e.body, s.id, s.threadId, new Date().toISOString()).run();
@@ -174,7 +185,7 @@ export async function confirmBooking(context, bookingId) {
   } catch (e) { sent = `Confirmation not sent (${e.message}).`; }
   await alertTony(env, `New booking: ${b.type_name} with ${job.first_name} ${job.last_name}`, [
     ['When', when], ['Who', `${job.first_name} ${job.last_name}${job.partner_name ? ` and ${job.partner_name}` : ''}`], ['Email', job.email], ['Phone', job.phone],
-    ['Wedding date', job.event_date ?? ''], ['Their note', job.message?.slice(-500) ?? ''], ['Email to them', sent],
+    ['Wedding date', job.event_date ?? ''], ['Their note', job.message?.slice(-500) ?? ''], ['Where', appt?.location ?? ''], ['Email to them', sent], ...(calNote ? [['Calendar', calNote]] : []),
   ], `${SITE}/studio/crm/job?id=${job.id}`);
 }
 

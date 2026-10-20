@@ -104,6 +104,32 @@ export async function syncJob(env, jobId) {
   return true;
 }
 
+/** A Google Meet link for an appointment (online bookings of a video-call kind): added to its Google
+ *  event, then kept as the appointment's location so it shows on the client page, in the calendar and
+ *  in the confirmation email. Returns the link, or null if Google Calendar isn't connected. */
+export async function addMeet(env, apptId) {
+  const db = env.DB;
+  let a = await db.prepare('SELECT * FROM appointments WHERE id = ?1').bind(apptId).first();
+  if (!a) return null;
+  const have = String(a.location || '').match(/https:\/\/meet\.google\.com\/\S+/);
+  if (have) return have[0];
+  if (!a.gcal_event_id) { await syncJob(env, a.job_id); a = await db.prepare('SELECT * FROM appointments WHERE id = ?1').bind(apptId).first(); }
+  if (!a?.gcal_event_id) return null;
+  const path = `/calendars/${encodeURIComponent(await calendarId(env))}/events/${encodeURIComponent(a.gcal_event_id)}`;
+  let ev = await gcal(env, 'PATCH', `${path}?conferenceDataVersion=1`, { conferenceData: { createRequest: { requestId: `appt-${a.id}-${Date.now()}`, conferenceSolutionKey: { type: 'hangoutsMeet' } } } });
+  // Google usually makes the Meet straight away; give it a moment if not.
+  for (let n = 0; n < 4 && !ev.hangoutLink && ev.conferenceData?.createRequest?.status?.statusCode === 'pending'; n++) {
+    await new Promise((r) => setTimeout(r, 1000));
+    ev = await gcal(env, 'GET', path);
+  }
+  const link = ev.hangoutLink || ev.conferenceData?.entryPoints?.find((e) => e.entryPointType === 'video')?.uri;
+  if (!link) return null;
+  const location = `Google Meet video call: ${link}${/phone/i.test(a.location || '') ? ' (or phone, if you’d prefer)' : ''}`;
+  await db.prepare('UPDATE appointments SET location = ?2, updated_at = ?3 WHERE id = ?1').bind(a.id, location, new Date().toISOString()).run();
+  await syncJob(env, a.job_id); // the event's location too
+  return link;
+}
+
 /** Remove an appointment's Google event (when the appointment is deleted). */
 export async function unsyncAppointment(env, a) {
   if (!a?.gcal_event_id || !(await calendarReady(env.DB))) return;
