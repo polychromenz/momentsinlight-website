@@ -481,7 +481,7 @@ function drawMusic() {
 $<HTMLInputElement>('.music-add [name=file]').addEventListener('change', (e) => {
   const file = (e.target as HTMLInputElement).files?.[0];
   if (!file) return;
-  const words = file.name.replace(/.mp3$/i, '').replace(/[_-]+/g, ' ').replace(/d{3,}/g, '').replace(/s+/g, ' ').trim();
+  const words = file.name.replace(/\.mp3$/i, '').replace(/[_-]+/g, ' ').replace(/\b\d{3,}\b/g, '').replace(/\s+/g, ' ').trim();
   $<HTMLInputElement>('.music-add [name=name]').value = words ? words[0].toUpperCase() + words.slice(1) : '';
 });
 $<HTMLFormElement>('.music-add').addEventListener('submit', async (e) => {
