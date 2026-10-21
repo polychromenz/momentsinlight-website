@@ -38,8 +38,10 @@ let platforms: Record<string, Platform> = {};
 let open: Post | null = null;
 let at = 0; // the photo being cropped in the editor
 let meta: Meta = { ready: false, connection: null };
+type Pin = { ready: boolean; connection: null | { username: string; boards: { id: string; name: string }[]; board_id: string | null; board_name: string | null; connected_at: string } };
+let pin: Pin = { ready: false, connection: null };
 /** Does this platform post itself (connected)? */
-const auto = (platform: string) => !!meta.connection && ((platform === 'facebook' && !!meta.connection.page_id) || (platform === 'instagram' && !!meta.connection.ig_id));
+const auto = (platform: string) => (platform === 'pinterest' ? !!pin.connection?.board_id : !!meta.connection && ((platform === 'facebook' && !!meta.connection.page_id) || (platform === 'instagram' && !!meta.connection.ig_id)));
 
 function monday(d: Date) { const m = new Date(d.getFullYear(), d.getMonth(), d.getDate()); m.setDate(m.getDate() - ((m.getDay() + 6) % 7)); return m; }
 
@@ -48,8 +50,9 @@ async function load() {
   const r = await fetch(`/api/studio/social?from=${iso(start)}&to=${iso(end)}`);
   const d = await r.json().catch(() => null);
   if (!r.ok || !d) { $('.so-weeks').innerHTML = `<p class="muted">${esc(d?.error || 'Couldn’t load the drafts.')}</p>`; return; }
-  posts = d.posts; platforms = d.platforms; meta = d.meta; music = d.music ?? [];
+  posts = d.posts; platforms = d.platforms; meta = d.meta; music = d.music ?? []; pin = d.pinterest ?? pin;
   drawMeta();
+  drawPin();
   drawMusic();
   $<HTMLInputElement>('[data-auto]').checked = d.drafts_on;
   $('.idea-list').innerHTML = d.ideas.length ? d.ideas.map((i: any) => `<li>${esc(i.text)}${i.link ? ` <a href="${esc(i.link)}">Open</a>` : ''}</li>`).join('') : '<li class="muted">Nothing new right now.</li>';
@@ -67,6 +70,18 @@ function drawMeta() {
     ${c.pages.length > 1 ? `<label>Page <select data-meta-page>${c.pages.map((p) => `<option value="${esc(p.id)}"${p.id === c.page_id ? ' selected' : ''}>${esc(p.name)}${p.ig_username ? ` (@${esc(p.ig_username)})` : ''}</option>`).join('')}</select></label>` : ''}
     <p class="muted">Approved Facebook and Instagram posts go out on their own at their time. Nothing goes without your approval.</p>
     <a class="s-btn s-btn--quiet" href="/api/studio/meta/connect">Reconnect</a> <button type="button" class="s-btn s-btn--quiet" data-meta-off>Disconnect</button>`;
+}
+
+// The Pinterest connection card.
+function drawPin() {
+  const box = $('.so-pin-body');
+  const c = pin.connection;
+  if (!pin.ready) { box.innerHTML = '<p class="muted">Not set up yet: the Pinterest app’s ID and secret need adding in Cloudflare (PINTEREST_APP_ID, PINTEREST_APP_SECRET).</p>'; return; }
+  if (!c) { box.innerHTML = '<p>Connect Pinterest, choose a board, and approved pins go out on their own at their time.</p><a class="s-btn s-btn--solid" href="/api/studio/pinterest/connect">Connect Pinterest</a>'; return; }
+  box.innerHTML = `<p><strong>Pinterest:</strong> ${c.username ? `@${esc(c.username)}` : 'connected'}</p>
+    <label>Board <select data-pin-board><option value="">Choose a board…</option>${c.boards.map((b) => `<option value="${esc(b.id)}"${b.id === c.board_id ? ' selected' : ''}>${esc(b.name)}</option>`).join('')}</select></label>
+    <p class="muted">${c.board_id ? 'Approved pins go out on their own at their time.' : 'Choose the board pins go to, and approved pins go out on their own.'} While the app is on Pinterest’s Trial access, pins are only visible to you.</p>
+    <a class="s-btn s-btn--quiet" href="/api/studio/pinterest/connect">Reconnect</a> <button type="button" class="s-btn s-btn--quiet" data-pin-off>Disconnect</button>`;
 }
 
 function draw() {
@@ -453,6 +468,28 @@ document.addEventListener('click', async (e) => {
   const r = await fetch('/api/studio/meta', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'disconnect' }) });
   if (r.ok) { meta = await r.json(); drawMeta(); draw(); toast('Disconnected.'); }
 });
+document.addEventListener('change', async (e) => {
+  const sel = (e.target as HTMLElement).closest<HTMLSelectElement>('[data-pin-board]');
+  if (!sel || !sel.value) return;
+  const r = await fetch('/api/studio/pinterest', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'board', id: sel.value }) });
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok) { toast(d.error || 'That didn’t change.', true); return; }
+  pin = d; drawPin(); draw(); toast('Board chosen.');
+});
+document.addEventListener('click', async (e) => {
+  if (!(e.target as HTMLElement).closest('[data-pin-off]')) return;
+  if (!await ask('Disconnect Pinterest? Approved pins will wait for you to post them yourself.')) return;
+  const r = await fetch('/api/studio/pinterest', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'disconnect' }) });
+  if (r.ok) { pin = await r.json(); drawPin(); draw(); toast('Disconnected.'); }
+});
+// Back from Pinterest's login.
+{
+  const m = new URLSearchParams(location.search).get('pinterest');
+  if (m) {
+    toast(m === 'connected' ? 'Pinterest is connected. Choose the board pins go to.' : m === 'cancelled' ? 'Connecting was cancelled.' : m === 'expired' ? 'That took too long. Please try Connect again.' : `Connecting didn’t work. ${m.replace(/^failed:/, '')}`, m !== 'connected');
+    history.replaceState(null, '', location.pathname);
+  }
+}
 // Back from Facebook's login.
 {
   const m = new URLSearchParams(location.search).get('meta');

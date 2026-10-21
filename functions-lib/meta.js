@@ -13,6 +13,8 @@
 // Needs the Cloudflare settings META_APP_ID and META_APP_SECRET (a secret), and the app's Valid OAuth
 // Redirect URI set to REDIRECT below.
 
+import { publishPin, pinterestOn } from './pinterest.js';
+
 export const SITE = 'https://www.momentsinlight.co.nz';
 export const REDIRECT = `${SITE}/api/studio/meta/callback`;
 const V = 'v21.0';
@@ -50,6 +52,7 @@ async function saveConn(db, v) {
 export const disconnectMeta = (db) => saveConn(db, null);
 /** Is this platform connected (so approved posts publish themselves)? */
 export async function connectedFor(db, platform) {
+  if (platform === 'pinterest') return pinterestOn(db);
   const c = await metaConnection(db);
   return !!c && ((platform === 'facebook' && !!c.page_id) || (platform === 'instagram' && !!c.ig_id));
 }
@@ -112,6 +115,7 @@ const message = (p) => (p.platform === 'facebook' && p.link && !p.caption.includ
 
 /** Publish one approved post now. Returns { id, url }. */
 export async function publish(env, p) {
+  if (p.platform === 'pinterest') return publishPin(env, p);
   const c = await metaConnection(env.DB);
   if (!c) throw new Error('Facebook and Instagram aren’t connected.');
   const media = JSON.parse(p.media || '[]');
@@ -189,9 +193,9 @@ const nzStamp = (d = new Date()) => {
 /** The timer: approved Facebook and Instagram posts whose time has come (NZ). */
 export async function publishDue(env) {
   const nowNz = nzStamp();
-  const c = await metaConnection(env.DB);
-  if (!c || !metaReady(env)) return 'not connected';
-  const plats = [c.page_id && 'facebook', c.ig_id && 'instagram'].filter(Boolean);
+  const c = metaReady(env) ? await metaConnection(env.DB) : null;
+  const plats = [c?.page_id && 'facebook', c?.ig_id && 'instagram', (await pinterestOn(env.DB)) && 'pinterest'].filter(Boolean);
+  if (!plats.length) return 'not connected';
   // A post stuck mid-publish (the run stopped) goes back to failed so Tony sees it.
   await env.DB.prepare(`UPDATE social_posts SET status = 'failed', error = 'Stopped part-way through posting: check the platform before trying again' WHERE status = 'posting' AND posting_at < ?1`)
     .bind(new Date(Date.now() - 30 * 60_000).toISOString()).run();

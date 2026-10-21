@@ -14,6 +14,7 @@ import { json } from '../../../../functions-lib/studio.js';
 import { adsBlocked } from '../../../../functions-lib/picks.js';
 import { PLATFORMS, ideas, recaption, swapDraft, socialTimer } from '../../../../functions-lib/social.js';
 import { metaStatus, connectedFor, publishPost } from '../../../../functions-lib/meta.js';
+import { pinterestStatus } from '../../../../functions-lib/pinterest.js';
 
 const shape = (p) => ({ ...p, photos: JSON.parse(p.photos || '[]') });
 
@@ -23,15 +24,16 @@ export async function onRequestGet({ request, env }) {
   const from = ok(q.get('from')) ? q.get('from') : new Date().toISOString().slice(0, 10);
   const to = ok(q.get('to')) ? q.get('to') : from;
   const db = env.DB;
-  const [posts, marked, set, idea, meta, music] = await Promise.all([
+  const [posts, marked, set, idea, meta, music, pinterest] = await Promise.all([
     db.prepare(`SELECT * FROM social_posts WHERE post_at >= ?1 AND post_at <= ?2 AND source <> 'none' ORDER BY post_at, platform`).bind(from, `${to}T23:59`).all(),
     db.prepare(`SELECT count(*) n FROM photo_picks WHERE purpose = 'social'`).first(),
     db.prepare(`SELECT value FROM settings WHERE key = 'social'`).first(),
     ideas(env).catch(() => []),
     metaStatus(env),
     db.prepare(`SELECT id, name, mood, seconds FROM social_music ORDER BY lower(name)`).all().then((r) => r.results).catch(() => []),
+    pinterestStatus(env),
   ]);
-  return json({ posts: posts.results.map(shape), platforms: PLATFORMS, ideas: idea, marked: marked.n, drafts_on: !set || JSON.parse(set.value).drafts !== false, meta, music });
+  return json({ posts: posts.results.map(shape), platforms: PLATFORMS, ideas: idea, marked: marked.n, drafts_on: !set || JSON.parse(set.value).drafts !== false, meta, music, pinterest });
 }
 
 const cropOk = (c) => c && ['x', 'y', 'w', 'h'].every((k) => Number.isFinite(c[k])) && c.x >= -0.001 && c.y >= -0.001 && c.w > 0.05 && c.h > 0.05 && c.x + c.w <= 1.001 && c.y + c.h <= 1.001;
