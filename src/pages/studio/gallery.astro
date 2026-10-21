@@ -40,6 +40,9 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
         <button type="button" class="s-btn s-btn--quiet" data-sel="none">Clear</button>
       </div>
       <p class="hint">Click photos to select them (Shift-click for a run); drag to reorder or move them into another section. ★ = a highlight, shown large on a row of its own. Hidden photos are kept but nobody sees them.</p>
+      <div class="ga-size" role="group" aria-label="Photo size">Size
+        <button type="button" data-size="120">Small</button><button type="button" data-size="200">Medium</button><button type="button" data-size="300">Large</button>
+      </div>
       <div class="sec-order"><button type="button" class="s-btn" data-order-open>Reorder sections</button></div>
       <div class="ga-sections"></div>
       <button type="button" class="s-btn" data-add-section>Add a section</button>
@@ -191,6 +194,9 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
   .sec-head button { font: inherit; font-size: 13px; padding: 5px 9px; border: 1px solid #e2dacd; border-radius: 8px 0; background: var(--white); cursor: pointer; }
   .thumbs { display: flex; flex-wrap: wrap; gap: 6px; min-height: 60px; padding: 2px; border-radius: 10px 0; }
   .thumbs.over { outline: 2px dashed var(--sage); }
+  .ga-size { display: inline-flex; align-items: center; gap: 2px; margin: 0 0 12px; font-size: 13px; font-weight: 600; color: #555; }
+  .ga-size button { font: inherit; font-weight: 500; padding: 6px 12px; margin-left: 4px; border: 1px solid #ddd3c4; background: #fff; color: var(--ink); cursor: pointer; border-radius: 10px 0; }
+  .ga-size button.on { background: var(--green); border-color: var(--green); color: #fff; }
   .th { position: relative; height: 120px; flex: none; background: var(--griseo); cursor: pointer; border-radius: 4px; overflow: hidden; outline-offset: 2px; }
   .th img { height: 100%; width: auto; display: block; pointer-events: none; }
   .th.sel { outline: 3px solid var(--green); }

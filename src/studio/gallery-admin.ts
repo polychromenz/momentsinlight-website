@@ -108,17 +108,28 @@ const sorted = () => [...d.sections].sort((a: any, b: any) => a.sort_order - b.s
 const inSection = (sid: number) => d.images.filter((i: any) => i.section_id === sid).sort((a: any, b: any) => a.sort_order - b.sort_order);
 const flat = () => sorted().flatMap((s: any) => inSection(s.id));
 
+// Photo size in the grid (Small / Medium / Large), remembered on this computer.
+let thumbH = (() => { try { return Number(localStorage.getItem('ga-thumb')) || 120; } catch { return 120; } })();
+document.addEventListener('click', (e) => {
+  const b = (e.target as HTMLElement).closest<HTMLElement>('[data-size]');
+  if (!b) return;
+  thumbH = Number(b.dataset.size);
+  try { localStorage.setItem('ga-thumb', String(thumbH)); } catch {}
+  drawPhotos();
+});
+
 function thumb(i: any) {
-  const w = Math.round((120 * (i.width || 3)) / (i.height || 2));
+  const w = Math.round((thumbH * (i.width || 3)) / (i.height || 2));
   const cover = d.gallery.cover_image_id === i.id;
   if (i.status !== 'ready') return `<div class="th wait" data-id="${i.id}" draggable="true">not finished</div>`;
-  return `<div class="th${i.is_hero ? ' hero' : ''}${i.hidden ? ' hid' : ''}${selected.has(i.id) ? ' sel' : ''}" data-id="${i.id}" draggable="true" style="width:${w}px" title="${esc(i.filename)}">
+  return `<div class="th${i.is_hero ? ' hero' : ''}${i.hidden ? ' hid' : ''}${selected.has(i.id) ? ' sel' : ''}" data-id="${i.id}" draggable="true" style="width:${w}px;height:${thumbH}px" title="${esc(i.filename)}">
     <img src="${esc(i.thumb)}" alt="" loading="lazy" />
     <span class="marks">${i.is_hero ? '<span class="hero-mark">★</span>' : ''}${cover ? '<span>Cover</span>' : ''}${i.hidden ? '<span>Hidden</span>' : ''}${d.picks?.[i.id] ? `<span class="ad-mark" title="${d.picks[i.id] === 'added' ? 'In Google Ads' : 'Picked for Google Ads'}">Ad</span>` : ''}${d.social?.includes(i.id) ? '<span class="so-mark" title="Marked for social media posts">Social</span>' : ''}</span>
     <span class="tools"><button type="button" class="star" data-t="hero" title="${i.is_hero ? 'Not a highlight' : 'Highlight (a row of its own)'}">${i.is_hero ? '☆' : '★'}</button><button type="button" data-t="cover" title="Use as the cover">◎</button><button type="button" data-t="hide" title="${i.hidden ? 'Show' : 'Hide'}">${i.hidden ? '◉' : '⊘'}</button><button type="button" class="ad-t" data-t="ad" title="${d.ads_blocked ? esc(d.ads_blocked) : d.picks?.[i.id] ? 'Not for Google Ads' : 'Use in Google Ads (only you see this)'}"${d.ads_blocked && !d.picks?.[i.id] ? ' disabled' : ''}>Ad</button><button type="button" class="so-t" data-t="social" title="${d.ads_blocked ? esc(d.ads_blocked.replace('no ads', 'no marketing')) : d.social?.includes(i.id) ? 'Not for social media' : 'Use in social media posts (only you see this)'}"${d.ads_blocked && !d.social?.includes(i.id) ? ' disabled' : ''}>S</button></span></div>`;
 }
 function drawPhotos() {
   const secs = sorted();
+  document.querySelectorAll<HTMLElement>('[data-size]').forEach((b) => b.classList.toggle('on', Number(b.dataset.size) === thumbH));
   $('.sec-order').hidden = secs.length < 2;
   $('.ga-sections').innerHTML = secs.map((s: any, n: number) => {
     const list = inSection(s.id);
