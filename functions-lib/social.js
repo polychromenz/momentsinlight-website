@@ -340,7 +340,7 @@ export async function freshPhotos(env, p) {
     if (post) {
       pool = others(post.photos.map(postPhoto));
       // The couple's gallery too: photos Tony has marked Social there (new ones are least used, so they come first).
-      const first = (n) => String(n).split(/s+(?:and|&)s+/i)[0].trim().toLowerCase();
+      const first = (n) => String(n).split(/\s+(?:and|&)\s+/i)[0].trim().toLowerCase();
       const g = (await markedPhotos(db)).find((x) => first(x.name) && post.title.toLowerCase().includes(first(x.name)));
       if (g) pool.push(...others(g.photos.map(galleryPhoto)));
     }
