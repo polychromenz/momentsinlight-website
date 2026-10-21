@@ -1011,7 +1011,10 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
     if (d.done && !heldN) { box.innerHTML = `<p class="hint">Switched over on ${new Date(d.done.at).toLocaleString('en-NZ', { dateStyle: 'medium', timeStyle: 'short' })}: ${d.done.jobs} jobs taken off hold, ${d.done.planned} upcoming workflow steps planned. The studio handles reminders and emails now.</p>`; return; }
     box.innerHTML = `<p class="hint">The ${heldN} imported jobs are on hold, so Studio Ninja still handles their reminders and emails. Switching over takes them off hold and the studio takes over. <strong>Do it the same day you turn off Studio Ninja’s automatic emails and payment reminders</strong>, so couples don’t get both.</p>
       <h4 class="sn-sub">Invoice reminders that will come from the studio</h4>
-      ${d.invoices.length ? `<table class="list-table"><thead><tr><th>Couple</th><th>Invoice</th><th>Amount</th><th>What happens</th></tr></thead><tbody>${d.invoices.map((i: any) => `<tr><td>${esc(i.title)}</td><td>${esc(i.number)} <small>${esc(i.label)}</small></td><td>${money(i.amount)}</td><td>${i.reminder ? `Reminder ${nzd(i.reminder)}; again ${nzd(i.late)} if still unpaid` : `Sent by the studio ${nzd(i.send)}`}</td></tr>`).join('')}</tbody></table>` : '<p class="hint">No unpaid invoices.</p>'}
+      ${d.invoices.length ? `${d.xero_error ? `<p class="hint" style="color:#a8432a">${esc(d.xero_error)}</p>` : ''}<table class="list-table"><thead><tr><th>Couple</th><th>Invoice</th><th>Amount</th><th>In Xero</th><th>What happens</th></tr></thead><tbody>${d.invoices.map((i: any) => `<tr><td>${esc(i.title)}</td><td>${esc(i.number)} <small>${esc(i.label)}</small></td><td>${money(i.amount)}</td>
+        <td>${i.xero === undefined ? '–' : !i.xero ? '<span style="color:#a8432a">Not found</span>' : i.xero.status === 'PAID' ? `<strong>Paid</strong> <small>${esc(i.xero.number)}</small>` : `Unpaid <small>${esc(i.xero.number)}</small>`}</td>
+        <td>${i.xero?.status === 'PAID' ? 'Marked paid at the switch (no email)' : i.reminder ? `Reminder ${nzd(i.reminder)}; again ${nzd(i.late)} if still unpaid` : `Sent by the studio ${nzd(i.send)}`}</td></tr>`).join('')}</tbody></table>
+      <p class="hint">“Not found”: the studio couldn’t find it in Xero, so if it’s paid by bank transfer, mark it paid on the couple’s page yourself.</p>` : '<p class="hint">No unpaid invoices.</p>'}
       <h4 class="sn-sub">Wedding emails for booked couples (only the ones still ahead)</h4>
       ${d.couples.map((c: any) => `<details class="sn-couple"><summary><strong>${esc(c.title)}</strong> · ${nzd(c.event_date)} · ${c.steps.filter((x: any) => x.kind !== 'todo').length} emails, ${c.steps.filter((x: any) => x.kind === 'todo').length} to-dos${c.skipped ? ` (${c.skipped} already past, skipped)` : ''}</summary><ul>${c.steps.map((x: any) => `<li>${esc(x.title)} <small>${x.due ? nzd(x.due) : 'when you’re ready'} · ${x.kind === 'auto_email' ? 'automatic email' : x.kind === 'ready_email' ? 'you review and send' : 'to-do'}</small></li>`).join('')}</ul></details>`).join('') || '<p class="hint">No booked couples.</p>'}
       <p class="hint">Automatic emails go on their dates; you can skip or change any of them on the couple’s page first. Past weddings and lost enquiries stay as records only.</p>
@@ -1026,7 +1029,7 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
     const r = await fetch('/api/studio/crm/sn-switch', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'switch' }) });
     const d = await r.json().catch(() => ({}));
     if (!r.ok) { toast(d.error || 'That didn’t work.', true); b.disabled = false; b.textContent = 'Switch over to the studio'; return; }
-    toast(`Switched over: ${d.jobs} jobs, ${d.planned} upcoming steps planned.`);
+    toast(`Switched over: ${d.jobs} jobs, ${d.planned} upcoming steps planned, ${d.linked} invoices linked to Xero${d.paid_in_xero ? ` (${d.paid_in_xero} already paid there)` : ''}.`);
     drawSwitch();
   });
 
