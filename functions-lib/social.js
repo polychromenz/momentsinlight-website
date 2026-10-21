@@ -346,11 +346,14 @@ export async function freshPhotos(env, p) {
     }
     else if (p.source === 'review') pool = others((src.reviews.find((r) => r.name === ref)?.photos ?? []).map(postPhoto));
     else if (ref === 'note:dates') pool = others(src.posts.filter((x) => x.categories.includes('Wedding')).slice(0, 12).flatMap((x) => x.photos).map(postPhoto));
-    // A pin: an upright photo makes the best pin.
-    if (p.platform === 'pinterest') pool.sort((a, b) => (b.h > b.w) - (a.h > a.w));
   }
   if (!pool.length) return null;
-  return p.platform === 'pinterest' ? pool.slice(0, 1) : leastUsed(pool, use, count);
+  // Each click shows something new: shuffled, then the least used first, the gallery photos Tony marked
+  // Social before the blog's (they're his fresh picks), and for a pin the upright ones (they pin best).
+  for (let i = pool.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [pool[i], pool[j]] = [pool[j], pool[i]]; }
+  const key = (x) => (use.get(x.image_id || x.src) ?? 0) * 4 + (x.image_id ? 0 : 1) * 2 + (p.platform === 'pinterest' && !(x.h > x.w) ? 1 : 0);
+  pool.sort((a, b) => key(a) - key(b));
+  return pool.slice(0, p.platform === 'pinterest' ? 1 : count);
 }
 
 /** Suggestions for the Ideas list: things that happened lately that would make a good post. */
