@@ -35,9 +35,9 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
       <p class="muted">Friday’s Instagram post is a slideshow Reel with music, and Facebook shares the same video. Find tracks on <a href="https://pixabay.com/music/" target="_blank" rel="noopener">Pixabay Music</a> (free for business use), download the MP3, then add it here. Each Reel gets the track used least lately; you can change it in the post.</p>
       <ul class="music-list"></ul>
       <form class="music-add" autocomplete="off">
-        <input type="file" name="file" accept=".mp3,audio/mpeg" required />
-        <input name="name" placeholder="Name, e.g. Soft piano" maxlength="100" />
-        <input name="mood" placeholder="Mood (optional)" maxlength="60" />
+        <label class="music-file">MP3 file <input type="file" name="file" accept=".mp3,audio/mpeg" required /></label>
+        <label class="grow">Name <small>(from the file; change it if you like)</small><input name="name" maxlength="100" /></label>
+        <label>Mood <small>(optional)</small><input name="mood" placeholder="e.g. Soft piano" maxlength="60" /></label>
         <button type="submit" class="s-btn s-btn--solid">Add track</button>
       </form>
     </section>
@@ -109,11 +109,19 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
 <style is:global>
   .so-meta { margin: 0 0 18px; }
   .music-list { list-style: none; margin: 8px 0 12px; padding: 0; display: grid; gap: 6px; }
-  .music-list li { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 8px 10px; border-radius: 10px 0; background: #faf6f0; }
-  .music-list li strong { font-weight: 500; }
-  .music-list audio { height: 32px; max-width: 260px; }
-  .music-add { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
-  .music-add input { font: inherit; font-size: 14px; padding: 7px 10px; border: 1px solid #ddd3c4; border-radius: 10px 0; background: #fff; }
+  .music-list li { display: grid; grid-template-columns: minmax(0, 1fr) auto auto auto; align-items: center; gap: 12px; padding: 8px 8px 8px 14px; border-radius: 12px 0; background: #faf6f0; }
+  .music-list li.muted { display: block; background: none; padding: 0; }
+  .music-list li strong { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .music-list li strong .muted { font-weight: 400; margin-left: 6px; }
+  .music-list audio { height: 34px; width: 260px; }
+  .music-add { display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; padding-top: 12px; border-top: 1px solid #f0e9de; }
+  .music-add label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; font-weight: 600; color: #555; }
+  .music-add label small { font-weight: 400; color: #888; }
+  .music-add .grow { flex: 1 1 240px; }
+  .music-add input:not([type=file]) { font: inherit; font-size: 15px; font-weight: 400; padding: 8px 10px; border: 1px solid #ddd3c4; border-radius: 10px 0; background: #fff; color: var(--ink); min-width: 0; }
+  .music-add input[type=file] { font: inherit; font-size: 14px; font-weight: 400; color: #666; max-width: 300px; }
+  .music-add input[type=file]::file-selector-button { font: inherit; font-size: 14px; font-weight: 600; padding: 8px 14px; margin-right: 10px; border: 1px solid var(--green); border-radius: 12px 0; background: var(--white); color: var(--green); cursor: pointer; }
+  .music-add input[type=file]::file-selector-button:hover { background: rgb(90 94 59 / 0.08); }
   .ed-reel { display: flex; flex-direction: column; gap: 10px; }
   .ed-reel-prev { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
   .ed-video { width: 220px; aspect-ratio: 9 / 16; background: #000; border-radius: 10px 0; }

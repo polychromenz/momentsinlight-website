@@ -472,11 +472,18 @@ export {};
 // ---- Music for Reels ----
 const mmss = (s: number | null) => (s ? `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, '0')}` : '');
 function drawMusic() {
-  $('.music-list').innerHTML = music.length ? music.map((m) => `<li><strong>${esc(m.name)}</strong>${m.mood ? ` <span class="muted">${esc(m.mood)}</span>` : ''}
+  $('.music-list').innerHTML = music.length ? music.map((m) => `<li><strong>${esc(m.name)}${m.mood ? `<span class="muted">${esc(m.mood)}</span>` : ''}</strong>
     <span class="muted">${mmss(m.seconds)}</span><audio controls preload="none" src="/api/studio/social/music?play=${m.id}"></audio>
     <button type="button" class="s-btn s-btn--quiet" data-music-del="${m.id}">Remove</button></li>`).join('')
     : '<li class="muted">No music yet. Add a few tracks so Friday’s Reels have something to use.</li>';
 }
+// The name from the file: "alex-productions-romantic-wedding-piano-123456.mp3" -> "Romantic wedding piano".
+$<HTMLInputElement>('.music-add [name=file]').addEventListener('change', (e) => {
+  const file = (e.target as HTMLInputElement).files?.[0];
+  if (!file) return;
+  const words = file.name.replace(/.mp3$/i, '').replace(/[_-]+/g, ' ').replace(/d{3,}/g, '').replace(/s+/g, ' ').trim();
+  $<HTMLInputElement>('.music-add [name=name]').value = words ? words[0].toUpperCase() + words.slice(1) : '';
+});
 $<HTMLFormElement>('.music-add').addEventListener('submit', async (e) => {
   e.preventDefault();
   const mf = e.target as HTMLFormElement;
