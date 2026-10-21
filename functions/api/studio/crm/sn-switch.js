@@ -8,33 +8,47 @@
 //   POST /api/studio/crm/sn-switch { action: 'switch' }  do it
 import { json } from '../../../../functions-lib/studio.js';
 import { loadWorkflow, dueFor, planSteps } from '../../../../functions-lib/workflows.js';
-import { xero, xeroConnection } from '../../../../functions-lib/xero.js';
+import { xero, xeroConnection, settledShare } from '../../../../functions-lib/xero.js';
 
-// Studio Ninja sent its invoices to Xero too. Each imported unpaid invoice is found there (by its number,
-// else by the client and amount), so the studio links to it: one already paid in Xero (a bank transfer
-// Tony reconciled) is marked paid at the switch, and reconciling one later stops the studio's reminders
-// (functions-lib/xero.js checkPaidInXero), as Studio Ninja did.
+// Studio Ninja sent its invoices to Xero too: one Xero invoice for the whole booking, paid in parts,
+// where the studio has an invoice per instalment. Each imported unpaid instalment is linked to that
+// Xero invoice (found by number, else by the client: the one for the booking's total, or one with at
+// least this much owing). What Xero says is still owing decides which instalments are already paid
+// (settledShare): those are marked paid at the switch, and reconciling one later stops the studio's
+// reminders (checkPaidInXero), as Studio Ninja did.
 async function findInXero(env, inv) {
   const ok = (x) => x.Type === 'ACCREC' && !['DELETED', 'VOIDED', 'DRAFT'].includes(x.Status);
-  const pick = (x) => ({ id: x.InvoiceID, number: x.InvoiceNumber, status: x.Status, due: x.AmountDue });
-  const nums = [...new Set([inv.number, inv.number.replace(/^SN-/, '')])];
+  const pick = (x) => ({ id: x.InvoiceID, number: x.InvoiceNumber, status: x.Status, owing: Math.round((x.AmountDue ?? 0) * 100), total: Math.round((x.Total ?? 0) * 100) });
+  const bare = inv.number.replace(/^SN-/, ''), base = bare.replace(/-\d+$/, '');
+  const nums = [...new Set([inv.number, bare, base, `SN-${base}`])];
   const byNo = (await xero(env, 'GET', `/Invoices?InvoiceNumbers=${nums.map(encodeURIComponent).join(',')}&summaryOnly=true`)).Invoices?.filter(ok) ?? [];
   if (byNo.length) return pick(byNo[0]);
   const name = `${inv.first_name} ${inv.last_name}`.trim();
   const contacts = (await xero(env, 'GET', `/Contacts?searchTerm=${encodeURIComponent(name)}&summaryOnly=true`)).Contacts ?? [];
   if (!contacts.length) return null;
   const list = (await xero(env, 'GET', `/Invoices?ContactIDs=${contacts.slice(0, 5).map((c) => c.ContactID).join(',')}&Statuses=AUTHORISED,PAID&summaryOnly=true`)).Invoices?.filter(ok) ?? [];
-  const same = list.filter((x) => Math.round(x.Total * 100) === inv.amount);
-  if (!same.length) return null;
-  // Two the same amount: the one due nearest this invoice's date.
-  const day = (x) => Math.abs(Date.parse(String(x.DueDateString ?? x.DateString ?? '').slice(0, 10)) - Date.parse(inv.due_date ?? inv.send_at ?? ''));
-  return pick(same.sort((a, b) => day(a) - day(b))[0]);
+  const cents = (v) => Math.round((v ?? 0) * 100);
+  const hit = list.find((x) => cents(x.Total) === inv.job_total) ?? list.find((x) => cents(x.Total) === inv.amount)
+    ?? list.find((x) => x.Status === 'AUTHORISED' && cents(x.AmountDue) >= inv.amount);
+  return hit ? pick(hit) : null;
 }
 async function xeroMatches(env, invoices) {
   if (!(await xeroConnection(env.DB))?.refresh) return { error: 'Xero isn’t connected, so these couldn’t be looked up there.' };
   const out = {};
-  try { for (const inv of invoices) out[inv.id] = await findInXero(env, inv); }
-  catch (e) { return { error: `Xero lookup stopped: ${e.message}` }; }
+  try {
+    // One lookup per booking: its instalments share the Xero invoice.
+    const byJob = new Map();
+    for (const inv of invoices) {
+      if (!byJob.has(inv.job_id)) byJob.set(inv.job_id, await findInXero(env, inv));
+      out[inv.id] = byJob.get(inv.job_id);
+    }
+  } catch (e) { return { error: `Xero lookup stopped: ${e.message}` }; }
+  // Which instalments Xero shows as paid already.
+  for (const [jobId, x] of new Map(invoices.map((i) => [i.job_id, out[i.id]]))) {
+    if (!x) continue;
+    const paid = new Set(settledShare(invoices.filter((i) => i.job_id === jobId), { Status: x.status, AmountDue: x.owing / 100 }).map((i) => i.id));
+    for (const i of invoices.filter((r) => r.job_id === jobId)) out[i.id] = { ...x, paid: paid.has(i.id) };
+  }
   return out;
 }
 
@@ -67,7 +81,8 @@ async function preview(env) {
   }
   return { held, invoices, couples, xero_error: found.error ?? null };
 }
-const heldInvoices = async (db) => (await db.prepare(`SELECT i.id, i.number, i.label, i.amount, i.status, i.due_date, i.send_at, i.xero_invoice_id, j.title, c.first_name, c.last_name
+const heldInvoices = async (db) => (await db.prepare(`SELECT i.id, i.job_id, i.number, i.label, i.amount, i.status, i.due_date, i.send_at, i.xero_invoice_id, j.title, c.first_name, c.last_name,
+      (SELECT sum(amount) FROM invoices x WHERE x.job_id = i.job_id) job_total
     FROM invoices i JOIN jobs j ON j.id = i.job_id JOIN clients c ON c.id = j.client_id
     WHERE j.hold = 1 AND i.status IN ('sent', 'scheduled') ORDER BY COALESCE(i.due_date, i.send_at)`).all()).results;
 
@@ -93,7 +108,7 @@ export async function onRequestPost({ request, env }) {
       const x = found[inv.id];
       if (!x) continue;
       linked++;
-      if (x.status === 'PAID') {
+      if (x.paid) {
         paidInXero++;
         await db.prepare(`UPDATE invoices SET xero_invoice_id = ?2, xero_payment_id = 'xero', status = 'paid', paid_at = ?3, paid_method = 'bank', paid_note = 'Paid in Xero before the switch from Studio Ninja' WHERE id = ?1`).bind(inv.id, x.id, now0).run();
       } else await db.prepare('UPDATE invoices SET xero_invoice_id = ?2 WHERE id = ?1').bind(inv.id, x.id).run();

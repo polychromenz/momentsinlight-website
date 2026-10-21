@@ -187,19 +187,42 @@ export async function queueNew(env) {
 }
 
 /** Invoices Tony reconciled in Xero (bank transfers): queue "mark paid in the studio". Hourly. */
+/**
+ * Which of a Xero invoice's open studio instalments Xero shows as paid. Studio Ninja put the whole
+ * booking on one Xero invoice, paid in parts; the studio has an invoice per instalment. What Xero says
+ * is still owing belongs to the latest instalments, so the earlier ones are the paid ones.
+ * rows: the open (sent/scheduled) studio invoices linked to it; x: Xero's invoice (Status, AmountDue).
+ */
+export function settledShare(rows, x) {
+  if (x.Status === 'PAID') return rows;
+  if (rows.length < 2) return []; // its own Xero invoice: only paid once Xero says PAID
+  let owing = Math.round((x.AmountDue ?? 0) * 100);
+  const latestFirst = [...rows].sort((a, b) => String(b.due_date ?? b.send_at ?? '').localeCompare(String(a.due_date ?? a.send_at ?? '')) || b.id - a.id);
+  const paid = [];
+  for (const r of latestFirst) {
+    if (owing >= r.amount) owing -= r.amount;
+    else paid.push(r);
+  }
+  return paid;
+}
+
 export async function checkPaidInXero(env) {
   const db = env.DB;
-  const open = (await db.prepare(`SELECT id, number, amount, xero_invoice_id FROM invoices WHERE status = 'sent' AND xero_invoice_id IS NOT NULL LIMIT 40`).all()).results;
+  const open = (await db.prepare(`SELECT id, number, amount, due_date, send_at, status, xero_invoice_id FROM invoices WHERE status IN ('sent', 'scheduled') AND xero_invoice_id IS NOT NULL AND xero_invoice_id <> 'xero' LIMIT 60`).all()).results;
   if (!open.length) return 0;
-  const d = await xero(env, 'GET', `/Invoices?IDs=${open.map((i) => i.xero_invoice_id).join(',')}&summaryOnly=true`);
-  const paid = (d.Invoices ?? []).filter((x) => x.Status === 'PAID');
+  const ids = [...new Set(open.map((i) => i.xero_invoice_id))].slice(0, 40);
+  const d = await xero(env, 'GET', `/Invoices?IDs=${ids.join(',')}&summaryOnly=true`);
   const now = new Date().toISOString();
-  for (const x of paid) {
-    const i = open.find((o) => o.xero_invoice_id === x.InvoiceID);
-    if (i) await db.prepare(`INSERT OR IGNORE INTO xero_queue (kind, ref, summary, created_at) VALUES ('paid_in_xero', ?1, ?2, ?3)`)
-      .bind(String(i.id), `Xero shows ${i.number} (${money(i.amount)}) paid: mark it paid in the studio and send the receipt`, now).run();
+  let n = 0;
+  for (const x of d.Invoices ?? []) {
+    for (const i of settledShare(open.filter((o) => o.xero_invoice_id === x.InvoiceID), x)) {
+      if (i.status !== 'sent') continue; // a scheduled one paid early waits until it's sent
+      n++;
+      await db.prepare(`INSERT OR IGNORE INTO xero_queue (kind, ref, summary, created_at) VALUES ('paid_in_xero', ?1, ?2, ?3)`)
+        .bind(String(i.id), `Xero shows ${i.number} (${money(i.amount)}) paid: mark it paid in the studio and send the receipt`, now).run();
+    }
   }
-  return paid.length;
+  return n;
 }
 
 // ---- Doing each one ----
