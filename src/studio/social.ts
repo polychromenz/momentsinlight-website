@@ -41,7 +41,7 @@ let meta: Meta = { ready: false, connection: null };
 type Pin = { ready: boolean; connection: null | { username: string; boards: { id: string; name: string }[]; board_id: string | null; board_name: string | null; connected_at: string } };
 let pin: Pin = { ready: false, connection: null };
 /** Does this platform post itself (connected)? */
-const auto = (platform: string) => (platform === 'pinterest' ? !!pin.connection?.board_id : !!meta.connection && ((platform === 'facebook' && !!meta.connection.page_id) || (platform === 'instagram' && !!meta.connection.ig_id)));
+const auto = (platform: string) => (platform === 'pinterest' ? true : !!meta.connection && ((platform === 'facebook' && !!meta.connection.page_id) || (platform === 'instagram' && !!meta.connection.ig_id)));
 
 function monday(d: Date) { const m = new Date(d.getFullYear(), d.getMonth(), d.getDate()); m.setDate(m.getDate() - ((m.getDay() + 6) % 7)); return m; }
 
@@ -73,12 +73,18 @@ function drawMeta() {
 }
 
 // The Pinterest connection card.
+const FEED = 'https://www.momentsinlight.co.nz/feeds/pinterest';
 function drawPin() {
   const box = $('.so-pin-body');
   const c = pin.connection;
-  if (!pin.ready) { box.innerHTML = '<p class="muted">Not set up yet: the Pinterest app’s ID and secret need adding in Cloudflare (PINTEREST_APP_ID, PINTEREST_APP_SECRET).</p>'; return; }
-  if (!c) { box.innerHTML = '<p>Connect Pinterest, choose a board, and approved pins go out on their own at their time.</p><a class="s-btn s-btn--solid" href="/api/studio/pinterest/connect">Connect Pinterest</a>'; return; }
-  box.innerHTML = `<p><strong>Pinterest:</strong> ${c.username ? `@${esc(c.username)}` : 'connected'}</p>
+  // Until the Pinterest app is approved and connected, pins go out through the RSS feed.
+  const feed = `<p>Approved pins go out through your Pinterest RSS feed: at a pin’s time it joins the feed, and Pinterest picks it up within about a day. Set up once in Pinterest: <strong>Settings › Bulk create Pins › Auto-publish › Connect RSS feed</strong>, paste this address and choose your weddings board.</p>
+    <p class="so-feed"><code>${FEED}</code> <button type="button" class="s-btn s-btn--quiet" data-copy-feed>Copy</button></p>`;
+  if (!c?.board_id) {
+    box.innerHTML = feed + (pin.ready ? `<p class="muted">The Pinterest app: ${c ? 'connected; choose a board to post through it instead.' : 'once Pinterest approves it, you can connect it here instead.'}</p>${c ? '' : '<a class="s-btn s-btn--quiet" href="/api/studio/pinterest/connect">Connect Pinterest app</a>'}` : '');
+    if (!c) return;
+  }
+  box.innerHTML = (c.board_id ? '' : box.innerHTML) + `<p><strong>Pinterest app:</strong> ${c.username ? `@${esc(c.username)}` : 'connected'}</p>
     <label>Board <select data-pin-board><option value="">Choose a board…</option>${c.boards.map((b) => `<option value="${esc(b.id)}"${b.id === c.board_id ? ' selected' : ''}>${esc(b.name)}</option>`).join('')}</select></label>
     <p class="muted">${c.board_id ? 'Approved pins go out on their own at their time.' : 'Choose the board pins go to, and approved pins go out on their own.'} While the app is on Pinterest’s Trial access, pins are only visible to you.</p>
     <a class="s-btn s-btn--quiet" href="/api/studio/pinterest/connect">Reconnect</a> <button type="button" class="s-btn s-btn--quiet" data-pin-off>Disconnect</button>`;
@@ -467,6 +473,10 @@ document.addEventListener('click', async (e) => {
   if (!await ask('Disconnect Facebook and Instagram? Approved posts will wait for you to post them yourself.')) return;
   const r = await fetch('/api/studio/meta', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'disconnect' }) });
   if (r.ok) { meta = await r.json(); drawMeta(); draw(); toast('Disconnected.'); }
+});
+document.addEventListener('click', async (e) => {
+  if (!(e.target as HTMLElement).closest('[data-copy-feed]')) return;
+  try { await navigator.clipboard.writeText(FEED); toast('Feed address copied.'); } catch { toast('Couldn’t copy: select the address instead.', true); }
 });
 document.addEventListener('change', async (e) => {
   const sel = (e.target as HTMLElement).closest<HTMLSelectElement>('[data-pin-board]');

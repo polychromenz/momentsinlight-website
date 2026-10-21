@@ -52,7 +52,7 @@ async function saveConn(db, v) {
 export const disconnectMeta = (db) => saveConn(db, null);
 /** Is this platform connected (so approved posts publish themselves)? */
 export async function connectedFor(db, platform) {
-  if (platform === 'pinterest') return pinterestOn(db);
+  if (platform === 'pinterest') return true; // the app, or the RSS feed
   const c = await metaConnection(db);
   return !!c && ((platform === 'facebook' && !!c.page_id) || (platform === 'instagram' && !!c.ig_id));
 }
@@ -115,7 +115,13 @@ const message = (p) => (p.platform === 'facebook' && p.link && !p.caption.includ
 
 /** Publish one approved post now. Returns { id, url }. */
 export async function publish(env, p) {
-  if (p.platform === 'pinterest') return publishPin(env, p);
+  // Pinterest: through the app once it's connected; until then the RSS feed (functions/feeds/pinterest.js)
+  // carries it: marking it posted puts it in the feed, and Pinterest picks it up within about a day.
+  if (p.platform === 'pinterest') {
+    if (await pinterestOn(env.DB)) return publishPin(env, p);
+    if (!JSON.parse(p.media || '[]').length) throw new Error('Its image wasn’t made. Open the pin, Back to draft, then Approve again.');
+    return { id: null, url: null };
+  }
   const c = await metaConnection(env.DB);
   if (!c) throw new Error('Facebook and Instagram aren’t connected.');
   const media = JSON.parse(p.media || '[]');
@@ -194,7 +200,7 @@ const nzStamp = (d = new Date()) => {
 export async function publishDue(env) {
   const nowNz = nzStamp();
   const c = metaReady(env) ? await metaConnection(env.DB) : null;
-  const plats = [c?.page_id && 'facebook', c?.ig_id && 'instagram', (await pinterestOn(env.DB)) && 'pinterest'].filter(Boolean);
+  const plats = [c?.page_id && 'facebook', c?.ig_id && 'instagram', 'pinterest'].filter(Boolean);
   if (!plats.length) return 'not connected';
   // A post stuck mid-publish (the run stopped) goes back to failed so Tony sees it.
   await env.DB.prepare(`UPDATE social_posts SET status = 'failed', error = 'Stopped part-way through posting: check the platform before trying again' WHERE status = 'posting' AND posting_at < ?1`)

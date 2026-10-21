@@ -113,6 +113,8 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
 
 <style is:global>
   .so-meta { margin: 0 0 18px; }
+  .so-feed { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .so-feed code { font-size: 14px; padding: 6px 10px; background: #f6f1ea; border-radius: 8px 0; user-select: all; }
   .music-list { list-style: none; margin: 8px 0 12px; padding: 0; display: grid; gap: 6px; }
   .music-list li { display: grid; grid-template-columns: minmax(0, 1fr) auto auto auto; align-items: center; gap: 12px; padding: 8px 8px 8px 14px; border-radius: 12px 0; background: #faf6f0; }
   .music-list li.muted { display: block; background: none; padding: 0; }
