@@ -113,6 +113,10 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
 
 <style is:global>
   .so-meta { margin: 0 0 18px; }
+  /* While Approve / Save is working: everything waits, with a note so it doesn't look ignored. */
+  .so-ed.busy .ed-form { cursor: progress; }
+  .so-ed.busy .ed-acts, .so-ed.busy .ed-strip, .so-ed.busy .ed-nudge, .so-ed.busy .ed-fields input, .so-ed.busy .ed-fields select, .so-ed.busy .ed-fields textarea { pointer-events: none; opacity: 0.6; }
+  .so-ed.busy .ed-acts::after { content: 'Working on it… please wait'; flex-basis: 100%; font-size: 14px; color: var(--green); font-weight: 600; }
   .so-feed { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
   .so-feed code { font-size: 14px; padding: 6px 10px; background: #f6f1ea; border-radius: 8px 0; user-select: all; }
   .music-list { list-style: none; margin: 8px 0 12px; padding: 0; display: grid; gap: 6px; }

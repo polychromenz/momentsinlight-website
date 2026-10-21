@@ -37,6 +37,7 @@ let posts: Post[] = [];
 let platforms: Record<string, Platform> = {};
 let open: Post | null = null;
 let at = 0; // the photo being cropped in the editor
+let busy = false; // an action (Approve, Save…) is under way
 let meta: Meta = { ready: false, connection: null };
 type Pin = { ready: boolean; connection: null | { username: string; boards: { id: string; name: string }[]; board_id: string | null; board_name: string | null; connected_at: string } };
 let pin: Pin = { ready: false, connection: null };
@@ -388,6 +389,10 @@ document.addEventListener('click', async (e) => {
   if (!act) return;
   onReelProgress = (s) => (act.textContent = `Making the video… ${Math.round(s * 100)}%`);
   const a = act.dataset.act!;
+  // One thing at a time: Approve can take a while (the photos or video are made first), and the
+  // buttons are redrawn part-way through, so a second click would start it again.
+  if (busy) return;
+  busy = true; ed.classList.add('busy');
   act.disabled = true;
   try {
     if (a === 'save') {
@@ -433,7 +438,8 @@ document.addEventListener('click', async (e) => {
   } catch (err) {
     toast((err as Error).message, true);
   }
-  if (document.contains(act)) drawEditor();
+  busy = false; ed.classList.remove('busy');
+  if (ed.open && open) drawEditor();
 });
 document.addEventListener('keydown', (e) => {
   const th = (e.target as HTMLElement).closest?.('[data-at], [data-post]');
