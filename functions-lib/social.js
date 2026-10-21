@@ -112,13 +112,20 @@ async function photoUse(db, date) {
 const leastUsed = (list, use, count) => list.map((x, i) => ({ x, i, u: use.get(x.image_id || x.src) ?? 0 }))
   .sort((a, b) => a.u - b.u || a.i - b.i).slice(0, count).sort((a, b) => a.i - b.i).map((o) => o.x);
 
+// Wedding photos come only from the ones Tony has flagged Social in a gallery (his rule, 22 Oct 2026):
+// a blog story or review uses that couple's flagged photos, and the blog's own photos only when the
+// couple's gallery has none flagged.
+const firstName = (n) => String(n ?? '').split(/\s+(?:and|&)\s+/i)[0].trim().toLowerCase();
+const galleryFor = (galleries, title) => galleries.find((g) => firstName(g.name) && String(title ?? '').toLowerCase().includes(firstName(g.name)));
+const flaggedFor = (galleries, title) => (galleryFor(galleries, title)?.photos ?? []).map(galleryPhoto);
+
 /** One idea for a post: { source, source_ref, label, facts, photos, link }. */
 async function idea(env, platform, date, kind, src, blocked, count = null) {
   const db = env.DB;
   const use = await photoUse(db, date);
   const weddings = src.posts.filter((p) => p.categories.includes('Wedding') && p.photos.length && !mentions(p.title, blocked));
+  const galleries = await markedPhotos(db);
   if (kind === 'photos') {
-    const galleries = await markedPhotos(db);
     const used = await lastUsed(db, 'photos');
     const pick = galleries.filter((g) => !usedSince(used, g.gallery_id, date, 7)).sort((a, b) => (used.get(a.gallery_id) ?? '').localeCompare(used.get(b.gallery_id) ?? ''))[0];
     if (pick) {
@@ -134,7 +141,7 @@ async function idea(env, platform, date, kind, src, blocked, count = null) {
     const days = platform === 'google' ? 60 : 30;
     const pick = weddings.filter((p) => !usedSince(used, p.id, date, days)).sort((a, b) => (used.get(a.id) ?? '').localeCompare(used.get(b.id) ?? '') || b.date.localeCompare(a.date))[0];
     if (!pick) return null;
-    return { source: 'blog', source_ref: pick.id, label: pick.title, link: `${SITE}${pick.url}`, photos: leastUsed(pick.photos, use, count ?? 8).map(postPhoto),
+    return { source: 'blog', source_ref: pick.id, label: pick.title, link: `${SITE}${pick.url}`, photos: (() => { const fl = flaggedFor(galleries, pick.title); return fl.length ? leastUsed(fl, use, count ?? 8) : leastUsed(pick.photos, use, count ?? 8).map(postPhoto); })(),
       facts: `A wedding story on my blog: “${pick.title}”. ${pick.description}${pick.venue ? ` Venue: ${pick.venue}.` : ''}` };
   }
   if (kind === 'review') {
@@ -143,7 +150,8 @@ async function idea(env, platform, date, kind, src, blocked, count = null) {
       .sort((a, b) => (used.get(a.name) ?? '').localeCompare(used.get(b.name) ?? '') || b.date.localeCompare(a.date));
     for (const r of ok) {
       const post = src.posts.find((p) => p.review === r.name);
-      const photos = post ? leastUsed(post.photos, use, 3).map(postPhoto) : r.photos.slice(0, 1).map(postPhoto);
+      const fl = post ? flaggedFor(galleries, post.title) : [];
+      const photos = fl.length ? leastUsed(fl, use, 3) : post ? leastUsed(post.photos, use, 3).map(postPhoto) : r.photos.slice(0, 1).map(postPhoto);
       if (!photos.length) continue;
       return { source: 'review', source_ref: r.name, label: `Review from ${r.name}`, link: post ? `${SITE}${post.url}` : `${SITE}/testimonials`, photos,
         facts: `A 5-star Google review from ${r.name}${post ? ` (their wedding: “${post.title}”)` : ''}. The review: “${r.text}”` };
@@ -155,8 +163,9 @@ async function idea(env, platform, date, kind, src, blocked, count = null) {
     // Now and then (every four weeks or so): dates for next year and the year after.
     if (!usedSince(used, 'note:dates', date, 28)) {
       const year = Number(date.slice(0, 4)) + (Number(date.slice(5, 7)) >= 6 ? 1 : 0);
-      const photo = leastUsed(weddings.slice(0, 12).flatMap((w) => w.photos), use, 1)[0];
-      if (photo) return { source: 'tip', source_ref: 'note:dates', label: `Now booking ${year} weddings`, link: `${SITE}/contact`, photos: [postPhoto(photo)],
+      const flagged = galleries.flatMap((g) => g.photos.map(galleryPhoto));
+      const photo = flagged.length ? leastUsed(flagged, use, 1)[0] : leastUsed(weddings.slice(0, 12).flatMap((w) => w.photos), use, 1).map(postPhoto)[0];
+      if (photo) return { source: 'tip', source_ref: 'note:dates', label: `Now booking ${year} weddings`, link: `${SITE}/contact`, photos: [photo],
         facts: `I’m now taking bookings for ${year} weddings (and the odd ${year + 1} one), and popular summer Saturdays go first. Invite couples to check their date with me through the contact form on my website.` };
     }
     const info = src.posts.filter((p) => p.categories.includes('Info') && p.photos.length && !usedSince(used, `info:${p.id}`, date, 90))
@@ -177,7 +186,15 @@ async function pinIdea(env, date, src, blocked) {
   for (const ref of pinned) { const id = String(ref).split('#')[0]; used.set(id, (used.get(id) ?? 0) + 1); }
   const posts = src.posts.filter((p) => p.photos.length && !mentions(p.title, blocked) && p.categories.some((c) => ['Wedding', 'Portrait', 'Info'].includes(c)))
     .sort((a, b) => (used.get(a.id) ?? 0) - (used.get(b.id) ?? 0) || b.date.localeCompare(a.date));
+  const galleries = await markedPhotos(db);
   for (const p of posts) {
+    const fl = p.categories.includes('Wedding') ? flaggedFor(galleries, p.title).sort((a, b) => (b.h > b.w) - (a.h > a.w)) : [];
+    if (fl.length) {
+      const next = fl.find((ph) => !pinned.has(`${p.id}#g:${ph.image_id}`));
+      if (next) return { source: 'blog', source_ref: `${p.id}#g:${next.image_id}`, label: p.title.slice(0, 100), link: `${SITE}${p.url}`, photos: [next],
+        facts: `A pin linking to my blog post “${p.title}”: ${p.description}` };
+      continue;
+    }
     // Upright photos make the best pins; then any.
     const order = p.photos.map((ph, n) => ({ ph, n })).sort((a, b) => (b.ph.h > b.ph.w) - (a.ph.h > a.ph.w));
     const next = order.find(({ n }) => !pinned.has(`${p.id}#${n}`));
@@ -339,15 +356,15 @@ export async function freshPhotos(env, p) {
       : src.posts.find((x) => x.id === ref.replace(/^info:/, '').split('#')[0]);
     if (post) {
       pool = others(post.photos.map(postPhoto));
-      // The couple's gallery: the photos Tony has marked Social there.
-      const first = (n) => String(n).split(/\s+(?:and|&)\s+/i)[0].trim().toLowerCase();
-      const g = (await markedPhotos(db)).find((x) => first(x.name) && post.title.toLowerCase().includes(first(x.name)));
-      // Only the ones Tony flagged Social, when the gallery has any: the blog's photos are the fallback.
-      const flagged = g ? others(g.photos.map(galleryPhoto)) : [];
+      // Only the couple's photos Tony flagged Social, when the gallery has any: the blog's are the fallback.
+      const flagged = others(flaggedFor(await markedPhotos(db), post.title));
       if (flagged.length) pool = flagged;
     }
     else if (p.source === 'review') pool = others((src.reviews.find((r) => r.name === ref)?.photos ?? []).map(postPhoto));
-    else if (ref === 'note:dates') pool = others(src.posts.filter((x) => x.categories.includes('Wedding')).slice(0, 12).flatMap((x) => x.photos).map(postPhoto));
+    else if (ref === 'note:dates') {
+      const flagged = others((await markedPhotos(db)).flatMap((g) => g.photos.map(galleryPhoto)));
+      pool = flagged.length ? flagged : others(src.posts.filter((x) => x.categories.includes('Wedding')).slice(0, 12).flatMap((x) => x.photos).map(postPhoto));
+    }
   }
   if (!pool.length) return null;
   // Each click shows something new: shuffled, then the least used first, the gallery photos Tony marked
