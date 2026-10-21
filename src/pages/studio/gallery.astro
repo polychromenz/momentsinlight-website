@@ -44,6 +44,7 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
         <button type="button" data-size="120">Small</button><button type="button" data-size="200">Medium</button><button type="button" data-size="300">Large</button>
       </div>
       <div class="sec-order"><button type="button" class="s-btn" data-order-open>Reorder sections</button></div>
+      <nav class="sec-jump" aria-label="Jump to a section" hidden></nav>
       <div class="ga-sections"></div>
       <button type="button" class="s-btn" data-add-section>Add a section</button>
     </section>
@@ -167,7 +168,12 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
   .ga select, .ga input, .ga textarea { font: inherit; font-size: 15px; padding: 8px 10px; border: 1px solid #ddd3c4; border-radius: 10px 0; background: var(--white); }
 
   /* Photos */
-  .ga-selbar { position: sticky; top: 64px; z-index: 20; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 8px 12px; margin-bottom: 12px; background: var(--olive); color: var(--cream); border-radius: 16px 0; }
+  /* Jump to a section: stays at the top while scrolling the photos. */
+  .sec-jump { position: sticky; top: 64px; z-index: 21; display: flex; flex-wrap: wrap; gap: 6px; padding: 8px 10px; margin: 0 0 12px; background: var(--champagne); border-radius: 14px 0; box-shadow: 0 8px 16px -14px rgb(0 0 0 / .4); }
+  .sec-jump button { font: inherit; font-size: 13px; padding: 5px 12px; border: 1px solid #ddd3c4; border-radius: 10px 0; background: #fff; color: var(--ink); cursor: pointer; }
+  .sec-jump button:hover { border-color: var(--green); color: var(--green); }
+  .sec-jump small { color: #999; margin-left: 4px; }
+  .ga-selbar { position: sticky; top: 112px; z-index: 20; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 8px 12px; margin-bottom: 12px; background: var(--olive); color: var(--cream); border-radius: 16px 0; }
   .ga-selbar .s-btn { padding: 6px 12px; color: var(--cream); border-color: transparent; }
   .ga-selbar .s-btn:hover { background: rgb(255 255 255 / 0.12); }
   .ga-selbar .s-btn--danger { color: #f3c4b6; }
@@ -182,7 +188,7 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
   .order-list .oname { flex: 1; cursor: grab; touch-action: none; }
   .order-list small { color: #999; }
   .order-list .omove button { font: inherit; font-size: 13px; padding: 3px 8px; border: 1px solid #e2dacd; border-radius: 6px; background: var(--white); cursor: pointer; }
-  .ga-sec { scroll-margin-top: 80px; background: var(--white); border-radius: 24px 0; padding: 14px 16px 16px; margin-bottom: 16px; }
+  .ga-sec { scroll-margin-top: 170px; background: var(--white); border-radius: 24px 0; padding: 14px 16px 16px; margin-bottom: 16px; }
   .ga-sec.hidden-sec { opacity: 0.6; }
   .sec-head { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 10px; }
   .sec-head .sec-name { font-size: 18px; font-weight: 400; border-color: transparent; padding: 4px 8px; min-width: 0; width: 18ch; }

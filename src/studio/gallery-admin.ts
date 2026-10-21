@@ -129,6 +129,10 @@ function thumb(i: any) {
 }
 function drawPhotos() {
   const secs = sorted();
+  // The bar of section names at the top, to jump to one.
+  const jump = $('.sec-jump');
+  jump.hidden = secs.length < 2;
+  jump.innerHTML = secs.map((s: any) => `<button type="button" data-jump="${s.id}">${esc(s.name)}<small>${inSection(s.id).length}</small></button>`).join('');
   document.querySelectorAll<HTMLElement>('[data-size]').forEach((b) => b.classList.toggle('on', Number(b.dataset.size) === thumbH));
   $('.sec-order').hidden = secs.length < 2;
   $('.ga-sections').innerHTML = secs.map((s: any, n: number) => {
@@ -547,3 +551,8 @@ document.addEventListener('change', async (e) => {
 });
 
 load().then(() => tab(new URLSearchParams(location.search).get('tab') ?? 'photos'));
+
+document.addEventListener('click', (e) => {
+  const b = (e.target as HTMLElement).closest<HTMLElement>('[data-jump]');
+  if (b) document.querySelector(`.ga-sec[data-sec="${b.dataset.jump}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+});
