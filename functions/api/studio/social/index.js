@@ -7,12 +7,13 @@
 //   POST /api/studio/social { action: 'approve' | 'unapprove' | 'skip' | 'restore' | 'posted', id }
 //   POST /api/studio/social { action: 'post_now', id }      publish an approved Facebook/Instagram post now (functions-lib/meta.js)
 //   POST /api/studio/social { action: 'recaption', id }     a fresh AI caption (not saved until Save)
+//   POST /api/studio/social { action: 'rephoto', id }       different photos from the same gallery or story (caption kept)
 //   POST /api/studio/social { action: 'swap', id }          a different idea in the same slot
 //   POST /api/studio/social { action: 'draft_now' }         fill the week ahead now rather than on the timer
 //   POST /api/studio/social { action: 'drafts', on }        pause or resume the automatic drafts
 import { json } from '../../../../functions-lib/studio.js';
 import { adsBlocked } from '../../../../functions-lib/picks.js';
-import { PLATFORMS, ideas, recaption, swapDraft, socialTimer } from '../../../../functions-lib/social.js';
+import { PLATFORMS, ideas, recaption, swapDraft, socialTimer, freshPhotos } from '../../../../functions-lib/social.js';
 import { metaStatus, connectedFor, publishPost } from '../../../../functions-lib/meta.js';
 import { pinterestStatus } from '../../../../functions-lib/pinterest.js';
 
@@ -112,6 +113,12 @@ export async function onRequestPost({ request, env }) {
     if (d.action === 'restore') return p.status === 'skipped' ? set(`status = 'draft'`) : json({ error: 'It isn’t skipped.' }, 400);
     if (d.action === 'posted') return ['approved', 'failed'].includes(p.status) ? set(`status = 'posted', posted_at = ?2`, now) : json({ error: 'Approve it first.' }, 400);
     if (d.action === 'recaption') return json(await recaption(env, p));
+    if (d.action === 'rephoto') {
+      if (p.status !== 'draft') return json({ error: 'Back to draft first, then choose different photos.' }, 400);
+      const photos = await freshPhotos(env, p);
+      if (!photos) return json({ error: p.source === 'photos' ? 'No other photos marked Social in this gallery yet. Mark more in the gallery’s Photos tab (select them, then Social).' : 'This story has no other photos to use.' }, 400);
+      return set(`photos = ?2, media = NULL`, JSON.stringify(photos));
+    }
     if (d.action === 'swap') {
       if (p.status !== 'draft') return json({ error: 'Only a draft can be swapped.' }, 400);
       return json({ swapped: await swapDraft(env, p) });

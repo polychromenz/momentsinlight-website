@@ -188,7 +188,7 @@ function drawEditor() {
   $('.ed-strip').innerHTML = p.photos.map((x, n) => `<div class="ed-th${n === at ? ' on' : ''}" data-at="${n}" role="button" tabindex="0"><img src="${esc(small(x))}" alt="" />${editable && p.photos.length > 1 ? `<button type="button" class="x" data-drop="${n}" title="Leave this photo out">×</button>${n ? `<button type="button" class="mv" data-first="${n}" title="Make it the first photo">↑</button>` : ''}` : ''}</div>`).join('');
   const b = (act: string, text: string, cls = '') => `<button type="button" class="s-btn ${cls}" data-act="${act}">${text}</button>`;
   const acts: string[] = [];
-  if (p.status === 'draft') acts.push(b('approve', 'Approve', 's-btn--solid'), b('save', 'Save'), b('recaption', 'New caption'), b('swap', 'Different idea'), b('skip', 'Skip', 's-btn--quiet'));
+  if (p.status === 'draft') acts.push(b('approve', 'Approve', 's-btn--solid'), b('save', 'Save'), b('recaption', 'New caption'), b('rephoto', 'Different photos'), b('swap', 'Different idea'), b('skip', 'Skip', 's-btn--quiet'));
   const self = auto(p.platform);
   if (p.status === 'approved' && self) acts.push(b('post_now', 'Post now', 's-btn--solid'), b('save', 'Save changes'), b('unapprove', 'Back to draft', 's-btn--quiet'));
   else if (p.status === 'approved') acts.push(b('copy', 'Copy caption', 's-btn--solid'), b('download', `Download photo${p.photos.length > 1 ? 's' : ''}`), b('posted', 'I’ve posted it'), b('save', 'Save changes'), b('unapprove', 'Back to draft', 's-btn--quiet'));
@@ -417,6 +417,15 @@ document.addEventListener('click', async (e) => {
       replace((await api({ action: a, id: open.id })).post);
       toast({ unapprove: 'Back to draft.', skip: 'Skipped.', restore: 'Back as a draft.', posted: 'Marked as posted.' }[a]!);
       if (a === 'skip' || a === 'posted') ed.close();
+    }
+    if (a === 'rephoto') {
+      act.textContent = 'Finding photos…';
+      // Keep any caption or note edits: save them first, then swap the photos.
+      await save();
+      replace((await api({ action: 'rephoto', id: open.id })).post);
+      at = 0;
+      reels.clear();
+      toast('Different photos. The caption is kept.');
     }
     if (a === 'recaption') {
       act.textContent = 'Writing…';

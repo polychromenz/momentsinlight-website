@@ -315,6 +315,38 @@ export async function swapDraft(env, p) {
   return false;
 }
 
+/**
+ * Different photos for a draft, keeping its story and caption (Tony's "Different photos" button):
+ * the same gallery or blog post's other photos, least used first, as many as it has now. Returns the
+ * photos, or null if there are no others to use.
+ */
+export async function freshPhotos(env, p) {
+  const db = env.DB;
+  const now = JSON.parse(p.photos || '[]');
+  const count = Math.max(1, Math.min(now.length || 1, PLATFORMS[p.platform].max));
+  const date = p.post_at.slice(0, 10);
+  const use = await photoUse(db, date);
+  const current = new Set(now.map((x) => x.image_id || x.src));
+  const others = (list) => list.filter((x) => !current.has(x.image_id || x.src));
+  let pool = [];
+  if (p.source === 'photos') {
+    const g = (await markedPhotos(db)).find((x) => x.gallery_id === p.source_ref);
+    pool = g ? others(g.photos.map(galleryPhoto)) : [];
+  } else {
+    const src = await sources(env);
+    const ref = String(p.source_ref ?? '');
+    const post = p.source === 'review' ? src.posts.find((x) => x.review === ref)
+      : src.posts.find((x) => x.id === ref.replace(/^info:/, '').split('#')[0]);
+    if (post) pool = others(post.photos.map(postPhoto));
+    else if (p.source === 'review') pool = others((src.reviews.find((r) => r.name === ref)?.photos ?? []).map(postPhoto));
+    else if (ref === 'note:dates') pool = others(src.posts.filter((x) => x.categories.includes('Wedding')).slice(0, 12).flatMap((x) => x.photos).map(postPhoto));
+    // A pin: an upright photo makes the best pin.
+    if (p.platform === 'pinterest') pool.sort((a, b) => (b.h > b.w) - (a.h > a.w));
+  }
+  if (!pool.length) return null;
+  return p.platform === 'pinterest' ? pool.slice(0, 1) : leastUsed(pool, use, count);
+}
+
 /** Suggestions for the Ideas list: things that happened lately that would make a good post. */
 export async function ideas(env) {
   const db = env.DB;
