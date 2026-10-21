@@ -82,7 +82,7 @@ export async function onRequestPost({ request, env }) {
       if (!photos.length) return json({ error: 'Keep at least one photo (or Skip the post).' }, 400);
       const link = d.link ? String(d.link).trim().slice(0, 500) : null;
       if (link && !/^https:\/\//.test(link)) return json({ error: 'The link should start with https://' }, 400);
-      const shapeOk = p.platform === 'instagram' && ['4:5', '1:1', 'original'].includes(d.shape) ? d.shape : p.shape ?? null;
+      const shapeOk = p.platform === 'instagram' && ['4:5', '1:1', 'original', 'whole'].includes(d.shape) ? d.shape : p.shape ?? null;
       return set(`caption = ?2, post_at = ?3, link = ?4, label = ?5, photos = ?6, shape = ?7, ai = CASE WHEN caption = ?2 THEN ai ELSE 0 END`,
         caption, d.post_at, link, String(d.label ?? p.label ?? '').slice(0, 200), JSON.stringify(photos), shapeOk);
     }

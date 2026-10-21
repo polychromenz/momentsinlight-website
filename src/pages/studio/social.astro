@@ -61,6 +61,7 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
               <option value="4:5">4:5 portrait (biggest in the feed)</option>
               <option value="1:1">Square</option>
               <option value="original">Original shape</option>
+              <option value="whole">Whole photo, 4:5 with a white border</option>
             </select>
           </label>
           <label>Caption <span class="ed-count muted"></span>
@@ -130,7 +131,8 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
   .ed-body { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 20px; padding: 16px 20px 20px; overflow: auto; }
   .ed-big { position: relative; overflow: hidden; background: #eee; border-radius: 6px; margin: 0 auto; }
   .ed-big img { display: block; width: 100%; height: 100%; object-fit: cover; }
-  .ed-frame { position: absolute; border: 2px solid #fff; box-shadow: 0 0 0 999px rgb(0 0 0 / 0.45); pointer-events: none; }
+  .ed-frame { position: absolute; border: 2px solid #fff; box-shadow: 0 0 0 999px rgb(0 0 0 / 0.45); cursor: move; touch-action: none; }
+  .ed-frame.dragging { cursor: grabbing; }
   .ed-nudge { margin: 8px 0; display: flex; gap: 8px; align-items: center; }
   .ed-nudge .nudge { display: inline-flex; gap: 4px; }
   .ed-nudge button { min-width: 34px; height: 34px; border: 1px solid #ddd3c4; background: var(--white); border-radius: 8px; cursor: pointer; font-size: 16px; }
@@ -142,7 +144,7 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
   .ed-th .x { right: 2px; } .ed-th .mv { left: 2px; }
   .ed-fields { display: flex; flex-direction: column; gap: 10px; }
   .ed-fields label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; font-weight: 600; color: #555; }
-  .ed-fields input, .ed-fields textarea { font: inherit; font-size: 15px; font-weight: 400; padding: 8px 10px; border: 1px solid #ddd3c4; border-radius: 10px 0; background: var(--white); color: var(--ink); }
+  .ed-fields input, .ed-fields textarea, .ed-fields select { font: inherit; font-size: 15px; font-weight: 400; padding: 8px 10px; border: 1px solid #ddd3c4; border-radius: 10px 0; background: var(--white); color: var(--ink); }
   .ed-fields textarea { resize: vertical; line-height: 1.5; min-height: 200px; }
   .ed-count { font-weight: 400; }
   .ed-acts { display: flex; flex-wrap: wrap; gap: 8px; }

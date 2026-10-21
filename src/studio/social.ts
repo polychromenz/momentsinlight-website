@@ -106,8 +106,10 @@ function ratioOf(p: Post): number | null {
   if (p.shape === 'original' && p.photos[0]) return Math.min(1.91, Math.max(0.8, p.photos[0].w / p.photos[0].h));
   return 0.8;
 }
-const cropOf = (p: Photo) => { const ratio = ratioOf(open!); return ratio ? (p.crop ??= suggest(p, ratio)) : null; };
-const SHAPE_TEXT: Record<string, string> = { '4:5': '4:5 portrait', '1:1': 'square', original: 'the first photo’s own shape' };
+/** "Whole photo": nothing cut off; each photo sits on a white 4:5 page instead. */
+const whole = (p: Post) => p.platform === 'instagram' && p.shape === 'whole';
+const cropOf = (p: Photo) => { const ratio = whole(open!) ? null : ratioOf(open!); return ratio ? (p.crop ??= suggest(p, ratio)) : null; };
+const SHAPE_TEXT: Record<string, string> = { '4:5': '4:5 portrait', '1:1': 'square', original: 'the first photo’s own shape', whole: '4:5' };
 
 function openPost(p: Post) {
   open = structuredClone(p);
@@ -162,7 +164,7 @@ function drawEditor() {
   $('.ed-how').textContent = p.status === 'failed' ? `It didn’t post: ${p.error ?? 'no reason given'}`
     : p.status === 'approved' && self ? `It goes out on its own on ${new Date(`${p.post_at}:00`).toLocaleString('en-NZ', { weekday: 'long', day: 'numeric', month: 'long', hour: 'numeric', minute: '2-digit' })}, or click Post now. Change something? Save changes (the photos are made again).`
     : p.status === 'approved' ? `${pf.name} isn’t connected yet, so post it yourself: copy the caption, download the photo${p.photos.length > 1 ? 's' : ''}, post${p.link && pf.link ? ' with the link' : ''}, then click “I’ve posted it”. Once ${pf.name} is connected, approved posts go out on their own at their time.`
-    : p.status === 'draft' ? `${ratioOf(p) ? `Photos are cropped to ${p.platform === 'instagram' ? SHAPE_TEXT[p.shape ?? '4:5'] : p.platform === 'pinterest' ? '2:3 tall' : '4:3'} for ${pf.name}: click a photo, then nudge the frame. ` : ''}${p.platform === 'instagram' && p.photos.length > 1 ? 'Instagram gives every photo in a carousel the first one’s shape. ' : ''}Edits are kept when you Save or Approve.` : '';
+    : p.status === 'draft' ? `${whole(p) ? 'Each photo is shown whole on a white 4:5 page: nothing is cut off. ' : ratioOf(p) ? `Photos are cropped to ${p.platform === 'instagram' ? SHAPE_TEXT[p.shape ?? '4:5'] : p.platform === 'pinterest' ? '2:3 tall' : '4:3'} for ${pf.name}: click a photo, then drag the frame with the mouse (the scroll wheel zooms). ` : ''}${p.platform === 'instagram' && p.photos.length > 1 ? 'Instagram gives every photo in a carousel the first one’s shape. ' : ''}Edits are kept when you Save or Approve.` : '';
   form.querySelectorAll<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>('input, textarea, select').forEach((el) => (el.disabled = !editable));
 }
 
@@ -187,6 +189,34 @@ function nudge(how: string) {
   drawEditor();
 }
 
+// Drag the frame with the mouse (or a finger); the scroll wheel over the photo zooms in and out.
+let drag: { sx: number; sy: number; c: Crop; w: number; h: number } | null = null;
+const bigBox = $('.ed-big');
+bigBox.addEventListener('pointerdown', (e) => {
+  const fr = (e.target as HTMLElement).closest<HTMLElement>('.ed-frame');
+  if (!fr || !open || !(open.status === 'draft' || open.status === 'approved')) return;
+  const r = bigBox.getBoundingClientRect();
+  drag = { sx: e.clientX, sy: e.clientY, c: { ...cropOf(open.photos[at])! }, w: r.width, h: r.height };
+  fr.setPointerCapture(e.pointerId);
+  fr.classList.add('dragging');
+  e.preventDefault();
+});
+bigBox.addEventListener('pointermove', (e) => {
+  if (!drag || !open) return;
+  const c = clamp({ ...drag.c, x: drag.c.x + (e.clientX - drag.sx) / drag.w, y: drag.c.y + (e.clientY - drag.sy) / drag.h });
+  open.photos[at].crop = c;
+  const fr = $('.ed-frame', bigBox);
+  fr.style.left = `${c.x * 100}%`; fr.style.top = `${c.y * 100}%`;
+});
+const endDrag = () => { if (!drag) return; drag = null; $('.ed-frame', bigBox)?.classList.remove('dragging'); };
+bigBox.addEventListener('pointerup', endDrag);
+bigBox.addEventListener('pointercancel', endDrag);
+bigBox.addEventListener('wheel', (e) => {
+  if (!open || !$('.ed-frame', bigBox) || !(open.status === 'draft' || open.status === 'approved')) return;
+  e.preventDefault();
+  nudge(e.deltaY < 0 ? 'in' : 'out');
+}, { passive: false });
+
 async function save() {
   const p = open!;
   p.photos.forEach((x) => cropOf(x));
@@ -199,7 +229,7 @@ async function upload(p: Post) {
   const pf = platforms[p.platform];
   const fd = new FormData();
   fd.append('id', String(p.id));
-  for (let n = 0; n < p.photos.length; n++) fd.append('files', await photoFile(p.photos[n], pf, ratioOf(p)), `${n + 1}.jpg`);
+  for (let n = 0; n < p.photos.length; n++) fd.append('files', await photoFile(p.photos[n], pf, ratioOf(p), whole(p)), `${n + 1}.jpg`);
   const r = await fetch('/api/studio/social/media', { method: 'POST', body: fd });
   const d = await r.json().catch(() => ({}));
   if (!r.ok) throw new Error(d.error || 'The photos didn’t upload.');
@@ -211,7 +241,7 @@ function replace(p: Post) {
 }
 
 // The photo files, at the platform's size and crop.
-async function photoFile(p: Photo, pf: Platform, ratio: number | null): Promise<Blob> {
+async function photoFile(p: Photo, pf: Platform, ratio: number | null, padded = false): Promise<Blob> {
   // Full size: gallery photos' 2048px copy; site photos from Cloudflare Images at full width (its
   // "public" copy is only 768px high, which made small Instagram files).
   const src = p.image_id ? `/api/studio/ads/picks?image=${encodeURIComponent(p.image_id)}` : p.src.replace(/(imagedelivery\.net\/[^/]+\/.+)\/[^/]+$/, '$1/w=2560');
@@ -219,6 +249,20 @@ async function photoFile(p: Photo, pf: Platform, ratio: number | null): Promise<
   const img = new Image();
   img.src = URL.createObjectURL(blob);
   await img.decode();
+  if (padded) {
+    // The whole photo, centred on a white page of the post's shape (1080 wide).
+    const W = 1080, H = Math.round(1080 / (ratio ?? 0.8));
+    const k = Math.min(W / img.naturalWidth, H / img.naturalHeight);
+    const cv = document.createElement('canvas');
+    cv.width = W; cv.height = H;
+    const ctx = cv.getContext('2d')!;
+    ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, W, H);
+    ctx.imageSmoothingQuality = 'high';
+    const w = img.naturalWidth * k, h = img.naturalHeight * k;
+    ctx.drawImage(img, (W - w) / 2, (H - h) / 2, w, h);
+    URL.revokeObjectURL(img.src);
+    return new Promise((res) => cv.toBlob((b) => res(b!), 'image/jpeg', 0.92));
+  }
   const c = ratio ? (p.crop ?? suggest(p, ratio)) : { x: 0, y: 0, w: 1, h: 1 };
   const sw = c.w * img.naturalWidth, sh = c.h * img.naturalHeight;
   // Instagram: 1080 wide whatever the shape (1080×1350 for 4:5); others their fixed size.
@@ -235,7 +279,7 @@ async function photoFile(p: Photo, pf: Platform, ratio: number | null): Promise<
 async function download(p: Post) {
   const pf = platforms[p.platform];
   for (let n = 0; n < p.photos.length; n++) {
-    const url = URL.createObjectURL(await photoFile(p.photos[n], pf, ratioOf(p)));
+    const url = URL.createObjectURL(await photoFile(p.photos[n], pf, ratioOf(p), whole(p)));
     const a = document.createElement('a');
     a.href = url; a.download = `${p.post_at.slice(0, 10)}-${p.platform}-${n + 1}.jpg`;
     document.body.append(a); a.click(); a.remove();
