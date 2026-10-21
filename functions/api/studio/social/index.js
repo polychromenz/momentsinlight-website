@@ -2,7 +2,7 @@
 // mark on gallery photos.
 //   GET  /api/studio/social?from=YYYY-MM-DD&to=YYYY-MM-DD   -> { posts, platforms, ideas, marked, drafts_on, meta }
 //   POST /api/studio/social { action: 'mark', gallery_id, image_ids, on? }   mark photos Social (on omitted = toggle one)
-//   POST /api/studio/social { action: 'save', id, caption, post_at, link, label, photos }
+//   POST /api/studio/social { action: 'save', id, caption, post_at, link, label, photos, shape? }   shape: Instagram's '4:5', '1:1' or 'original'
 //   POST /api/studio/social { action: 'approve' | 'unapprove' | 'skip' | 'restore' | 'posted', id }
 //   POST /api/studio/social { action: 'post_now', id }      publish an approved Facebook/Instagram post now (functions-lib/meta.js)
 //   POST /api/studio/social { action: 'recaption', id }     a fresh AI caption (not saved until Save)
@@ -82,8 +82,9 @@ export async function onRequestPost({ request, env }) {
       if (!photos.length) return json({ error: 'Keep at least one photo (or Skip the post).' }, 400);
       const link = d.link ? String(d.link).trim().slice(0, 500) : null;
       if (link && !/^https:\/\//.test(link)) return json({ error: 'The link should start with https://' }, 400);
-      return set(`caption = ?2, post_at = ?3, link = ?4, label = ?5, photos = ?6, ai = CASE WHEN caption = ?2 THEN ai ELSE 0 END`,
-        caption, d.post_at, link, String(d.label ?? p.label ?? '').slice(0, 200), JSON.stringify(photos));
+      const shapeOk = p.platform === 'instagram' && ['4:5', '1:1', 'original'].includes(d.shape) ? d.shape : p.shape ?? null;
+      return set(`caption = ?2, post_at = ?3, link = ?4, label = ?5, photos = ?6, shape = ?7, ai = CASE WHEN caption = ?2 THEN ai ELSE 0 END`,
+        caption, d.post_at, link, String(d.label ?? p.label ?? '').slice(0, 200), JSON.stringify(photos), shapeOk);
     }
     if (d.action === 'approve') {
       if (p.status !== 'draft') return json({ error: 'Only a draft can be approved.' }, 400);

@@ -5,7 +5,7 @@
 // and downloads the photos to post them himself.
 type Crop = { x: number; y: number; w: number; h: number };
 type Photo = { src: string; w: number; h: number; image_id?: string; gallery_id?: string; alt?: string; crop?: Crop };
-type Post = { id: number; platform: string; post_at: string; status: string; source: string; label: string; caption: string; link: string | null; photos: Photo[]; ai: number; error: string | null; media: string | null; remote_url: string | null };
+type Post = { id: number; shape?: string | null; platform: string; post_at: string; status: string; source: string; label: string; caption: string; link: string | null; photos: Photo[]; ai: number; error: string | null; media: string | null; remote_url: string | null };
 type Meta = { ready: boolean; connection: null | { page_id: string; page_name: string; ig_id: string | null; ig_username: string | null; pages: { id: string; name: string; ig_username: string | null }[]; connected_at: string } };
 type Platform = { name: string; ratio: number | null; out: [number, number]; max: number; link: boolean; chars: number };
 
@@ -97,7 +97,17 @@ function suggest(p: Photo, ratio: number): Crop {
   const h = r / ratio;
   return { x: 0, y: (1 - h) * (r < 1 ? 0.25 : 0.3), w: 1, h };
 }
-const cropOf = (p: Photo) => { const ratio = platforms[open!.platform].ratio; return ratio ? (p.crop ??= suggest(p, ratio)) : null; };
+/** The post's photo shape (width / height). Instagram's is Tony's choice per post: 4:5 (the default),
+ *  square, or the first photo's own shape, kept within what Instagram allows (4:5 tall to 1.91:1 wide);
+ *  a carousel's photos all share the first one's shape. Other platforms have a fixed one (or none). */
+function ratioOf(p: Post): number | null {
+  if (p.platform !== 'instagram') return platforms[p.platform].ratio;
+  if (p.shape === '1:1') return 1;
+  if (p.shape === 'original' && p.photos[0]) return Math.min(1.91, Math.max(0.8, p.photos[0].w / p.photos[0].h));
+  return 0.8;
+}
+const cropOf = (p: Photo) => { const ratio = ratioOf(open!); return ratio ? (p.crop ??= suggest(p, ratio)) : null; };
+const SHAPE_TEXT: Record<string, string> = { '4:5': '4:5 portrait', '1:1': 'square', original: 'the first photo’s own shape' };
 
 function openPost(p: Post) {
   open = structuredClone(p);
@@ -110,6 +120,8 @@ function openPost(p: Post) {
   field<HTMLTextAreaElement>('caption').value = p.caption;
   field<HTMLTextAreaElement>('caption').maxLength = pf.chars;
   field<HTMLInputElement>('link').value = p.link ?? '';
+  $('.ed-shape').hidden = p.platform !== 'instagram';
+  (form.elements.namedItem('shape') as HTMLSelectElement).value = p.shape ?? '4:5';
   $('.ed-link').hidden = !pf.link;
   $('.ed-ai').hidden = !p.ai;
   count();
@@ -150,8 +162,8 @@ function drawEditor() {
   $('.ed-how').textContent = p.status === 'failed' ? `It didn’t post: ${p.error ?? 'no reason given'}`
     : p.status === 'approved' && self ? `It goes out on its own on ${new Date(`${p.post_at}:00`).toLocaleString('en-NZ', { weekday: 'long', day: 'numeric', month: 'long', hour: 'numeric', minute: '2-digit' })}, or click Post now. Change something? Save changes (the photos are made again).`
     : p.status === 'approved' ? `${pf.name} isn’t connected yet, so post it yourself: copy the caption, download the photo${p.photos.length > 1 ? 's' : ''}, post${p.link && pf.link ? ' with the link' : ''}, then click “I’ve posted it”. Once ${pf.name} is connected, approved posts go out on their own at their time.`
-    : p.status === 'draft' ? `${pf.ratio ? `Photos are cropped to ${p.platform === 'instagram' ? '4:5 portrait' : p.platform === 'pinterest' ? '2:3 tall' : '4:3'} for ${pf.name}: click a photo, then nudge the frame. ` : ''}Edits are kept when you Save or Approve.` : '';
-  form.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>('input, textarea').forEach((el) => (el.disabled = !editable));
+    : p.status === 'draft' ? `${ratioOf(p) ? `Photos are cropped to ${p.platform === 'instagram' ? SHAPE_TEXT[p.shape ?? '4:5'] : p.platform === 'pinterest' ? '2:3 tall' : '4:3'} for ${pf.name}: click a photo, then nudge the frame. ` : ''}${p.platform === 'instagram' && p.photos.length > 1 ? 'Instagram gives every photo in a carousel the first one’s shape. ' : ''}Edits are kept when you Save or Approve.` : '';
+  form.querySelectorAll<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>('input, textarea, select').forEach((el) => (el.disabled = !editable));
 }
 
 const clamp = (c: Crop): Crop => ({ ...c, x: Math.min(Math.max(c.x, 0), 1 - c.w), y: Math.min(Math.max(c.y, 0), 1 - c.h) });
@@ -178,7 +190,7 @@ function nudge(how: string) {
 async function save() {
   const p = open!;
   p.photos.forEach((x) => cropOf(x));
-  const d = await api({ action: 'save', id: p.id, caption: field('caption').value, post_at: field('post_at').value, link: field('link').value || null, label: field('label').value, photos: p.photos });
+  const d = await api({ action: 'save', id: p.id, caption: field('caption').value, post_at: field('post_at').value, link: field('link').value || null, label: field('label').value, photos: p.photos, shape: p.shape ?? null });
   replace(d.post);
   return d.post as Post;
 }
@@ -187,7 +199,7 @@ async function upload(p: Post) {
   const pf = platforms[p.platform];
   const fd = new FormData();
   fd.append('id', String(p.id));
-  for (let n = 0; n < p.photos.length; n++) fd.append('files', await photoFile(p.photos[n], pf), `${n + 1}.jpg`);
+  for (let n = 0; n < p.photos.length; n++) fd.append('files', await photoFile(p.photos[n], pf, ratioOf(p)), `${n + 1}.jpg`);
   const r = await fetch('/api/studio/social/media', { method: 'POST', body: fd });
   const d = await r.json().catch(() => ({}));
   if (!r.ok) throw new Error(d.error || 'The photos didn’t upload.');
@@ -199,14 +211,19 @@ function replace(p: Post) {
 }
 
 // The photo files, at the platform's size and crop.
-async function photoFile(p: Photo, pf: Platform): Promise<Blob> {
-  const blob = await (await fetch(p.image_id ? `/api/studio/ads/picks?image=${encodeURIComponent(p.image_id)}` : p.src, { mode: 'cors' })).blob();
+async function photoFile(p: Photo, pf: Platform, ratio: number | null): Promise<Blob> {
+  // Full size: gallery photos' 2048px copy; site photos from Cloudflare Images at full width (its
+  // "public" copy is only 768px high, which made small Instagram files).
+  const src = p.image_id ? `/api/studio/ads/picks?image=${encodeURIComponent(p.image_id)}` : p.src.replace(/(imagedelivery\.net\/[^/]+\/.+)\/[^/]+$/, '$1/w=2560');
+  const blob = await (await fetch(src, { mode: 'cors' })).blob();
   const img = new Image();
   img.src = URL.createObjectURL(blob);
   await img.decode();
-  const c = pf.ratio ? (p.crop ?? suggest(p, pf.ratio)) : { x: 0, y: 0, w: 1, h: 1 };
+  const c = ratio ? (p.crop ?? suggest(p, ratio)) : { x: 0, y: 0, w: 1, h: 1 };
   const sw = c.w * img.naturalWidth, sh = c.h * img.naturalHeight;
-  const k = Math.min(1, pf.out[0] / sw, pf.out[1] / sh);
+  // Instagram: 1080 wide whatever the shape (1080×1350 for 4:5); others their fixed size.
+  const out = pf.name === 'Instagram' && ratio ? [1080, Math.round(1080 / ratio)] : pf.out;
+  const k = Math.min(1, out[0] / sw, out[1] / sh);
   const cv = document.createElement('canvas');
   cv.width = Math.round(sw * k); cv.height = Math.round(sh * k);
   const ctx = cv.getContext('2d')!;
@@ -218,7 +235,7 @@ async function photoFile(p: Photo, pf: Platform): Promise<Blob> {
 async function download(p: Post) {
   const pf = platforms[p.platform];
   for (let n = 0; n < p.photos.length; n++) {
-    const url = URL.createObjectURL(await photoFile(p.photos[n], pf));
+    const url = URL.createObjectURL(await photoFile(p.photos[n], pf, ratioOf(p)));
     const a = document.createElement('a');
     a.href = url; a.download = `${p.post_at.slice(0, 10)}-${p.platform}-${n + 1}.jpg`;
     document.body.append(a); a.click(); a.remove();
@@ -306,6 +323,14 @@ document.addEventListener('keydown', (e) => {
   if (th && (e.key === 'Enter' || e.key === ' ') && !(e.target as HTMLElement).matches('button')) { e.preventDefault(); (th as HTMLElement).click(); }
 });
 form.addEventListener('input', (e) => { if ((e.target as HTMLElement).matches('[name=caption]')) count(); });
+// A new Instagram shape: every photo's frame starts again at the new shape.
+form.addEventListener('change', (e) => {
+  const el = e.target as HTMLSelectElement;
+  if (!el.matches('[name=shape]') || !open) return;
+  open.shape = el.value;
+  open.photos.forEach((x) => delete x.crop);
+  drawEditor();
+});
 document.addEventListener('change', async (e) => {
   const sel = (e.target as HTMLElement).closest<HTMLSelectElement>('[data-meta-page]');
   if (!sel) return;

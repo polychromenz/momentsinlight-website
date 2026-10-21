@@ -56,6 +56,13 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
         <div class="ed-fields">
           <label>When <input type="datetime-local" name="post_at" required /></label>
           <label class="ed-label">Note <input name="label" maxlength="200" /></label>
+          <label class="ed-shape" hidden>Photo shape
+            <select name="shape">
+              <option value="4:5">4:5 portrait (biggest in the feed)</option>
+              <option value="1:1">Square</option>
+              <option value="original">Original shape</option>
+            </select>
+          </label>
           <label>Caption <span class="ed-count muted"></span>
             <textarea name="caption" rows="12"></textarea></label>
           <p class="ed-ai muted" hidden>Written by AI from the post’s details: check it reads like you.</p>
