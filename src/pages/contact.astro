@@ -29,9 +29,9 @@ const directions = 'https://www.google.com/maps/dir/?api=1&destination=' + encod
 
   <section class="form-band">
     <div class="wrap form-grid">
-      <!-- A CSS rise rather than data-reveal: on phones this is the biggest thing on the first
-           screen, and the reveal waited on scripts (the map's, when busy) for up to 8s. -->
-      <aside class="aside rise">
+      <!-- On phones this is the biggest thing on the first screen (what Google times as "loaded"),
+           so it slides up without fading: a fade from nothing held it back ~1.5s. -->
+      <aside class="aside slide">
         <div set:html={reassurance} />
       </aside>
       <div class="form-card">
@@ -44,7 +44,9 @@ const directions = 'https://www.google.com/maps/dir/?api=1&destination=' + encod
     <section class="map-band">
       <div class="wrap map-wrap" data-reveal>
         <div class="map">
-          <iframe src={mapSrc} title="Map showing Moments in Light in Waiwera" loading="lazy" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+          <!-- Google's map (~470KB of script) loads only when it scrolls into view (script below):
+               the browser's own lazy loading fetched it straight away on phones. -->
+          <iframe data-src={mapSrc} title="Map showing Moments in Light in Waiwera" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
         </div>
         <div class="map-card">
           <p class="map-name">Moments in Light</p>
@@ -66,7 +68,8 @@ const directions = 'https://www.google.com/maps/dir/?api=1&destination=' + encod
   .rise:nth-child(2) { animation-delay: 0.1s; }
   .rise:nth-child(3) { animation-delay: 0.2s; }
   .rise:nth-child(4) { animation-delay: 0.3s; }
-  .aside.rise { animation-delay: 0.4s; }
+  .slide { animation: slide 1s var(--ease) 0.2s both; }
+  @keyframes slide { from { transform: translateY(18px); } to { transform: none; } }
   hr.rise { animation-name: draw; }
   @keyframes rise { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
   @keyframes draw { from { transform: scaleX(0); } to { transform: none; } }
@@ -113,6 +116,18 @@ const directions = 'https://www.google.com/maps/dir/?api=1&destination=' + encod
     .aside { position: sticky; top: 140px; }
   }
   @media (prefers-reduced-motion: reduce) {
-    .rise { animation: none; }
+    .rise, .slide { animation: none; }
   }
 </style>
+
+<script>
+  // The map, once it's nearly on screen.
+  const frame = document.querySelector<HTMLIFrameElement>('.map iframe[data-src]');
+  if (frame) {
+    const go = () => { frame.src = frame.dataset.src!; };
+    if ('IntersectionObserver' in window) {
+      const io = new IntersectionObserver((es) => { if (es.some((e) => e.isIntersecting)) { io.disconnect(); go(); } }, { rootMargin: '200px 0px' });
+      io.observe(frame);
+    } else go();
+  }
+</script>
