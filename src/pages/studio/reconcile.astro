@@ -1,0 +1,224 @@
+---
+// Moments Studio > Payments > Reconcile: a period's bank reconciliation planned from Tony's BNZ and
+// Stripe exports, checked and approved here, then made in Xero so its Reconcile screen just needs OK on
+// each line (functions-lib/recon.js, functions/api/studio/reconcile.js).
+import StudioLayout from '../../layouts/StudioLayout.astro';
+---
+<StudioLayout title="Reconcile" section="reconcile">
+  <main class="rc">
+    <h1>Reconcile</h1>
+    <p class="intro">Give the studio your bank export (and Stripe’s payout report) for a period. It works out every line: which invoices and fees make up each Stripe payout, which invoice a couple’s bank transfer pays, and how to code everything else the way you have before. You check the plan and approve it; the studio then puts the matching transactions into Xero, so in Xero’s Reconcile screen each line already shows its match and you just click OK.</p>
+
+    <section class="card rc-setup"><h2>Set-up</h2><div class="rc-setup-body"><p class="muted">Loading…</p></div></section>
+
+    <section class="card rc-new">
+      <h2>New reconciliation</h2>
+      <form class="rc-form" autocomplete="off">
+        <div class="rc-row">
+          <label>From <input type="date" name="from" value="2026-04-01" required /></label>
+          <label>To <input type="date" name="to" value="2026-09-30" required /></label>
+        </div>
+        <label class="rc-file">Bank export from BNZ (CSV) <input type="file" name="bank" accept=".csv,text/csv" required /></label>
+        <details class="rc-how"><summary>How to export it from BNZ</summary>
+          <ol><li>In BNZ internet banking, open the business account.</li><li>Choose <strong>Export</strong> (or Download transactions), the dates above, and <strong>CSV</strong>.</li><li>Save it and choose it here.</li></ol></details>
+        <label class="rc-file">Stripe payout report (CSV) <small>(needed for the Stripe payouts)</small><input type="file" name="stripe" accept=".csv,text/csv" /></label>
+        <details class="rc-how"><summary>How to export it from Stripe</summary>
+          <ol><li>Open the Stripe account the payouts came from (for this period, the Studio Ninja one).</li><li>Go to <strong>Reports</strong> › <strong>Payout reconciliation</strong>, set the dates (a week either side of the period is fine).</li><li>Download the <strong>itemised</strong> report (“Payout reconciliation, itemised”) as CSV, and choose it here.</li></ol></details>
+        <button type="submit" class="s-btn s-btn--solid">Build the plan</button>
+        <p class="muted">Nothing goes to Xero yet: this only reads your files and Xero.</p>
+      </form>
+    </section>
+
+    <section class="card rc-plan" hidden></section>
+
+    <section class="card rc-runs"><h2>Earlier runs</h2><ul class="rc-run-list"><li class="muted">Loading…</li></ul></section>
+  </main>
+  <div class="s-toast" role="status"></div>
+</StudioLayout>
+
+<script>
+  import { ask } from '../../studio/dialogs';
+  const $ = <T extends HTMLElement = HTMLElement>(s: string, r: ParentNode = document) => r.querySelector<T>(s)!;
+  const esc = (s: unknown) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
+  const money = (c: number) => `${c < 0 ? '−' : ''}$${(Math.abs(c) / 100).toLocaleString('en-NZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const day = (d: string) => new Date(`${d}T12:00:00Z`).toLocaleDateString('en-NZ', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' });
+  function toast(msg: string, error = false) { const t = $('.s-toast'); t.textContent = msg; t.classList.toggle('error', error); t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 5000); }
+  const post = async (body: unknown) => {
+    const r = await fetch('/api/studio/reconcile', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(d.error || 'That didn’t work.');
+    return d;
+  };
+  let run: any = null;
+  let filter = 'all';
+
+  async function loadHome() {
+    const d = await fetch('/api/studio/reconcile').then((r) => r.json()).catch(() => null);
+    if (!d) return;
+    const banks = d.banks ?? [];
+    $('.rc-setup-body').innerHTML = !d.connected ? '<p>Connect Xero first (Payments › Xero).</p>' : `
+      <p>Connected to <strong>${esc(d.connected)}</strong>. Stripe payouts go through a <strong>Stripe clearing</strong> bank account in Xero: each payout’s invoice payments go into it, the fees come out of it (500 Stripe Fees, No GST), and the payout moves from it to BNZ, which is what the BNZ line matches.</p>
+      <label>Stripe clearing account <select data-clearing><option value="">Choose…</option>${banks.map((b: any) => `<option value="${esc(b.id)}"${b.id === d.settings.clearing ? ' selected' : ''}>${esc(b.name)}${b.code ? ` (${esc(b.code)})` : ''}</option>`).join('')}</select></label>
+      ${banks.some((b: any) => /stripe/i.test(b.name)) ? '' : '<p class="muted">No “Stripe” account yet: in Xero, go to Accounting › Chart of accounts › <strong>Add Bank Account</strong>, name it <strong>Stripe</strong> (account number “Stripe”, no bank feed), then reload this page and choose it here.</p>'}`;
+    $('.rc-run-list').innerHTML = d.runs.length ? d.runs.map((r: any) => `<li><button type="button" class="s-btn s-btn--quiet" data-open="${r.id}">${day(r.period_from)} to ${day(r.period_to)}</button>
+      <span class="muted">${r.summary ? `${r.summary.lines} lines · ${r.summary.ready} ready · ${r.summary.check} to check · ${r.summary.done} already in Xero` : ''} · ${r.status === 'sent' ? 'sent to Xero' : 'plan'} · ${new Date(r.created_at).toLocaleDateString('en-NZ')}</span></li>`).join('') : '<li class="muted">None yet.</li>';
+  }
+
+  const KIND: Record<string, string> = { payout: 'Stripe payout', client: 'From a couple', spend: 'Spend', receive: 'Received', done: 'Already in Xero', other: 'Other' };
+  function drawPlan() {
+    const box = $('.rc-plan');
+    box.hidden = !run;
+    if (!run) return;
+    const p = run.plan, s = p.summary;
+    const lines = p.lines.filter((l: any) => filter === 'all' || (filter === 'check' ? l.status === 'check' && !l.skipped : filter === 'ready' ? l.status === 'ready' && !l.sent && !l.skipped : filter === 'done' ? l.status === 'done' : filter === 'sent' ? !!l.sent : filter === 'error' ? !!l.error : true));
+    const left = p.lines.filter((l: any) => l.status === 'ready' && !l.skipped && !l.sent && !l.error).length;
+    const sent = p.lines.filter((l: any) => l.sent).length, errs = p.lines.filter((l: any) => l.error).length;
+    const opt = (list: any[], v: string, label: (x: any) => string, key: string) => list.map((x) => `<option value="${esc(x[key])}"${x[key] === v ? ' selected' : ''}>${esc(label(x))}</option>`).join('');
+    box.innerHTML = `<h2>${day(run.period_from)} to ${day(run.period_to)}</h2>
+      <div class="rc-tiles">
+        <div><span>Bank lines</span><strong>${s.lines}</strong><small>${money(s.in)} in · ${money(s.out)} out</small></div>
+        <div><span>Ready</span><strong>${s.ready}</strong><small>${s.payouts} Stripe payouts · ${s.clients} from couples</small></div>
+        <div><span>To check</span><strong>${p.lines.filter((l: any) => l.status === 'check' && !l.skipped).length}</strong><small>new payees and anything unclear</small></div>
+        <div><span>Already in Xero</span><strong>${s.done}</strong><small>left as they are</small></div>
+      </div>
+      ${!p.clearing && s.payouts ? '<p class="rc-warn">Choose the Stripe clearing account (Set-up, above), then build the plan again, so the Stripe payouts can be planned.</p>' : ''}
+      ${s.stripe_unused?.length ? `<p class="rc-warn">${s.stripe_unused.length} Stripe payout${s.stripe_unused.length === 1 ? '' : 's'} in the period didn’t match a bank line: ${s.stripe_unused.map((u: any) => `${day(u.date)} ${money(u.net)}`).join(', ')}.</p>` : ''}
+      <div class="rc-filter" role="tablist">${[['all', 'All'], ['check', 'To check'], ['ready', 'Ready'], ['done', 'Already in Xero'], ['sent', 'Sent'], ...(errs ? [['error', 'Didn’t go']] : [])].map(([k, t]) => `<button type="button" data-filter="${k}" class="${filter === k ? 'on' : ''}">${t}</button>`).join('')}</div>
+      <div class="tbl-wrap"><table class="rc-tbl"><thead><tr><th>Date</th><th>Bank line</th><th class="r">Amount</th><th>What the studio will do</th><th></th></tr></thead><tbody>
+      ${lines.map((l: any) => `<tr data-n="${l.n}" class="st-${l.status}${l.skipped ? ' skipped' : ''}${l.sent ? ' sent' : ''}">
+        <td>${day(l.date)}</td>
+        <td><strong>${esc(l.payee)}</strong>${l.details ? `<br><small>${esc(l.details)}</small>` : ''}</td>
+        <td class="r ${l.amount < 0 ? 'out' : 'in'}">${money(l.amount)}</td>
+        <td><span class="chip k-${l.kind}">${KIND[l.kind] ?? l.kind}</span> ${esc(l.note)}
+          ${l.choice && l.status !== 'done' && !l.sent ? `<div class="rc-code"><input data-contact value="${esc(l.choice.contact ?? '')}" placeholder="Contact" aria-label="Contact" />
+            <select data-code aria-label="Account"><option value="">Account…</option>${opt(p.accounts, l.choice.code, (a) => `${a.code} ${a.name}`, 'code')}</select>
+            <select data-tax aria-label="Tax"><option value="">Tax…</option>${opt(p.taxes, l.choice.tax, (t) => t.name, 'type')}</select></div>` : ''}
+          ${l.error ? `<br><span class="rc-err">Didn’t go: ${esc(l.error)}</span>` : ''}${l.sent ? '<br><span class="rc-ok">In Xero: reconcile it there</span>' : ''}</td>
+        <td>${l.status !== 'done' && !l.sent ? `<label class="rc-skip"><input type="checkbox" data-skip ${l.skipped ? 'checked' : ''} /> Leave out</label>` : ''}</td></tr>`).join('') || '<tr><td colspan="5" class="muted">Nothing here.</td></tr>'}
+      </tbody></table></div>
+      <div class="rc-acts">
+        ${left ? `<button type="button" class="s-btn s-btn--solid" data-send>Approve and send ${left} line${left === 1 ? '' : 's'} to Xero</button>` : ''}
+        ${errs ? '<button type="button" class="s-btn" data-retry>Try the ones that didn’t go again</button>' : ''}
+        ${sent ? `<button type="button" class="s-btn s-btn--quiet" data-undo>Undo what this run put in Xero</button>` : ''}
+      </div>
+      <p class="muted">Lines “To check” aren’t sent until you code them (or leave them out). After sending, open Xero’s Reconcile screen for the BNZ account: each line shows its match; click OK.</p>`;
+  }
+
+  $<HTMLFormElement>('.rc-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const f = e.target as HTMLFormElement;
+    const btn = f.querySelector('button')!;
+    const read = (n: string) => { const file = (f.elements.namedItem(n) as HTMLInputElement).files?.[0]; return file ? file.text() : Promise.resolve(''); };
+    btn.disabled = true; btn.textContent = 'Reading your files and Xero…';
+    try {
+      const d = await post({ action: 'plan', from: (f.elements.namedItem('from') as HTMLInputElement).value, to: (f.elements.namedItem('to') as HTMLInputElement).value, bank_csv: await read('bank'), stripe_csv: await read('stripe') });
+      run = d.run; filter = run.plan.summary.check ? 'check' : 'all'; drawPlan(); loadHome();
+      $('.rc-plan').scrollIntoView({ behavior: 'smooth' });
+    } catch (err) { toast((err as Error).message, true); }
+    btn.disabled = false; btn.textContent = 'Build the plan';
+  });
+
+  document.addEventListener('click', async (e) => {
+    const t = e.target as HTMLElement;
+    const o = t.closest<HTMLElement>('[data-open]');
+    if (o) { const d = await fetch(`/api/studio/reconcile?id=${o.dataset.open}`).then((r) => r.json()); run = d.run; filter = 'all'; drawPlan(); $('.rc-plan').scrollIntoView({ behavior: 'smooth' }); return; }
+    const fl = t.closest<HTMLElement>('[data-filter]');
+    if (fl) { filter = fl.dataset.filter!; drawPlan(); return; }
+    if (t.closest('[data-send]')) {
+      const b = t.closest<HTMLButtonElement>('[data-send]')!;
+      if (!await ask('Send the approved lines to Xero? The studio creates the payments, fees and transfers in your real books (you can undo them from here).', { title: 'Send to Xero', ok: 'Send' })) return;
+      b.disabled = true;
+      try {
+        let left = 1;
+        while (left) {
+          b.textContent = 'Sending…';
+          const d = await post({ action: 'send', id: run.id });
+          run = d.run; left = d.left;
+          const done = run.plan.lines.filter((l: any) => l.sent).length;
+          b.textContent = `Sending… ${done} done`;
+          if (run.plan.lines.filter((l: any) => l.error).length && !d.left) break;
+        }
+        toast('Sent. Open Xero’s Reconcile screen for BNZ and click OK on each match.');
+      } catch (err) { toast((err as Error).message, true); }
+      drawPlan(); loadHome();
+      return;
+    }
+    if (t.closest('[data-retry]')) { run = (await post({ action: 'retry', id: run.id })).run; drawPlan(); return; }
+    if (t.closest('[data-undo]')) {
+      if (!await ask('Take back everything this run put in Xero? Payments and coded transactions are deleted; any transfers are listed for you to delete in Xero yourself.', { title: 'Undo', ok: 'Undo', danger: true })) return;
+      try {
+        const d = await post({ action: 'undo', id: run.id });
+        run = d.run; drawPlan(); loadHome();
+        toast(d.left?.length ? `Undone, except ${d.left.length} transfer${d.left.length === 1 ? '' : 's'}: delete ${d.left.length === 1 ? 'it' : 'them'} in Xero (Bank account › Stripe).` : 'Undone.', !!d.left?.length);
+      } catch (err) { toast((err as Error).message, true); }
+    }
+  });
+  document.addEventListener('change', async (e) => {
+    const el = e.target as HTMLInputElement | HTMLSelectElement;
+    if (el.matches('[data-clearing]')) {
+      try { await post({ action: 'clearing', id: el.value }); toast('Saved.'); } catch (err) { toast((err as Error).message, true); }
+      return;
+    }
+    const row = el.closest<HTMLElement>('tr[data-n]');
+    if (!row || !run) return;
+    const n = Number(row.dataset.n);
+    const body: any = { action: 'choose', id: run.id, n };
+    if (el.matches('[data-skip]')) body.skip = (el as HTMLInputElement).checked;
+    if (el.matches('[data-code]')) body.code = el.value;
+    if (el.matches('[data-tax]')) body.tax = el.value;
+    if (el.matches('[data-contact]')) body.contact = el.value;
+    try { run = (await post(body)).run; drawPlan(); } catch (err) { toast((err as Error).message, true); }
+  });
+  loadHome();
+</script>
+
+<style is:global>
+  .rc { max-width: 1250px; margin: 0 auto; padding: 24px clamp(14px, 3vw, 32px) 80px; }
+  .rc h1 { margin: 0; font-weight: 300; font-size: 32px; color: var(--ink); }
+  .rc .intro { color: #666; margin: 4px 0 14px; max-width: 820px; }
+  .rc .card { background: var(--white); border-radius: 24px 0; padding: 18px 22px; margin-bottom: 16px; }
+  .rc h2 { margin: 0 0 10px; font-weight: 300; font-size: 22px; }
+  .rc .muted { color: #888; font-size: 14px; }
+  .rc label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; font-weight: 600; color: #555; }
+  .rc label small { font-weight: 400; color: #888; }
+  .rc input, .rc select { font: inherit; font-size: 14px; font-weight: 400; padding: 7px 10px; border: 1px solid #ddd3c4; border-radius: 10px 0; background: #fff; color: var(--ink); min-width: 0; }
+  .rc input[type=file] { border: 0; padding: 4px 0; }
+  .rc input[type=file]::file-selector-button { font: inherit; font-size: 14px; font-weight: 600; padding: 8px 14px; margin-right: 10px; border: 1px solid var(--green); border-radius: 12px 0; background: var(--white); color: var(--green); cursor: pointer; }
+  .rc-form { display: flex; flex-direction: column; gap: 12px; align-items: flex-start; }
+  .rc-row { display: flex; gap: 12px; flex-wrap: wrap; }
+  .rc-how { font-size: 14px; color: #555; }
+  .rc-how summary { cursor: pointer; color: var(--green); }
+  .rc-setup label { flex-direction: row; align-items: center; gap: 10px; }
+  .rc-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin: 0 0 14px; }
+  .rc-tiles div { background: #faf6f0; border-radius: 14px 0; padding: 10px 14px; display: flex; flex-direction: column; gap: 2px; }
+  .rc-tiles span { font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--green); font-weight: 600; }
+  .rc-tiles strong { font-size: 26px; font-weight: 400; }
+  .rc-tiles small { color: #888; font-size: 12px; }
+  .rc-warn { margin: 0 0 10px; padding: 8px 12px; background: #fbeee9; color: #8c1d18; border-radius: 10px 0; font-size: 14px; }
+  .rc-filter { display: flex; gap: 6px; flex-wrap: wrap; margin: 0 0 10px; }
+  .rc-filter button { font: inherit; font-size: 13px; padding: 6px 12px; border: 1px solid #ddd3c4; border-radius: 10px 0; background: #fff; cursor: pointer; }
+  .rc-filter button.on { background: var(--green); border-color: var(--green); color: #fff; }
+  .tbl-wrap { overflow-x: auto; }
+  .rc-tbl { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 860px; }
+  .rc-tbl th { text-align: left; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--green); padding: 8px; border-bottom: 1px solid #ece4d7; }
+  .rc-tbl td { padding: 8px; border-bottom: 1px solid #f3eee6; vertical-align: top; }
+  .rc-tbl td:first-child { white-space: nowrap; }
+  .rc-tbl .r { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .rc-tbl .in { color: var(--green); }
+  .rc-tbl small { color: #888; }
+  .rc-tbl tr.st-check td { background: #fffaf0; }
+  .rc-tbl tr.st-done td, .rc-tbl tr.skipped td { opacity: .55; }
+  .rc-tbl tr.sent td { background: #f1f4ea; }
+  .rc-tbl .chip { display: inline-block; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 999px; background: #efe9df; color: #555; margin-right: 4px; }
+  .rc-tbl .k-payout { background: #ece8f7; color: #4b3b8f; }
+  .rc-tbl .k-client { background: #e3efe6; color: #2f6b3c; }
+  .rc-tbl .k-done { background: #eee; color: #777; }
+  .rc-code { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+  .rc-code input { width: 180px; }
+  .rc-code select { max-width: 240px; }
+  .rc-skip { flex-direction: row !important; align-items: center; font-weight: 400 !important; white-space: nowrap; }
+  .rc-err { color: #a8432a; font-size: 13px; }
+  .rc-ok { color: var(--green); font-size: 13px; font-weight: 600; }
+  .rc-acts { display: flex; gap: 8px; flex-wrap: wrap; margin: 12px 0 6px; }
+  .rc-run-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+</style>
