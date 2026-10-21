@@ -92,13 +92,13 @@ export async function choosePage(db, id) {
 }
 
 // ---- Photos for a post: the files the editor made, kept where Meta can fetch them ----
-/** Store an approved post's photo files (JPEGs, in order). Returns their public addresses. */
-export async function storeMedia(env, postId, files) {
+/** Store an approved post's photo files (JPEGs, in order), or a Reel's video (one MP4). Returns their public addresses. */
+export async function storeMedia(env, postId, files, video = false) {
   const stamp = Date.now().toString(36);
   const urls = [];
   for (let n = 0; n < files.length; n++) {
-    const k = `social/${postId}/${stamp}-${n + 1}.jpg`;
-    await env.GALLERY_WEB.put(k, files[n], { httpMetadata: { contentType: 'image/jpeg', cacheControl: 'public, max-age=31536000, immutable' } });
+    const k = `social/${postId}/${stamp}-${n + 1}.${video ? 'mp4' : 'jpg'}`;
+    await env.GALLERY_WEB.put(k, files[n], { httpMetadata: { contentType: video ? 'video/mp4' : 'image/jpeg', cacheControl: 'public, max-age=31536000, immutable' } });
     urls.push(`${MEDIA_ORIGIN}/${k}`);
   }
   return urls;
@@ -117,6 +117,13 @@ export async function publish(env, p) {
   const media = JSON.parse(p.media || '[]');
   if (!media.length) throw new Error('Its photos weren’t made. Open the post, Back to draft, then Approve again.');
   const token = await open(env, c.page_token);
+  const reel = p.format === 'reel';
+  if (reel && !String(media[0]).endsWith('.mp4')) throw new Error('Its video wasn’t made. Open the post, Back to draft, then Approve again.');
+  if (p.platform === 'facebook' && reel) {
+    const d = await graph('POST', `/${c.page_id}/videos`, { file_url: media[0], description: message(p), published: 'true', access_token: token });
+    const link = await graph('GET', `/${d.id}`, { fields: 'permalink_url', access_token: token }).then((x) => x.permalink_url).catch(() => null);
+    return { id: d.id, url: link && link.startsWith('/') ? `https://www.facebook.com${link}` : link };
+  }
   if (p.platform === 'facebook') {
     if (media.length === 1) {
       const d = await graph('POST', `/${c.page_id}/photos`, { url: media[0], caption: message(p), published: 'true', access_token: token });
@@ -130,17 +137,20 @@ export async function publish(env, p) {
   }
   if (p.platform === 'instagram') {
     if (!c.ig_id) throw new Error('No Instagram account is linked to the connected Facebook Page.');
-    const ready = async (id) => { // Instagram fetches the photo first; usually a second or two.
-      for (let n = 0; n < 10; n++) {
+    const ready = async (id, tries = 10, gap = 1500) => { // Instagram fetches the photo first (a second or two; a video longer).
+      for (let n = 0; n < tries; n++) {
         const s = await graph('GET', `/${id}`, { fields: 'status_code', access_token: token });
         if (s.status_code === 'FINISHED') return;
-        if (s.status_code === 'ERROR' || s.status_code === 'EXPIRED') throw new Error('Instagram couldn’t use that photo.');
-        await wait(1500);
+        if (s.status_code === 'ERROR' || s.status_code === 'EXPIRED') throw new Error(`Instagram couldn’t use that ${reel ? 'video' : 'photo'}.`);
+        await wait(gap);
       }
-      throw new Error('Instagram took too long with the photo. It will try again on the next run.');
+      throw new Error(`Instagram took too long with the ${reel ? 'video' : 'photo'}. Try again in a few minutes.`);
     };
     let container;
-    if (media.length === 1) {
+    if (reel) {
+      container = (await graph('POST', `/${c.ig_id}/media`, { media_type: 'REELS', video_url: media[0], caption: message(p), share_to_feed: 'true', access_token: token })).id;
+      await ready(container, 40, 3000);
+    } else if (media.length === 1) {
       container = (await graph('POST', `/${c.ig_id}/media`, { image_url: media[0], caption: message(p), access_token: token })).id;
     } else {
       const kids = [];

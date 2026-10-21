@@ -2,7 +2,8 @@
 // mark on gallery photos.
 //   GET  /api/studio/social?from=YYYY-MM-DD&to=YYYY-MM-DD   -> { posts, platforms, ideas, marked, drafts_on, meta }
 //   POST /api/studio/social { action: 'mark', gallery_id, image_ids, on? }   mark photos Social (on omitted = toggle one)
-//   POST /api/studio/social { action: 'save', id, caption, post_at, link, label, photos, shape? }   shape: Instagram's '4:5', '1:1' or 'original'
+//   POST /api/studio/social { action: 'save', id, caption, post_at, link, label, photos, shape?, format?, music_id? }
+//        shape: Instagram's '4:5', '1:1', 'original' or 'whole'; format: 'photos' or 'reel' (Instagram and Facebook), with its music
 //   POST /api/studio/social { action: 'approve' | 'unapprove' | 'skip' | 'restore' | 'posted', id }
 //   POST /api/studio/social { action: 'post_now', id }      publish an approved Facebook/Instagram post now (functions-lib/meta.js)
 //   POST /api/studio/social { action: 'recaption', id }     a fresh AI caption (not saved until Save)
@@ -22,14 +23,15 @@ export async function onRequestGet({ request, env }) {
   const from = ok(q.get('from')) ? q.get('from') : new Date().toISOString().slice(0, 10);
   const to = ok(q.get('to')) ? q.get('to') : from;
   const db = env.DB;
-  const [posts, marked, set, idea, meta] = await Promise.all([
+  const [posts, marked, set, idea, meta, music] = await Promise.all([
     db.prepare(`SELECT * FROM social_posts WHERE post_at >= ?1 AND post_at <= ?2 AND source <> 'none' ORDER BY post_at, platform`).bind(from, `${to}T23:59`).all(),
     db.prepare(`SELECT count(*) n FROM photo_picks WHERE purpose = 'social'`).first(),
     db.prepare(`SELECT value FROM settings WHERE key = 'social'`).first(),
     ideas(env).catch(() => []),
     metaStatus(env),
+    db.prepare(`SELECT id, name, mood, seconds FROM social_music ORDER BY lower(name)`).all().then((r) => r.results).catch(() => []),
   ]);
-  return json({ posts: posts.results.map(shape), platforms: PLATFORMS, ideas: idea, marked: marked.n, drafts_on: !set || JSON.parse(set.value).drafts !== false, meta });
+  return json({ posts: posts.results.map(shape), platforms: PLATFORMS, ideas: idea, marked: marked.n, drafts_on: !set || JSON.parse(set.value).drafts !== false, meta, music });
 }
 
 const cropOk = (c) => c && ['x', 'y', 'w', 'h'].every((k) => Number.isFinite(c[k])) && c.x >= -0.001 && c.y >= -0.001 && c.w > 0.05 && c.h > 0.05 && c.x + c.w <= 1.001 && c.y + c.h <= 1.001;
@@ -83,8 +85,12 @@ export async function onRequestPost({ request, env }) {
       const link = d.link ? String(d.link).trim().slice(0, 500) : null;
       if (link && !/^https:\/\//.test(link)) return json({ error: 'The link should start with https://' }, 400);
       const shapeOk = p.platform === 'instagram' && ['4:5', '1:1', 'original', 'whole'].includes(d.shape) ? d.shape : p.shape ?? null;
-      return set(`caption = ?2, post_at = ?3, link = ?4, label = ?5, photos = ?6, shape = ?7, ai = CASE WHEN caption = ?2 THEN ai ELSE 0 END`,
-        caption, d.post_at, link, String(d.label ?? p.label ?? '').slice(0, 200), JSON.stringify(photos), shapeOk);
+      const reelOk = ['instagram', 'facebook'].includes(p.platform);
+      const format = reelOk && ['photos', 'reel'].includes(d.format) ? d.format : p.format ?? 'photos';
+      const musicId = format === 'reel' ? (await db.prepare('SELECT id FROM social_music WHERE id = ?1').bind(Number(d.music_id ?? p.music_id)).first())?.id ?? null : null;
+      if (format === 'reel' && !musicId) return json({ error: 'Choose the music for the Reel (add some under Music first).' }, 400);
+      return set(`caption = ?2, post_at = ?3, link = ?4, label = ?5, photos = ?6, shape = ?7, format = ?8, music_id = ?9, ai = CASE WHEN caption = ?2 THEN ai ELSE 0 END`,
+        caption, d.post_at, link, String(d.label ?? p.label ?? '').slice(0, 200), JSON.stringify(photos), shapeOk, format, musicId);
     }
     if (d.action === 'approve') {
       if (p.status !== 'draft') return json({ error: 'Only a draft can be approved.' }, 400);

@@ -30,6 +30,18 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
     <p class="so-key"><span class="pf pf-instagram">IG</span> Instagram <span class="pf pf-facebook">FB</span> Facebook <span class="pf pf-google">G</span> Google <span class="pf pf-pinterest">P</span> Pinterest
       · <span class="chip st-draft">Draft</span> <span class="chip st-approved">Approved</span> <span class="chip st-posted">Posted</span> <span class="chip st-skipped">Skipped</span></p>
 
+    <section class="card so-music">
+      <h2>Music for Reels</h2>
+      <p class="muted">Friday’s Instagram post is a slideshow Reel with music, and Facebook shares the same video. Find tracks on <a href="https://pixabay.com/music/" target="_blank" rel="noopener">Pixabay Music</a> (free for business use), download the MP3, then add it here. Each Reel gets the track used least lately; you can change it in the post.</p>
+      <ul class="music-list"></ul>
+      <form class="music-add" autocomplete="off">
+        <input type="file" name="file" accept=".mp3,audio/mpeg" required />
+        <input name="name" placeholder="Name, e.g. Soft piano" maxlength="100" />
+        <input name="mood" placeholder="Mood (optional)" maxlength="60" />
+        <button type="submit" class="s-btn s-btn--solid">Add track</button>
+      </form>
+    </section>
+
     <section class="card so-ideas">
       <h2>Ideas and reminders</h2>
       <ul class="idea-list"></ul>
@@ -64,6 +76,19 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
               <option value="whole">Whole photo, 4:5 with a white border</option>
             </select>
           </label>
+          <div class="ed-reel" hidden>
+            <label>Post as
+              <select name="format">
+                <option value="photos">Photos</option>
+                <option value="reel">Reel: a slideshow video with music</option>
+              </select>
+            </label>
+            <label class="ed-music" hidden>Music <select name="music_id"></select></label>
+            <div class="ed-reel-prev" hidden>
+              <button type="button" class="s-btn" data-reel-preview>Watch the Reel</button>
+              <video class="ed-video" controls playsinline hidden></video>
+            </div>
+          </div>
           <label>Caption <span class="ed-count muted"></span>
             <textarea name="caption" rows="12"></textarea></label>
           <p class="ed-ai muted" hidden>Written by AI from the post’s details: check it reads like you.</p>
@@ -83,6 +108,15 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
 
 <style is:global>
   .so-meta { margin: 0 0 18px; }
+  .music-list { list-style: none; margin: 8px 0 12px; padding: 0; display: grid; gap: 6px; }
+  .music-list li { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 8px 10px; border-radius: 10px 0; background: #faf6f0; }
+  .music-list li strong { font-weight: 500; }
+  .music-list audio { height: 32px; max-width: 260px; }
+  .music-add { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .music-add input { font: inherit; font-size: 14px; padding: 7px 10px; border: 1px solid #ddd3c4; border-radius: 10px 0; background: #fff; }
+  .ed-reel { display: flex; flex-direction: column; gap: 10px; }
+  .ed-reel-prev { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
+  .ed-video { width: 220px; aspect-ratio: 9 / 16; background: #000; border-radius: 10px 0; }
   .so-meta h2 { margin: 0 0 6px; }
   .so-meta p { margin: 0 0 10px; }
   .so-meta label { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; color: #555; margin: 0 0 10px; }

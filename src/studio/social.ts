@@ -5,11 +5,14 @@
 // and downloads the photos to post them himself.
 type Crop = { x: number; y: number; w: number; h: number };
 type Photo = { src: string; w: number; h: number; image_id?: string; gallery_id?: string; alt?: string; crop?: Crop };
-type Post = { id: number; shape?: string | null; platform: string; post_at: string; status: string; source: string; label: string; caption: string; link: string | null; photos: Photo[]; ai: number; error: string | null; media: string | null; remote_url: string | null };
+type Post = { id: number; shape?: string | null; format?: string; music_id?: number | null; platform: string; post_at: string; status: string; source: string; label: string; caption: string; link: string | null; photos: Photo[]; ai: number; error: string | null; media: string | null; remote_url: string | null };
 type Meta = { ready: boolean; connection: null | { page_id: string; page_name: string; ig_id: string | null; ig_username: string | null; pages: { id: string; name: string; ig_username: string | null }[]; connected_at: string } };
 type Platform = { name: string; ratio: number | null; out: [number, number]; max: number; link: boolean; chars: number };
 
 import { ask } from './dialogs';
+import { makeReel } from './reel';
+type Track = { id: number; name: string; mood: string; seconds: number | null; used?: number };
+let music: Track[] = [];
 const $ = <T extends HTMLElement = HTMLElement>(s: string, root: ParentNode = document) => root.querySelector<T>(s)!;
 const esc = (s: unknown) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
 function toast(msg: string, error = false) {
@@ -45,8 +48,9 @@ async function load() {
   const r = await fetch(`/api/studio/social?from=${iso(start)}&to=${iso(end)}`);
   const d = await r.json().catch(() => null);
   if (!r.ok || !d) { $('.so-weeks').innerHTML = `<p class="muted">${esc(d?.error || 'Couldn’t load the drafts.')}</p>`; return; }
-  posts = d.posts; platforms = d.platforms; meta = d.meta;
+  posts = d.posts; platforms = d.platforms; meta = d.meta; music = d.music ?? [];
   drawMeta();
+  drawMusic();
   $<HTMLInputElement>('[data-auto]').checked = d.drafts_on;
   $('.idea-list').innerHTML = d.ideas.length ? d.ideas.map((i: any) => `<li>${esc(i.text)}${i.link ? ` <a href="${esc(i.link)}">Open</a>` : ''}</li>`).join('') : '<li class="muted">Nothing new right now.</li>';
   $('.so-marked').textContent = `${d.marked} gallery photo${d.marked === 1 ? '' : 's'} marked Social. In a gallery’s Photos tab, select photos (or a whole section) and click Social.`;
@@ -108,7 +112,8 @@ function ratioOf(p: Post): number | null {
 }
 /** "Whole photo": nothing cut off; each photo sits on a white 4:5 page instead. */
 const whole = (p: Post) => p.platform === 'instagram' && p.shape === 'whole';
-const cropOf = (p: Photo) => { const ratio = whole(open!) ? null : ratioOf(open!); return ratio ? (p.crop ??= suggest(p, ratio)) : null; };
+const reel = (p: Post) => p.format === 'reel';
+const cropOf = (p: Photo) => { const ratio = whole(open!) || reel(open!) ? null : ratioOf(open!); return ratio ? (p.crop ??= suggest(p, ratio)) : null; };
 const SHAPE_TEXT: Record<string, string> = { '4:5': '4:5 portrait', '1:1': 'square', original: 'the first photo’s own shape', whole: '4:5' };
 
 function openPost(p: Post) {
@@ -122,8 +127,11 @@ function openPost(p: Post) {
   field<HTMLTextAreaElement>('caption').value = p.caption;
   field<HTMLTextAreaElement>('caption').maxLength = pf.chars;
   field<HTMLInputElement>('link').value = p.link ?? '';
-  $('.ed-shape').hidden = p.platform !== 'instagram';
   (form.elements.namedItem('shape') as HTMLSelectElement).value = p.shape ?? '4:5';
+  (form.elements.namedItem('format') as HTMLSelectElement).value = p.format ?? 'photos';
+  (form.elements.namedItem('music_id') as HTMLSelectElement).innerHTML = music.map((m) => `<option value="${m.id}">${esc(m.name)}${m.mood ? ` (${esc(m.mood)})` : ''}</option>`).join('') || '<option value="">Add music first (below the calendar)</option>';
+  (form.elements.namedItem('music_id') as HTMLSelectElement).value = String(p.music_id ?? music[0]?.id ?? '');
+  const v = $<HTMLVideoElement>('.ed-video'); v.hidden = true; v.removeAttribute('src');
   $('.ed-link').hidden = !pf.link;
   $('.ed-ai').hidden = !p.ai;
   count();
@@ -138,6 +146,11 @@ function drawEditor() {
   const p = open!;
   const pf = platforms[p.platform];
   const editable = p.status === 'draft' || p.status === 'approved';
+  // Instagram's shape; a Reel instead (Instagram and Facebook), with its music and a preview.
+  $('.ed-shape').hidden = p.platform !== 'instagram' || reel(p);
+  $('.ed-reel').hidden = !['instagram', 'facebook'].includes(p.platform);
+  $('.ed-music').hidden = !reel(p);
+  $('.ed-reel-prev').hidden = !reel(p);
   $('.ed-status').className = `chip ed-status st-${p.status}`;
   $('.ed-status').textContent = STATUS[p.status] ?? p.status;
   const ph = p.photos[at] ?? p.photos[0];
@@ -164,7 +177,7 @@ function drawEditor() {
   $('.ed-how').textContent = p.status === 'failed' ? `It didn’t post: ${p.error ?? 'no reason given'}`
     : p.status === 'approved' && self ? `It goes out on its own on ${new Date(`${p.post_at}:00`).toLocaleString('en-NZ', { weekday: 'long', day: 'numeric', month: 'long', hour: 'numeric', minute: '2-digit' })}, or click Post now. Change something? Save changes (the photos are made again).`
     : p.status === 'approved' ? `${pf.name} isn’t connected yet, so post it yourself: copy the caption, download the photo${p.photos.length > 1 ? 's' : ''}, post${p.link && pf.link ? ' with the link' : ''}, then click “I’ve posted it”. Once ${pf.name} is connected, approved posts go out on their own at their time.`
-    : p.status === 'draft' ? `${whole(p) ? 'Each photo is shown whole on a white 4:5 page: nothing is cut off. ' : ratioOf(p) ? `Photos are cropped to ${p.platform === 'instagram' ? SHAPE_TEXT[p.shape ?? '4:5'] : p.platform === 'pinterest' ? '2:3 tall' : '4:3'} for ${pf.name}: click a photo, then drag the frame with the mouse (the scroll wheel zooms). ` : ''}${p.platform === 'instagram' && p.photos.length > 1 ? 'Instagram gives every photo in a carousel the first one’s shape. ' : ''}Edits are kept when you Save or Approve.` : '';
+    : p.status === 'draft' ? `  ${reel(p) ? `A Reel: the photos as a slideshow (3 seconds each, about ${p.photos.length * 3 + 1} seconds) with the music. Watch it before approving; it’s made on this PC when you approve. ` : whole(p) ? 'Each photo is shown whole on a white 4:5 page: nothing is cut off. ' : ratioOf(p) ? `Photos are cropped to ${p.platform === 'instagram' ? SHAPE_TEXT[p.shape ?? '4:5'] : p.platform === 'pinterest' ? '2:3 tall' : '4:3'} for ${pf.name}: click a photo, then drag the frame with the mouse (the scroll wheel zooms). ` : ''}${p.platform === 'instagram' && p.photos.length > 1 ? 'Instagram gives every photo in a carousel the first one’s shape. ' : ''}Edits are kept when you Save or Approve.` : '';
   form.querySelectorAll<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>('input, textarea, select').forEach((el) => (el.disabled = !editable));
 }
 
@@ -220,7 +233,7 @@ bigBox.addEventListener('wheel', (e) => {
 async function save() {
   const p = open!;
   p.photos.forEach((x) => cropOf(x));
-  const d = await api({ action: 'save', id: p.id, caption: field('caption').value, post_at: field('post_at').value, link: field('link').value || null, label: field('label').value, photos: p.photos, shape: p.shape ?? null });
+  const d = await api({ action: 'save', id: p.id, caption: field('caption').value, post_at: field('post_at').value, link: field('link').value || null, label: field('label').value, photos: p.photos, shape: p.shape ?? null, format: p.format ?? 'photos', music_id: p.music_id ?? null });
   replace(d.post);
   return d.post as Post;
 }
@@ -229,7 +242,8 @@ async function upload(p: Post) {
   const pf = platforms[p.platform];
   const fd = new FormData();
   fd.append('id', String(p.id));
-  for (let n = 0; n < p.photos.length; n++) fd.append('files', await photoFile(p.photos[n], pf, ratioOf(p), whole(p)), `${n + 1}.jpg`);
+  if (reel(p)) fd.append('video', await reelFor(p), 'reel.mp4');
+  else for (let n = 0; n < p.photos.length; n++) fd.append('files', await photoFile(p.photos[n], pf, ratioOf(p), whole(p)), `${n + 1}.jpg`);
   const r = await fetch('/api/studio/social/media', { method: 'POST', body: fd });
   const d = await r.json().catch(() => ({}));
   if (!r.ok) throw new Error(d.error || 'The photos didn’t upload.');
@@ -241,11 +255,27 @@ function replace(p: Post) {
 }
 
 // The photo files, at the platform's size and crop.
+/** A photo at full size: gallery photos' 2048px copy; site photos from Cloudflare Images at full width
+ *  (its "public" copy is only 768px high, which made small Instagram files). */
+const fullSrc = (p: Photo) => (p.image_id ? `/api/studio/ads/picks?image=${encodeURIComponent(p.image_id)}` : p.src.replace(/(imagedelivery\.net\/[^/]+\/.+)\/[^/]+$/, '$1/w=2560'));
+
+// ---- Reels ----
+/** The Reel video for a post, made once for each set of photos and music (kept while the page is open). */
+const reels = new Map<string, Blob>();
+let onReelProgress: (share: number) => void = () => {};
+async function reelFor(p: Post): Promise<Blob> {
+  if (!p.music_id) throw new Error('Choose the music for the Reel first.');
+  const key = JSON.stringify([p.photos.map((x) => x.image_id || x.src), p.music_id]);
+  const have = reels.get(key);
+  if (have) return have;
+  const mp3 = await (await fetch(`/api/studio/social/music?play=${p.music_id}`)).arrayBuffer();
+  const blob = await makeReel(p.photos.map(fullSrc), mp3, (s) => onReelProgress(s));
+  reels.set(key, blob);
+  return blob;
+}
+
 async function photoFile(p: Photo, pf: Platform, ratio: number | null, padded = false): Promise<Blob> {
-  // Full size: gallery photos' 2048px copy; site photos from Cloudflare Images at full width (its
-  // "public" copy is only 768px high, which made small Instagram files).
-  const src = p.image_id ? `/api/studio/ads/picks?image=${encodeURIComponent(p.image_id)}` : p.src.replace(/(imagedelivery\.net\/[^/]+\/.+)\/[^/]+$/, '$1/w=2560');
-  const blob = await (await fetch(src, { mode: 'cors' })).blob();
+  const blob = await (await fetch(fullSrc(p), { mode: 'cors' })).blob();
   const img = new Image();
   img.src = URL.createObjectURL(blob);
   await img.decode();
@@ -278,6 +308,14 @@ async function photoFile(p: Photo, pf: Platform, ratio: number | null, padded = 
 }
 async function download(p: Post) {
   const pf = platforms[p.platform];
+  if (reel(p)) {
+    const url = URL.createObjectURL(await reelFor(p));
+    const a = document.createElement('a');
+    a.href = url; a.download = `${p.post_at.slice(0, 10)}-${p.platform}-reel.mp4`;
+    document.body.append(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+    return;
+  }
   for (let n = 0; n < p.photos.length; n++) {
     const url = URL.createObjectURL(await photoFile(p.photos[n], pf, ratioOf(p), whole(p)));
     const a = document.createElement('a');
@@ -312,25 +350,39 @@ document.addEventListener('click', async (e) => {
   if (th) { at = Number(th.dataset.at); return drawEditor(); }
   const n = t.closest<HTMLElement>('[data-n]');
   if (n) return nudge(n.dataset.n!);
+  const pv = t.closest<HTMLButtonElement>('[data-reel-preview]');
+  if (pv) {
+    pv.disabled = true;
+    onReelProgress = (s) => (pv.textContent = `Making the video… ${Math.round(s * 100)}%`);
+    try {
+      const v = $<HTMLVideoElement>('.ed-video');
+      v.src = URL.createObjectURL(await reelFor(open));
+      v.hidden = false;
+      v.play().catch(() => {});
+    } catch (err) { toast((err as Error).message, true); }
+    pv.disabled = false; pv.textContent = 'Watch the Reel';
+    return;
+  }
   const act = t.closest<HTMLButtonElement>('[data-act]');
   if (!act) return;
+  onReelProgress = (s) => (act.textContent = `Making the video… ${Math.round(s * 100)}%`);
   const a = act.dataset.act!;
   act.disabled = true;
   try {
     if (a === 'save') {
       const p = await save();
-      if (p.status === 'approved' && auto(p.platform)) { act.textContent = 'Making the photos…'; await upload({ ...p, photos: open.photos }); }
+      if (p.status === 'approved' && auto(p.platform)) { act.textContent = reel(p) ? 'Making the video…' : 'Making the photos…'; await upload({ ...p, photos: open.photos }); }
       toast('Saved.');
     }
     if (a === 'approve') {
       const p = await save();
-      if (auto(p.platform)) { act.textContent = 'Making the photos…'; await upload({ ...p, photos: open.photos }); }
+      if (auto(p.platform)) { act.textContent = reel(p) ? 'Making the video…' : 'Making the photos…'; await upload({ ...p, photos: open.photos }); }
       replace((await api({ action: 'approve', id: open.id })).post);
       toast(auto(p.platform) ? 'Approved: it goes out on its own at its time.' : 'Approved.');
     }
     if (a === 'post_now') {
       // Approved before Facebook/Instagram was connected: make its photo files first.
-      if (!open.media || open.media === '[]') { act.textContent = 'Making the photos…'; await upload(open); }
+      if (!open.media || open.media === '[]' || (reel(open) && !open.media.includes('.mp4'))) { act.textContent = reel(open) ? 'Making the video…' : 'Making the photos…'; await upload(open); }
       act.textContent = 'Posting…';
       try { replace((await api({ action: 'post_now', id: open.id })).post); toast(`Posted to ${platforms[open.platform].name}.`); }
       catch (err) { await load(); const p = posts.find((x) => x.id === open!.id); if (p) openPost(p); throw err; }
@@ -367,6 +419,18 @@ document.addEventListener('keydown', (e) => {
   if (th && (e.key === 'Enter' || e.key === ' ') && !(e.target as HTMLElement).matches('button')) { e.preventDefault(); (th as HTMLElement).click(); }
 });
 form.addEventListener('input', (e) => { if ((e.target as HTMLElement).matches('[name=caption]')) count(); });
+// Photos or a Reel, and the Reel's music.
+form.addEventListener('change', (e) => {
+  const el = e.target as HTMLSelectElement;
+  if (!open) return;
+  if (el.matches('[name=format]')) {
+    open.format = el.value;
+    if (el.value === 'reel' && !open.music_id) open.music_id = music[0]?.id ?? null;
+    if (el.value === 'reel' && !music.length) toast('Add some music first (Music for Reels, below the calendar).', true);
+    return drawEditor();
+  }
+  if (el.matches('[name=music_id]')) { open.music_id = Number(el.value) || null; $('.ed-video').hidden = true; return; }
+});
 // A new Instagram shape: every photo's frame starts again at the new shape.
 form.addEventListener('change', (e) => {
   const el = e.target as HTMLSelectElement;
@@ -404,3 +468,42 @@ $<HTMLInputElement>('[data-auto]').addEventListener('change', async (e) => {
 });
 load();
 export {};
+
+// ---- Music for Reels ----
+const mmss = (s: number | null) => (s ? `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, '0')}` : '');
+function drawMusic() {
+  $('.music-list').innerHTML = music.length ? music.map((m) => `<li><strong>${esc(m.name)}</strong>${m.mood ? ` <span class="muted">${esc(m.mood)}</span>` : ''}
+    <span class="muted">${mmss(m.seconds)}</span><audio controls preload="none" src="/api/studio/social/music?play=${m.id}"></audio>
+    <button type="button" class="s-btn s-btn--quiet" data-music-del="${m.id}">Remove</button></li>`).join('')
+    : '<li class="muted">No music yet. Add a few tracks so Friday’s Reels have something to use.</li>';
+}
+$<HTMLFormElement>('.music-add').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const mf = e.target as HTMLFormElement;
+  const file = (mf.elements.namedItem('file') as HTMLInputElement).files?.[0];
+  if (!file) return;
+  const btn = mf.querySelector('button')!;
+  btn.disabled = true; btn.textContent = 'Adding…';
+  try {
+    // Its length, from the browser, for the list.
+    const seconds = await new Promise<number>((res) => { const a = new Audio(URL.createObjectURL(file)); a.onloadedmetadata = () => res(a.duration); a.onerror = () => res(0); });
+    const fd = new FormData(mf);
+    fd.set('seconds', String(seconds || ''));
+    const r = await fetch('/api/studio/social/music', { method: 'POST', body: fd });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(d.error || 'That didn’t upload.');
+    mf.reset();
+    toast('Track added.');
+    await load();
+  } catch (err) { toast((err as Error).message, true); }
+  btn.disabled = false; btn.textContent = 'Add track';
+});
+document.addEventListener('click', async (e) => {
+  const b = (e.target as HTMLElement).closest<HTMLElement>('[data-music-del]');
+  if (!b) return;
+  if (!await ask('Remove this track? Draft Reels using it go back to photo posts.')) return;
+  const r = await fetch('/api/studio/social/music', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'delete', id: Number(b.dataset.musicDel) }) });
+  if (!r.ok) return toast('That didn’t remove.', true);
+  toast('Removed.');
+  load();
+});
