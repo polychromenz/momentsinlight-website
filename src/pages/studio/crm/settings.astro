@@ -123,6 +123,8 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
       <p class="hint">Bringing your history across from Studio Ninja. Step 1 searches your Gmail for the emails Studio Ninja sent you (new enquiries, bookings…) and counts them by kind and year, so we can see what can be read from them. It only reads; nothing in Gmail changes. It takes up to a minute.</p>
       <div class="actions" style="justify-content:flex-start"><button type="button" class="s-btn s-btn--solid" data-sn-survey>Search my Gmail for Studio Ninja emails</button></div>
       <div class="sn-result"></div>
+      <h3 class="sn-h">Step 4: switch over from Studio Ninja</h3>
+      <div class="sn-switch"><p class="hint">Loading…</p></div>
     </section>
 
     <section class="pane" data-pane="links" hidden>
@@ -999,6 +1001,35 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
   });
   fetch('/api/studio/crm/sn-gmail').then((r) => r.json()).then(showSurvey).catch(() => {});
 
+  // ---- Step 4: the switch-over (functions/api/studio/crm/sn-switch.js) ----
+  const nzd = (d: string | null) => (d ? new Date(`${d}T12:00:00Z`).toLocaleDateString('en-NZ', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }) : '');
+  async function drawSwitch() {
+    const box = $('.sn-switch');
+    const d = await fetch('/api/studio/crm/sn-switch').then((r) => r.json()).catch(() => null);
+    if (!d) { box.innerHTML = '<p class="hint">Couldn’t load.</p>'; return; }
+    const heldN = d.held.reduce((a: number, h: any) => a + h.n, 0);
+    if (d.done && !heldN) { box.innerHTML = `<p class="hint">Switched over on ${new Date(d.done.at).toLocaleString('en-NZ', { dateStyle: 'medium', timeStyle: 'short' })}: ${d.done.jobs} jobs taken off hold, ${d.done.planned} upcoming workflow steps planned. The studio handles reminders and emails now.</p>`; return; }
+    box.innerHTML = `<p class="hint">The ${heldN} imported jobs are on hold, so Studio Ninja still handles their reminders and emails. Switching over takes them off hold and the studio takes over. <strong>Do it the same day you turn off Studio Ninja’s automatic emails and payment reminders</strong>, so couples don’t get both.</p>
+      <h4 class="sn-sub">Invoice reminders that will come from the studio</h4>
+      ${d.invoices.length ? `<table class="list-table"><thead><tr><th>Couple</th><th>Invoice</th><th>Amount</th><th>What happens</th></tr></thead><tbody>${d.invoices.map((i: any) => `<tr><td>${esc(i.title)}</td><td>${esc(i.number)} <small>${esc(i.label)}</small></td><td>${money(i.amount)}</td><td>${i.reminder ? `Reminder ${nzd(i.reminder)}; again ${nzd(i.late)} if still unpaid` : `Sent by the studio ${nzd(i.send)}`}</td></tr>`).join('')}</tbody></table>` : '<p class="hint">No unpaid invoices.</p>'}
+      <h4 class="sn-sub">Wedding emails for booked couples (only the ones still ahead)</h4>
+      ${d.couples.map((c: any) => `<details class="sn-couple"><summary><strong>${esc(c.title)}</strong> · ${nzd(c.event_date)} · ${c.steps.filter((x: any) => x.kind !== 'todo').length} emails, ${c.steps.filter((x: any) => x.kind === 'todo').length} to-dos${c.skipped ? ` (${c.skipped} already past, skipped)` : ''}</summary><ul>${c.steps.map((x: any) => `<li>${esc(x.title)} <small>${x.due ? nzd(x.due) : 'when you’re ready'} · ${x.kind === 'auto_email' ? 'automatic email' : x.kind === 'ready_email' ? 'you review and send' : 'to-do'}</small></li>`).join('')}</ul></details>`).join('') || '<p class="hint">No booked couples.</p>'}
+      <p class="hint">Automatic emails go on their dates; you can skip or change any of them on the couple’s page first. Past weddings and lost enquiries stay as records only.</p>
+      <div class="actions" style="justify-content:flex-start"><button type="button" class="s-btn s-btn--solid" data-sn-switch>Switch over to the studio</button></div>`;
+  }
+  drawSwitch();
+  document.addEventListener('click', async (e) => {
+    const b = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-sn-switch]');
+    if (!b) return;
+    if (!await ask('Switch over now? The studio starts sending reminders and wedding emails for the imported couples. Make sure Studio Ninja’s automatic emails and payment reminders are off.', { title: 'Switch over from Studio Ninja', ok: 'Switch over' })) return;
+    b.disabled = true; b.textContent = 'Switching…';
+    const r = await fetch('/api/studio/crm/sn-switch', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'switch' }) });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) { toast(d.error || 'That didn’t work.', true); b.disabled = false; b.textContent = 'Switch over to the studio'; return; }
+    toast(`Switched over: ${d.jobs} jobs, ${d.planned} upcoming steps planned.`);
+    drawSwitch();
+  });
+
   // ---- Your links ----
   const linksForm = $<HTMLFormElement>('.links-form');
   const linkTest = () => { const v = (linksForm.elements.namedItem('booking_link') as HTMLInputElement).value.trim(); const a = $<HTMLAnchorElement>('.links-test'); a.hidden = !/^https:\/\//.test(v); a.href = v; };
@@ -1111,6 +1142,11 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
   .settings .sn-table td:first-child, .settings .sn-table th:first-child { text-align: left; }
   .settings .sn-table small { color: #999; }
   .settings .sn-h { margin: 22px 0 6px; font-weight: 400; font-size: 18px; color: var(--ink); }
+  .settings .sn-sub { margin: 16px 0 6px; font-size: 13px; letter-spacing: .08em; text-transform: uppercase; color: var(--green); font-weight: 600; }
+  .settings .sn-couple { padding: 8px 12px; margin: 0 0 6px; background: #faf6f0; border-radius: 10px 0; }
+  .settings .sn-couple summary { cursor: pointer; }
+  .settings .sn-couple ul { margin: 8px 0 2px; padding-left: 20px; }
+  .settings .sn-couple small { color: #888; }
   .settings .sn-progress { font-size: 14px; color: #444; }
   .settings .sn-progress small { color: #999; }
   .settings .pay-stripe { margin: 0; font-size: 14px; color: #444; }
