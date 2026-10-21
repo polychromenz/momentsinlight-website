@@ -339,10 +339,12 @@ export async function freshPhotos(env, p) {
       : src.posts.find((x) => x.id === ref.replace(/^info:/, '').split('#')[0]);
     if (post) {
       pool = others(post.photos.map(postPhoto));
-      // The couple's gallery too: photos Tony has marked Social there (new ones are least used, so they come first).
+      // The couple's gallery: the photos Tony has marked Social there.
       const first = (n) => String(n).split(/\s+(?:and|&)\s+/i)[0].trim().toLowerCase();
       const g = (await markedPhotos(db)).find((x) => first(x.name) && post.title.toLowerCase().includes(first(x.name)));
-      if (g) pool.push(...others(g.photos.map(galleryPhoto)));
+      // Only the ones Tony flagged Social, when the gallery has any: the blog's photos are the fallback.
+      const flagged = g ? others(g.photos.map(galleryPhoto)) : [];
+      if (flagged.length) pool = flagged;
     }
     else if (p.source === 'review') pool = others((src.reviews.find((r) => r.name === ref)?.photos ?? []).map(postPhoto));
     else if (ref === 'note:dates') pool = others(src.posts.filter((x) => x.categories.includes('Wedding')).slice(0, 12).flatMap((x) => x.photos).map(postPhoto));
