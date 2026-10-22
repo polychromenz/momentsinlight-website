@@ -13,6 +13,11 @@ import { longDate, parseQuote, planHtml, quoteText } from '../../../../functions
  *  (everything before its first button, e.g. "View your quote"). The standard one a quote starts
  *  with (Settings › quote templates) doesn't: the template's own greeting stays. */
 const words = (h) => String(h ?? '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+/** One payment (e.g. due in 7 days): no "Your payments" heading and table ({{payment_plan}}). */
+function withoutPlan(template, q) {
+  if (q.schedule.length > 1) return template;
+  return { ...template, body: template.body.replace(/(<h[23][^>]*>(?:(?!<h[23]).)*?<\/h[23]>\s*)?<p>\s*\{\{\s*payment_plan\s*\}\}\s*<\/p>/s, '') };
+}
 async function withIntro(db, template, q, job) {
   const own = words(q.intro);
   if (!own) return template;
@@ -32,7 +37,7 @@ async function prepare(env, id) {
   if (!template) throw new Error('The “Quote ready” email template is missing (Settings).');
   const parsed = parseQuote(q);
   const values = fields(job, { ...(await studioLinks(env.DB)), quote_link: `https://www.momentsinlight.co.nz/quote?t=${q.token}`, quote_valid_until: longDate(q.valid_until), payment_plan: planHtml(parsed, job) });
-  return { q, job, template: await withIntro(env.DB, template, parsed, job), values };
+  return { q, job, template: withoutPlan(await withIntro(env.DB, template, parsed, job), parsed), values };
 }
 
 export async function onRequestGet({ request, env }) {
