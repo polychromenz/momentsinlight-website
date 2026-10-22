@@ -62,7 +62,7 @@ function amounts(text) {
   const re = /(NZ\$|US\$|AU\$|A\$|USD|NZD|AUD|EUR|GBP|€|£|\$)\s?(\d{1,3}(?:,\d{3})*(?:\.\d{2})|\d+\.\d{2})(?:\s?(NZD|USD|AUD|EUR|GBP))?/g;
   let m;
   while ((m = re.exec(text))) {
-    const cur = (m[3] || { 'NZ$': 'NZD', 'US$': 'USD', 'AU$': 'AUD', 'A$': 'AUD', '€': 'EUR', '£': 'GBP', '$': '' }[m[1]] ?? m[1]).toUpperCase();
+    const cur = (m[3] || ({ 'NZ$': 'NZD', 'US$': 'USD', 'AU$': 'AUD', 'A$': 'AUD', '€': 'EUR', '£': 'GBP', '$': '' }[m[1]] ?? m[1])).toUpperCase();
     const before = text.slice(Math.max(0, m.index - 40), m.index).toLowerCase();
     const total = /(grand total|total|amount paid|paid|amount due|amount charged|charged|payment of|amounting to)[^a-z]*$/.test(before);
     found.push({ cur, value: Math.round(Number(m[2].replace(/,/g, '')) * 100), total, near: before.slice(-30).trim() });
