@@ -147,6 +147,7 @@ async function pictimeLayout(link) {
       return { id: s.id, name: s.nm || 'Photos', prio: s.viewPrio ?? 0, photos: ids.map((n) => ({ n, name: names.get(n) ?? '' })) };
     })
     .filter((s) => s.photos.length) // e.g. an empty Slideshow scene
+    .filter((s) => !/sneak\s*peek/i.test(s.name)) // Tony doesn't move sneak peeks (the photos are in the full sections)
     .sort((a, b) => a.prio - b.prio);
   return { project, title: g.title || 'Gallery', date: g.projectDate || null, cover: g.coverId ?? null, big: g.enlargedPhotoIds ?? [], scenes };
 }
