@@ -108,30 +108,47 @@ import SeoTabs from '../../../components/studio/SeoTabs.astro';
   load();
 </script>
 
-<style>
+<style is:global>
   .kw { max-width: 1100px; margin: 0 auto; padding: 24px clamp(14px, 3vw, 32px) 80px; }
-  h1 { margin: 0 0 4px; font-weight: 300; font-size: 32px; color: var(--ink); }
-  .intro { margin: 0 0 16px; color: #666; font-size: 15px; }
-  .kw-add { display: flex; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
-  .kw-add input, .ideas-form input { flex: 1 1 320px; font: inherit; font-size: 15px; padding: 9px 12px; border: 1px solid #ddd3c4; border-radius: 10px 0; background: var(--white); }
-  .kw-status { margin: 0 0 10px; font-size: 13px; color: #777; }
-  .card { background: var(--white); border-radius: 24px 0; padding: 8px 18px; overflow-x: auto; animation: s-rise 0.6s var(--ease) both; }
-  .tbl { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 760px; }
-  .tbl th { text-align: left; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--green); font-weight: 600; padding: 10px 8px; border-bottom: 1px solid #ece4d7; }
-  .tbl td { padding: 9px 8px; border-bottom: 1px solid #f3eee6; vertical-align: middle; }
-  .tbl tbody tr:nth-child(even) td { background: #faf6ee; }
-  .tbl tr.lvl-main td:first-child { box-shadow: inset 3px 0 0 #2f3f86; }
-  .tbl tr.lvl-low td { color: #888; }
-  .tbl .r { text-align: right; white-space: nowrap; }
-  .tbl select { font: inherit; font-size: 13px; padding: 5px 6px; border: 1px solid #ddd3c4; border-radius: 6px 0; background: var(--white); max-width: 240px; }
-  .tbl td:first-child { min-width: 230px; }
-  .rm { border: 0; background: none; color: #a8432a; cursor: pointer; font-size: 15px; }
-  .muted { color: #999; } .up { color: #5a7d2a; }
-  .ideas-card { margin-top: 18px; padding: 18px 22px; }
-  .ideas-card h2 { margin: 0 0 6px; font-weight: 300; font-size: 22px; color: var(--ink); }
-  .hint { margin: 0 0 10px; font-size: 13px; color: #777; }
-  .ideas-form { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
-  .ideas { list-style: none; margin: 0; padding: 0; columns: 2 260px; font-size: 14px; }
-  .ideas li { padding: 4px 0; break-inside: avoid; }
-  .add { border: 1px solid #ddd3c4; background: var(--white); border-radius: 50%; width: 22px; height: 22px; font-size: 13px; line-height: 1; cursor: pointer; color: var(--green); }
+  .kw h1 { margin: 0 0 4px; font-weight: 300; font-size: 32px; color: var(--ink); }
+  .kw .intro { margin: 0 0 16px; color: #666; font-size: 15px; }
+  .kw .kw-add { display: flex; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
+  .kw .kw-add input, .kw .ideas-form input { flex: 1 1 320px; font: inherit; font-size: 15px; padding: 9px 12px; border: 1px solid #ddd3c4; border-radius: 10px 0; background: var(--white); }
+  .kw .kw-status { margin: 0 0 10px; font-size: 13px; color: #777; }
+  .kw .card { background: var(--white); border-radius: 24px 0; padding: 8px 18px; overflow-x: auto; animation: s-rise 0.6s var(--ease) both; }
+  .kw .tbl { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 760px; }
+  .kw .tbl th { text-align: left; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--green); font-weight: 600; padding: 10px 8px; border-bottom: 1px solid #ece4d7; }
+  .kw .tbl td { padding: 9px 8px; border-bottom: 1px solid #f3eee6; vertical-align: middle; }
+  .kw .tbl tbody tr:nth-child(even) td { background: #faf6ee; }
+  .kw .tbl tr.lvl-main td:first-child { box-shadow: inset 3px 0 0 #2f3f86; }
+  .kw .tbl tr.lvl-low td { color: #888; }
+  .kw .tbl .r { text-align: right; white-space: nowrap; }
+  .kw .tbl select { font: inherit; font-size: 13px; padding: 5px 6px; border: 1px solid #ddd3c4; border-radius: 6px 0; background: var(--white); max-width: 240px; }
+  .kw .tbl td:first-child { min-width: 230px; }
+  .kw .rm { border: 0; background: none; color: #a8432a; cursor: pointer; font-size: 15px; }
+  .kw .muted { color: #999; } .kw .up { color: #5a7d2a; }
+  .kw .ideas-card { margin-top: 18px; padding: 18px 22px; }
+  .kw .ideas-card h2 { margin: 0 0 6px; font-weight: 300; font-size: 22px; color: var(--ink); }
+  .kw .hint { margin: 0 0 10px; font-size: 13px; color: #777; }
+  .kw .ideas-form { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+  .kw .ideas { list-style: none; margin: 0; padding: 0; columns: 2 260px; font-size: 14px; }
+  .kw .ideas li { padding: 4px 0; break-inside: avoid; }
+  .kw .add { border: 1px solid #ddd3c4; background: var(--white); border-radius: 50%; width: 22px; height: 22px; font-size: 13px; line-height: 1; cursor: pointer; color: var(--green); }
+
+  /* Rows are drawn by the script, so these styles are global (is:global), kept inside .kw. */
+  .kw .tbl td { padding: 14px 10px; border-bottom: 1px solid #efe8dc; }
+  .kw .tbl tbody tr:nth-child(odd) td { background: var(--white); }
+  .kw .tbl tbody tr:nth-child(even) td { background: #faf6ee; }
+  .kw .tbl tbody tr:hover td { background: #f4eee2; }
+  .kw .tbl td:first-child { min-width: 260px; width: 30%; padding-left: 14px; line-height: 1.4; }
+  .kw .tbl td:first-child strong { font-weight: 600; font-size: 15px; color: var(--ink); }
+  .kw .tbl td:first-child small { display: inline-block; margin-top: 3px; font-size: 12px; }
+  .kw .tbl td:nth-child(3) { width: 40%; }
+  .kw .tbl select { appearance: none; -webkit-appearance: none; width: 100%; max-width: none; font: inherit; font-size: 14px; color: var(--ink); padding: 8px 32px 8px 11px; border: 1px solid #ddd3c4; border-radius: 10px 0; cursor: pointer;
+    background: var(--white) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%235a5e3b' stroke-width='1.5'/%3E%3C/svg%3E") no-repeat right 11px center; text-overflow: ellipsis; }
+  .kw .tbl select:hover { border-color: #c9bca6; }
+  .kw .tbl select:focus { outline: 2px solid #c9d1a3; outline-offset: 1px; }
+  .kw .tbl td:nth-child(2) select { min-width: 128px; }
+  .kw .tbl .rm { width: 32px; height: 32px; border: 1px solid #e6dccd; border-radius: 10px 0; background: var(--white); }
+  .kw .tbl .rm:hover { background: #fbeee9; border-color: #e3b7a8; }
 </style>
