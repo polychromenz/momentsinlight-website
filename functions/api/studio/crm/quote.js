@@ -4,7 +4,7 @@
 //   PUT  /api/studio/crm/quote          { id, ...changes }      edit a draft or sent quote
 //   DELETE /api/studio/crm/quote?id=3   withdraw it (its link then says it's no longer available)
 import { json } from '../../../../functions-lib/studio.js';
-import { parseQuote, payments, totalFor } from '../../../../functions-lib/quotes.js';
+import { parseQuote, payments, totalFor, imageUrl } from '../../../../functions-lib/quotes.js';
 import { loadJob } from '../../../../functions-lib/crm-send.js';
 
 const token = () => [...crypto.getRandomValues(new Uint8Array(24))].map((b) => b.toString(16).padStart(2, '0')).join('');
@@ -57,8 +57,8 @@ export async function onRequestPut({ request, env }) {
   if (!['draft', 'sent'].includes(q.status)) return json({ error: `This quote is ${q.status} and can’t be changed. Make a new one instead.` }, 409);
   const text = (v, max) => (v ?? '').toString().trim().slice(0, max);
   const cents = (v) => Math.max(0, Math.round(Number(v) || 0));
-  const packages = Array.isArray(d.packages) ? d.packages.map((p) => ({ name: text(p.name, 120), subtitle: text(p.subtitle, 120), price: cents(p.price), description: text(p.description, 10000), recommended: !!p.recommended })).filter((p) => p.name) : q.packages;
-  const extras = Array.isArray(d.extras) ? d.extras.map((x) => ({ name: text(x.name, 120), price: cents(x.price), description: text(x.description, 2000) })).filter((x) => x.name) : q.extras;
+  const packages = Array.isArray(d.packages) ? d.packages.map((p) => ({ name: text(p.name, 120), subtitle: text(p.subtitle, 120), price: cents(p.price), description: text(p.description, 10000), recommended: !!p.recommended, image: imageUrl(p.image) })).filter((p) => p.name) : q.packages;
+  const extras = Array.isArray(d.extras) ? d.extras.map((x) => ({ name: text(x.name, 120), price: cents(x.price), description: text(x.description, 2000), image: imageUrl(x.image) })).filter((x) => x.name) : q.extras;
   if (!packages.length) return json({ error: 'A quote needs at least one package.' }, 400);
   let schedule = q.schedule;
   if (d.schedule_key) {

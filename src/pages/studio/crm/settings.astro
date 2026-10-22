@@ -101,6 +101,7 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
         <form class="card cat-editor" autocomplete="off" hidden>
           <h3 class="cat-kind"></h3>
           <div class="row"><label>Name<input name="cat_name" required /></label><label class="cat-pkg">Subtitle<input name="cat_subtitle" placeholder="e.g. 8+ hours" /></label><label>Price ($, incl. GST)<input name="cat_price" type="number" min="0" step="0.01" /></label></div>
+          <div class="cat-image-label">Picture <small>(optional: shown beside it on quotes)</small><div class="cat-image"></div></div>
           <label>Description <small class="cat-desc-hint"></small><textarea name="cat_description" rows="8"></textarea></label>
           <label class="check cat-pkg"><input type="checkbox" name="cat_recommended" /> Recommended (shown with a ♥ on the quote)</label>
           <div class="actions"><button type="button" class="s-btn s-btn--danger" data-cat-delete>Delete</button><button type="submit" class="s-btn s-btn--solid">Save</button></div>
@@ -275,6 +276,7 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
   import { attachRich } from '../../../studio/rich-editor';
   import Sortable from 'sortablejs';
   import { attachPicker, type Doc } from '../../../studio/attach-picker';
+  import { itemImage, watchItemImages } from '../../../studio/item-image';
   import { payments, money, longDate } from '../../../../functions-lib/quotes.js';
   import { WHEN, KINDS } from '../../../../functions-lib/workflows.js';
   import { TYPES, FILLS, formHtml } from '../../../../functions-lib/questionnaire-form.js';
@@ -616,7 +618,7 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
     $('.sch-list').innerHTML = data.schedules.map((x) => `<li data-key="${esc(x.key)}"><button type="button">${esc(x.name)}<small>${x.parts.map((p) => p.percent + '%').join(' / ')}</small></button></li>`).join('');
   }
   // ---- Packages & products (functions/api/studio/crm/catalogue.js) ----
-  type Cat = { id: number; kind: string; name: string; subtitle: string; description: string; price: number; recommended: number };
+  type Cat = { id: number; kind: string; name: string; subtitle: string; description: string; price: number; recommended: number; image: string };
   let cat: { packages: Cat[]; products: Cat[] } = { packages: [], products: [] };
   let catOpen: Cat | null = null, catKind = 'package';
   const catForm = $<HTMLFormElement>('.cat-editor');
@@ -635,6 +637,7 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
     $('.cat-desc-hint').textContent = kind === 'package' ? '(what’s included)' : '(shown under the add-on on the quote)';
     cf('cat_name').value = x?.name ?? ''; cf('cat_subtitle').value = x?.subtitle ?? ''; cf('cat_price').value = x ? String(x.price / 100) : '';
     cf('cat_recommended').checked = !!x?.recommended;
+    $('.cat-image').innerHTML = itemImage(x?.image ?? '');
     catRich.set(x?.description ?? '');
     $<HTMLButtonElement>('[data-cat-delete]').hidden = !x;
     drawCat();
@@ -657,7 +660,7 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
   });
   catForm.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const body = { id: catOpen?.id, kind: catKind, name: cf('cat_name').value, subtitle: catKind === 'package' ? cf('cat_subtitle').value : '', price: Math.round(Number(cf('cat_price').value || 0) * 100), description: cf('cat_description').value, recommended: catKind === 'package' && cf('cat_recommended').checked };
+    const body = { id: catOpen?.id, kind: catKind, name: cf('cat_name').value, subtitle: catKind === 'package' ? cf('cat_subtitle').value : '', price: Math.round(Number(cf('cat_price').value || 0) * 100), description: cf('cat_description').value, recommended: catKind === 'package' && cf('cat_recommended').checked, image: catForm.querySelector<HTMLInputElement>('[data-k="image"]')?.value ?? '' };
     const r = await fetch('/api/studio/crm/catalogue', { method: catOpen ? 'PUT' : 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
     const d = await r.json().catch(() => ({}));
     if (!r.ok) { toast(d.error || 'Couldn’t save.', true); return; }
@@ -666,6 +669,7 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
     openCat(d.item);
   });
   loadCat();
+  watchItemImages(() => toast('Picture ready. Save to keep it.'), (m) => toast(m, true));
 
   sch.addEventListener('input', schExample);
   sch.addEventListener('change', schExample);
@@ -1198,6 +1202,8 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
   @media (min-width: 700px) { .settings .pay-form .two { grid-template-columns: 1fr 1fr; } }
   .settings .tpl-layout { display: grid; gap: 16px; }
   .settings .wf-editor { display: flex; flex-direction: column; gap: 12px; }
+  .settings .cat-image-label { font-size: 13px; font-weight: 600; color: #555; margin-top: 4px; }
+  .settings .cat-image-label small { font-weight: 400; color: #888; }
   .settings .wf-editor > label { display: flex; flex-direction: column; gap: 5px; font-size: 13px; font-weight: 600; color: #555; }
   .settings .wf-editor > label > input { font: inherit; font-weight: 400; font-size: 15px; padding: 9px 11px; border: 1px solid #ddd3c4; border-radius: 10px 0; max-width: 420px; }
   .settings .wf-steps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }

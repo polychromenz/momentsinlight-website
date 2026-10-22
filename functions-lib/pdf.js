@@ -85,6 +85,7 @@ async function setup() {
   let logo = null;
   try { const r = await fetch(`${SITE}/email/logo.png`); if (r.ok) logo = await pdf.embedPng(new Uint8Array(await r.arrayBuffer())); } catch { /* the PDF still works without it */ }
   let page; let y;
+  let inset = 0; // text moved right to sit beside a picture (beside())
   const W = A4[0] - 2 * M;
   const newPage = (first = false) => {
     page = pdf.addPage(A4);
@@ -102,7 +103,7 @@ async function setup() {
 
   const font = (r) => (r.bold ? F.bold : r.weight ? F[r.weight] : F.regular);
   /** Write runs of text ({ text, bold?, weight? }), wrapped to the width. */
-  const write = (runs, { size = 10, indent = 0, color = TEXT, gap = 6, lead = 1.55, width = W, x0 = M, align = 'left', bullet = false } = {}) => {
+  const write = (runs, { size = 10, indent = 0, color = TEXT, gap = 6, lead = 1.55, width = W - inset, x0 = M + inset, align = 'left', bullet = false } = {}) => {
     let first = true;
     const words = [];
     for (const r of runs) for (const [i, piece] of txt(r.text).split('\n').entries()) {
@@ -132,7 +133,7 @@ async function setup() {
     write([{ text, weight: 'light' }], { size: 26, color: INK, gap: 4, lead: 1.25 });
     if (sub) write([{ text: sub }], { size: 9, color: GREY, gap: 18 });
   };
-  const label = (text, { x0 = M, keep = true } = {}) => {
+  const label = (text, { x0 = M + inset, keep = true } = {}) => {
     if (keep) { need(40); y -= 10; }
     page.drawText(txt(text.toUpperCase()), { x: x0, y: y - 7.5, size: 7.5, font: F.bold, color: GREEN, characterSpacing: 1.6 });
     if (keep) y -= 7.5 + 9;
@@ -190,12 +191,33 @@ async function setup() {
       else write(b.runs, { size });
     }
   };
+  /** A picture (a Cloudflare Images address) at the left, with what draw() writes beside it. No
+   *  picture, or one that can't be fetched: draw() just writes full width. */
+  const beside = async (src, draw) => {
+    let img = null;
+    if (src) try {
+      const r = await fetch(src.replace(/\/public$/,'/w=360,h=360,fit=cover'), { headers: { accept: 'image/jpeg,image/png' } });
+      const b = r.ok ? new Uint8Array(await r.arrayBuffer()) : null;
+      if (b) img = b[0] === 0x89 && b[1] === 0x50 ? await pdf.embedPng(b) : b[0] === 0xff && b[1] === 0xd8 ? await pdf.embedJpg(b) : null;
+    } catch { /* write it without the picture */ }
+    if (!img) { draw(); return; }
+    const size = 96;
+    need(size + 8);
+    const top = y;
+    // Cloudflare crops it square (fit=cover); anything else is fitted inside the square.
+    const s = Math.min(size / img.width, size / img.height); const w = img.width * s; const h = img.height * s;
+    page.drawImage(img, { x: M + (size - w) / 2, y: top - 4 - h - (size - h) / 2, width: w, height: h });
+    const p0 = page; inset = size + 16;
+    draw();
+    inset = 0;
+    if (page === p0) y = Math.min(y, top - size - 12);
+  };
   const footer = (text) => pdf.getPages().forEach((p, i, all) => {
     const t = txt(`${text}  ·  momentsinlight.co.nz  ·  Page ${i + 1} of ${all.length}`);
     p.drawLine({ start: { x: M, y: 40 }, end: { x: A4[0] - M, y: 40 }, thickness: 0.5, color: LINE });
     p.drawText(t, { x: A4[0] / 2 - F.regular.widthOfTextAtSize(t, 7.5) / 2, y: 26, size: 7.5, font: F.regular, color: GREY });
   });
-  return { pdf, write, title, label, rule, columns, rows, panel, html, footer, get y() { return y; } };
+  return { pdf, write, title, label, rule, columns, rows, panel, html, beside, footer, get y() { return y; } };
 }
 
 const FROM = ['Moments in Light', 'Tony Gorham', '021 625 943', 'tony@momentsinlight.co.nz', '985a Hibiscus Coast Highway', 'Waiwera, Auckland 0994'];
@@ -212,8 +234,19 @@ export async function quotePdf(q, job, number) {
   const extras = (accepted ? q.chosen_extras : []).map((i) => q.extras[i]).filter(Boolean);
   if (pkg) {
     d.label(accepted ? 'Your package' : 'Package');
-    d.write([{ text: `${pkg.name}${pkg.subtitle ? ` (${pkg.subtitle})` : ''}`, weight: 'medium' }], { size: 14, gap: 4, color: INK });
-    d.html(pkg.description);
+    await d.beside(pkg.image, () => {
+      d.write([{ text: `${pkg.name}${pkg.subtitle ? ` (${pkg.subtitle})` : ''}`, weight: 'medium' }], { size: 14, gap: 4, color: INK });
+      d.html(pkg.description);
+    });
+  }
+  // Chosen extras with a picture or a description: shown like the package.
+  const shown = extras.filter((x) => x.image || x.description);
+  if (shown.length) {
+    d.label('Extras');
+    for (const x of shown) await d.beside(x.image, () => {
+      d.write([{ text: x.name, weight: 'medium' }], { size: 11.5, gap: 2, color: INK });
+      if (x.description) d.write([{ text: x.description }], { size: 9.5, color: GREY, gap: 8 });
+    });
   }
   d.label('Summary');
   const subtotal = (pkg?.price ?? 0) + extras.reduce((a, x) => a + x.price, 0);

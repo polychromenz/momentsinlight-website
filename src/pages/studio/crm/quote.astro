@@ -77,8 +77,9 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
   import { ask, guardLeaving } from '../../../studio/dialogs';
   import { attachRich } from '../../../studio/rich-editor';
   import { attachPicker } from '../../../studio/attach-picker';
-  type Pkg = { name: string; subtitle: string; price: number; description: string; recommended: boolean };
-  type Extra = { name: string; price: number; description: string };
+  import { itemImage, watchItemImages } from '../../../studio/item-image';
+  type Pkg = { name: string; subtitle: string; price: number; description: string; recommended: boolean; image?: string };
+  type Extra = { name: string; price: number; description: string; image?: string };
   const $ = <T extends HTMLElement = HTMLElement>(s: string, root: ParentNode = document) => root.querySelector<T>(s)!;
   const esc = (s: unknown) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
   const money = (c: number) => `$${(c / 100).toLocaleString('en-NZ', { minimumFractionDigits: c % 100 ? 2 : 0, maximumFractionDigits: 2 })}`;
@@ -101,11 +102,11 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
     });
   };
   // Your packages and products (Settings > Packages & products), to add or swap in. Copied into the quote.
-  type LibItem = { id: number; name: string; subtitle: string; description: string; price: number; recommended: number };
+  type LibItem = { id: number; name: string; subtitle: string; description: string; price: number; recommended: number; image: string };
   let lib: { packages: LibItem[]; products: LibItem[] } = { packages: [], products: [] };
   const libOptions = (list: LibItem[]) => list.map((x) => `<option value="${x.id}">${esc(x.name)}${x.subtitle ? ` · ${esc(x.subtitle)}` : ''} (${money(x.price)})</option>`).join('');
   const plain = (t: string) => t.replace(/<[^>]+>/g, ' ').replace(/[*_#>]+/g, '').replace(/\s+/g, ' ').trim();
-  const asPkg = (x: LibItem): Pkg => ({ name: x.name, subtitle: x.subtitle, price: x.price, description: x.description, recommended: !!x.recommended });
+  const asPkg = (x: LibItem): Pkg => ({ name: x.name, subtitle: x.subtitle, price: x.price, description: x.description, recommended: !!x.recommended, image: x.image });
   const drawLib = () => {
     document.querySelector<HTMLSelectElement>('[data-lib="package"]')!.innerHTML = `<option value="">+ Add one of your packages…</option>${libOptions(lib.packages)}`;
     document.querySelector<HTMLSelectElement>('[data-lib="product"]')!.innerHTML = `<option value="">+ Add one of your products…</option>${libOptions(lib.products)}`;
@@ -119,7 +120,7 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
       t.value = '';
       if (!x) return;
       if (t.dataset.lib === 'package') { $('.packages').insertAdjacentHTML('beforeend', pkgRow(asPkg(x))); attachPackages(); }
-      else $('.extras').insertAdjacentHTML('beforeend', extraRow({ name: x.name, price: x.price, description: plain(x.description) }));
+      else $('.extras').insertAdjacentHTML('beforeend', extraRow({ name: x.name, price: x.price, description: plain(x.description), image: x.image }));
       dirty = true; $('.save-state').textContent = 'Unsaved changes';
       toast(`Added “${x.name}”. Save to keep it.`);
     }
@@ -141,17 +142,19 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
 
   const pkgRow = (p: Pkg) => `<div class="item pkg">
     <div class="row"><label>Name<input data-k="name" value="${esc(p.name)}" /></label><label>Subtitle<input data-k="subtitle" value="${esc(p.subtitle)}" placeholder="e.g. 8+ hours" /></label><label class="price">Price ($)<input data-k="price" type="number" min="0" step="1" value="${p.price / 100}" /></label></div>
+    ${itemImage(p.image)}
     <label>What's included<textarea data-k="description" rows="8">${esc(p.description)}</textarea></label>
     <div class="row-end"><label class="check"><input type="checkbox" data-k="recommended"${p.recommended ? ' checked' : ''} /> Recommended</label>${lib.packages.length ? `<select class="lib-swap" aria-label="Swap for one of your packages"><option value="">Swap for…</option>${libOptions(lib.packages)}</select>` : ''}<button type="button" class="s-btn s-btn--quiet" data-remove>Remove</button></div>
   </div>`;
   const extraRow = (x: Extra) => `<div class="item extra">
     <div class="row"><label>Name<input data-k="name" value="${esc(x.name)}" /></label><label class="price">Price ($)<input data-k="price" type="number" min="0" step="1" value="${x.price / 100}" /></label></div>
     <label>Description<input data-k="description" value="${esc(x.description)}" /></label>
+    ${itemImage(x.image)}
     <div class="row-end"><button type="button" class="s-btn s-btn--quiet" data-remove>Remove</button></div>
   </div>`;
   const read = (sel: string) => [...document.querySelectorAll<HTMLElement>(sel)].map((el) => {
     const v = (k: string) => el.querySelector<HTMLInputElement>(`[data-k="${k}"]`);
-    return { name: v('name')!.value, subtitle: v('subtitle')?.value ?? '', price: Math.round(Number(v('price')!.value || 0) * 100), description: v('description')!.value, recommended: !!v('recommended')?.checked };
+    return { name: v('name')!.value, subtitle: v('subtitle')?.value ?? '', price: Math.round(Number(v('price')!.value || 0) * 100), description: v('description')!.value, recommended: !!v('recommended')?.checked, image: v('image')?.value ?? '' };
   });
 
   async function load() {
@@ -204,6 +207,7 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
 
   form.addEventListener('input', () => { dirty = true; $('.save-state').textContent = 'Unsaved changes'; });
   guardLeaving(() => dirty);
+  watchItemImages(() => { dirty = true; $('.save-state').textContent = 'Unsaved changes'; }, (m) => toast(m, true));
   document.addEventListener('click', async (e) => {
     const t = e.target as HTMLElement;
     if (t.closest('[data-act="save"]')) { save(); return; }

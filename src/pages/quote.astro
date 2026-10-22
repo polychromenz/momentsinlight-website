@@ -61,8 +61,10 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 </BaseLayout>
 
 <script>
-  type Pkg = { name: string; subtitle: string; price: number; description: string; recommended: boolean };
-  type Extra = { name: string; price: number; description: string };
+  type Pkg = { name: string; subtitle: string; price: number; description: string; recommended: boolean; image?: string };
+  type Extra = { name: string; price: number; description: string; image?: string };
+  // A package or product's picture (Cloudflare Images), sized for its box; tap for the full size.
+  const pic = (src: string | undefined, w: number) => (src ? `<a class="q-pic" href="${esc(src)}" target="_blank" rel="noopener"><img src="${esc(src.replace(/\/public$/,`/w=${w * 2}`))}" alt="" loading="lazy" /></a>` : '');
   type Part = { percent: number; label: string; when: string; days?: number; months?: number };
   const $ = <T extends HTMLElement = HTMLElement>(s: string) => document.querySelector<T>(s)!;
   const esc = (s: unknown) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
@@ -139,13 +141,14 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     $('.m-client').innerHTML = [`<strong>${esc(q.client.name)}</strong>`, esc(q.client.email), q.client.address && esc(q.client.address).replace(/\n/g, '<br>'), q.event_date_long && `Wedding: ${esc(q.event_date_long)}`, q.venue && esc(q.venue)].filter(Boolean).join('<br>');
     $('.q-packages').innerHTML = q.packages.map((p, i) => `<article class="pkg${p.recommended ? ' rec' : ''}">
       ${p.recommended ? '<span class="pkg-badge">♥ Recommended</span>' : ''}
+      <div class="pkg-head">${pic(p.image, 110)}<div>
       <h3>${esc(p.name)}</h3>${p.subtitle ? `<p class="pkg-sub">${esc(p.subtitle)}</p>` : ''}
-      <p class="pkg-price">${short(p.price)}<small> incl. GST</small></p>
+      <p class="pkg-price">${short(p.price)}<small> incl. GST</small></p></div></div>
       <div class="pkg-desc">${p.description}</div>
       <button type="button" class="btn${p.recommended ? '' : ' btn--outline'}" data-pkg="${i}" aria-pressed="false">Choose this package</button>
     </article>`).join('');
     $('.q-extras').hidden = !q.extras.length;
-    $('.q-extras-list').innerHTML = q.extras.map((x, i) => `<label class="extra"><input type="checkbox" data-extra="${i}" /> <span><strong>${esc(x.name)}</strong> ${short(x.price)}${x.description ? `<small>${esc(x.description)}</small>` : ''}</span></label>`).join('');
+    $('.q-extras-list').innerHTML = q.extras.map((x, i) => `<label class="extra"><input type="checkbox" data-extra="${i}" /> ${pic(x.image, 88)}<span><strong>${esc(x.name)}</strong> ${short(x.price)}${x.description ? `<small>${esc(x.description)}</small>` : ''}</span></label>`).join('');
     $('.q-notes').innerHTML = q.notes || '';
     $('.q-notes-card').hidden = !q.notes;
     if (q.status === 'accepted') {
@@ -234,6 +237,10 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   .q-packages :global(.pkg.on .btn) { background: var(--green); color: var(--white); border-color: var(--green); }
   .q-extras :global(.extra) { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; }
   .q-extras :global(.extra small) { display: block; color: #777; }
+  .q :global(.pkg-head) { display: flex; gap: 16px; align-items: flex-start; }
+  .q :global(.q-pic) { flex: none; display: block; width: 110px; height: 110px; border-radius: 14px 0; overflow: hidden; background: #f3eee6; }
+  .q :global(.q-pic img) { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .q-extras :global(.extra .q-pic) { width: 88px; height: 88px; }
   .q table { width: 100%; border-collapse: collapse; font-size: 15px; }
   .q th { text-align: left; font-size: 12px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: #777; padding: 8px 0; border-bottom: 1px solid #eee6d9; }
   .q td { padding: 10px 0; border-bottom: 1px solid #f3eee6; color: #333; }

@@ -44,6 +44,9 @@ export function payments(parts, total, eventDate, acceptDate = nzToday()) {
   });
 }
 
+/** A package or product's picture: a Cloudflare Images address (uploaded through /api/studio/upload), else ''. */
+export const imageUrl = (v) => (/^https:\/\/imagedelivery\.net\/[\w-]+\/[\w/.-]+$/.test(String(v ?? '')) ? String(v) : '');
+
 /** A quote row from the database with its JSON fields parsed. */
 export const parseQuote = (row) => row && ({
   ...row,

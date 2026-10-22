@@ -85,6 +85,9 @@ export function attachRich(textarea: HTMLTextAreaElement, opts: { fields?: strin
     (bar.querySelector('[data-c="size"]') as HTMLSelectElement).value = editor.getAttributes('textStyle').fontSize ?? '';
   };
 
+  // The editor often sits inside a <label> ("Body", "What's included"): a click in the text would
+  // otherwise also "click" the label's first button, Bold, and toggle bold on every click.
+  wrap.addEventListener('click', (e) => { if (wrap.closest('label') && !(e.target as HTMLElement).closest('button, select, input, .rich-pick')) e.preventDefault(); });
   bar.addEventListener('mousedown', (e) => { if ((e.target as HTMLElement).closest('button')) e.preventDefault(); }); // keep the selection
   bar.addEventListener('click', async (e) => {
     const b = (e.target as HTMLElement).closest<HTMLButtonElement>('button');
