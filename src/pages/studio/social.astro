@@ -53,6 +53,13 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
       <p class="muted so-marked"></p>
       <label class="so-auto"><input type="checkbox" data-auto /> Make drafts automatically (a week ahead: Instagram and Facebook Mon, Wed, Fri; Google Tuesday; Pinterest weekdays)</label>
     </section>
+
+    <section class="card so-times">
+      <h2>Best times to post</h2>
+      <p class="muted">When engaged couples are around, by day and hour (NZ time): when your wedding enquiries arrive and when people click your Google Ads, each counted equally. Darker means busier. The outlined squares are when Instagram and Facebook posts go out (12:15pm Mon and Wed, Friday’s Reel 7:30pm; Facebook 15 minutes later). Instagram, Facebook and Meta ads data can be added once there’s enough of it.</p>
+      <div class="tm-wrap"><p class="muted">Loading…</p></div>
+      <p class="muted tm-note"></p>
+    </section>
   </main>
 
   <dialog class="so-ed" aria-label="Post">
@@ -109,6 +116,30 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
 
 <script>
   import '../../studio/social.ts';
+
+  // Best times to post: enquiries and Google Ads clicks by NZ weekday and hour (functions/api/studio/social/timing.js).
+  const POSTS: Record<string, number> = { 'Mon 12': 1, 'Wed 12': 1, 'Fri 19': 1 }; // Instagram/Facebook post times
+  const FIRST = 6; // 6am to 11pm
+  (async () => {
+    const wrap = document.querySelector<HTMLElement>('.tm-wrap')!;
+    const r = await fetch('/api/studio/social/timing');
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) { wrap.innerHTML = `<p class="muted">${d.error ?? 'Couldn’t load the times.'}</p>`; return; }
+    const { days, enquiries, clicks, totals } = d;
+    const score = (di: number, h: number) => (totals.enquiries ? enquiries[di][h] / totals.enquiries : 0) + (totals.clicks ? clicks[di][h] / totals.clicks : 0);
+    const hours = Array.from({ length: 24 - FIRST }, (_, i) => i + FIRST);
+    const max = Math.max(...days.flatMap((_: string, di: number) => hours.map((h) => score(di, h))), 0.0001);
+    const label = (h: number) => (h === 12 ? '12p' : h > 12 ? `${h - 12}p` : `${h}a`);
+    const dayTotal = (di: number) => hours.reduce((a, h) => a + score(di, h), 0);
+    const dayMax = Math.max(...days.map((_: string, di: number) => dayTotal(di)), 0.0001);
+    wrap.innerHTML = `<table class="tm"><thead><tr><th></th>${hours.map((h) => `<th>${label(h)}</th>`).join('')}<th class="tm-day">Day</th></tr></thead><tbody>
+      ${days.map((day: string, di: number) => `<tr><th>${day}</th>${hours.map((h) => {
+        const s = score(di, h), a = Math.round((s / max) * 100) / 100;
+        return `<td class="${POSTS[`${day} ${h}`] ? 'post-slot' : ''}" style="--a:${a}" title="${day} ${label(h)}: ${enquiries[di][h]} enquiries, ${clicks[di][h]} ad clicks"></td>`;
+      }).join('')}<td class="tm-day"><span style="width:${Math.round((dayTotal(di) / dayMax) * 100)}%"></span></td></tr>`).join('')}
+      </tbody></table>`;
+    document.querySelector<HTMLElement>('.tm-note')!.textContent = `From ${totals.enquiries} wedding enquiries and ${totals.clicks} Google Ads clicks. Small numbers so far: read it as a direction, and it sharpens as more come in.`;
+  })();
 </script>
 
 <style is:global>
@@ -174,6 +205,14 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
   .so-key { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 13px; color: #777; }
   .idea-list { margin: 0 0 8px; padding-left: 18px; line-height: 1.7; }
   .so-auto { display: flex; gap: 8px; align-items: center; font-size: 14px; color: #666; margin-top: 10px; }
+  .tm-wrap { overflow-x: auto; margin: 6px 0 4px; }
+  .tm { border-collapse: separate; border-spacing: 3px; font-size: 11px; color: #777; }
+  .tm th { font-weight: 600; text-align: center; padding: 0 2px; }
+  .tm tbody th { text-align: left; padding-right: 8px; color: #555; }
+  .tm td { width: 30px; height: 26px; border-radius: 4px; background: rgb(90 94 59 / calc(0.06 + var(--a) * 0.9)); }
+  .tm td.post-slot { outline: 2px solid #c13584; outline-offset: -2px; }
+  .tm .tm-day { width: 90px; padding-left: 8px; background: none; }
+  .tm .tm-day span { display: block; height: 10px; border-radius: 999px; background: var(--green); }
 
   .so-ed { width: min(1100px, 96vw); max-height: 94vh; padding: 0; border: 0; border-radius: 24px 0; box-shadow: 0 30px 80px -30px rgb(0 0 0 / 0.5); }
   .so-ed::backdrop { background: rgb(30 30 20 / 0.45); }

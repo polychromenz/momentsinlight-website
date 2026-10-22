@@ -25,12 +25,15 @@ export const PLATFORMS = {
 
 // Tony's rhythm (19 Oct 2026): Instagram and Facebook Mon/Wed/Fri, Google Tuesday, Pinterest weekdays.
 // Day 1 = Monday. Instagram and Facebook on the same day share the photos, each with its own caption.
+// Times (22 Oct 2026, from the Best times heatmap: enquiries and Google Ads clicks peak at lunchtime
+// and early evening): lunchtime posts, and Friday's Reel in the evening. A time can be per weekday.
 const SLOTS = [
-  { platform: 'instagram', days: [1, 3, 5], time: '19:00' },
-  { platform: 'facebook', days: [1, 3, 5], time: '19:30' },
+  { platform: 'instagram', days: [1, 3, 5], time: { default: '12:15', 5: '19:30' } },
+  { platform: 'facebook', days: [1, 3, 5], time: { default: '12:30', 5: '19:45' } },
   { platform: 'google', days: [2], time: '10:00' },
   { platform: 'pinterest', days: [1, 2, 3, 4, 5], time: '20:30' },
 ];
+const slotTime = (s, date) => (typeof s.time === 'string' ? s.time : s.time[dayOf(date)] ?? s.time.default);
 const AHEAD_DAYS = 8;
 const PER_RUN = 4;
 
@@ -50,8 +53,9 @@ export async function openSlots(db, today = nzNow()) {
     for (const s of SLOTS) {
       if (!s.days.includes(dayOf(date))) continue;
       // Today only if it's still more than a couple of hours away.
-      if (n === 0 && Number(s.time.slice(0, 2)) <= today.hour + 2) continue;
-      if (!have.has(`${s.platform} ${date}`)) out.push({ platform: s.platform, date, post_at: `${date}T${s.time}` });
+      const time = slotTime(s, date);
+      if (n === 0 && Number(time.slice(0, 2)) <= today.hour + 2) continue;
+      if (!have.has(`${s.platform} ${date}`)) out.push({ platform: s.platform, date, post_at: `${date}T${time}` });
     }
   }
   return out;
