@@ -28,6 +28,25 @@ gallery:
   - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-ellen-and-ryan/colour/_Q9A7710/public","alt":"Ellie and Ryan's wedding at Tui Hills","width":2048,"height":1365}
   - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-ellen-and-ryan/colour/_30A6607/public","alt":"Ellie and Ryan's wedding at Tui Hills","width":2048,"height":1366}
   - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-ellen-and-ryan/colour/_Q9A7798/public","alt":"Ellie and Ryan's wedding at Tui Hills","width":1365,"height":2048}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-ellie-and-ryan-tui-hills/_30A5315/public","alt":"A white sheet with a pearl necklace on it","width":2048,"height":1366}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-ellie-and-ryan-tui-hills/_30A5482-Edit/public","alt":"A bride in a white dress smiles at the camera","width":1366,"height":2048}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-ellie-and-ryan-tui-hills/_30A5610/public","alt":"A couple stand in front of a group of guests at a wedding","width":2048,"height":1366}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-ellie-and-ryan-tui-hills/_Q9A6527/public","alt":"A bride and groom stand together in front of a minister","width":1365,"height":2048}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-ellie-and-ryan-tui-hills/_30A5811/public","alt":"A group of people, including Ellie and Ryan, pose for a wedding photo in front of a gazebo","width":2048,"height":1366}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-ellie-and-ryan-tui-hills/_Q9A7237/public","alt":"Ellie and Ryan are sitting at a table with a vase of wheat in front of them","width":1638,"height":2048}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-ellie-and-ryan-tui-hills/_Q9A7358/public","alt":"A man in a vest and glasses points at the camera","width":1638,"height":2048}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-ellie-and-ryan-tui-hills/_Q9A7404/public","alt":"A woman in a red shirt is laughing at the camera","width":1365,"height":2048}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-ellie-and-ryan-tui-hills/_30A6799/public","alt":"A couple dancing on a wooden floor","width":2048,"height":1366}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-ellie-and-ryan-tui-hills/_30A6558/public","alt":"Ellie and Ryan are cutting a cake together","width":1639,"height":2048}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-ellie-and-ryan-tui-hills/_Q9A7657/public","alt":"Two people are sitting on a couch, one wearing a hat and the other wearing a tie","width":2048,"height":1365}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-ellie-and-ryan-tui-hills/_Q9A7685/public","alt":"Two women, one with glasses, are laughing and hugging each other","width":2048,"height":1365}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-ellie-and-ryan-tui-hills/_Q9A7704/public","alt":"A man wearing glasses and a green tie sits in front of a fireplace","width":1365,"height":2048}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-ellie-and-ryan-tui-hills/_Q9A6702/public","alt":"The bride and groom are posing for a picture in front of a green plant","width":1365,"height":2048}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-ellie-and-ryan-tui-hills/_30A6305-Edit/public","alt":"A newly married couple, Ellie and Ryan, share a kiss on their wedding day","width":2048,"height":1366}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-ellie-and-ryan-tui-hills/_30A5124/public","alt":"A pair of black shoes with laces and a grey sole","width":2048,"height":1366}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-ellie-and-ryan-tui-hills/_Q9A6385/public","alt":"A man wearing glasses and a tie smiles for the camera","width":1365,"height":2048}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-ellie-and-ryan-tui-hills/_Q9A6483/public","alt":"A woman in a suit with a flower in her lapel walks down a path","width":1365,"height":2048}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-ellie-and-ryan-tui-hills/_Q9A6509/public","alt":"A bride and groom are walking down a path with a woman in a black dress","width":1639,"height":2048}
 ---
 Some couples walk in front of your camera and the joy simply radiates from them. Ellie and Ryan are exactly that kind of couple — warm, playful, and so visibly, completely in love that capturing their wedding day felt less like work and more like a privilege. Tui Hills provided a breathtaking canvas, and what unfolded across the day was pure magic.
 
