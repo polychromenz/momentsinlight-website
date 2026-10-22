@@ -5,6 +5,7 @@
 //   POST /api/studio/receipts { file: [{ id, month: '2026-04' }, …] }  label each one Invoice/YYYY-MM
 //   POST /api/studio/receipts { action: 'amounts', ids: [≤20] }  each email's money amounts (totals first)
 //   POST /api/studio/receipts { action: 'xero', from, to }       what Xero has: bank transactions and bills
+//   POST /api/studio/receipts { action: 'journal', date, narration, lines: [{ code, tax, amount (cents, + debit), desc }] }  draft journal
 // Labelling needs the gmail.modify permission (Reconnect Google once). Emails stay in the Inbox.
 import { json } from '../../../functions-lib/studio.js';
 import { googleToken, connection } from '../../../functions-lib/gmail.js';
