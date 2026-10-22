@@ -10,7 +10,6 @@ venueUrl: "https://www.settlerscountrymanor.co.nz/"
 categories: ["Wedding"]
 tags: ["settlers-country-manor"]
 review: "Josh Stewart"
-draft: true
 thumbnail: "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-josh-and-paul-settlers-country-manor-wedding/_30A1681/public"
 gallery:
   - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-josh-and-paul/_30A1305/public","alt":"Josh and Paul kiss in front of a wooden door","width":2048,"height":1638}
