@@ -6,7 +6,7 @@
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
 import fontkit from '@pdf-lib/fontkit';
 import { clean, toHtml } from './rich-html.js';
-import { longDate, payments } from './quotes.js';
+import { longDate, payments, quoteText } from './quotes.js';
 
 const money = (c) => `$${(c / 100).toLocaleString('en-NZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
@@ -261,7 +261,7 @@ export async function quotePdf(q, job, number) {
   d.label('Payment schedule');
   d.rows(payments(q.schedule, total, job.event_date, (q.accepted_at || new Date().toISOString()).slice(0, 10))
     .map((p) => [`${p.label} (${p.percent}%)  ·  ${p.onAccept ? 'on acceptance' : `by ${longDate(p.due)}`}`, money(p.amount)]));
-  if (q.notes) { d.label('Notes'); d.html(q.notes); }
+  if (q.notes) { d.label('Notes'); d.html(quoteText(q.notes, q, job)); } // fill-ins like {{valid_until}}, as on the web quote
   if (accepted) {
     d.rule(20);
     d.write([{ text: `Accepted online by ${q.accepted_name} on ${new Date(q.accepted_at).toLocaleString('en-NZ', { timeZone: 'Pacific/Auckland', dateStyle: 'long', timeStyle: 'short' })} (NZ time).` }], { size: 9, color: GREY });
