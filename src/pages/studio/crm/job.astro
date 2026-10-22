@@ -503,7 +503,7 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
 
     const qs: Record<string, string> = { draft: 'Draft', sent: 'Sent', accepted: 'Accepted', withdrawn: 'Withdrawn', declined: 'Declined' };
     $('.quote-list').innerHTML = d.quotes.length ? d.quotes.map((q: { id: number; status: string; total: number | null; sent_at: string | null; viewed_at: string | null; accepted_at: string | null; created_at: string }) =>
-      `<li><a href="/studio/crm/quote?id=${q.id}"><strong>${qs[q.status] ?? q.status}</strong></a> <a class="pdf" href="/api/studio/crm/contract?quote=${q.id}&pdf=1" target="_blank" rel="noopener">PDF</a> <small>${q.accepted_at ? `accepted ${dateTime(q.accepted_at)}${q.total ? ` · ${(q.total / 100).toLocaleString('en-NZ')}` : ''}` : q.sent_at ? `sent ${dateTime(q.sent_at)}${q.viewed_at ? ' · opened' : ' · not opened yet'}` : `made ${dateTime(q.created_at)}`}</small></li>`).join('')
+      `<li><a href="/studio/crm/quote?id=${q.id}"><strong>${qs[q.status] ?? q.status}</strong></a> <a class="pdf" href="/api/studio/crm/contract?quote=${q.id}&pdf=1" target="_blank" rel="noopener">PDF</a> <small>${q.accepted_at ? `accepted ${dateTime(q.accepted_at)}${q.total ? ` · ${(q.total / 100).toLocaleString('en-NZ')}` : ''}` : q.sent_at ? `sent ${dateTime(q.sent_at)}${q.viewed_at ? ' · opened' : ' · not opened yet'}` : `made ${dateTime(q.created_at)}`}</small>${q.status === 'draft' ? ` <button type="button" class="link-btn quote-del" data-quote-delete="${q.id}">Delete</button>` : ''}</li>`).join('')
       : '<li class="empty">No quotes yet.</li>';
     const cs: Record<string, string> = { sent: 'Sent, not signed yet', signed: 'Signed', void: 'Cancelled' };
     $('.contracts').innerHTML = d.contracts.length ? d.contracts.map((c: { id: number; name: string; status: string; sent_at: string | null; viewed_at: string | null; signed_name: string | null; signed_at: string | null }) =>
@@ -741,6 +741,14 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
     if (ae) { openAppt(appts[Number(ae.dataset.apptEdit)]); return; }
     const ad = t.closest<HTMLButtonElement>('[data-appt-delete]');
     if (ad) { if (await ask('Remove this appointment?')) { await fetch(`/api/studio/crm/appointment?id=${ad.dataset.apptDelete}`, { method: 'DELETE' }); await load(); } return; }
+    const qd = t.closest<HTMLButtonElement>('[data-quote-delete]');
+    if (qd) {
+      if (!await ask('Delete this draft quote? It has never been sent, so it’s simply removed.', { ok: 'Delete', danger: true })) return;
+      const r = await fetch(`/api/studio/crm/quote?id=${qd.dataset.quoteDelete}&draft=1`, { method: 'DELETE' });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) { toast(d.error || 'Couldn’t delete it.', true); return; }
+      toast('Draft quote deleted.'); await load(); return;
+    }
     if (t.closest('[data-portal-copy]') && portal) { await navigator.clipboard.writeText(portal.link); toast('Portal link copied.'); return; }
     const gr = t.closest<HTMLButtonElement>('[data-gallery-remove]');
     if (gr) { if (await ask('Remove this gallery from their portal?')) await portalPost({ action: 'gallery-remove', id: Number(gr.dataset.galleryRemove) }); return; }
@@ -947,6 +955,7 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
   .job-page .quotes li { padding: 8px 0; border-bottom: 1px solid #f1ebe1; }
   .job-page .quotes li:last-child { border-bottom: 0; }
   .job-page .quotes a { color: var(--ink); }
+  .job-page .quote-del { float: right; background: none; border: 0; padding: 0; font: inherit; font-size: 13px; color: #a33; text-decoration: underline; cursor: pointer; }
   .job-page .quotes small { color: #777; }
   .job-page .quotes .pdf { font-size: 12px; margin-left: 4px; }
   .job-page .inv { display: flex; align-items: center; gap: 6px 8px; flex-wrap: wrap; }

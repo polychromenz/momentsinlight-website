@@ -53,7 +53,7 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
       <section class="card">
         <label>Notes (shown at the bottom of the quote; use the + Fill-in menu for the valid-until date)<textarea name="notes" rows="3"></textarea></label>
       </section>
-      <p class="danger"><button type="button" class="s-btn s-btn--danger" data-act="withdraw">Withdraw quote</button></p>
+      <p class="danger"><button type="button" class="s-btn s-btn--danger" data-act="withdraw">Withdraw quote</button> <button type="button" class="s-btn s-btn--danger" data-act="delete-draft" hidden>Delete draft</button></p>
     </form>
   </main>
 
@@ -191,6 +191,9 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
     $<HTMLButtonElement>('[data-act="save"]').hidden = lock; $<HTMLButtonElement>('[data-act="send"]').hidden = lock;
     $<HTMLButtonElement>('[data-act="send"]').textContent = q.status === 'sent' ? 'Send again…' : 'Send to client…';
     $('.danger').hidden = lock;
+    // A draft that was never sent can simply be deleted; a sent one is withdrawn.
+    $<HTMLButtonElement>('[data-act="delete-draft"]').hidden = q.status !== 'draft';
+    $<HTMLButtonElement>('[data-act="withdraw"]').hidden = q.status === 'draft';
     dirty = false; $('.save-state').textContent = '';
     form.hidden = false; $('.status').hidden = true;
   }
@@ -234,6 +237,13 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
       const res = $('.contract-result');
       res.textContent = text; res.classList.toggle('bad', !r.ok); res.hidden = false;
       return;
+    }
+    if (t.closest('[data-act="delete-draft"]')) {
+      if (!await ask('Delete this draft quote? It has never been sent, so it’s simply removed.', { ok: 'Delete', danger: true })) return;
+      const r = await fetch(`/api/studio/crm/quote?id=${id}&draft=1`, { method: 'DELETE' });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) { toast(d.error || 'Couldn’t delete it.', true); return; }
+      dirty = false; location.href = `/studio/crm/job?id=${data.job.id}`; return;
     }
     if (t.closest('[data-act="withdraw"]')) {
       if (!await ask('Withdraw this quote? Its link will say it’s no longer available.')) return;

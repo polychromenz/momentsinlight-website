@@ -75,8 +75,16 @@ export async function onRequestPut({ request, env }) {
   return json({ ok: true });
 }
 
+// DELETE ?id=…: withdraw it (sent quotes); DELETE ?id=…&draft=1: delete a draft that was never sent.
 export async function onRequestDelete({ request, env }) {
-  const id = Number(new URL(request.url).searchParams.get('id'));
+  const url = new URL(request.url);
+  const id = Number(url.searchParams.get('id'));
+  if (url.searchParams.has('draft')) {
+    const r = await env.DB.prepare(`DELETE FROM quotes WHERE id = ?1 AND status = 'draft' AND sent_at IS NULL
+      AND NOT EXISTS (SELECT 1 FROM contracts WHERE quote_id = ?1) AND NOT EXISTS (SELECT 1 FROM invoices WHERE quote_id = ?1)`).bind(id).run();
+    if (!r.meta.changes) return json({ error: 'Only a draft that hasn’t been sent can be deleted.' }, 409);
+    return json({ ok: true });
+  }
   const r = await env.DB.prepare(`UPDATE quotes SET status = 'withdrawn', updated_at = ?2 WHERE id = ?1 AND status IN ('draft', 'sent')`).bind(id, new Date().toISOString()).run();
   if (!r.meta.changes) return json({ error: 'That quote can’t be withdrawn now.' }, 409);
   return json({ ok: true });

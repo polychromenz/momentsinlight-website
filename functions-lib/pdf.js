@@ -129,7 +129,9 @@ async function setup() {
     if (line.length) flush();
     y -= gap;
   };
-  const title = (text, sub) => {
+  // name: the PDF's own title, which the browser shows on its tab (else it shows the address's last word).
+  const title = (text, sub, name = text) => {
+    pdf.setTitle(`${name} · Moments in Light`, { showInWindowTitleBar: true });
     write([{ text, weight: 'light' }], { size: 26, color: INK, gap: 4, lead: 1.25 });
     if (sub) write([{ text: sub }], { size: 9, color: GREY, gap: 18 });
   };
@@ -226,7 +228,7 @@ const FROM = ['Moments in Light', 'Tony Gorham', '021 625 943', 'tony@momentsinl
 export async function quotePdf(q, job, number) {
   const d = await setup();
   const accepted = q.status === 'accepted';
-  d.title(accepted ? 'Accepted quote' : 'Quote', `Quote ${number}  ·  Issued ${longDate((q.sent_at || q.created_at).slice(0, 10))}${q.valid_until && !accepted ? `  ·  Valid until ${longDate(q.valid_until)}` : ''}`);
+  d.title(accepted ? 'Accepted quote' : 'Quote', `Quote ${number}  ·  Issued ${longDate((q.sent_at || q.created_at).slice(0, 10))}${q.valid_until && !accepted ? `  ·  Valid until ${longDate(q.valid_until)}` : ''}`, `Quote ${number}`);
   d.columns([['From', FROM.join('\n')], ['For', [`${job.first_name} ${job.last_name}`.trim(), job.email, job.address, job.event_date && `Wedding: ${longDate(job.event_date)}`, job.venue].filter(Boolean).join('\n')]]);
   d.rule(20);
   const pick = accepted ? q.chosen_package : Math.max(0, q.packages.findIndex((p) => p.recommended));
@@ -276,7 +278,7 @@ export async function invoicePdf(inv, job, pay, { asInvoice = false } = {}) {
   const d = await setup();
   const paid = inv.status === 'paid' && !asInvoice;
   const wasPaid = inv.status === 'paid' && asInvoice;
-  d.title(paid ? 'Receipt' : pay?.gst_number ? 'Tax invoice' : 'Invoice', `Invoice ${inv.number}  ·  Issued ${longDate((inv.sent_at || inv.created_at).slice(0, 10))}${paid ? `  ·  Paid ${longDate(inv.paid_at.slice(0, 10))}` : `  ·  Due ${longDate(inv.due_date)}`}`);
+  d.title(paid ? 'Receipt' : pay?.gst_number ? 'Tax invoice' : 'Invoice', `Invoice ${inv.number}  ·  Issued ${longDate((inv.sent_at || inv.created_at).slice(0, 10))}${paid ? `  ·  Paid ${longDate(inv.paid_at.slice(0, 10))}` : `  ·  Due ${longDate(inv.due_date)}`}`, `${paid ? 'Receipt' : 'Invoice'} ${inv.number}`);
   d.columns([['From', [...FROM, pay?.gst_number && `GST number: ${pay.gst_number}`].filter(Boolean).join('\n')], ['To', [`${job.first_name} ${job.last_name}`.trim(), job.email, job.address].filter(Boolean).join('\n')]]);
   d.rule(20);
   d.label('For');
