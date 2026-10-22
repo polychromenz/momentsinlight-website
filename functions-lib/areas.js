@@ -20,7 +20,7 @@ const API = [
   [/^\/api\/studio\/crm\/(settings|send-mode|sn-gmail|sn-switch|gmail-connect|gmail-callback|gmail-test|digest)\b/, 'settings'],
   [/^\/api\/studio\/(booking|people)\b/, 'settings'],
   [/^\/api\/studio\/crm\/(invoice|payments)\b/, 'payments'],
-  [/^\/api\/studio\/(mileage|xero|reports|reconcile)\b/, 'payments'],
+  [/^\/api\/studio\/(mileage|xero|reports|reconcile|receipts)\b/, 'payments'],
   [/^\/api\/studio\/crm\/ads\b|^\/api\/studio\/ads\//, 'ads'],
   [/^\/api\/studio\/crm\/(seo|rankings)\b|^\/api\/studio\/(seo|stats)\b/, 'seo'],
   [/^\/api\/studio\/crm\/(dashboard|today|tasks)\b/, null],
