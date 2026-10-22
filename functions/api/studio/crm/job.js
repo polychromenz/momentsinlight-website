@@ -149,7 +149,8 @@ export async function onRequestPost(context) {
 }
 
 // Delete permanently (e.g. a test lead), so it doesn't count as a lost lead. Refused when anything
-// has been paid: business records are kept (IRD: 7 years). A client with other jobs keeps those;
+// has been paid: business records are kept (IRD: 7 years), except for a test client (their payments
+// are Tony's own tests and never went to Xero). A client with other jobs keeps those;
 // otherwise the client goes too. Their Google Calendar entries are removed; Gmail isn't touched.
 //   DELETE /api/studio/crm/job?id=12
 export async function onRequestDelete({ request, env }) {
@@ -160,7 +161,8 @@ export async function onRequestDelete({ request, env }) {
   // (Both forms use ?1 and ?2, so the same two values bind either way.)
   const scope = others ? 'job_id = ?1 AND ?2 = ?2' : 'job_id IN (SELECT id FROM jobs WHERE client_id = ?2) AND ?1 = ?1';
   const paid = await env.DB.prepare(`SELECT count(*) n FROM invoices WHERE ${scope} AND status = 'paid'`).bind(id, job.client_id).first();
-  if (paid.n) return json({ error: 'They’ve paid an invoice, so their records need keeping (IRD asks for 7 years). Mark them “Not going ahead” instead.' }, 409);
+  const test = (await env.DB.prepare('SELECT test FROM clients WHERE id = ?1').bind(job.client_id).first())?.test === 1;
+  if (paid.n && !test) return json({ error: 'They’ve paid an invoice, so their records need keeping (IRD asks for 7 years). Mark them “Not going ahead” instead.' }, 409);
   // Google Calendar: the job's own event and its appointments.
   const events = [job.gcal_event_id, ...(await env.DB.prepare(`SELECT gcal_event_id FROM appointments WHERE ${scope} AND gcal_event_id IS NOT NULL`).bind(id, job.client_id).all()).results.map((a) => a.gcal_event_id)].filter(Boolean);
   for (const e of events) await unsyncAppointment(env, { gcal_event_id: e }).catch(() => {});
