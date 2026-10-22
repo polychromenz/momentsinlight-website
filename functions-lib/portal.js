@@ -42,7 +42,7 @@ export async function portalData(db, job) {
       WHERE i.job_id = ?1 AND i.status IN ('scheduled', 'sent', 'paid') ORDER BY i.due_date, i.id`).bind(job.id).all(),
     db.prepare('SELECT id, title, url, note FROM galleries WHERE job_id = ?1 ORDER BY id').bind(job.id).all(),
     db.prepare('SELECT d.id, d.name, d.size, d.type FROM job_documents jd JOIN documents d ON d.id = jd.document_id WHERE jd.job_id = ?1 ORDER BY d.name').bind(job.id).all(),
-    db.prepare('SELECT id, name, size, type, questionnaire_id, created_at FROM uploads WHERE job_id = ?1 ORDER BY id').bind(job.id).all(),
+    db.prepare('SELECT id, name, size, type, questionnaire_id, from_studio, created_at FROM uploads WHERE job_id = ?1 ORDER BY id').bind(job.id).all(),
     portalSettings(db),
   ]);
   // The accepted quote (else the latest sent one): its package and payment plan.

@@ -44,7 +44,7 @@ export async function onRequestPost({ request, env }) {
   if (f.size > MAX_UPLOAD) return reply({ error: `“${f.name}” is over 10 MB. Please choose a smaller version.` }, 400);
   const type = f.type || (/\.heic$/i.test(f.name) ? 'image/heic' : '');
   if (!OK_TYPE.test(type)) return reply({ error: `“${f.name}” isn’t a photo or PDF.` }, 400);
-  const count = await env.DB.prepare('SELECT count(*) n FROM uploads WHERE job_id = ?1').bind(job.id).first();
+  const count = await env.DB.prepare('SELECT count(*) n FROM uploads WHERE job_id = ?1 AND from_studio = 0').bind(job.id).first();
   if (count.n >= 40) return reply({ error: 'That’s the most files for one booking (40). Remove one to add another.' }, 400);
   const name = f.name.replace(/[\\/:*?"<>|\r\n]+/g, ' ').trim().slice(0, 120) || 'file';
   const row = await env.DB.prepare('INSERT INTO uploads (job_id, name, type, size, created_at) VALUES (?1, ?2, ?3, ?4, ?5) RETURNING id, name, size, type, created_at')
@@ -65,7 +65,7 @@ export async function onRequestDelete({ request, env }) {
   const job = await findByPortal(env.DB, url.searchParams.get('t'));
   if (!job) return reply({ error: GONE }, 404);
   const id = Number(url.searchParams.get('upload'));
-  const r = await env.DB.prepare('DELETE FROM uploads WHERE id = ?1 AND job_id = ?2').bind(id, job.id).run();
+  const r = await env.DB.prepare('DELETE FROM uploads WHERE id = ?1 AND job_id = ?2 AND from_studio = 0').bind(id, job.id).run();
   if (r.meta.changes) await env.DB.prepare('DELETE FROM files WHERE name = ?1').bind(`upload-${id}`).run();
   return reply({ ok: true });
 }

@@ -9,9 +9,12 @@
 //                                { job_id, action: 'gallery-remove', id }
 //                                { job_id, action: 'share', document_ids: [..] }     which documents they see
 //                                { job_id, action: 'upload-remove', id }
+//   POST /api/studio/crm/portal  form data: job_id, file    add a file to their portal's files (up to 10 MB)
 import { json } from '../../../../functions-lib/studio.js';
 import { portalToken, portalLink } from '../../../../functions-lib/portal.js';
-import { listDocuments, loadNamed } from '../../../../functions-lib/documents.js';
+import { listDocuments, loadNamed, storeNamed } from '../../../../functions-lib/documents.js';
+import { MAX_UPLOAD } from '../../../../functions-lib/questionnaire-form.js';
+import { toBase64 } from '../../../../functions-lib/pdf.js';
 import { jobGalleries } from '../../../../functions-lib/gallery-access.js';
 
 export async function onRequestGet({ request, env }) {
@@ -30,7 +33,7 @@ export async function onRequestGet({ request, env }) {
       env.DB.prepare('SELECT id, title, url, note FROM galleries WHERE job_id = ?1 ORDER BY id').bind(jobId).all(),
       env.DB.prepare('SELECT document_id FROM job_documents WHERE job_id = ?1').bind(jobId).all(),
       listDocuments(env.DB),
-      env.DB.prepare('SELECT u.id, u.name, u.size, u.created_at, u.questionnaire_id FROM uploads u WHERE u.job_id = ?1 ORDER BY u.id').bind(jobId).all(),
+      env.DB.prepare('SELECT u.id, u.name, u.size, u.created_at, u.questionnaire_id, u.from_studio FROM uploads u WHERE u.job_id = ?1 ORDER BY u.id').bind(jobId).all(),
       // This couple's own documents (e.g. their signed Studio Ninja contract), listed first.
       env.DB.prepare('SELECT id, name, size FROM documents WHERE job_id = ?1 ORDER BY name').bind(jobId).all(),
       jobGalleries(env.DB, jobId),
@@ -44,7 +47,29 @@ export async function onRequestGet({ request, env }) {
   }
 }
 
+// A file Tony adds: it goes in with the couple's own uploads, so they see it in their portal.
+async function addFile(request, env) {
+  const form = await request.formData().catch(() => null);
+  const jobId = Number(form?.get('job_id'));
+  if (!jobId || !(await env.DB.prepare('SELECT 1 FROM jobs WHERE id = ?1').bind(jobId).first())) return json({ error: 'That job doesn’t exist.' }, 404);
+  const f = form.get('file');
+  if (!f || typeof f === 'string') return json({ error: 'Which file?' }, 400);
+  if (f.size > MAX_UPLOAD) return json({ error: `“${f.name}” is over 10 MB.` }, 400);
+  const name = f.name.replace(/[\\/:*?"<>|\r\n]+/g, ' ').trim().slice(0, 120) || 'file';
+  const type = f.type || 'application/octet-stream';
+  const row = await env.DB.prepare('INSERT INTO uploads (job_id, name, type, size, created_at, from_studio) VALUES (?1, ?2, ?3, ?4, ?5, 1) RETURNING id')
+    .bind(jobId, name, type, f.size, new Date().toISOString()).first();
+  try {
+    await storeNamed(env.DB, `upload-${row.id}`, type, toBase64(new Uint8Array(await f.arrayBuffer())));
+  } catch (e) {
+    await env.DB.prepare('DELETE FROM uploads WHERE id = ?1').bind(row.id).run();
+    throw e;
+  }
+  return json({ ok: true, id: row.id });
+}
+
 export async function onRequestPost({ request, env }) {
+  if ((request.headers.get('content-type') ?? '').startsWith('multipart/form-data')) return addFile(request, env);
   const d = await request.json().catch(() => null);
   const jobId = Number(d?.job_id);
   if (!jobId || !(await env.DB.prepare('SELECT 1 FROM jobs WHERE id = ?1').bind(jobId).first())) return json({ error: 'That job doesn’t exist.' }, 404);

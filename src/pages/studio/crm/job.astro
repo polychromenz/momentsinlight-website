@@ -75,7 +75,7 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
             </details>
             <h3 class="sub">Files from you <small>(tick to share from your Documents)</small></h3>
             <div class="portal-docs"></div>
-            <h3 class="sub">Files from them</h3>
+            <div class="sub-head"><h3 class="sub">Shared files <small>(theirs and yours; they see all of these)</small></h3><label class="s-btn s-btn--quiet up-btn">+ Add files<input type="file" multiple hidden /></label></div>
             <ul class="quotes portal-uploads"></ul>
           </section>
           <section class="card">
@@ -92,7 +92,24 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
           </section>
         </div>
 
-        <form class="card details" autocomplete="off">
+        <div class="side">
+        <section class="card details day-card">
+          <h2 class="day-title">Wedding day</h2>
+          <div class="two">
+            <label>Date<input name="event_date" type="date" form="job-details" /></label>
+            <label>Time <small>(optional)</small><input name="event_time" type="time" form="job-details" /></label>
+          </div>
+          <label>Venue<input name="venue" form="job-details" placeholder="Start typing the venue or address" /><input type="hidden" name="venue_address" form="job-details" /></label>
+          <div class="practice">
+            <h3 class="sub">Practice shoot <small>(also in Appointments, the calendar and mileage)</small></h3>
+            <div class="two">
+              <label>Date<input name="p_date" type="date" /></label>
+              <label>Time <small>(optional)</small><input name="p_time" type="time" /></label>
+            </div>
+            <label>Location<input name="p_location" placeholder="Start typing a place or address" /></label>
+          </div>
+        </section>
+        <form class="card details" id="job-details" autocomplete="off">
           <h2>Details</h2>
           <div class="two">
             <label>First name<input name="first_name" /></label>
@@ -114,14 +131,12 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
                 <option>Wedding</option><option>Portraits</option><option>Family</option><option>Headshots</option><option>Lifestyle</option><option>Event</option><option>Commercial / Advertising</option>
               </select>
             </label>
-            <label>Date<input name="event_date" type="date" /></label>
           </div>
-          <label>Time <small>(for a shoot; optional)</small><input name="event_time" type="time" /></label>
-          <label>Venue<input name="venue" placeholder="Start typing the venue or address" /><input type="hidden" name="venue_address" /></label>
           <label>Heard about you via<input name="lead_source" list="lead-sources" /><datalist id="lead-sources"></datalist></label>
           <label>Your notes<textarea name="notes" rows="6" placeholder="Anything to remember about them or their day"></textarea></label>
           <p class="other-jobs" hidden></p>
         </form>
+        </div>
       </div>
     </div>
   </main>
@@ -265,7 +280,7 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
     $('.gallery-link').hidden = !p.unlinked.length;
     $('.portal-galleries').innerHTML = p.galleries.map((g: any) => `<li class="inv"><span class="what"><a href="${esc(g.url)}" target="_blank" rel="noopener"><strong>${esc(g.title)}</strong></a><br><small>${esc(g.url)}</small></span><button type="button" class="s-btn s-btn--quiet" data-gallery-remove="${g.id}">Remove</button></li>`).join('');
     $('.portal-docs').innerHTML = p.documents.length ? p.documents.map((x: any) => `<span class="pdoc"><input type="checkbox" value="${x.id}"${x.shared ? ' checked' : ''} aria-label="Share ${esc(x.name)} in their portal" /> <a href="/api/studio/crm/documents?id=${x.id}" target="_blank" rel="noopener">${esc(x.name)}</a> <small>${kb(x.size)}${x.own ? ' · just for them' : ''}</small></span>`).join('') : '<p class="empty">Upload files in Settings &gt; Documents first.</p>';
-    $('.portal-uploads').innerHTML = p.uploads.map((u: any) => `<li class="inv"><span class="what"><a href="/api/studio/crm/portal?job=${id}&upload=${u.id}" target="_blank" rel="noopener">${esc(u.name)}</a><br><small>${kb(u.size)} · ${u.questionnaire_id ? 'from their questionnaire' : 'added in their portal'} · ${dateTime(u.created_at)}</small></span>${u.questionnaire_id ? '' : `<button type="button" class="s-btn s-btn--quiet" data-upload-remove="${u.id}">Remove</button>`}</li>`).join('') || '<li class="empty">Nothing yet.</li>';
+    $('.portal-uploads').innerHTML = p.uploads.map((u: any) => `<li class="inv"><span class="what"><a href="/api/studio/crm/portal?job=${id}&upload=${u.id}" target="_blank" rel="noopener">${esc(u.name)}</a><br><small>${kb(u.size)} · ${u.from_studio ? 'you added this' : u.questionnaire_id ? 'from their questionnaire' : 'added in their portal'} · ${dateTime(u.created_at)}</small></span>${u.questionnaire_id ? '' : `<button type="button" class="s-btn s-btn--quiet" data-upload-remove="${u.id}">Remove</button>`}</li>`).join('') || '<li class="empty">Nothing yet.</li>';
   }
   async function portalPost(body: Record<string, unknown>) {
     const r = await fetch('/api/studio/crm/portal', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ job_id: id, ...body }) });
@@ -305,6 +320,23 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
 
   let clashList: any[] = [];
   let appts: any[] = [];
+  // The practice shoot on the wedding day card is the job's "Practice shoot" appointment.
+  const dayField = (n: string) => $<HTMLInputElement>(`.day-card [name="${n}"]`);
+  let practice: any = null;
+  async function savePractice() {
+    const date = dayField('p_date').value, time = dayField('p_time').value, location = dayField('p_location').value.trim();
+    if (!date) {
+      if (practice && !time && !location) await fetch(`/api/studio/crm/appointment?id=${practice.id}`, { method: 'DELETE' });
+      else if (time || location) { toast('Give the practice shoot a date (or clear it to remove it).', true); return false; }
+      return true;
+    }
+    const keepEnd = practice?.end_time && time && practice.end_time > time ? practice.end_time : null;
+    const body = { title: practice?.title ?? 'Practice shoot', date, start_time: time, end_time: keepEnd, location, notes: practice?.notes ?? '', ...(practice ? { id: practice.id } : { job_id: id }) };
+    if (practice && practice.date === date && (practice.start_time ?? '') === time && practice.location === location) return true;
+    const r = await fetch('/api/studio/crm/appointment', { method: practice ? 'PUT' : 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
+    if (!r.ok) { toast((await r.json().catch(() => ({}))).error || 'Couldn’t save the practice shoot.', true); return false; }
+    return true;
+  }
   let editingAppt = 0;
   const apptForm = $<HTMLFormElement>('.appt-form');
   // Google address suggestions: the postal address, the venue (its name, plus its address for the
@@ -318,6 +350,7 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
     attachAddressLookup(venue, { ...api, onPick: (p, el) => { el.value = p.business && p.name ? p.name : p.address; venueAddr.value = p.address; } });
     venue.addEventListener('input', (e) => { if ((e as InputEvent).inputType) venueAddr.value = ''; });
     attachAddressLookup(apptForm.elements.namedItem('location') as HTMLInputElement, { ...api, onPick: (p, el) => { el.value = p.business && p.name ? `${p.name}, ${p.address}` : p.address; } });
+    attachAddressLookup(dayField('p_location'), { ...api, onPick: (p, el) => { el.value = p.business && p.name ? `${p.name}, ${p.address}` : p.address; markDirty(); } });
   }
   function openAppt(a: any | null) {
     editingAppt = a?.id ?? 0;
@@ -491,6 +524,12 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
     cl.innerHTML = d.clashes.length ? `⚠ ${d.clashes.some((c: any) => c.stage === 'booked') ? 'This date is already booked' : 'Another lead wants this date'}: ${d.clashes.map((c: any) => `<a href="/studio/crm/job?id=${c.id}">${esc(c.title)}</a> (${c.stage === 'booked' ? 'booked' : 'lead'}, ${esc(c.job_type)})`).join(', ')}` : '';
     // Appointments.
     appts = d.appointments;
+    practice = d.appointments.find((a: any) => /practice/i.test(a.title)) ?? null;
+    dayField('p_date').value = practice?.date ?? '';
+    dayField('p_time').value = practice?.start_time ?? '';
+    dayField('p_location').value = practice?.location ?? '';
+    $('.day-title').textContent = j.job_type === 'Wedding' ? 'Wedding day' : 'The shoot';
+    $('.day-card .practice').hidden = j.job_type !== 'Wedding' && !practice;
     const tm = (t: string | null) => (t ? new Date(`2000-01-01T${t}:00`).toLocaleTimeString('en-NZ', { hour: 'numeric', minute: '2-digit' }) : '');
     $('.appts').innerHTML = d.appointments.map((a: any, i: number) => `<li class="inv"><span class="what"><strong>${esc(a.title)}</strong><br><small>${new Date(`${a.date}T12:00:00Z`).toLocaleDateString('en-NZ', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' })}${a.start_time ? ` · ${tm(a.start_time)}${a.end_time ? `–${tm(a.end_time)}` : ''}` : ' · all day'}${a.location ? ` · ${esc(a.location)}` : ''}</small></span>
       <button type="button" class="s-btn s-btn--quiet" data-appt-edit="${i}">Change</button><button type="button" class="s-btn s-btn--quiet" data-appt-delete="${a.id}">Remove</button></li>`).join('') || '<li class="empty">None yet: practice shoot, planning meeting…</li>';
@@ -549,6 +588,7 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
     const r = await fetch('/api/studio/crm/job', { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
     const d = await r.json().catch(() => ({}));
     if (!r.ok) { toast(d.error || 'Couldn’t save.', true); saveBtn.disabled = false; $('.save-state').textContent = 'Not saved'; return; }
+    if (!(await savePractice())) { saveBtn.disabled = false; $('.save-state').textContent = 'Practice shoot not saved'; return; }
     toast('Saved.');
     await load();
   }
@@ -657,6 +697,22 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
   });
 
   form.addEventListener('input', markDirty);
+  $('.day-card').addEventListener('input', markDirty);
+  // Tony's own files, into the shared pool their portal shows.
+  $<HTMLInputElement>('.up-btn input').addEventListener('change', async (e) => {
+    const input = e.target as HTMLInputElement;
+    const files = [...(input.files ?? [])];
+    let added = 0;
+    for (const f of files) {
+      if (f.size > 10 * 1024 * 1024) { toast(`“${f.name}” is over 10 MB.`, true); continue; }
+      const fd = new FormData(); fd.append('job_id', String(id)); fd.append('file', f);
+      const r = await fetch('/api/studio/crm/portal', { method: 'POST', body: fd });
+      if (!r.ok) { toast((await r.json().catch(() => ({}))).error || `“${f.name}” didn’t upload.`, true); continue; }
+      added++;
+    }
+    input.value = '';
+    if (added) { toast(added === 1 ? 'Added. It’s in their portal too.' : `${added} files added. They’re in their portal too.`); await loadPortal(); }
+  });
   saveBtn.addEventListener('click', () => save());
   guardLeaving(() => dirty);
 
@@ -689,7 +745,7 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
     const gr = t.closest<HTMLButtonElement>('[data-gallery-remove]');
     if (gr) { if (await ask('Remove this gallery from their portal?')) await portalPost({ action: 'gallery-remove', id: Number(gr.dataset.galleryRemove) }); return; }
     const ur = t.closest<HTMLButtonElement>('[data-upload-remove]');
-    if (ur) { if (await ask('Delete this file they uploaded?')) await portalPost({ action: 'upload-remove', id: Number(ur.dataset.uploadRemove) }); return; }
+    if (ur) { if (await ask('Delete this file? It goes from their portal too.')) await portalPost({ action: 'upload-remove', id: Number(ur.dataset.uploadRemove) }); return; }
     const ql = t.closest<HTMLButtonElement>('[data-q-link]');
     if (ql) { await navigator.clipboard.writeText(location.origin.replace(/localhost:\d+/, 'www.momentsinlight.co.nz') + ql.dataset.qLink); toast('Link copied. Paste it into an email to them.'); return; }
     if (t.closest('[data-q-close]')) { $<HTMLDialogElement>('dialog.q-view').close(); return; }
@@ -938,7 +994,12 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
   .job-page .empty { color: #888; }
   .job-page .message { margin: 0; white-space: pre-wrap; line-height: 1.7; color: #333; }
   .job-page .message[data-when]::after { content: attr(data-when); display: block; margin-top: 10px; font-size: 13px; color: #888; }
-  .job-page .details { display: flex; flex-direction: column; gap: 12px; align-self: start; }
+  .job-page .side { display: flex; flex-direction: column; gap: 20px; align-self: start; min-width: 0; }
+  .job-page .details { display: flex; flex-direction: column; gap: 12px; }
+  .job-page .day-card .practice { display: flex; flex-direction: column; gap: 12px; margin-top: 6px; padding-top: 14px; border-top: 1px solid #eee5d8; }
+  .job-page .day-card .sub, .job-page .sub-head .sub { margin: 0; }
+  .job-page .sub-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
+  .job-page .up-btn { cursor: pointer; }
   .job-page .details label { display: flex; flex-direction: column; gap: 5px; font-size: 13px; font-weight: 600; color: #555; }
   .job-page .details label.tick { display: block; font-weight: 400; color: #333; line-height: 1.5; }
   .job-page .details label.tick input { margin: 0 8px 0 0; vertical-align: -2px; }
@@ -983,5 +1044,5 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
   .review-preview iframe { width: 100%; height: 520px; border: 1px solid #ece4d7; border-radius: 10px 0; background: #f6f1ea; }
   .review-actions { display: flex; justify-content: flex-end; gap: 8px; }
   @media (min-width: 900px) { .review-cols { grid-template-columns: 1fr 1fr; } }
-  @media (min-width: 900px) { .job-page .cols { grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); } .job-page .details { position: sticky; top: 80px; } }
+  @media (min-width: 900px) { .job-page .cols { grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); } .job-page .side { position: sticky; top: 80px; } }
 </style>

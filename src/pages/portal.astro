@@ -108,7 +108,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     // Files: from Tony, and theirs.
     $('.p-files').innerHTML = [
       ...d.documents.map((x: any) => `<li><span class="what"><a href="/api/portal?t=${T}&doc=${x.id}" target="_blank" rel="noopener">${esc(x.name)}</a><small>From Tony · ${size(x.size)}</small></span></li>`),
-      ...d.uploads.map((u: any) => `<li><span class="what"><a href="/api/portal?t=${T}&upload=${u.id}" target="_blank" rel="noopener">${esc(u.name)}</a><small>${u.questionnaire_id ? 'From your questionnaire' : 'You added this'} · ${size(u.size)}</small></span>${u.questionnaire_id ? '' : `<button type="button" class="p-remove" data-remove="${u.id}">Remove</button>`}</li>`),
+      ...d.uploads.map((u: any) => `<li><span class="what"><a href="/api/portal?t=${T}&upload=${u.id}" target="_blank" rel="noopener">${esc(u.name)}</a><small>${u.from_studio ? 'From Tony' : u.questionnaire_id ? 'From your questionnaire' : 'You added this'} · ${size(u.size)}</small></span>${u.questionnaire_id || u.from_studio ? '' : `<button type="button" class="p-remove" data-remove="${u.id}">Remove</button>`}</li>`),
     ].join('') || '<li class="empty">No files yet.</li>';
 
     // Galleries.
