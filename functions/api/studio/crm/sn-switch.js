@@ -9,6 +9,7 @@
 import { json } from '../../../../functions-lib/studio.js';
 import { loadWorkflow, dueFor, planSteps } from '../../../../functions-lib/workflows.js';
 import { xero, xeroConnection, settledShare } from '../../../../functions-lib/xero.js';
+import { syncGroup } from '../../../../functions-lib/invoices.js';
 
 // Studio Ninja sent its invoices to Xero too: one Xero invoice for the whole booking, paid in parts,
 // where the studio has an invoice per instalment. Each imported unpaid instalment is linked to that
@@ -113,6 +114,8 @@ export async function onRequestPost({ request, env }) {
         await db.prepare(`UPDATE invoices SET xero_invoice_id = ?2, xero_payment_id = 'xero', status = 'paid', paid_at = ?3, paid_method = 'bank', paid_note = 'Paid in Xero before the switch from Studio Ninja' WHERE id = ?1`).bind(inv.id, x.id, now0).run();
       } else await db.prepare('UPDATE invoices SET xero_invoice_id = ?2 WHERE id = ?1').bind(inv.id, x.id).run();
     }
+    // A Studio Ninja invoice is paid once all its payments are.
+    for (const p of new Set((await db.prepare('SELECT DISTINCT parent_id FROM invoices WHERE parent_id IS NOT NULL').all()).results.map((r) => r.parent_id))) await syncGroup(db, p);
   }
   // The wedding workflow's steps still ahead (planSteps skips any whose time has passed).
   let planned = 0;
