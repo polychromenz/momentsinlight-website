@@ -124,8 +124,8 @@ function thumb(i: any) {
   if (i.status !== 'ready') return `<div class="th wait" data-id="${i.id}" draggable="true">not finished</div>`;
   return `<div class="th${i.is_hero ? ' hero' : ''}${i.hidden ? ' hid' : ''}${selected.has(i.id) ? ' sel' : ''}" data-id="${i.id}" draggable="true" style="width:${w}px;height:${thumbH}px" title="${esc(i.filename)}">
     <img src="${esc(i.thumb)}" alt="" loading="lazy" />
-    <span class="marks">${i.is_hero ? '<span class="hero-mark">★</span>' : ''}${cover ? '<span>Cover</span>' : ''}${i.hidden ? '<span>Hidden</span>' : ''}${d.picks?.[i.id] ? `<span class="ad-mark" title="${d.picks[i.id] === 'added' ? 'In Google Ads' : 'Picked for Google Ads'}">Ad</span>` : ''}${d.social?.includes(i.id) ? '<span class="so-mark" title="Marked for social media posts">Social</span>' : ''}</span>
-    <span class="tools"><button type="button" class="star" data-t="hero" title="${i.is_hero ? 'Not a highlight' : 'Highlight (a row of its own)'}">${i.is_hero ? '☆' : '★'}</button><button type="button" data-t="cover" title="Use as the cover">◎</button><button type="button" data-t="hide" title="${i.hidden ? 'Show' : 'Hide'}">${i.hidden ? '◉' : '⊘'}</button><button type="button" class="ad-t" data-t="ad" title="${d.ads_blocked ? esc(d.ads_blocked) : d.picks?.[i.id] ? 'Not for Google Ads' : 'Use in Google Ads (only you see this)'}"${d.ads_blocked && !d.picks?.[i.id] ? ' disabled' : ''}>Ad</button><button type="button" class="so-t" data-t="social" title="${d.ads_blocked ? esc(d.ads_blocked.replace('no ads', 'no marketing')) : d.social?.includes(i.id) ? 'Not for social media' : 'Use in social media posts (only you see this)'}"${d.ads_blocked && !d.social?.includes(i.id) ? ' disabled' : ''}>S</button></span></div>`;
+    <span class="marks">${i.is_hero ? '<span class="hero-mark">★</span>' : ''}${cover ? '<span>Cover</span>' : ''}${i.hidden ? '<span>Hidden</span>' : ''}${d.picks?.[i.id] ? `<span class="ad-mark" title="${d.picks[i.id] === 'added' ? 'In Google Ads' : 'Picked for Google Ads'}">Ad</span>` : ''}${d.social?.includes(i.id) ? '<span class="so-mark" title="Marked for social media posts">Social</span>' : ''}${d.blog?.includes(i.id) ? '<span class="so-mark bl-mark" title="Marked for blog posts">Blog</span>' : ''}</span>
+    <span class="tools"><button type="button" class="star" data-t="hero" title="${i.is_hero ? 'Not a highlight' : 'Highlight (a row of its own)'}">${i.is_hero ? '☆' : '★'}</button><button type="button" data-t="cover" title="Use as the cover">◎</button><button type="button" data-t="hide" title="${i.hidden ? 'Show' : 'Hide'}">${i.hidden ? '◉' : '⊘'}</button><button type="button" class="ad-t" data-t="ad" title="${d.ads_blocked ? esc(d.ads_blocked) : d.picks?.[i.id] ? 'Not for Google Ads' : 'Use in Google Ads (only you see this)'}"${d.ads_blocked && !d.picks?.[i.id] ? ' disabled' : ''}>Ad</button><button type="button" class="so-t" data-t="social" title="${d.ads_blocked ? esc(d.ads_blocked.replace('no ads', 'no marketing')) : d.social?.includes(i.id) ? 'Not for social media' : 'Use in social media posts (only you see this)'}"${d.ads_blocked && !d.social?.includes(i.id) ? ' disabled' : ''}>S</button><button type="button" class="so-t bl-t" data-t="blog" title="${d.blog?.includes(i.id) ? 'Not for the blog' : 'Use in a blog post (only you see this)'}">B</button></span></div>`;
 }
 function drawPhotos() {
   const secs = sorted();
@@ -404,6 +404,11 @@ document.addEventListener('click', async (e) => {
       if (r) { d.social = r.marked; drawPhotos(); toast(r.on ? 'Marked for social media. Drafts use it on the Social page.' : 'Not for social media.'); }
       return;
     }
+    if (tool.dataset.t === 'blog') {
+      const r = await tryApi('/api/studio/blog-photos', 'POST', { action: 'mark', gallery_id: id, image_ids: [iid] });
+      if (r) { d.blog = r.marked; drawPhotos(); toast(r.on ? 'Marked for the blog. In a post, use “From a gallery” to add it.' : 'Not for the blog.'); }
+      return;
+    }
     if (tool.dataset.t === 'cover' && (await tryApi('/api/studio/galleries/gallery', 'PUT', { id, cover_image_id: iid }))) { d.gallery.cover_image_id = iid; drawPhotos(); toast('Cover chosen.'); }
     return;
   }
@@ -443,6 +448,11 @@ document.addEventListener('click', async (e) => {
       const have = vendors.find((l: any) => l.name.toLowerCase() === name.trim().toLowerCase());
       const r = await tryApi('/api/studio/galleries/links', 'POST', { action: 'vendor', gallery_id: id, link_id: have?.id, name: name.trim(), image_ids: ids });
       if (r) { selected.clear(); drawPhotos(); toast(`${r.name}’s vendor link now has ${r.photos} photo${r.photos === 1 ? '' : 's'}. Copy it from the Sharing tab.`); }
+      return;
+    }
+    if (k === 'blog' || k === 'unblog') {
+      const r = await tryApi('/api/studio/blog-photos', 'POST', { action: 'mark', gallery_id: id, image_ids: ids, on: k === 'blog' });
+      if (r) { d.blog = r.marked; selected.clear(); drawPhotos(); toast(k === 'blog' ? `${ids.length} photo${ids.length === 1 ? '' : 's'} marked for the blog (${r.marked.length} in this gallery).` : 'Unmarked.'); }
       return;
     }
     if (k === 'social' || k === 'unsocial') {

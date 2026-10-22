@@ -414,6 +414,99 @@ async function addFiles(files: File[]) {
   toast(failed ? `${images.length - failed} uploaded, ${failed} didn’t. Try those again.` : `${images.length} photo${images.length === 1 ? '' : 's'} uploaded. Remember to save.`, !!failed);
 }
 
+// ---- Photos from a studio gallery (functions/api/studio/blog-photos.js) ----
+// Opens the couple's gallery (Blog-marked photos first); ticked photos are copied server side
+// into Cloudflare Images like an upload, added to the post, and given descriptions.
+{
+  const dlg = $<HTMLDialogElement>('dialog.gp');
+  const sel = dlg.querySelector<HTMLSelectElement>('.gp-gallery')!;
+  const only = dlg.querySelector<HTMLInputElement>('.gp-only input')!;
+  const grid2 = dlg.querySelector<HTMLElement>('.gp-grid')!;
+  type GP = { id: string; thumb: string; w: number; h: number; section: string; blog: boolean };
+  let photos: GP[] = [];
+  const picked = new Set<string>();
+  const count = () => { dlg.querySelector('.gp-count')!.textContent = picked.size ? `${picked.size} ticked` : ''; dlg.querySelector<HTMLButtonElement>('[data-gp="add"]')!.textContent = picked.size ? `Add ${picked.size} photo${picked.size === 1 ? '' : 's'}` : 'Add photos'; };
+  const shown = () => (only.checked ? photos.filter((p) => p.blog) : photos);
+  const draw = () => {
+    const list = shown();
+    const note = dlg.querySelector('.gp-note')!;
+    note.textContent = !photos.length ? '' : only.checked && !list.length ? 'No photos in this gallery are marked for the blog yet. Untick “Blog-marked only” to see them all, or mark some with B on the gallery’s Photos tab.' : `${list.length} photo${list.length === 1 ? '' : 's'}. Click to tick; ticked ones are copied into this post.`;
+    let last = '';
+    grid2.innerHTML = list.map((p) => {
+      const head = p.section !== last ? `<p class="gp-sec">${esc(p.section || 'Photos')}</p>` : '';
+      last = p.section;
+      return `${head}<button type="button" class="gp-ph${picked.has(p.id) ? ' on' : ''}" data-gp-id="${p.id}"><img src="${p.thumb}" alt="" loading="lazy" />${p.blog ? '<span class="gp-b">Blog</span>' : ''}</button>`;
+    }).join('');
+    count();
+  };
+  const loadGallery = async () => {
+    picked.clear();
+    grid2.innerHTML = '<p class="gp-sec">Loading…</p>';
+    const d = await api(`/api/studio/blog-photos?gallery=${encodeURIComponent(sel.value)}`);
+    photos = d.photos;
+    if (only.checked && !photos.some((p) => p.blog)) only.checked = false;
+    draw();
+  };
+  $('[data-act="from-gallery"]').addEventListener('click', async () => {
+    try {
+      const d = await api('/api/studio/blog-photos');
+      if (!d.galleries.length) { toast('There are no studio galleries with photos yet.', true); return; }
+      // The couple's gallery if the post's title names them (e.g. "Josh & Paul | …" → "Josh and Paul").
+      const who = names().toLowerCase().replace(/[^a-z ]+/g, ' ').split(/\s+/).filter((w) => w.length > 2 && w !== 'and');
+      const best = d.galleries.find((g: any) => who.length && who.every((w) => g.name.toLowerCase().includes(w))) ?? d.galleries.find((g: any) => who.some((w) => g.name.toLowerCase().includes(w)));
+      sel.innerHTML = d.galleries.map((g: any) => `<option value="${g.id}">${esc(g.name)}${g.event_date ? ` · ${g.event_date}` : ''} (${g.photos}${g.blog ? `, ${g.blog} for blog` : ''})</option>`).join('');
+      if (best) sel.value = best.id;
+      only.checked = true;
+      dlg.showModal();
+      await loadGallery();
+    } catch (err) { toast(esc((err as Error).message), true); }
+  });
+  sel.addEventListener('change', () => loadGallery().catch((err) => toast(esc(err.message), true)));
+  only.addEventListener('change', draw);
+  grid2.addEventListener('click', (e) => {
+    const b = (e.target as HTMLElement).closest<HTMLElement>('[data-gp-id]');
+    if (!b) return;
+    const id = b.dataset.gpId!;
+    if (picked.has(id)) picked.delete(id); else picked.add(id);
+    b.classList.toggle('on', picked.has(id));
+    count();
+  });
+  dlg.addEventListener('click', async (e) => {
+    const act = (e.target as HTMLElement).closest<HTMLElement>('[data-gp]')?.dataset.gp;
+    if (act === 'close') dlg.close();
+    if (act === 'all') { shown().forEach((p) => picked.add(p.id)); draw(); }
+    if (act !== 'add' || !picked.size) return;
+    // In the gallery's order, so the post reads like the day.
+    const ids = photos.filter((p) => picked.has(p.id)).map((p) => p.id);
+    const gid = sel.value;
+    const folder = `${(field<HTMLInputElement>('date').value || today()).slice(0, 4)}-${field<HTMLInputElement>('slug').value || slugify(titleEl.value) || 'new-post'}`;
+    dlg.close();
+    const added: Tile[] = [];
+    let failed = 0;
+    toast(`Copying ${ids.length} photo${ids.length === 1 ? '' : 's'} from the gallery…`, false, 600000);
+    for (let n = 0; n < ids.length; n += 3) {
+      try {
+        const r = await api('/api/studio/blog-photos', { method: 'POST', body: JSON.stringify({ action: 'copy', gallery_id: gid, image_ids: ids.slice(n, n + 3), folder }) });
+        for (const p of r.photos) {
+          if (p.error) { failed++; continue; }
+          const t: Tile = { key: `g${keySeq++}`, src: p.src, alt: '', width: p.width, height: p.height };
+          tiles.push(t); added.push(t);
+        }
+      } catch { failed += Math.min(3, ids.length - n); }
+      syncGallery(); renderPhotos(); renderCover(); markDirty();
+      toast(`Copied ${added.length} of ${ids.length}…`, false, 600000);
+    }
+    if (!added.length) { toast('Those photos didn’t copy. Try again.', true); return; }
+    // Descriptions for Google and screen readers, as for uploads.
+    toast(`${added.length} photo${added.length === 1 ? '' : 's'} added${failed ? ` (${failed} didn’t copy)` : ''}. Writing descriptions…`, !!failed, 120000);
+    for (const t of added) {
+      const ta = grid.querySelector<HTMLTextAreaElement>(`li[data-key="${t.key}"] textarea`);
+      if (ta) await suggestAlt(t, ta);
+    }
+    toast(`${added.length} photo${added.length === 1 ? '' : 's'} added from the gallery${failed ? `, ${failed} didn’t copy` : ''}. Have a quick read of the descriptions, then save.`, !!failed);
+  });
+}
+
 // Collect files from a drop, including whole folders.
 async function filesFromDrop(dt: DataTransfer): Promise<File[]> {
   const entries = [...dt.items].map((i) => i.webkitGetAsEntry?.()).filter(Boolean) as FileSystemEntry[];
