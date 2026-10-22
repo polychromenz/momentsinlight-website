@@ -109,7 +109,21 @@ export async function onRequestPost({ request, env }) {
       });
     } catch (e) { return json({ error: e.message }, 400); }
   }
-  const file =Array.isArray(d?.file) ? d.file.filter((f) => typeof f?.id === 'string' && /^\d{4}-\d{2}$/.test(f.month ?? '')) : [];
+  // A cost Tony paid himself: Dr the expense (GST inclusive), Cr 504 Shareholder Current Account,
+  // as a draft manual journal for him to check and post in Xero.
+  if (d?.action === 'journal') {
+    const date = day(d.date);
+    const lines = (Array.isArray(d.lines) ? d.lines : []).filter((l) => /^\d{3}$/.test(l.code ?? '') && Number.isInteger(l.amount) && l.amount);
+    if (!date || !lines.length || lines.reduce((a, l) => a + l.amount, 0) !== 0) return json({ error: 'A journal needs a date and lines that add up to zero.' }, 400);
+    try {
+      const r = await xero(env, 'PUT', '/ManualJournals', { ManualJournals: [{
+        Narration: String(d.narration ?? '').slice(0, 500), Date: date, Status: 'DRAFT', LineAmountTypes: 'Inclusive',
+        JournalLines: lines.map((l) => ({ AccountCode: l.code, TaxType: l.tax || 'NONE', LineAmount: l.amount / 100, Description: String(l.desc ?? '').slice(0, 200) })),
+      }] });
+      return json({ ok: true, id: r.ManualJournals?.[0]?.ManualJournalID ?? null });
+    } catch (e) { return json({ error: e.message }, 400); }
+  }
+  const file = Array.isArray(d?.file) ? d.file.filter((f) => typeof f?.id === 'string' && /^\d{4}-\d{2}$/.test(f.month ?? '')) : [];
   if (!file.length) return json({ error: 'Nothing to file.' }, 400);
   const c = await connection(env.DB);
   if (!/gmail\.modify/.test(c?.scopes ?? '')) return json({ error: 'The studio can only read your Gmail. Reconnect Google (Clients page) and allow it to manage your email labels, then try again.' }, 400);
