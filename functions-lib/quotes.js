@@ -13,10 +13,11 @@ const addDays = (date, n) => { const d = new Date(`${date}T12:00:00Z`); d.setUTC
 const addMonths = (date, n) => { const d = new Date(`${date}T12:00:00Z`); d.setUTCMonth(d.getUTCMonth() + n); return d.toISOString().slice(0, 10); };
 export const longDate = (date) => (date ? new Date(`${date}T12:00:00Z`).toLocaleDateString('en-NZ', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }) : '');
 
-/** Total for a chosen package and extras, less any discount (never below zero). */
+/** Total for a chosen package and extras, less any discount (never below zero). A quote with no
+ *  packages (e.g. prints sold later) is just its products: at least one must be chosen. */
 export function totalFor(quote, pkgIndex, extraIndexes = []) {
-  const pkg = quote.packages[pkgIndex];
-  if (!pkg) return null;
+  const pkg = quote.packages.length ? quote.packages[pkgIndex] : { price: 0 };
+  if (!pkg || (!quote.packages.length && !extraIndexes.length)) return null;
   const extras = extraIndexes.map((i) => quote.extras[i]?.price ?? 0).reduce((a, b) => a + b, 0);
   return Math.max(0, pkg.price + extras - (quote.discount || 0));
 }
@@ -47,6 +48,9 @@ export function payments(parts, total, eventDate, acceptDate = nzToday()) {
 /** A package or product's picture: a Cloudflare Images address (uploaded through /api/studio/upload), else ''. */
 export const imageUrl = (v) => (/^https:\/\/imagedelivery\.net\/[\w-]+\/[\w/.-]+$/.test(String(v ?? '')) ? String(v) : '');
 
+/** Quotes set to "No contract" (e.g. prints): accepting sends the invoice straight away. */
+export const NO_CONTRACT = 'none';
+
 /** A quote row from the database with its JSON fields parsed. */
 export const parseQuote = (row) => row && ({
   ...row,
@@ -74,7 +78,9 @@ export function quoteText(text, q, job) {
  *  ready" email): each package's total and its payments with dates (if accepted today). */
 export function planHtml(q, job) {
   const td = 'padding:7px 0;border-bottom:1px solid #f1ebe1;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#333;';
-  return q.packages.map((p) => {
+  // No packages (just products): one plan for everything on the quote.
+  const options = q.packages.length ? q.packages : [{ name: 'Everything on this quote', price: q.extras.reduce((a, x) => a + x.price, 0) }];
+  return options.map((p) => {
     const total = Math.max(0, p.price - (q.discount || 0));
     const rows = payments(q.schedule, total, job.event_date).map((x) =>
       `<tr><td style="${td}">${esc(x.label)} (${x.percent}%)</td><td style="${td}text-align:right;">${money(x.amount)}</td><td style="${td}text-align:right;color:#777;padding-left:12px;">${x.passed ? 'on acceptance (the usual date has passed)' : x.onAccept ? 'on acceptance' : `by ${longDate(x.due)}`}</td></tr>`).join('');
@@ -96,6 +102,7 @@ export function publicQuote(q, job) {
     event_date: job.event_date, event_date_long: longDate(job.event_date), venue: job.venue,
     intro: quoteText(q.intro, q, job), packages: q.packages.map((p) => ({ ...p, description: clean(toHtml(p.description)) })), extras: q.extras, discount: q.discount, discount_label: q.discount_label,
     schedule: q.schedule, notes: quoteText(q.notes, q, job), valid_until: q.valid_until, valid_until_long: longDate(q.valid_until),
+    contract: q.contract_key !== NO_CONTRACT,
     chosen_package: q.chosen_package, chosen_extras: q.chosen_extras, total: q.total, accepted_name: q.accepted_name, accepted_at: q.accepted_at,
     today: nzToday(),
   };

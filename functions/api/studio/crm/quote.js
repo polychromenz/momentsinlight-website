@@ -37,12 +37,13 @@ export async function onRequestGet({ request, env }) {
   const contractTemplates = await env.DB.prepare('SELECT key, name FROM contract_templates ORDER BY name').all();
   const contracts = await env.DB.prepare('SELECT id, name, status, sent_at, viewed_at, signed_name, signed_at FROM contracts WHERE quote_id = ?1 ORDER BY id DESC').bind(q.id).all();
   // An example of the payments, for the package marked recommended (or the first).
+  // (No packages: all of its products.)
   const pick = Math.max(0, q.packages.findIndex((p) => p.recommended));
-  const total = q.status === 'accepted' ? q.total : totalFor(q, pick, []);
+  const total = q.status === 'accepted' ? q.total : totalFor(q, pick, q.packages.length ? [] : q.extras.map((x, i) => i));
   return json({
     quote: q,
     job: { id: job.id, title: job.title, first_name: job.first_name, partner_name: job.partner_name, email: job.email, event_date: job.event_date, venue: job.venue },
-    example: total === null ? null : { package: q.packages[pick]?.name, total, payments: payments(q.schedule, total, job.event_date, q.accepted_at?.slice(0, 10)) },
+    example: total === null ? null : { package: q.packages[pick]?.name ?? 'Everything on the quote', total, payments: payments(q.schedule, total, job.event_date, q.accepted_at?.slice(0, 10)) },
     schedules: schedules.results.map((s) => ({ ...s, parts: JSON.parse(s.parts) })),
     link: `https://www.momentsinlight.co.nz/quote?t=${q.token}`,
     contractTemplates: contractTemplates.results,
@@ -59,7 +60,7 @@ export async function onRequestPut({ request, env }) {
   const cents = (v) => Math.max(0, Math.round(Number(v) || 0));
   const packages = Array.isArray(d.packages) ? d.packages.map((p) => ({ name: text(p.name, 120), subtitle: text(p.subtitle, 120), price: cents(p.price), description: text(p.description, 10000), recommended: !!p.recommended, image: imageUrl(p.image) })).filter((p) => p.name) : q.packages;
   const extras = Array.isArray(d.extras) ? d.extras.map((x) => ({ name: text(x.name, 120), price: cents(x.price), description: text(x.description, 2000), image: imageUrl(x.image) })).filter((x) => x.name) : q.extras;
-  if (!packages.length) return json({ error: 'A quote needs at least one package.' }, 400);
+  if (!packages.length && !extras.length) return json({ error: 'A quote needs at least one package or product.' }, 400);
   let schedule = q.schedule;
   if (d.schedule_key) {
     const s = await env.DB.prepare('SELECT parts FROM payment_schedules WHERE key = ?1').bind(d.schedule_key).first();

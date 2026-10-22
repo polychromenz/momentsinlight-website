@@ -40,10 +40,13 @@ export async function nextNumber(db, year) {
   return `MIL-${year}-${String(n).padStart(4, '0')}`;
 }
 
-/** One invoice per payment in the accepted quote's schedule. Returns the invoices made. */
+/** One invoice per payment in the accepted quote's schedule. Returns the invoices made.
+ *  contract: the signed contract, or { id: null, quote_id, job_id } for a quote with no contract. */
 export async function createInvoices(env, contract) {
   const db = env.DB;
-  const existing = await db.prepare(`SELECT count(*) n FROM invoices WHERE contract_id = ?1`).bind(contract.id).first();
+  const existing = contract.id
+    ? await db.prepare(`SELECT count(*) n FROM invoices WHERE contract_id = ?1`).bind(contract.id).first()
+    : await db.prepare(`SELECT count(*) n FROM invoices WHERE quote_id = ?1 AND status <> 'void'`).bind(contract.quote_id).first();
   if (existing.n) return [];
   const q = parseQuote(await db.prepare('SELECT * FROM quotes WHERE id = ?1').bind(contract.quote_id).first());
   const job = await loadJob(db, contract.job_id);

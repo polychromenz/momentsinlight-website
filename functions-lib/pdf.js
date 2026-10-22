@@ -231,7 +231,8 @@ export async function quotePdf(q, job, number) {
   d.rule(20);
   const pick = accepted ? q.chosen_package : Math.max(0, q.packages.findIndex((p) => p.recommended));
   const pkg = q.packages[pick];
-  const extras = (accepted ? q.chosen_extras : []).map((i) => q.extras[i]).filter(Boolean);
+  // Before it's accepted, a quote with no packages (just products) shows all of them.
+  const extras = (accepted ? q.chosen_extras : pkg ? [] : q.extras.map((x, i) => i)).map((i) => q.extras[i]).filter(Boolean);
   if (pkg) {
     d.label(accepted ? 'Your package' : 'Package');
     await d.beside(pkg.image, () => {
@@ -242,7 +243,7 @@ export async function quotePdf(q, job, number) {
   // Chosen extras with a picture or a description: shown like the package.
   const shown = extras.filter((x) => x.image || x.description);
   if (shown.length) {
-    d.label('Extras');
+    d.label(pkg ? 'Extras' : accepted ? 'Your order' : 'Items');
     for (const x of shown) await d.beside(x.image, () => {
       d.write([{ text: x.name, weight: 'medium' }], { size: 11.5, gap: 2, color: INK });
       if (x.description) d.write([{ text: x.description }], { size: 9.5, color: GREY, gap: 8 });
@@ -252,7 +253,7 @@ export async function quotePdf(q, job, number) {
   const subtotal = (pkg?.price ?? 0) + extras.reduce((a, x) => a + x.price, 0);
   const total = accepted ? q.total : Math.max(0, subtotal - (q.discount || 0));
   d.rows([
-    [pkg ? pkg.name : 'Package', money(pkg?.price ?? 0)],
+    ...(pkg ? [[pkg.name, money(pkg.price)]] : []),
     ...extras.map((x) => [x.name, money(x.price)]),
     ...(q.discount ? [[q.discount_label || 'Discount', `-${money(q.discount)}`]] : []),
   ]);

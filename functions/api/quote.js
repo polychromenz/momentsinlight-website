@@ -5,8 +5,10 @@
 // Accepting records their name, the time and their IP address, saves their postal address (and
 // phone, if given) to their client record, marks the lead booked (which
 // stops the enquiry follow-ups), then automatically emails the contract to sign with a PDF of the
-// accepted quote (if that can't be sent, Tony gets a to-do instead), and alerts Tony.
-import { parseQuote, publicQuote, totalFor, payments, money, longDate } from '../../functions-lib/quotes.js';
+// accepted quote (if that can't be sent, Tony gets a to-do instead), and alerts Tony. A quote set
+// to "No contract" (e.g. prints) makes its invoices and sends the first straight away instead.
+import { parseQuote, publicQuote, totalFor, payments, money, longDate, NO_CONTRACT } from '../../functions-lib/quotes.js';
+import { createInvoices, sendInvoice } from '../../functions-lib/invoices.js';
 import { loadJob } from '../../functions-lib/crm-send.js';
 import { alertTony } from '../../functions-lib/crm.js';
 import { quotePdf } from '../../functions-lib/pdf.js';
@@ -28,13 +30,18 @@ export async function onRequestGet({ request, env }) {
   if (!url.searchParams.has('preview') && !q.viewed_at) {
     await env.DB.prepare('UPDATE quotes SET viewed_at = ?2 WHERE id = ?1 AND viewed_at IS NULL').bind(q.id, new Date().toISOString()).run();
   }
-  // One-step booking: once accepted, the contract to sign next (while it's unsigned).
-  let sign_link = null;
+  // One-step booking: once accepted, the contract to sign next (while it's unsigned), or with no
+  // contract, the first invoice to pay (while it's unpaid).
+  let sign_link = null; let pay_link = null;
   if (q.status === 'accepted' && !url.searchParams.has('preview')) {
     const c = await env.DB.prepare(`SELECT token FROM contracts WHERE quote_id = ?1 AND status = 'sent' ORDER BY id DESC LIMIT 1`).bind(q.id).first();
     if (c) sign_link = `/contract?t=${c.token}`;
+    if (q.contract_key === NO_CONTRACT) {
+      const inv = await env.DB.prepare(`SELECT token FROM invoices WHERE quote_id = ?1 AND contract_id IS NULL AND status IN ('sent', 'scheduled') AND send_at <= ?2 ORDER BY due_date, id LIMIT 1`).bind(q.id, new Date().toISOString()).first();
+      if (inv) pay_link = `/invoice?t=${inv.token}`;
+    }
   }
-  return reply({ ...publicQuote(q, job), sign_link });
+  return reply({ ...publicQuote(q, job), sign_link, pay_link });
 }
 
 export async function onRequestPost({ request, env }) {
@@ -45,11 +52,11 @@ export async function onRequestPost({ request, env }) {
   const view = publicQuote(q, job);
   if (view.status === 'accepted') return reply({ error: 'You’ve already accepted this quote. Thank you!' }, 409);
   if (view.status === 'expired') return reply({ error: 'This quote has expired. Please get in touch with Tony for an updated one.' }, 409);
-  const pkg = Number(d.package);
+  const pkg = q.packages.length ? Number(d.package) : null; // no packages: just products
   const extras = Array.isArray(d.extras) ? [...new Set(d.extras.map(Number).filter((i) => Number.isInteger(i) && q.extras[i]))] : [];
   const name = (d.name ?? '').toString().trim().slice(0, 120);
   const total = totalFor(q, pkg, extras);
-  if (total === null) return reply({ error: 'Please choose a package.' }, 400);
+  if (total === null) return reply({ error: q.packages.length ? 'Please choose a package.' : 'Please tick what you’d like.' }, 400);
   if (name.length < 2) return reply({ error: 'Please type your full name to accept.' }, 400);
   const address = (d.address ?? '').toString().replace(/\r\n/g, '\n').replace(/[\u0000-\u0009\u000b-\u001f]/g, ' ').trim().slice(0, 300);
   const phone = (d.phone ?? '').toString().replace(/[^\d +()-]/g, '').trim().slice(0, 40);
@@ -72,7 +79,18 @@ export async function onRequestPost({ request, env }) {
   await planBooking(env.DB, await env.DB.prepare('SELECT * FROM jobs WHERE id = ?1').bind(job.id).first()).catch((e) => console.error('quote accept: planning', e));
   // The contract, sent automatically with the quote as a PDF.
   let next = 'Contract sent to sign, with the quote attached as a PDF.';
-  try {
+  if (q.contract_key === NO_CONTRACT) try {
+    // No contract: the invoices now (one per payment), the first one emailed straight away.
+    const made = await createInvoices(env, { id: null, quote_id: q.id, job_id: job.id });
+    const first = made.find((i) => i.send_at <= new Date().toISOString());
+    if (first) { const s = await sendInvoice(env, first, 'invoice'); next = `No contract. Invoice ${first.number} (${money(first.amount)}) sent${s.redirected ? ` (test mode: to ${s.to})` : ''}${made.length > 1 ? `; ${made.length - 1} more scheduled` : ''}.`; }
+    else next = `No contract. ${made.length} invoices scheduled.`;
+  } catch (e) {
+    console.error('quote accept: invoices', e);
+    next = `The invoice couldn’t be sent automatically (${e.message}). It’s on your Today list.`;
+    await env.DB.prepare(`INSERT OR IGNORE INTO steps (job_id, step_key, kind, title, due_at, note, created_at) VALUES (?1, ?2, 'todo', 'Send the invoice (quote accepted, no contract)', ?3, ?4, ?3)`).bind(job.id, `quote-invoice-${q.id}`, at, String(e.message).slice(0, 300)).run();
+  }
+  else try {
     const fresh = await loadJob(env.DB, job.id);
     const qRow = await env.DB.prepare('SELECT * FROM quotes WHERE id = ?1').bind(q.id).first();
     const contract = await makeContract(env, qRow, fresh);
@@ -86,7 +104,7 @@ export async function onRequestPost({ request, env }) {
   const chosen = q.packages[pkg];
   const plan = payments(q.schedule, total, job.event_date, new Date(at).toLocaleDateString('en-CA', { timeZone: 'Pacific/Auckland' }));
   await alertTony(env, `Quote accepted: ${view.names}`, [
-    ['Package', `${chosen.name}${chosen.subtitle ? ` (${chosen.subtitle})` : ''}`],
+    ['Package', chosen ? `${chosen.name}${chosen.subtitle ? ` (${chosen.subtitle})` : ''}` : ''],
     ['Extras', extras.map((i) => q.extras[i].name).join(', ')],
     ['Total', `${money(total)} incl. GST`],
     ['Payments', plan.map((p) => `${p.label}: ${money(p.amount)} ${p.onAccept ? 'now' : `by ${longDate(p.due)}`}`).join('\n')],

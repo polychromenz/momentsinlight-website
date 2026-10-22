@@ -2,7 +2,9 @@
 // A couple's private quote (/quote?t=…, the link in their "Quote ready" email), laid out like
 // Tony's Studio Ninja quotes: quote number and date, from and to, the packages to choose from,
 // extras, a summary (subtotal, GST, total), the payment schedule with dates, and notes. They
-// choose, type their name and accept; they can also save it as a PDF or print it.
+// choose, type their name and accept; they can also save it as a PDF or print it. A quote with no
+// packages (e.g. prints sold later) is a list of products to tick; one set to "No contract" sends
+// the invoice straight away instead of a contract.
 // Hidden from Google; the data comes from functions/api/quote.js (text already cleaned there).
 import BaseLayout from '../layouts/BaseLayout.astro';
 ---
@@ -25,7 +27,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
       <h2 class="q-section">Choose your package</h2>
       <section class="q-packages" aria-label="Packages"></section>
-      <section class="q-card q-extras" hidden><h2>Add extras</h2><div class="q-extras-list"></div></section>
+      <section class="q-card q-extras" hidden><h2 class="q-extras-h">Add extras</h2><div class="q-extras-list"></div></section>
 
       <section class="q-card q-summary">
         <h2>Quote summary</h2>
@@ -86,8 +88,12 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
   const addDays = (d: string, n: number) => { const x = new Date(`${d}T12:00:00Z`); x.setUTCDate(x.getUTCDate() + n); return x.toISOString().slice(0, 10); };
   const addMonths = (d: string, n: number) => { const x = new Date(`${d}T12:00:00Z`); x.setUTCMonth(x.getUTCMonth() + n); return x.toISOString().slice(0, 10); };
-  const subtotal = () => (chosen < 0 ? null : q.packages[chosen].price + [...extras].reduce((a, i) => a + q.extras[i].price, 0));
-  const total = () => { const s = subtotal(); return s === null ? null : Math.max(0, s - (q.discount || 0)); };
+  // No packages: just the products they tick (at least one).
+  const noPkg = () => !q.packages.length;
+  const subtotal = () => (noPkg() ? (extras.size ? 0 : null) : chosen < 0 ? null : q.packages[chosen].price) ?? null;
+  const fullSubtotal = () => { const s = subtotal(); return s === null ? null : s + [...extras].reduce((a, i) => a + q.extras[i].price, 0); };
+  const nextStep = () => (q.contract ? 'Next, I’ll send your contract to sign and your deposit invoice.' : 'Next, I’ll email your invoice.');
+  const total = () => { const s = fullSubtotal(); return s === null ? null : Math.max(0, s - (q.discount || 0)); };
 
   function update() {
     document.querySelectorAll<HTMLElement>('.pkg').forEach((el, i) => {
@@ -97,8 +103,9 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       b.textContent = i === chosen ? '✓ Chosen' : 'Choose this package';
     });
     const t = total();
-    const lines = chosen < 0 ? [] : [[q.packages[chosen].name + (q.packages[chosen].subtitle ? ` (${q.packages[chosen].subtitle})` : ''), q.packages[chosen].price], ...[...extras].map((i) => [q.extras[i].name, q.extras[i].price])];
-    $('.q-lines tbody').innerHTML = lines.length ? lines.map(([n, p]) => `<tr><td>${esc(n)}</td><td>${money(p as number)}</td></tr>`).join('') : '<tr><td>Choose a package above.</td><td></td></tr>';
+    const pkg = chosen < 0 ? null : q.packages[chosen];
+    const lines = t === null ? [] : [...(pkg ? [[pkg.name + (pkg.subtitle ? ` (${pkg.subtitle})` : ''), pkg.price]] : []), ...[...extras].map((i) => [q.extras[i].name, q.extras[i].price])];
+    $('.q-lines tbody').innerHTML = lines.length ? lines.map(([n, p]) => `<tr><td>${esc(n)}</td><td>${money(p as number)}</td></tr>`).join('') : `<tr><td>${noPkg() ? 'Tick what you’d like above.' : 'Choose a package above.'}</td><td></td></tr>`;
     $('.q-totals tbody').innerHTML = t === null ? '' : [
       ...(q.discount ? [[`${esc(q.discount_label || 'Discount')}`, `−${money(q.discount)}`]] : []),
       ['GST (15%, included)', money(Math.round((t * 3) / 23))],
@@ -106,7 +113,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     ].map(([a, b]) => `<tr><td>${a}</td><td>${b}</td></tr>`).join('');
     const from = q.accepted_at ? q.accepted_at.slice(0, 10) : q.today;
     let left = t ?? 0;
-    $('.q-plan tbody').innerHTML = t === null ? '<tr><td colspan="3">Choose a package to see your payments.</td></tr>' : q.schedule.map((p, i) => {
+    $('.q-plan tbody').innerHTML = t === null ? `<tr><td colspan="3">${noPkg() ? 'Tick what you’d like' : 'Choose a package'} to see your payments.</td></tr>` : q.schedule.map((p, i) => {
       const amount = i === q.schedule.length - 1 ? left : Math.round((t * p.percent) / 100);
       left -= amount;
       let due = from;
@@ -129,7 +136,9 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     const ph = $<HTMLInputElement>('.q-accept input[name="phone"]');
     ph.required = needPhone;
     ph.previousElementSibling!.hidden = needPhone;
-    $('.q-accept-intro').textContent = `Add your name, address${needPhone ? ' and phone number' : ''}, then click Accept. Next, I'll send your contract to sign and your deposit invoice.`;
+    $('.q-accept-intro').textContent = `Add your name, address${needPhone ? ' and phone number' : ''}, then click Accept. ${nextStep()}`;
+    $('.q-section').hidden = noPkg();
+    $('.q-extras-h').textContent = noPkg() ? 'Choose what you’d like' : 'Add extras';
     document.title = `Quote ${q.number} | Moments In Light`;
     $('.q-eyebrow').textContent = [q.event_date_long, q.venue].filter(Boolean).join(' · ');
     $('.q-title').textContent = `A quote for ${q.names}`;
@@ -155,9 +164,10 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       chosen = q.chosen_package; (q.chosen_extras || []).forEach((i: number) => extras.add(i));
       $('.q-accept').hidden = true;
       $('.q-done').hidden = false;
-      $('.q-done-text').textContent = `Accepted by ${q.accepted_name} on ${new Date(q.accepted_at).toLocaleDateString('en-NZ', { day: 'numeric', month: 'long', year: 'numeric' })}. Thank you! ${q.sign_link ? 'Your contract is ready to sign now (a copy is on its way to your inbox too, with this quote attached).' : 'Your contract is on its way to your inbox to sign, with a copy of this quote attached.'}`;
+      $('.q-done-text').textContent = `Accepted by ${q.accepted_name} on ${new Date(q.accepted_at).toLocaleDateString('en-NZ', { day: 'numeric', month: 'long', year: 'numeric' })}. Thank you! ${q.sign_link ? 'Your contract is ready to sign now (a copy is on its way to your inbox too, with this quote attached).' : q.contract ? 'Your contract is on its way to your inbox to sign, with a copy of this quote attached.' : 'Your invoice is on its way to your inbox.'}`;
       const next = document.querySelector<HTMLAnchorElement>('.q-next');
-      if (next) { next.hidden = !q.sign_link; if (q.sign_link) next.href = q.sign_link; }
+      const link = q.sign_link || q.pay_link;
+      if (next) { next.hidden = !link; if (link) { next.href = link; next.textContent = q.sign_link ? 'Sign your contract now' : 'Pay your invoice now'; } }
       $<HTMLAnchorElement>('.q-pdf').href = `/api/quote?t=${encodeURIComponent(token)}&pdf=1`;
       document.querySelectorAll<HTMLInputElement>('[data-pkg], [data-extra]').forEach((b) => (b.disabled = true));
     } else if (q.status === 'expired') {
@@ -186,7 +196,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     if (preview) return;
     const msg = $('.q-msg');
     const name = ($<HTMLInputElement>('.q-accept input[name="name"]')).value.trim();
-    if (chosen < 0) { msg.textContent = 'Please choose a package.'; msg.hidden = false; return; }
+    if (total() === null) { msg.textContent = noPkg() ? 'Please tick what you’d like.' : 'Please choose a package.'; msg.hidden = false; return; }
     if (name.length < 2) { msg.textContent = 'Please type your full name.'; msg.hidden = false; return; }
     const address = ($<HTMLTextAreaElement>('.q-accept textarea[name="address"]')).value.trim();
     const phone = ($<HTMLInputElement>('.q-accept input[name="phone"]')).value.trim();
