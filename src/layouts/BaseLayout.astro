@@ -73,6 +73,18 @@ const ogImage = image ? sized(image, 1500) : undefined;
     </main>
     <Footer />
     <script>
+      // The website's notification bar (Studio > Settings > Notification bars): on every public page
+      // except the client-only ones, until the visitor has seen this text once.
+      import { showNoticeBar, store } from '../lib/notice-bar';
+      if (!/^\/(portal|invoice|quote|contract|questionnaire)\b/.test(location.pathname)) {
+        fetch('/api/notice').then((r) => (r.ok ? r.json() : null)).then((n) => {
+          const s = n?.site;
+          if (!s?.text || store.get('mil-notice') === s.v) return;
+          setTimeout(() => showNoticeBar({ text: s.text, link: s.link || undefined, onDone: () => store.set('mil-notice', s.v) }), 1200);
+        }).catch(() => {});
+      }
+    </script>
+    <script>
       // Every other page gets the same motion automatically: photos and text blocks that start
       // below the first screen are tagged here (anything already on screen shows at once).
       // Pages tagged by hand (home, weddings) are left as they are.

@@ -30,6 +30,8 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
       <button type="button" role="tab" data-tab="booking">Online booking</button>
       <button type="button" role="tab" data-tab="portal">Client portal</button>
       <button type="button" role="tab" data-tab="documents">Documents</button>
+      <p class="tab-group">Website</p>
+      <button type="button" role="tab" data-tab="notices">Notification bars</button>
       <p class="tab-group">Import</p>
       <button type="button" role="tab" data-tab="sn">Studio Ninja</button>
       <p class="tab-group">Access</p>
@@ -41,6 +43,7 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
       <optgroup label="How you work"><option value="workflows">Workflows</option><option value="job_type">Job types</option><option value="lead_source">Lead sources</option><option value="questionnaires">Questionnaires</option></optgroup>
       <optgroup label="Money"><option value="catalogue">Packages &amp; products</option><option value="schedules">Payment schedules</option><option value="payments">Payments</option><option value="contracts">Contracts</option></optgroup>
       <optgroup label="Clients"><option value="booking">Online booking</option><option value="portal">Client portal</option><option value="documents">Documents</option></optgroup>
+      <optgroup label="Website"><option value="notices">Notification bars</option></optgroup>
       <optgroup label="Import"><option value="sn">Studio Ninja</option></optgroup>
       <optgroup label="Access"><option value="people">People</option></optgroup>
     </select>
@@ -226,6 +229,21 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
       </form>
       <h3>Recent bookings</h3>
       <ul class="bk-recent"></ul>
+    </section>
+
+    <section class="pane card notices-pane" data-pane="notices" hidden>
+      <h2>Notification bars</h2>
+      <p class="muted">A slim bar that drops down from the top for about 8 seconds (or until they click Dismiss). Leave the text blank and no bar shows.</p>
+      <form class="notices-form" autocomplete="off">
+        <h3>Website</h3>
+        <p class="muted">On every page of the website except clients’ own pages (portal, quotes, contracts, invoices, questionnaires). Each visitor sees it once; change the text and they see the new one.</p>
+        <label>Text<input name="site_text" maxlength="240" placeholder="e.g. Now taking bookings for summer 2027 weddings" /></label>
+        <label>Link <small>(optional, e.g. /contact or /weddings)</small><input name="site_link" maxlength="300" placeholder="/contact" /></label>
+        <h3>Galleries</h3>
+        <p class="muted">For friends and family (guest and invited gallery links; not the couple, vendors or you), once a day when they open a gallery. It ends with a “Visit Moments in Light” link to your homepage.</p>
+        <label>Text<input name="gallery_text" maxlength="240" placeholder="e.g. Loved these photos? I photograph weddings, portraits and more across Auckland." /></label>
+        <button type="submit" class="s-btn s-btn--solid">Save</button>
+      </form>
     </section>
 
     <section class="pane card people-pane" data-pane="people" hidden>
@@ -820,6 +838,22 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
     });
   }
 
+  // ---- Notification bars (functions/api/studio/notices.js) ----
+  {
+    const f = document.querySelector<HTMLFormElement>('.notices-form')!;
+    const el = (n: string) => f.elements.namedItem(n) as HTMLInputElement;
+    const draw = (d: any) => { el('site_text').value = d.site.text; el('site_link').value = d.site.link; el('gallery_text').value = d.gallery.text; };
+    fetch('/api/studio/notices').then((r) => r.json()).then(draw).catch(() => {});
+    f.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const r = await fetch('/api/studio/notices', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ site: { text: el('site_text').value, link: el('site_link').value }, gallery: { text: el('gallery_text').value } }) });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) { tell(d.error || 'That didn’t save.'); return; }
+      draw(d);
+      tell(d.site.text || d.gallery.text ? 'Saved. The bars show within a minute.' : 'Saved. No bars are showing.');
+    });
+  }
+
   // ---- People: who else can use the studio (functions/api/studio/people.js) ----
   {
     type Sig = { name: string; role: string; phone: string; photo: string };
@@ -1118,6 +1152,13 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
   .settings .bk-type { border: 1px solid #ece4d7; border-radius: 14px 0; padding: 10px 14px; margin: 0 0 10px; display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; align-items: end; }
   .settings .bk-type .wide { grid-column: 1 / -1; }
   .settings .booking-pane .tick { flex-direction: row; align-items: center; gap: 6px; }
+  .settings .notices-form { display: flex; flex-direction: column; gap: 10px; max-width: 720px; }
+  .settings .notices-form h3 { margin: 14px 0 0; font-size: 13px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--green); }
+  .settings .notices-form p { margin: 0; }
+  .settings .notices-form label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; font-weight: 600; color: #555; }
+  .settings .notices-form label small { font-weight: 400; color: #888; }
+  .settings .notices-form input { font: inherit; font-size: 15px; font-weight: 400; padding: 8px 10px; border: 1px solid #ddd3c4; border-radius: 10px 0; background: var(--white); color: var(--ink); }
+  .settings .notices-form button { align-self: flex-start; margin-top: 6px; }
   .settings .bk-recent { list-style: none; padding: 0; margin: 0; font-size: 14px; line-height: 1.9; }
   .settings .people-list { list-style: none; margin: 12px 0; padding: 0; display: grid; gap: 8px; }
   .settings .people-list li { padding: 10px 0; border-bottom: 1px solid #f3eee6; }

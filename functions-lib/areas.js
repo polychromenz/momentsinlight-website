@@ -18,7 +18,7 @@ export const LEVELS = { hidden: 'Hidden', look: 'Look only', change: 'Can change
 // Most specific first.
 const API = [
   [/^\/api\/studio\/crm\/(settings|send-mode|sn-gmail|sn-switch|gmail-connect|gmail-callback|gmail-test|digest)\b/, 'settings'],
-  [/^\/api\/studio\/(booking|people)\b/, 'settings'],
+  [/^\/api\/studio\/(booking|people|notices)\b/, 'settings'],
   [/^\/api\/studio\/crm\/(invoice|payments)\b/, 'payments'],
   [/^\/api\/studio\/(mileage|xero|reports|reconcile|receipts)\b/, 'payments'],
   [/^\/api\/studio\/crm\/ads\b|^\/api\/studio\/ads\//, 'ads'],

@@ -91,6 +91,7 @@ import { site } from '../data/site';
 
 <script>
   import { ask, askText, tell } from '../studio/dialogs';
+  import { showNoticeBar, store as nbStore } from '../lib/notice-bar';
   type Img = { id: string; s: number; w: number; h: number; hero: number; ch?: number; thumb: string; web: string };
   type List = { id: number; name: string; kind: 'favourites' | 'custom' | 'selection_request'; purpose: string | null; status: string; min: number | null; max: number | null; deadline: string | null; instructions: string; note: string; submitted_at: string | null; ids: string[] };
   type View = {
@@ -188,12 +189,26 @@ import { site } from '../data/site';
     });
   }
 
+  // Friends and family (guest and invited links) get a gentle nudge to consider Tony for their own
+  // photos, once a day per gallery (Studio > Settings > Notification bars). Not the couple, vendors or Tony.
+  function nudge() {
+    if (preview || !['guest', 'invited'].includes(view.rights.kind)) return;
+    const key = `mil-gnudge-${slug}`, today = new Date().toLocaleDateString('en-CA');
+    if (nbStore.get(key) === today) return;
+    fetch('/api/gallery/notice').then((r) => (r.ok ? r.json() : null)).then((n) => {
+      if (!n?.gallery?.text) return;
+      nbStore.set(key, today);
+      setTimeout(() => showNoticeBar({ text: n.gallery.text, link: 'https://www.momentsinlight.co.nz/', linkText: 'Visit Moments in Light' }), 2000);
+    }).catch(() => {});
+  }
+
   async function load() {
     const r = await fetch(preview ? `/api/studio/galleries/preview?slug=${encodeURIComponent(slug)}${params.get('link') ? `&link=${params.get('link')}` : ''}` : `/api/gallery/view?v=${viewer}`);
     if (r.status === 401 && !preview) { save(''); viewer = ''; return enter(); }
     if (!r.ok) return gate('<p>Something went wrong opening the gallery. Please reload the page.</p>');
     view = await r.json();
     showCover(view.gallery, view.cover);
+    nudge();
     $('[data-lists]').hidden = !(live() && view.rights.lists);
     $('[data-select]').hidden = !(live() && (view.rights.lists || view.rights.zip || view.rights.hide));
     $('[data-dl]').hidden = !(live() && view.rights.zip);
