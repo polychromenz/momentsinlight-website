@@ -14,7 +14,6 @@ thumbnail: "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-josh-and-paul-
 gallery:
   - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-josh-and-paul/_30A1305/public","alt":"Josh and Paul kiss in front of a wooden door","width":2048,"height":1638}
   - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-josh-and-paul/_Q9A8425/public","alt":"Josh and Paul walk back down the aisle as their guests clap and cheer","width":2048,"height":1366}
-  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-josh-and-paul/_30A1793/public","alt":"Josh and Paul smile together next to their wedding cake","width":2048,"height":1366}
   - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-josh-and-paul-settlers-country-manor-wedding/_30A0436/public","alt":"A man in a suit adjusts his tie in front of a window","width":1366,"height":2048}
   - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-josh-and-paul-settlers-country-manor-wedding/_30A0879/public","alt":"A woman in a black dress looks out the window","width":1366,"height":2048}
   - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-josh-and-paul-settlers-country-manor-wedding/_30A1183/public","alt":"A man and woman are holding hands, possibly at a wedding","width":1366,"height":2048}
