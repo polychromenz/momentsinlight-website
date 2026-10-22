@@ -7,7 +7,21 @@ import { sendEmail, connection } from '../../../../functions-lib/gmail.js';
 import { loadJob, templateAttachments } from '../../../../functions-lib/crm-send.js';
 import { listDocuments, attachmentsFor } from '../../../../functions-lib/documents.js';
 import { outgoing, sendMode, liveForNew, testClient } from '../../../../functions-lib/crm.js';
-import { longDate, parseQuote, planHtml } from '../../../../functions-lib/quotes.js';
+import { longDate, parseQuote, planHtml, quoteText } from '../../../../functions-lib/quotes.js';
+
+/** An introduction Tony wrote for this quote opens the email, in place of the template's opening
+ *  (everything before its first button, e.g. "View your quote"). The standard one a quote starts
+ *  with (Settings › quote templates) doesn't: the template's own greeting stays. */
+const words = (h) => String(h ?? '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+async function withIntro(db, template, q, job) {
+  const own = words(q.intro);
+  if (!own) return template;
+  const defaults = (await db.prepare('SELECT intro FROM quote_templates').all()).results.map((t) => words(t.intro));
+  if (defaults.includes(own)) return template;
+  const intro = quoteText(q.intro, q, job);
+  const at = template.body.search(/<p>\s*<a [^>]*class="button"/);
+  return { ...template, body: intro + (at >= 0 ? template.body.slice(at) : template.body) };
+}
 
 async function prepare(env, id) {
   const q = id && await env.DB.prepare('SELECT * FROM quotes WHERE id = ?1').bind(id).first();
@@ -16,8 +30,9 @@ async function prepare(env, id) {
   const job = await loadJob(env.DB, q.job_id);
   const template = await env.DB.prepare(`SELECT * FROM templates WHERE key = 'quote-ready'`).first();
   if (!template) throw new Error('The “Quote ready” email template is missing (Settings).');
-  const values = fields(job, { ...(await studioLinks(env.DB)), quote_link: `https://www.momentsinlight.co.nz/quote?t=${q.token}`, quote_valid_until: longDate(q.valid_until), payment_plan: planHtml(parseQuote(q), job) });
-  return { q, job, template, values };
+  const parsed = parseQuote(q);
+  const values = fields(job, { ...(await studioLinks(env.DB)), quote_link: `https://www.momentsinlight.co.nz/quote?t=${q.token}`, quote_valid_until: longDate(q.valid_until), payment_plan: planHtml(parsed, job) });
+  return { q, job, template: await withIntro(env.DB, template, parsed, job), values };
 }
 
 export async function onRequestGet({ request, env }) {
