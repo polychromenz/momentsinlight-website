@@ -6,12 +6,19 @@
 //   POST /api/invoice  { t, autopay? }   a Stripe Checkout page to pay by card → { url }
 //        autopay: keep the card and pay the later instalments automatically on their due dates
 import { loadJob } from '../../functions-lib/crm-send.js';
-import { paymentSettings, checkout, stripeReady } from '../../functions-lib/invoices.js';
+import { paymentSettings, checkout, stripeReady, groupOf } from '../../functions-lib/invoices.js';
 import { invoicePdf } from '../../functions-lib/pdf.js';
 import { longDate } from '../../functions-lib/quotes.js';
 
 const reply = (data, status = 200) => new Response(JSON.stringify(data), { status, headers: { 'content-type': 'application/json', 'cache-control': 'no-store' } });
-const find = (env, t) => (/^[a-f0-9]{48}$/.test(t || '') ? env.DB.prepare('SELECT * FROM invoices WHERE token = ?1').bind(t).first() : null);
+const byToken = (env, t) => (/^[a-f0-9]{48}$/.test(t || '') ? env.DB.prepare('SELECT * FROM invoices WHERE token = ?1').bind(t).first() : null);
+/** The invoice a link is for: a payment, or for an invoice with several payments, the next one owing (or the last). */
+async function find(env, t) {
+  const inv = await byToken(env, t);
+  if (!inv || inv.status !== 'group') return inv;
+  const g = await groupOf(env.DB, inv);
+  return g?.parts.find((p) => ['sent', 'scheduled'].includes(p.status)) ?? g?.parts.at(-1) ?? null;
+}
 
 export async function onRequestGet({ request, env }) {
   const url = new URL(request.url);
@@ -22,7 +29,14 @@ export async function onRequestGet({ request, env }) {
   if (url.searchParams.has('pdf')) {
     return new Response(await invoicePdf(inv, job, pay), { headers: { 'content-type': 'application/pdf', 'content-disposition': `inline; filename="${inv.status === 'paid' ? 'Receipt' : 'Invoice'} ${inv.number}.pdf"`, 'cache-control': 'no-store' } });
   }
+  // Part of one invoice with several payments: the invoice, and every payment on it.
+  const g = await groupOf(env.DB, inv);
+  const group = g && {
+    number: g.parent.number, total: g.parts.reduce((a, p) => a + p.amount, 0), paid: g.parts.filter((p) => p.status === 'paid').reduce((a, p) => a + p.amount, 0),
+    parts: g.parts.map((p) => ({ label: p.label, amount: p.amount, due_long: longDate(p.due_date), status: p.status, paid_at: p.paid_at, current: p.id === inv.id })),
+  };
   return reply({
+    group,
     number: inv.number, label: inv.label, description: inv.description, amount: inv.amount, status: inv.status,
     issued: longDate((inv.sent_at || inv.created_at).slice(0, 10)), due: inv.due_date, due_long: longDate(inv.due_date),
     paid_at: inv.paid_at, paid_method: inv.paid_method,

@@ -162,7 +162,7 @@ export async function queueNew(env) {
   const nzMidnight = (() => { const g = new Date(`${s.start}T00:00:00Z`); const nz = new Date(g.toLocaleString('en-US', { timeZone: 'Pacific/Auckland' })); const utc = new Date(g.toLocaleString('en-US', { timeZone: 'UTC' })); return new Date(g.valueOf() - (nz - utc)).toISOString(); })();
   const now = new Date().toISOString();
   const add = (kind, ref, summary) => db.prepare(`INSERT OR IGNORE INTO xero_queue (kind, ref, summary, created_at) VALUES (?1, ?2, ?3, ?4)`).bind(kind, String(ref), summary, now);
-  const base = `FROM invoices i JOIN jobs j ON j.id = i.job_id JOIN clients c ON c.id = j.client_id WHERE COALESCE(j.hold, 0) = 0 AND c.test = 0 AND COALESCE(i.sent_at, i.paid_at, i.created_at) >= ?1`; // (an invoice paid before it was emailed has no sent_at)
+  const base = `FROM invoices i JOIN jobs j ON j.id = i.job_id JOIN clients c ON c.id = j.client_id WHERE COALESCE(j.hold, 0) = 0 AND c.test = 0 AND i.import_batch IS NULL AND COALESCE(i.sent_at, i.paid_at, i.created_at) >= ?1`; // (an invoice paid before it was emailed has no sent_at)
   const name = (r) => `${r.first_name} ${r.last_name}`.trim();
   // Real card payments only, except while testing with Xero's Demo Company.
   const live = (await isDemo(db)) ? '1 = 1' : 'i.stripe_live = 1';

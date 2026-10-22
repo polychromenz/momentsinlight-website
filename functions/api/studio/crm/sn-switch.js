@@ -82,7 +82,7 @@ async function preview(env) {
   return { held, invoices, couples, xero_error: found.error ?? null };
 }
 const heldInvoices = async (db) => (await db.prepare(`SELECT i.id, i.job_id, i.number, i.label, i.amount, i.status, i.due_date, i.send_at, i.xero_invoice_id, j.title, c.first_name, c.last_name,
-      (SELECT sum(amount) FROM invoices x WHERE x.job_id = i.job_id) job_total
+      (SELECT sum(amount) FROM invoices x WHERE x.job_id = i.job_id AND x.status <> 'group') job_total
     FROM invoices i JOIN jobs j ON j.id = i.job_id JOIN clients c ON c.id = j.client_id
     WHERE j.hold = 1 AND i.status IN ('sent', 'scheduled') ORDER BY COALESCE(i.due_date, i.send_at)`).all()).results;
 

@@ -75,6 +75,26 @@ export async function createInvoices(env, contract) {
   return made;
 }
 
+/**
+ * One invoice with several payments (migration 0048): the 'group' row shows the invoice (its number
+ * and total); its payments are ordinary invoices with parent_id. After a payment changes, the group's
+ * total and paid date follow (its status stays 'group', so nothing adds it up twice).
+ */
+export async function syncGroup(db, parentId) {
+  if (!parentId) return;
+  const k = await db.prepare(`SELECT COALESCE(sum(amount), 0) total, count(*) n, sum(status = 'paid') paid, max(paid_at) last, max(due_date) due FROM invoices WHERE parent_id = ?1 AND status <> 'void'`).bind(parentId).first();
+  await db.prepare(`UPDATE invoices SET amount = ?2, due_date = COALESCE(?5, due_date), paid_at = CASE WHEN ?3 = ?4 AND ?4 > 0 THEN ?6 ELSE NULL END WHERE id = ?1 AND status = 'group'`)
+    .bind(parentId, k.total, k.paid ?? 0, k.n, k.due, k.last).run();
+}
+/** A payment's invoice, for showing it: { parent, parts } (parts in due order), or null if it stands alone. */
+export async function groupOf(db, inv) {
+  const parentId = inv.status === 'group' ? inv.id : inv.parent_id;
+  if (!parentId) return null;
+  const parent = inv.status === 'group' ? inv : await db.prepare('SELECT * FROM invoices WHERE id = ?1').bind(parentId).first();
+  const parts = (await db.prepare(`SELECT * FROM invoices WHERE parent_id = ?1 AND status <> 'void' ORDER BY due_date, id`).bind(parentId).all()).results;
+  return parent ? { parent, parts } : null;
+}
+
 /** The fill-ins for an invoice email. */
 export const invoiceValues = (inv, job) => fields(job, {
   invoice_number: inv.number, invoice_label: inv.label,
@@ -117,6 +137,7 @@ export async function markPaid(env, inv, { method, note = '', stripeSession = nu
     .bind(inv.id, now, method, note, stripeSession, stripePayment).run();
   if (!r.meta.changes) return false; // already paid (e.g. Stripe sent the webhook twice)
   const paid = await db.prepare('SELECT * FROM invoices WHERE id = ?1').bind(inv.id).first();
+  await syncGroup(db, paid.parent_id);
   const job = await loadJob(db, inv.job_id);
   let receipt = 'Receipt emailed.';
   try { const s = await sendInvoice(env, paid, 'payment-receipt'); if (s.redirected) receipt += ` (Test mode: to ${s.to}.)`; } catch (e) { receipt = `Receipt not sent (${e.message}).`; }

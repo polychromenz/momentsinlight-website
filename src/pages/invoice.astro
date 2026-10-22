@@ -26,6 +26,10 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         <div class="i-for"><h2>For</h2><p class="i-desc"></p></div>
         <table class="i-sum"><tbody></tbody></table>
       </section>
+      <section class="i-card i-parts" hidden>
+        <h2>Payments on this invoice</h2>
+        <table class="i-parts-t"><tbody></tbody></table>
+      </section>
 
       <section class="i-card i-pay">
         <h2>How to pay</h2>
@@ -64,8 +68,13 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     // Back from Stripe: the payment confirmation can take a few seconds to arrive.
     if (justPaid && d.status !== 'paid' && tries < 6) { $('.i-status').textContent = 'Confirming your payment…'; setTimeout(() => load(tries + 1), 2500); return; }
     const paid = d.status === 'paid';
-    document.title = `Invoice ${d.number} | Moments In Light`;
-    $('.i-eyebrow').textContent = `Invoice ${d.number} · ${d.issued}`;
+    // One invoice paid in several payments: its number and every payment, with the one this page pays.
+    const num = d.group ? d.group.number : d.number;
+    document.title = `Invoice ${num} | Moments In Light`;
+    $('.i-eyebrow').textContent = d.group ? `Invoice ${num} · ${money(d.group.total)} · ${money(d.group.total - d.group.paid)} still to pay` : `Invoice ${d.number} · ${d.issued}`;
+    $('.i-parts').hidden = !d.group;
+    if (d.group) $('.i-parts-t tbody').innerHTML = d.group.parts.map((p: any) => `<tr class="${p.current ? 'now' : ''}"><td>${esc(p.label)}</td><td>${p.status === 'paid' ? `Paid ${new Date(p.paid_at).toLocaleDateString('en-NZ', { day: 'numeric', month: 'short', year: 'numeric' })}` : `Due ${esc(p.due_long)}`}</td><td>${money(p.amount)}</td></tr>`).join('')
+      + `<tr class="total"><td>Total</td><td>${money(d.group.paid)} paid</td><td>${money(d.group.total)}</td></tr>`;
     $('.i-title').textContent = paid ? 'Paid. Thank you!' : `${money(d.amount)} due ${d.due_long}`;
     $('.i-gst').innerHTML = d.gst_number ? `<br>GST number: ${esc(d.gst_number)}` : '';
     $('.i-to').innerHTML = [esc(d.client.name), esc(d.client.address).replace(/\n/g, '<br>'), esc(d.client.email)].filter(Boolean).join('<br>');
@@ -87,7 +96,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     $('.i-none').hidden = d.card || d.bank;
     if (d.bank) {
       $('.i-bank-dl').innerHTML = [['Account name', d.bank.account_name], ['Bank', d.bank.bank_name], ['Account number', d.bank.account_number], ['Reference', d.number]]
-        .filter(([, v]) => v).map(([k, v]) => `<dt>${k}</dt><dd>${esc(v)}</dd>`).join('');
+        .filter(([, v]) => v).map(([k, v]) => `<dt>${k}</dt><dd>${esc(k === 'Reference' && d.group ? d.group.number : v)}</dd>`).join('');
       $('.i-instructions').textContent = d.bank.instructions || '';
     }
     const thanks = $('.i-thanks');
@@ -142,4 +151,9 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   .i-buttons { display: flex; justify-content: center; }
   .i-pay[hidden], .i-thanks[hidden], .i-card-pay[hidden], .i-bank[hidden], .i-none[hidden], .i-or[hidden], .i-msg[hidden] { display: none; }
   @media (min-width: 700px) { .i-details { grid-template-columns: 1fr 1fr; } .i-for, .i-sum { grid-column: 1 / -1; } }
+  .i-parts-t { width: 100%; border-collapse: collapse; font-size: 15px; }
+  .i-parts-t td { padding: 8px 6px; border-bottom: 1px solid #eee5d8; }
+  .i-parts-t td:last-child { text-align: right; font-variant-numeric: tabular-nums; }
+  .i-parts-t tr.now td { font-weight: 600; }
+  .i-parts-t tr.total td { border-bottom: 0; border-top: 2px solid #ddd3c4; font-weight: 600; }
 </style>

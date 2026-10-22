@@ -199,7 +199,11 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
   </dialog>
   <div class="s-toast" role="status"></div>
 </StudioLayout>
-<style is:inline set:html={FORM_CSS}></style>
+<style is:inline set:html={FORM_CSS}>  .inv--group { background: #faf6f0; }
+  .inv-parts { list-style: none; padding: 0 0 6px 22px !important; border: 0 !important; }
+  .inv-parts ul { list-style: none; margin: 0; padding: 0; border-left: 2px solid #ece4d7; }
+  .inv-parts ul > li { padding-left: 12px; }
+</style>
 
 <script>
   import { ask, askText, guardLeaving, tell } from '../../../studio/dialogs';
@@ -505,7 +509,8 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
         <a class="s-btn s-btn--quiet" href="/questionnaire?t=${q.token}" target="_blank" rel="noopener">Their page ↗</a>
         <button type="button" class="s-btn s-btn--quiet" data-q="${q.id}" data-q-act="delete">Remove</button></li>`).join('') : '')
       + (d.questionnaireTemplates.length ? `<li class="inv q-make">${d.questionnaires.length ? '<span class="what"><small>Another one:</small></span>' : '<span class="what"><small>None yet. The planning email will send it; or make it now and copy the link.</small></span>'}${choose}<button type="button" class="s-btn s-btn--quiet" data-q-act="make">Make questionnaire</button></li>` : '<li class="empty">Make a questionnaire in Settings first.</li>');
-    $('.invoices').innerHTML = invoices.length ? invoices.map((i) => {
+    // An invoice paid in several payments (brought across from Studio Ninja): the invoice, then its payments.
+    const row = (i: any) => {
       const late = i.status === 'sent' && i.due_date < today;
       const how = i.paid_method === 'card' ? 'card' : i.paid_method === 'bank' ? 'bank transfer' : esc(i.paid_method || '');
       const state = i.status === 'paid' ? `Paid ${day(i.paid_at!)} (${how})${i.paid_note ? ` · ${esc(i.paid_note)}` : ''}`
@@ -515,6 +520,16 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
       return `<li class="inv inv--${i.status}"><span class="what"><a href="/api/studio/crm/invoice?id=${i.id}&pdf=1" target="_blank" rel="noopener"><strong>${esc(i.number)}</strong></a> ${esc(i.label)} · <strong>${money(i.amount)}</strong><br><small>${state}</small></span>
         ${open ? `<button type="button" class="s-btn" data-inv="${i.id}" data-inv-act="paid">Mark paid</button><button type="button" class="s-btn s-btn--quiet" data-inv="${i.id}" data-inv-act="send">${i.status === 'sent' ? 'Send again' : 'Send now'}</button><button type="button" class="s-btn s-btn--quiet" data-inv="${i.id}" data-inv-act="edit">Change</button><button type="button" class="s-btn s-btn--quiet" data-inv="${i.id}" data-inv-act="void">Cancel</button>` : ''}
         ${i.status === 'paid' ? `<a class="pdf" href="/api/studio/crm/invoice?id=${i.id}&pdf=1&receipt=1" target="_blank" rel="noopener">Receipt</a> ` : ''}${i.status !== 'void' ? `<a class="pdf" href="/invoice?t=${i.token}" target="_blank" rel="noopener">Their page</a>` : ''}</li>`;
+    };
+    const kids = (id: number) => invoices.filter((x: any) => x.parent_id === id);
+    $('.invoices').innerHTML = invoices.length ? invoices.filter((i: any) => !i.parent_id).map((i: any) => {
+      if (i.status !== 'group') return row(i);
+      const parts = kids(i.id).filter((x: any) => x.status !== 'void');
+      const paid = parts.filter((x: any) => x.status === 'paid').reduce((a: number, x: any) => a + x.amount, 0);
+      const next = parts.find((x: any) => x.status !== 'paid');
+      return `<li class="inv inv--group"><span class="what"><strong>Invoice ${esc(i.number)}</strong> · <strong>${money(i.amount)}</strong><br><small>${parts.filter((x: any) => x.status === 'paid').length} of ${parts.length} payments made · ${next ? `${money(i.amount - paid)} to pay, next ${money(next.amount)} due ${day(next.due_date)}` : 'paid in full'}</small></span>
+        <a class="pdf" href="/invoice?t=${i.token}" target="_blank" rel="noopener">Their page</a></li>
+        <li class="inv-parts"><ul>${kids(i.id).map(row).join('')}</ul></li>`;
     }).join('')
       : signed.length ? `<li class="empty">No invoices. <button type="button" class="s-btn s-btn--quiet" data-make-invoices="${signed[0].id}">Make the invoices</button></li>`
       : '<li class="empty">No invoices yet. They’re made when the contract is signed, and the deposit invoice goes straight away.</li>';

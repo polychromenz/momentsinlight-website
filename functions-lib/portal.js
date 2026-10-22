@@ -38,7 +38,8 @@ export async function portalData(db, job) {
     db.prepare(`SELECT * FROM quotes WHERE job_id = ?1 AND status IN ('sent', 'accepted') ORDER BY created_at DESC`).bind(job.id).all(),
     db.prepare(`SELECT id, name, status, token, signed_name, signed_at, sent_at FROM contracts WHERE job_id = ?1 AND status IN ('sent', 'signed') ORDER BY id DESC`).bind(job.id).all(),
     db.prepare('SELECT id, name, status, token, submitted_at, updated_at, created_at FROM questionnaires WHERE job_id = ?1 ORDER BY id').bind(job.id).all(),
-    db.prepare(`SELECT id, number, label, amount, due_date, status, token, paid_at, paid_method, send_at FROM invoices WHERE job_id = ?1 AND status IN ('scheduled', 'sent', 'paid') ORDER BY due_date, id`).bind(job.id).all(),
+    db.prepare(`SELECT i.id, COALESCE(p.number, i.number) number, i.label, i.amount, i.due_date, i.status, i.token, i.paid_at, i.paid_method, i.send_at FROM invoices i LEFT JOIN invoices p ON p.id = i.parent_id
+      WHERE i.job_id = ?1 AND i.status IN ('scheduled', 'sent', 'paid') ORDER BY i.due_date, i.id`).bind(job.id).all(),
     db.prepare('SELECT id, title, url, note FROM galleries WHERE job_id = ?1 ORDER BY id').bind(job.id).all(),
     db.prepare('SELECT d.id, d.name, d.size, d.type FROM job_documents jd JOIN documents d ON d.id = jd.document_id WHERE jd.job_id = ?1 ORDER BY d.name').bind(job.id).all(),
     db.prepare('SELECT id, name, size, type, questionnaire_id, created_at FROM uploads WHERE job_id = ?1 ORDER BY id').bind(job.id).all(),

@@ -30,7 +30,7 @@ export async function onRequestGet({ request, env }) {
     env.DB.prepare('SELECT id, title, job_type, stage, event_date FROM jobs WHERE client_id = ?1 AND id <> ?2 ORDER BY created_at DESC').bind(job.client_id, id).all(),
     env.DB.prepare('SELECT id, status, total, sent_at, viewed_at, accepted_at, created_at FROM quotes WHERE job_id = ?1 ORDER BY created_at DESC').bind(id).all(),
     env.DB.prepare('SELECT id, quote_id, name, status, sent_at, viewed_at, signed_name, signed_at FROM contracts WHERE job_id = ?1 ORDER BY id DESC').bind(id).all(),
-    env.DB.prepare('SELECT id, contract_id, number, label, amount, due_date, send_at, status, sent_at, reminders, paid_at, paid_method, paid_note, token FROM invoices WHERE job_id = ?1 ORDER BY due_date, id').bind(id).all(),
+    env.DB.prepare('SELECT id, contract_id, parent_id, number, label, amount, due_date, send_at, status, sent_at, reminders, paid_at, paid_method, paid_note, token FROM invoices WHERE job_id = ?1 ORDER BY due_date, id').bind(id).all(),
     env.DB.prepare('SELECT id, name, status, token, created_at, updated_at, submitted_at FROM questionnaires WHERE job_id = ?1 ORDER BY id').bind(id).all(),
     env.DB.prepare('SELECT key, name FROM questionnaire_templates ORDER BY name').all(),
     env.DB.prepare(`SELECT questionnaire_key FROM lists WHERE kind = 'job_type' AND value = ?1`).bind(job.job_type).first(),

@@ -13,7 +13,7 @@
 //                                                                     (if they weren't made automatically)
 import { json } from '../../../../functions-lib/studio.js';
 import { loadJob } from '../../../../functions-lib/crm-send.js';
-import { markPaid, sendInvoice, paymentSettings, createInvoices, nextNumber, token } from '../../../../functions-lib/invoices.js';
+import { markPaid, sendInvoice, paymentSettings, createInvoices, nextNumber, token, syncGroup } from '../../../../functions-lib/invoices.js';
 import { money, payments } from '../../../../functions-lib/quotes.js';
 import { invoicePdf } from '../../../../functions-lib/pdf.js';
 
@@ -73,6 +73,13 @@ export async function onRequestPost({ request, env }) {
   }
   const inv = d?.id && await env.DB.prepare('SELECT * FROM invoices WHERE id = ?1').bind(Number(d.id)).first();
   if (!inv) return json({ error: 'That invoice doesn’t exist.' }, 404);
+  if (inv.status === 'group') return json({ error: 'Use the payment underneath it.' }, 400);
+  const res = await act(env, d, inv);
+  if (inv.parent_id) await syncGroup(env.DB, inv.parent_id);
+  return res;
+}
+
+async function act(env, d, inv) {
   try {
     if (d.action === 'paid') {
       if (inv.status === 'paid') return json({ error: 'It’s already marked paid.' }, 409);
