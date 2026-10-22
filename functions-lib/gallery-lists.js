@@ -3,7 +3,7 @@
 // Lists belong to the link for the couple and invited people (the same on every device they use)
 // and to the visitor for guests. a = viewerAccess(): { viewer, link, gallery }.
 import { newId } from './galleries.js';
-import { linkUrl } from './gallery-access.js';
+import { linkUrl, createLink } from './gallery-access.js';
 import { alertTony } from './crm.js';
 
 const ownedByLink = (a) => ['main_client', 'invited'].includes(a.link.kind);
@@ -62,6 +62,18 @@ export async function act(env, a, d) {
     await db.prepare('UPDATE gallery_images SET client_hidden = ?3 WHERE gallery_id = ?1 AND id IN (SELECT value FROM json_each(?2))').bind(a.gallery.id, JSON.stringify(ids), d.hidden ? 1 : 0).run();
     await event(env, a, d.hidden ? 'client_hide' : 'client_unhide', { n: ids.length });
     return { ok: true };
+  }
+  // The couple's "Share with friends & family": the gallery's guest link (made the first time), so
+  // family get guest rights (and the gentle nudge about Tony's own photography) instead of the couple's.
+  if (d.action === 'guest-link') {
+    if (a.link.kind !== 'main_client') throw new Error('Only the couple can share the gallery.');
+    let l = await db.prepare(`SELECT token FROM gallery_links WHERE gallery_id = ?1 AND kind = 'guest' AND (expires_at IS NULL OR expires_at >= date('now')) ORDER BY name = 'Friends & family' DESC, id LIMIT 1`).bind(a.gallery.id).first();
+    if (!l) {
+      const id = await createLink(env, a.gallery.id, { kind: 'guest', name: 'Friends & family' });
+      l = await db.prepare('SELECT token FROM gallery_links WHERE id = ?1').bind(id).first();
+    }
+    await event(env, a, 'guest_link');
+    return { ok: true, url: linkUrl(a.gallery.slug, l.token) };
   }
   if (!canList(a)) throw new Error('Lists aren’t switched on for this link.');
   if (d.action === 'fav') {

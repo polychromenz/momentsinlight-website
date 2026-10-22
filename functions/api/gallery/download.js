@@ -11,7 +11,8 @@ export async function onRequestGet({ request, env }) {
   const a = await viewerAccess(env, u.searchParams.get('v'));
   if (!a) return json({ error: 'This gallery link no longer works.' }, 401);
   if (a.link.downloads === 'none') return json({ error: 'Downloads aren’t switched on for this gallery.' }, 403);
-  const img = await env.DB.prepare(`SELECT * FROM gallery_images WHERE id = ?1 AND gallery_id = ?2 AND hidden = 0 AND status = 'ready'`).bind(u.searchParams.get('id') ?? '', a.gallery.id).first();
+  const img = await env.DB.prepare(`SELECT * FROM gallery_images WHERE id = ?1 AND gallery_id = ?2 AND hidden = 0 AND status = 'ready' AND (client_hidden = 0 OR ?3 = 1)`)
+    .bind(u.searchParams.get('id') ?? '', a.gallery.id, a.link.kind === 'main_client' || a.viewer.role === 'studio' ? 1 : 0) // the couple's hidden photos are theirs alone.first();
   if (!img) return json({ error: 'That photo isn’t here.' }, 404);
   // Links limited to a list (a shared list, a vendor link) download only the photos in it.
   if (a.link.list_id && (a.link.kind === 'list_share' || a.link.kind === 'vendor')

@@ -44,6 +44,7 @@ import { site } from '../data/site';
           <button type="button" class="g-btn g-btn--fav" data-lists hidden title="Favourites and lists">♥ <span class="fav-n">0</span></button>
           <button type="button" class="g-btn" data-select hidden>Select</button>
           <button type="button" class="g-btn" data-dl hidden>Download</button>
+          <button type="button" class="g-btn" data-share-family hidden title="A link for friends and family to see the gallery">Share with family</button>
           <button type="button" class="g-btn" data-play>Slideshow</button>
         </div>
       </header>
@@ -213,6 +214,7 @@ import { site } from '../data/site';
     $('[data-select]').hidden = !(live() && (view.rights.lists || view.rights.zip || view.rights.hide));
     $('[data-dl]').hidden = !(live() && view.rights.zip);
     $('.g-vendor').hidden = view.rights.kind !== 'vendor';
+    $('[data-share-family]').hidden = !(live() && view.rights.kind === 'main_client');
     gate(`<a class="g-cta" href="#photos">View the gallery</a>`);
     if (view.preview) {
       const p = $('.gv-preview');
@@ -622,6 +624,14 @@ import { site } from '../data/site';
     if (id('[data-sel-unhide]')) { setHidden([...selected], false); return true; }
     if (id('[data-lists]')) { listsPanel(); return true; }
     if (id('[data-dl]')) { downloadDlg('all', 'all your photos'); return true; }
+    if (id('[data-share-family]')) {
+      act({ action: 'guest-link' }).then(async (d) => {
+        if (!d) return;
+        try { await navigator.clipboard.writeText(d.url); toast('Link copied. Send it to friends and family: they see your gallery without your own controls.'); }
+        catch { await askText('Copy this link to share with friends and family:', d.url); }
+      });
+      return true;
+    }
     if (id('[data-show-all]')) { filter = 0; draw(); return true; }
     if (id('[data-lb-fav]')) { const i = current[at]; setFav(i.id, !isFav(i.id)); return true; }
     if (id('[data-lb-list]')) { pickList([current[at].id]); return true; }
