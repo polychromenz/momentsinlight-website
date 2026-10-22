@@ -4,31 +4,31 @@ seoTitle: "Ellie & Ryan’s Tui Hills Wedding"
 description: "A joyful Tui Hills wedding: an emotional bridal prep, outdoor portraits in the bush and a groom who Rickrolled his own vows. Photos by Tony Gorham."
 date: 2026-07-22
 updated: 2026-08-17
-author: Tony Gorham
-venue: Tui Hills
-venueUrl: https://tuihills.co.nz/
+author: "Tony Gorham"
+venue: "Tui Hills"
+venueUrl: "https://tuihills.co.nz/"
 categories: ["Wedding"]
 tags: ["tui-hills"]
 review: "Ellen Fenton"
+thumbnail: "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-ellen-and-ryan/colour/_30A6384-Edit/public"
 gallery:
-  - { src: "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-ellen-and-ryan/colour/_30A5340/public", alt: "Ellie and Ryan's wedding at Tui Hills", width: 2048, height: 1366 }
-  - { src: "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-ellen-and-ryan/colour/_30A5188/public", alt: "Ellie and Ryan's wedding at Tui Hills", width: 1366, height: 2048 }
-  - { src: "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-ellen-and-ryan/colour/_30A5428/public", alt: "Ellie and Ryan's wedding at Tui Hills", width: 1366, height: 2048 }
-  - { src: "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-ellen-and-ryan/colour/_30A5431/public", alt: "Ellie and Ryan's wedding at Tui Hills", width: 1366, height: 2048 }
-  - { src: "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-ellen-and-ryan/colour/_30A5519/public", alt: "Ellie and Ryan's wedding at Tui Hills", width: 1366, height: 2048 }
-  - { src: "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-ellen-and-ryan/colour/_30A5507-Edit/public", alt: "Ellie and Ryan's wedding at Tui Hills", width: 1638, height: 2048 }
-  - { src: "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-ellen-and-ryan/colour/_30A5616/public", alt: "Ellie and Ryan's wedding at Tui Hills", width: 1366, height: 2048 }
-  - { src: "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-ellen-and-ryan/colour/_30A5707/public", alt: "Ellie and Ryan's wedding at Tui Hills", width: 2048, height: 1366 }
-  - { src: "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-ellen-and-ryan/colour/_30A6273-Edit/public", alt: "Ellie and Ryan's wedding at Tui Hills", width: 1366, height: 2048 }
-  - { src: "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-ellen-and-ryan/colour/_30A6458-Edit/public", alt: "Ellie and Ryan's wedding at Tui Hills", width: 1366, height: 2048 }
-  - { src: "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-ellen-and-ryan/colour/_30A6384-Edit/public", alt: "Ellie and Ryan's wedding at Tui Hills", width: 1366, height: 2048 }
-  - { src: "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-ellen-and-ryan/colour/_30A6188-Edit/public", alt: "Ellie and Ryan's wedding at Tui Hills", width: 1582, height: 2048 }
-  - { src: "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-ellen-and-ryan/colour/_Q9A6998-Edit/public", alt: "Ellie and Ryan's wedding at Tui Hills", width: 2048, height: 1365 }
-  - { src: "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-ellen-and-ryan/colour/_Q9A7710/public", alt: "Ellie and Ryan's wedding at Tui Hills", width: 2048, height: 1365 }
-  - { src: "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-ellen-and-ryan/colour/_30A6607/public", alt: "Ellie and Ryan's wedding at Tui Hills", width: 2048, height: 1366 }
-  - { src: "https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-ellen-and-ryan/colour/_Q9A7798/public", alt: "Ellie and Ryan's wedding at Tui Hills", width: 1365, height: 2048 }
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-ellen-and-ryan/colour/_30A5340/public","alt":"Ellie and Ryan's wedding at Tui Hills","width":2048,"height":1366}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-ellen-and-ryan/colour/_30A5188/public","alt":"Ellie and Ryan's wedding at Tui Hills","width":1366,"height":2048}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-ellen-and-ryan/colour/_30A5428/public","alt":"Ellie and Ryan's wedding at Tui Hills","width":1366,"height":2048}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-ellen-and-ryan/colour/_30A5431/public","alt":"Ellie and Ryan's wedding at Tui Hills","width":1366,"height":2048}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-ellen-and-ryan/colour/_30A5519/public","alt":"Ellie and Ryan's wedding at Tui Hills","width":1366,"height":2048}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-ellen-and-ryan/colour/_30A5507-Edit/public","alt":"Ellie and Ryan's wedding at Tui Hills","width":1638,"height":2048}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-ellen-and-ryan/colour/_30A5616/public","alt":"Ellie and Ryan's wedding at Tui Hills","width":1366,"height":2048}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-ellen-and-ryan/colour/_30A5707/public","alt":"Ellie and Ryan's wedding at Tui Hills","width":2048,"height":1366}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-ellen-and-ryan/colour/_30A6273-Edit/public","alt":"Ellie and Ryan's wedding at Tui Hills","width":1366,"height":2048}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-ellen-and-ryan/colour/_30A6458-Edit/public","alt":"Ellie and Ryan's wedding at Tui Hills","width":1366,"height":2048}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-ellen-and-ryan/colour/_30A6384-Edit/public","alt":"Ellie and Ryan's wedding at Tui Hills","width":1366,"height":2048}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-ellen-and-ryan/colour/_30A6188-Edit/public","alt":"Ellie and Ryan's wedding at Tui Hills","width":1582,"height":2048}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-ellen-and-ryan/colour/_Q9A6998-Edit/public","alt":"Ellie and Ryan's wedding at Tui Hills","width":2048,"height":1365}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-ellen-and-ryan/colour/_Q9A7710/public","alt":"Ellie and Ryan's wedding at Tui Hills","width":2048,"height":1365}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-ellen-and-ryan/colour/_30A6607/public","alt":"Ellie and Ryan's wedding at Tui Hills","width":2048,"height":1366}
+  - {"src":"https://imagedelivery.net/qzGY-glAlQGHmkVvJZVh0Q/2026-ellen-and-ryan/colour/_Q9A7798/public","alt":"Ellie and Ryan's wedding at Tui Hills","width":1365,"height":2048}
 ---
-
 Some couples walk in front of your camera and the joy simply radiates from them. Ellie and Ryan are exactly that kind of couple — warm, playful, and so visibly, completely in love that capturing their wedding day felt less like work and more like a privilege. Tui Hills provided a breathtaking canvas, and what unfolded across the day was pure magic.
 
 ## Bridal Preparations
