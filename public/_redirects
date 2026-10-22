@@ -62,3 +62,6 @@
 
 # The test copy of the contact page, used before the studio form replaced Studio Ninja's (2026-10-19)
 /newcontact              /contact                          301
+
+# Emma and Corey's post was published under the wrong name in Squarespace (renamed 2026-10-23)
+/blog/emma-and-scott-hamilton-gardens-wedding  /blog/emma-and-corey-hamilton-gardens-wedding  301
