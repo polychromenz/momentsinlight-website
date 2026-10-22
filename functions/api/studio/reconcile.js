@@ -93,8 +93,10 @@ export async function onRequestPost({ request, env }) {
     }
     if (d.action === 'undo') {
       const left = await undoMade(env, run.result.made ?? []);
-      for (const l of run.plan.lines) { delete l.sent; delete l.sent_at; delete l.error; }
-      run.result = { undone_at: new Date().toISOString(), left };
+      // A line whose entries couldn't all be taken out of Xero stays sent, so it can't be sent twice.
+      const stuck = new Set(left.map((m) => m.n));
+      for (const l of run.plan.lines) if (!stuck.has(l.n)) { delete l.sent; delete l.sent_at; delete l.error; }
+      run.result = { undone_at: new Date().toISOString(), left, made: (run.result.made ?? []).filter((m) => stuck.has(m.n)) };
       run.status = 'plan';
       await save(db, run);
       return json({ run, left });

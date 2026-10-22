@@ -313,10 +313,19 @@ export async function sendLine(env, line, s, run) {
 /** Take back what a run made (payments and bank transactions; transfers are listed for Tony to delete). */
 export async function undoMade(env, made) {
   const left = [];
+  // Xero allows about 60 calls a minute: on "too many requests" (429), wait and try again.
+  const call = async (path, body) => {
+    for (let tries = 0; ; tries++) {
+      try { return await xero(env, 'POST', path, body); } catch (e) {
+        if (!/429/.test(e.message) || tries >= 4) throw e;
+        await new Promise((r) => setTimeout(r, 15000));
+      }
+    }
+  };
   for (const m of made) {
     try {
-      if (m.kind === 'payment') await xero(env, 'POST', `/Payments/${m.id}`, { Payments: [{ PaymentID: m.id, Status: 'DELETED' }] });
-      else if (m.kind === 'banktransaction') await xero(env, 'POST', `/BankTransactions/${m.id}`, { BankTransactions: [{ BankTransactionID: m.id, Status: 'DELETED' }] });
+      if (m.kind === 'payment') await call(`/Payments/${m.id}`, { Payments: [{ PaymentID: m.id, Status: 'DELETED' }] });
+      else if (m.kind === 'banktransaction') await call(`/BankTransactions/${m.id}`, { BankTransactions: [{ BankTransactionID: m.id, Status: 'DELETED' }] });
       else left.push(m);
     } catch (e) { left.push({ ...m, error: e.message }); }
   }
