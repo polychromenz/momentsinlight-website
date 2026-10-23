@@ -62,7 +62,7 @@ export async function openSlots(db, today = nzNow()) {
 }
 
 // ---- What there is to post about ----
-async function sources(env) {
+export async function sources(env) {
   const r = await env.ASSETS.fetch(new Request(`${SITE}/studio/social-sources.json`));
   if (!r.ok) throw new Error(`social sources ${r.status}`);
   return r.json();

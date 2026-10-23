@@ -104,6 +104,11 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
           <label>Caption <span class="ed-count muted"></span>
             <textarea name="caption" rows="12"></textarea></label>
           <p class="ed-ai muted" hidden>Written by AI from the post’s details: check it reads like you.</p>
+          <div class="ed-tags" hidden>
+            <span class="ed-tags-h">Tag <small class="muted">(venues and suppliers with an Instagram or Facebook in Contacts)</small></span>
+            <div class="ed-tag-list"></div>
+            <p class="ed-credit muted"></p>
+          </div>
           <label class="ed-link">Link <input name="link" type="url" placeholder="https://www.momentsinlight.co.nz/…" /></label>
           <div class="ed-acts"></div>
           <p class="ed-how muted"></p>
@@ -249,4 +254,10 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
     .so-dn { flex: 0 0 100%; }
     .post { flex: 1 1 160px; }
   }
+  .ed-tags { display: flex; flex-direction: column; gap: 6px; font-size: 13px; }
+  .ed-tags[hidden] { display: none; }
+  .ed-tags-h { font-weight: 600; color: #555; }
+  .ed-tag-list { display: flex; flex-wrap: wrap; gap: 6px 14px; }
+  .ed-tag-list label { display: inline-flex; gap: 6px; align-items: center; font-weight: 400; }
+  .ed-credit { margin: 0; font-size: 12px; }
 </style>

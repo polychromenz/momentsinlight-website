@@ -14,6 +14,7 @@
 // Redirect URI set to REDIRECT below.
 
 import { publishPin, pinterestOn } from './pinterest.js';
+import { tagged } from './social-tags.js';
 
 export const SITE = 'https://www.momentsinlight.co.nz';
 export const REDIRECT = `${SITE}/api/studio/meta/callback`;
@@ -114,7 +115,16 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 const message = (p) => (p.platform === 'facebook' && p.link && !p.caption.includes(p.link) ? `${p.caption.trim()}\n\n${p.link}` : p.caption.trim());
 
 /** Publish one approved post now. Returns { id, url }. */
-export async function publish(env, p) {
+export async function publish(env, post) {
+  // Venues and suppliers tagged: the credit line in the caption, and Instagram's photo tag.
+  const t = await tagged(env, post).catch(() => ({ caption: post.caption, handles: [] }));
+  const p = { ...post, caption: t.caption };
+  const userTags = t.handles.length ? JSON.stringify(t.handles.slice(0, 20).map((username, n) => ({ username, x: 0.2 + (n % 4) * 0.2, y: 0.85 }))) : null;
+  // A photo tag Instagram won't take (e.g. a changed handle) mustn't stop the post: try once without.
+  const igMedia = async (id, fields) => {
+    if (!userTags) return graph('POST', `/${id}/media`, fields);
+    try { return await graph('POST', `/${id}/media`, { ...fields, user_tags: userTags }); } catch { return graph('POST', `/${id}/media`, fields); }
+  };
   // Pinterest: through the app once it's connected; until then the RSS feed (functions/feeds/pinterest.js)
   // carries it: marking it posted puts it in the feed, and Pinterest picks it up within about a day.
   if (p.platform === 'pinterest') {
@@ -161,10 +171,13 @@ export async function publish(env, p) {
       container = (await graph('POST', `/${c.ig_id}/media`, { media_type: 'REELS', video_url: media[0], caption: message(p), share_to_feed: 'true', access_token: token })).id;
       await ready(container, 40, 3000);
     } else if (media.length === 1) {
-      container = (await graph('POST', `/${c.ig_id}/media`, { image_url: media[0], caption: message(p), access_token: token })).id;
+      container = (await igMedia(c.ig_id, { image_url: media[0], caption: message(p), access_token: token })).id;
     } else {
       const kids = [];
-      for (const m of media.slice(0, 10)) kids.push((await graph('POST', `/${c.ig_id}/media`, { image_url: m, is_carousel_item: 'true', access_token: token })).id);
+      for (const [n, m] of media.slice(0, 10).entries()) {
+        const fields = { image_url: m, is_carousel_item: 'true', access_token: token };
+        kids.push((await (n === 0 ? igMedia(c.ig_id, fields) : graph('POST', `/${c.ig_id}/media`, fields))).id); // tagged on the first photo
+      }
       for (const k of kids) await ready(k);
       container = (await graph('POST', `/${c.ig_id}/media`, { media_type: 'CAROUSEL', children: kids.join(','), caption: message(p), access_token: token })).id;
     }

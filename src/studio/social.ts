@@ -5,7 +5,10 @@
 // and downloads the photos to post them himself.
 type Crop = { x: number; y: number; w: number; h: number };
 type Photo = { src: string; w: number; h: number; image_id?: string; gallery_id?: string; alt?: string; crop?: Crop };
-type Post = { id: number; shape?: string | null; format?: string; music_id?: number | null; platform: string; post_at: string; status: string; source: string; label: string; caption: string; link: string | null; photos: Photo[]; ai: number; error: string | null; media: string | null; remote_url: string | null };
+type Post = { id: number; shape?: string | null; format?: string; music_id?: number | null; platform: string; post_at: string; status: string; source: string; label: string; caption: string; link: string | null; photos: Photo[]; ai: number; error: string | null; media: string | null; remote_url: string | null; tags?: string | null; tag_ids?: number[] };
+// Venues and suppliers to tag (Contacts with an Instagram or Facebook): functions-lib/social-tags.js.
+type Contact = { id: number; business: string; type: string; instagram: string; facebook: string };
+let contacts: Contact[] = [];
 type Meta = { ready: boolean; connection: null | { page_id: string; page_name: string; ig_id: string | null; ig_username: string | null; pages: { id: string; name: string; ig_username: string | null }[]; connected_at: string } };
 type Platform = { name: string; ratio: number | null; out: [number, number]; max: number; link: boolean; chars: number };
 
@@ -51,7 +54,7 @@ async function load() {
   const r = await fetch(`/api/studio/social?from=${iso(start)}&to=${iso(end)}`);
   const d = await r.json().catch(() => null);
   if (!r.ok || !d) { $('.so-weeks').innerHTML = `<p class="muted">${esc(d?.error || 'Couldn’t load the drafts.')}</p>`; return; }
-  posts = d.posts; platforms = d.platforms; meta = d.meta; music = d.music ?? []; pin = d.pinterest ?? pin;
+  posts = d.posts; platforms = d.platforms; meta = d.meta; music = d.music ?? []; pin = d.pinterest ?? pin; contacts = d.contacts ?? [];
   drawMeta();
   drawPin();
   drawMusic();
@@ -156,10 +159,32 @@ function openPost(p: Post) {
   const v = $<HTMLVideoElement>('.ed-video'); v.hidden = true; v.removeAttribute('src');
   $('.ed-link').hidden = !pf.link;
   $('.ed-ai').hidden = !p.ai;
+  drawTags();
   count();
   drawEditor();
   if (!ed.open) ed.showModal();
 }
+/** The Tag list (Instagram and Facebook posts), and what it adds when the post goes out. */
+function drawTags() {
+  const p = open!;
+  const on = ['instagram', 'facebook'].includes(p.platform) && contacts.length > 0;
+  $('.ed-tags').hidden = !on;
+  if (!on) return;
+  const ids = new Set(p.tag_ids ?? []);
+  const lock = !(p.status === 'draft' || p.status === 'approved');
+  $('.ed-tag-list').innerHTML = contacts.map((c) => `<label><input type="checkbox" data-tag="${c.id}"${ids.has(c.id) ? ' checked' : ''}${lock ? ' disabled' : ''} /> ${esc(c.business)}${p.platform === 'instagram' ? (c.instagram ? ` <small class="muted">@${esc(c.instagram)}</small>` : ' <small class="muted">(no Instagram)</small>') : ''}</label>`).join('');
+  const tagged = contacts.filter((c) => ids.has(c.id));
+  const line = tagged.map((c) => `${c.type && c.type !== 'Other' ? `${c.type}: ` : ''}${p.platform === 'instagram' && c.instagram ? `@${c.instagram}` : c.business}`).join(' · ');
+  $('.ed-credit').textContent = line ? `Added when it goes out: “${line}”${p.platform === 'instagram' && tagged.some((c) => c.instagram) ? ', and tagged on the first photo' : ''}.${p.platform === 'facebook' ? ' (Facebook doesn’t let apps tag Pages, so it’s their name.)' : ''}` : 'No one tagged.';
+}
+form.addEventListener('change', (e) => {
+  const t = e.target as HTMLInputElement;
+  if (!t.matches('[data-tag]') || !open) return;
+  const ids = new Set(open.tag_ids ?? []);
+  t.checked ? ids.add(Number(t.dataset.tag)) : ids.delete(Number(t.dataset.tag));
+  open.tag_ids = [...ids];
+  drawTags();
+});
 function count() {
   const n = field<HTMLTextAreaElement>('caption').value.length;
   $('.ed-count').textContent = `${n} / ${platforms[open!.platform].chars}`;
@@ -255,7 +280,7 @@ bigBox.addEventListener('wheel', (e) => {
 async function save() {
   const p = open!;
   p.photos.forEach((x) => cropOf(x));
-  const d = await api({ action: 'save', id: p.id, caption: field('caption').value, post_at: field('post_at').value, link: field('link').value || null, label: field('label').value, photos: p.photos, shape: p.shape ?? null, format: p.format ?? 'photos', music_id: p.music_id ?? null });
+  const d = await api({ action: 'save', id: p.id, caption: field('caption').value, post_at: field('post_at').value, link: field('link').value || null, label: field('label').value, photos: p.photos, shape: p.shape ?? null, format: p.format ?? 'photos', music_id: p.music_id ?? null, tags: p.tag_ids ?? [] });
   replace(d.post);
   return d.post as Post;
 }
@@ -271,7 +296,9 @@ async function upload(p: Post) {
   if (!r.ok) throw new Error(d.error || 'The photos didn’t upload.');
 }
 function replace(p: Post) {
-  posts = posts.map((x) => (x.id === p.id ? p : x));
+  // A post back from the server has its tags (if set) but not the venue worked out for it.
+  posts = posts.map((x) => (x.id === p.id ? { ...p, tag_ids: p.tags != null ? JSON.parse(p.tags) : x.tag_ids } : x));
+  p = posts.find((x) => x.id === p.id) ?? p;
   if (open?.id === p.id) { open = structuredClone(p); drawEditor(); }
   draw();
 }
