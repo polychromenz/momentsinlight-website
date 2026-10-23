@@ -128,7 +128,11 @@ export async function publish(env, post) {
   // Pinterest: through the app once it's connected; until then the RSS feed (functions/feeds/pinterest.js)
   // carries it: marking it posted puts it in the feed, and Pinterest picks it up within about a day.
   if (p.platform === 'pinterest') {
-    if (await pinterestOn(env.DB)) return publishPin(env, p);
+    if (await pinterestOn(env.DB)) {
+      // An app on Pinterest's Trial access can't make real pins (only test ones): until Standard
+      // access is approved, the RSS feed carries them as before.
+      try { return await publishPin(env, p); } catch (e) { if (!/trial access/i.test(e.message)) throw e; }
+    }
     if (!JSON.parse(p.media || '[]').length) throw new Error('Its image wasn’t made. Open the pin, Back to draft, then Approve again.');
     return { id: null, url: null };
   }

@@ -5,7 +5,8 @@
 // Facebook and Instagram (functions-lib/meta.js publish / publishDue): the editor makes the 2:3 image
 // (1000×1500) and uploads it to photos.momentsinlight.co.nz, and Pinterest fetches it from there.
 //
-// While the app has Trial access, pins it makes are only visible to Tony; Standard access (applied for
+// While the app has Trial access, Pinterest refuses real pins (only its sandbox takes them), so
+// publish() in meta.js falls back to the RSS feed; Standard access (applied for
 // from the app's page) makes them public. Access tokens last 30 days and are refreshed automatically.
 //
 // Needs the Cloudflare settings PINTEREST_APP_ID and PINTEREST_APP_SECRET (a secret), and the app's

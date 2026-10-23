@@ -90,7 +90,7 @@ function drawPin() {
   }
   box.innerHTML = (c.board_id ? '' : box.innerHTML) + `<p><strong>Pinterest app:</strong> ${c.username ? `@${esc(c.username)}` : 'connected'}</p>
     <label>Board <select data-pin-board><option value="">Choose a board…</option>${c.boards.map((b) => `<option value="${esc(b.id)}"${b.id === c.board_id ? ' selected' : ''}>${esc(b.name)}</option>`).join('')}</select></label>
-    <p class="muted">${c.board_id ? 'Approved pins go out on their own at their time.' : 'Choose the board pins go to, and approved pins go out on their own.'} While the app is on Pinterest’s Trial access, pins are only visible to you.</p>
+    <p class="muted">${c.board_id ? 'Approved pins go out on their own at their time.' : 'Choose the board pins go to, and approved pins go out on their own.'} Until Pinterest gives the app Standard access (Upgrade, on the app’s page at developers.pinterest.com), pins go out through the website’s feed instead, which Pinterest picks up within a day.</p>
     <a class="s-btn s-btn--quiet" href="/api/studio/pinterest/connect">Reconnect</a> <button type="button" class="s-btn s-btn--quiet" data-pin-off>Disconnect</button>`;
 }
 
