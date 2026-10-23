@@ -91,7 +91,8 @@ function drawPin() {
   box.innerHTML = (c.board_id ? '' : box.innerHTML) + `<p><strong>Pinterest app:</strong> ${c.username ? `@${esc(c.username)}` : 'connected'}</p>
     <label>Board <select data-pin-board><option value="">Choose a board…</option>${c.boards.map((b) => `<option value="${esc(b.id)}"${b.id === c.board_id ? ' selected' : ''}>${esc(b.name)}</option>`).join('')}</select></label>
     <p class="muted">${c.board_id ? 'Approved pins go out on their own at their time.' : 'Choose the board pins go to, and approved pins go out on their own.'} Until Pinterest gives the app Standard access (Upgrade, on the app’s page at developers.pinterest.com), pins go out through the website’s feed instead, which Pinterest picks up within a day.</p>
-    <a class="s-btn s-btn--quiet" href="/api/studio/pinterest/connect">Reconnect</a> <button type="button" class="s-btn s-btn--quiet" data-pin-off>Disconnect</button>`;
+    <a class="s-btn s-btn--quiet" href="/api/studio/pinterest/connect">Reconnect</a> <button type="button" class="s-btn s-btn--quiet" data-pin-off>Disconnect</button>${c.board_id ? ' <button type="button" class="s-btn s-btn--quiet" data-pin-test title="For Pinterest’s Standard access video: makes a pin in Pinterest’s sandbox (test area)">Make a test pin</button>' : ''}
+    <p class="so-pin-test muted" hidden></p>`;
 }
 
 function draw() {
@@ -533,6 +534,20 @@ document.addEventListener('click', async (e) => {
   if (!await ask('Disconnect Pinterest? Approved pins will wait for you to post them yourself.')) return;
   const r = await fetch('/api/studio/pinterest', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'disconnect' }) });
   if (r.ok) { pin = await r.json(); drawPin(); draw(); toast('Disconnected.'); }
+});
+// A test pin in Pinterest's sandbox, for the Standard access video.
+document.addEventListener('click', async (e) => {
+  const b = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-pin-test]');
+  if (!b) return;
+  const out = $('.so-pin-test');
+  b.disabled = true; b.textContent = 'Making a test pin…';
+  const r = await fetch('/api/studio/pinterest', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'test' }) });
+  const d = await r.json().catch(() => ({}));
+  b.disabled = false; b.textContent = 'Make a test pin';
+  out.hidden = false;
+  out.textContent = r.ok
+    ? `✓ Test pin made in Pinterest’s sandbox: “${d.pin.title}” on “${d.pin.board}” (pin ${d.pin.id}${d.pin.created_at ? `, ${new Date(d.pin.created_at).toLocaleString('en-NZ')}` : ''}).`
+    : `The test pin didn’t work: ${d.error || r.status}`;
 });
 // Back from Pinterest's login.
 {

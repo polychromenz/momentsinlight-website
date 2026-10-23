@@ -15,6 +15,7 @@
 export const SITE = 'https://www.momentsinlight.co.nz';
 export const REDIRECT = `${SITE}/api/studio/pinterest/callback`;
 const API = 'https://api.pinterest.com/v5';
+const SANDBOX = 'https://api-sandbox.pinterest.com/v5'; // Trial apps' test area (pins there are only for testing)
 const SCOPES = ['boards:read', 'boards:write', 'pins:read', 'pins:write', 'user_accounts:read'];
 
 export const pinterestReady = (env) => !!(env.PINTEREST_APP_ID && env.PINTEREST_APP_SECRET);
@@ -53,8 +54,8 @@ async function tokenCall(env, body) {
   if (!r.ok || !d.access_token) throw new Error(`Pinterest sign-in said ${r.status}: ${d.message ?? d.error ?? ''}`);
   return d;
 }
-/** A Pinterest API call with a fresh token; throws with Pinterest's own message. */
-async function api(env, method, path, body) {
+/** A Pinterest API call with a fresh token; throws with Pinterest's own message. base: the sandbox for test pins. */
+async function api(env, method, path, body, base = API) {
   const db = env.DB;
   let c = await pinterestConnection(db);
   if (!c?.refresh) throw new Error('Pinterest isn’t connected.');
@@ -65,7 +66,9 @@ async function api(env, method, path, body) {
     c = { ...c, access: await seal(env, t.access_token), access_until: new Date(Date.now() + (t.expires_in ?? 2592000) * 1000).toISOString(), ...(t.refresh_token ? { refresh: await seal(env, t.refresh_token) } : {}) };
     await saveConn(db, c);
   }
-  const r = await fetch(`${API}${path}`, { method, headers: { authorization: `Bearer ${await open(env, c.access)}`, ...(body ? { 'content-type': 'application/json' } : {}) }, body: body ? JSON.stringify(body) : undefined });
+  // The sandbox takes the same sign-in, or a token made on the app's page (PINTEREST_SANDBOX_TOKEN) if set.
+  const bearer = base === SANDBOX && env.PINTEREST_SANDBOX_TOKEN ? env.PINTEREST_SANDBOX_TOKEN : await open(env, c.access);
+  const r = await fetch(`${base}${path}`, { method, headers: { authorization: `Bearer ${bearer}`, ...(body ? { 'content-type': 'application/json' } : {}) }, body: body ? JSON.stringify(body) : undefined });
   const d = await r.json().catch(() => ({}));
   if (!r.ok) throw new Error(`Pinterest: ${d.message || r.status}`);
   return d;
@@ -118,4 +121,27 @@ export async function publishPin(env, p) {
     media_source: { source_type: 'image_url', url: media[0] },
   });
   return { id: d.id, url: `https://www.pinterest.com/pin/${d.id}/` };
+}
+
+/**
+ * A test pin in Pinterest's sandbox (Studio > Social, "Make a test pin"): what Pinterest asks to see in
+ * the screen recording for Standard access, since Trial apps can't make real pins. Uses the latest
+ * approved pin's image and words; makes the board in the sandbox if it isn't there yet.
+ */
+export async function testPin(env) {
+  const c = await pinterestConnection(env.DB);
+  if (!c?.board_name) throw new Error('Choose the board first.');
+  const p = await env.DB.prepare(`SELECT * FROM social_posts WHERE platform = 'pinterest' AND media IS NOT NULL AND media <> '[]' ORDER BY approved_at DESC LIMIT 1`).first();
+  if (!p) throw new Error('Approve a pin first (its image is used for the test).');
+  const boards = (await api(env, 'GET', '/boards?page_size=100', null, SANDBOX)).items ?? [];
+  const board = boards.find((b) => b.name === c.board_name) ?? await api(env, 'POST', '/boards', { name: c.board_name, privacy: 'PUBLIC' }, SANDBOX);
+  const photo = JSON.parse(p.photos || '[]')[0] ?? {};
+  const pin = await api(env, 'POST', '/pins', {
+    board_id: board.id, title: String(p.label ?? '').slice(0, 100), description: String(p.caption ?? '').slice(0, 500),
+    ...(p.link ? { link: p.link } : {}), ...(photo.alt ? { alt_text: String(photo.alt).slice(0, 500) } : {}),
+    media_source: { source_type: 'image_url', url: JSON.parse(p.media)[0] },
+  }, SANDBOX);
+  // Read it back, to show it's there.
+  const back = await api(env, 'GET', `/pins/${pin.id}`, null, SANDBOX);
+  return { id: back.id, title: back.title, board: board.name, link: back.link ?? null, created_at: back.created_at ?? null };
 }
