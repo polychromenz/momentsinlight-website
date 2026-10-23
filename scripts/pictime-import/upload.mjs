@@ -29,6 +29,9 @@ const SITE = process.env.MIL_SITE || 'https://www.momentsinlight.co.nz';
 const PARALLEL = 3;
 
 const CHECK = process.argv.includes('--check');
+// --missing-only: only photos the gallery doesn't have yet (by section and file name), e.g. after a
+// re-export, whose files differ from the ones already up and would otherwise all be sent again.
+const MISSING_ONLY = process.argv.includes('--missing-only');
 const root = path.resolve(process.argv.slice(2).find((a) => !a.startsWith('--')) || '.');
 const keyFile = [path.join(root, 'lightroom-key.txt'), path.join(path.dirname(root), 'lightroom-key.txt')].find((f) => fs.existsSync(f));
 const KEY = (process.env.MIL_LR_KEY || (keyFile ? fs.readFileSync(keyFile, 'utf8') : '')).trim();
@@ -261,7 +264,13 @@ async function moveGallery(folder, link) {
   const jobs = [];
   for (const [order, s] of layout.scenes.entries()) {
     const sec = await api({ action: 'section', gallery_id: g.id, key: `pt:${s.id}`, name: s.name, is_bw: isMono(s.name), order });
-    s.photos.forEach((p, i) => p.file && jobs.push({ ...p, section_id: sec.id, sort_order: order * 10000 + i }));
+    s.photos.forEach((p, i) => p.file && jobs.push({ ...p, section_id: sec.id, section: s.name, sort_order: order * 10000 + i }));
+  }
+  if (MISSING_ONLY) {
+    const have = new Set((await api({ action: 'list', gallery_id: g.id })).images.map((i) => `${i.section}|${i.filename}`));
+    const before = jobs.length;
+    jobs.splice(0, jobs.length, ...jobs.filter((j) => !have.has(`${j.section}|${path.basename(j.file)}`)));
+    log(`  Missing only: ${jobs.length} of ${before} photos to send (the rest are already up).`);
   }
 
   let done = 0, sent = 0, refreshed = 0, failed = 0, bytes = 0;
