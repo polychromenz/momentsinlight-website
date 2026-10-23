@@ -133,8 +133,10 @@ export async function testPin(env) {
   if (!c?.board_name) throw new Error('Choose the board first.');
   const p = await env.DB.prepare(`SELECT * FROM social_posts WHERE platform = 'pinterest' AND media IS NOT NULL AND media <> '[]' ORDER BY approved_at DESC LIMIT 1`).first();
   if (!p) throw new Error('Approve a pin first (its image is used for the test).');
+  // The sandbox's own board ("… (test)": the real board's name is taken there but not listed).
+  const name = `${c.board_name} (test)`;
   const boards = (await api(env, 'GET', '/boards?page_size=100', null, SANDBOX)).items ?? [];
-  const board = boards.find((b) => b.name === c.board_name) ?? await api(env, 'POST', '/boards', { name: c.board_name, privacy: 'PUBLIC' }, SANDBOX);
+  const board = boards.find((b) => b.name.toLowerCase() === name.toLowerCase()) ?? await api(env, 'POST', '/boards', { name, privacy: 'PUBLIC' }, SANDBOX);
   const photo = JSON.parse(p.photos || '[]')[0] ?? {};
   const pin = await api(env, 'POST', '/pins', {
     board_id: board.id, title: String(p.label ?? '').slice(0, 100), description: String(p.caption ?? '').slice(0, 500),
