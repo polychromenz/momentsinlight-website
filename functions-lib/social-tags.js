@@ -27,7 +27,8 @@ async function venueOf(db, p, src) {
   return '';
 }
 
-/** Tag ids for each post: its own, or (never set) the venue when it matches a contact. */
+/** Tag ids for each post: its own, or (never set) the venue when it matches a contact. The post's
+ *  title counts too (e.g. "Felicity & Ronan | Settlers Country Manor" on a post with no venue set). */
 export async function tagIds(env, posts, contacts) {
   const out = new Map();
   let src = null;
@@ -35,8 +36,8 @@ export async function tagIds(env, posts, contacts) {
     if (p.tags != null) { out.set(p.id, JSON.parse(p.tags)); continue; }
     if (!TAGGABLE.includes(p.platform)) { out.set(p.id, []); continue; }
     if (!src && p.source !== 'photos') src = await sources(env).catch(() => ({ posts: [] }));
-    const venue = (await venueOf(env.DB, p, src)).toLowerCase();
-    out.set(p.id, venue ? contacts.filter((c) => c.business.length >= 4 && venue.includes(c.business.toLowerCase())).map((c) => c.id) : []);
+    const venue = `${await venueOf(env.DB, p, src)} ${p.label ?? ''}`.toLowerCase();
+    out.set(p.id, contacts.filter((c) => c.business.length >= 4 && venue.includes(c.business.toLowerCase())).map((c) => c.id));
   }
   return out;
 }
