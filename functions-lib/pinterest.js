@@ -147,3 +147,13 @@ export async function testPin(env) {
   const back = await api(env, 'GET', `/pins/${pin.id}`, null, SANDBOX);
   return { id: back.id, title: back.title, board: board.name, link: back.link ?? null, created_at: back.created_at ?? null };
 }
+
+/** The test pins in Pinterest's sandbox (newest first), to check one was made. */
+export async function testPins(env) {
+  const c = await pinterestConnection(env.DB);
+  const name = `${c?.board_name ?? ''} (test)`.toLowerCase();
+  const board = ((await api(env, 'GET', '/boards?page_size=100', null, SANDBOX)).items ?? []).find((b) => b.name.toLowerCase() === name);
+  if (!board) return [];
+  const pins = (await api(env, 'GET', `/boards/${board.id}/pins?page_size=25`, null, SANDBOX)).items ?? [];
+  return pins.map((p) => ({ id: p.id, title: p.title, created_at: p.created_at })).sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)));
+}

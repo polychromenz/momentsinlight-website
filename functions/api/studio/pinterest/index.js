@@ -4,7 +4,7 @@
 //   POST /api/studio/pinterest { action: 'disconnect' }
 //   POST /api/studio/pinterest { action: 'test' }        a test pin in Pinterest's sandbox -> { pin }
 import { json } from '../../../../functions-lib/studio.js';
-import { pinterestStatus, chooseBoard, disconnectPinterest, testPin } from '../../../../functions-lib/pinterest.js';
+import { pinterestStatus, chooseBoard, disconnectPinterest, testPin, testPins } from '../../../../functions-lib/pinterest.js';
 
 export async function onRequestGet({ env }) {
   return json(await pinterestStatus(env));
@@ -14,6 +14,7 @@ export async function onRequestPost({ request, env }) {
   const d = await request.json().catch(() => ({}));
   try {
     if (d.action === 'test') return json({ pin: await testPin(env) });
+    if (d.action === 'test-pins') return json({ pins: await testPins(env) }); // the sandbox's test pins, newest first
     if (d.action === 'board') await chooseBoard(env, d.id);
     else if (d.action === 'disconnect') await disconnectPinterest(env.DB);
     else return json({ error: 'What should happen?' }, 400);
