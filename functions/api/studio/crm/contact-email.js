@@ -2,11 +2,14 @@
 //   GET  /api/studio/crm/contact-email?contact=3[&template=key][&reply=ROW_ID]   a draft
 //   GET  /api/studio/crm/contact-email?message=ROW_ID                           one email in full
 //   POST /api/studio/crm/contact-email  { contact_id, subject, body, attachments?, reply? }
+//   POST /api/studio/crm/contact-email  { action: 'link-gmail', contact_id }   the latest email Tony
+//        sent them from Gmail itself (last 60 days), with its conversation, added to the contact (so
+//        their replies are tracked from then on)
 // Contacts aren't clients, so the CRM's test mode doesn't redirect these: they go to the contact.
 import { json } from '../../../../functions-lib/studio.js';
 import { hasCheck } from '../../../../functions-lib/crm-send.js';
 import { renderTemplate } from '../../../../functions-lib/email-render.js';
-import { sendEmail, message, connection } from '../../../../functions-lib/gmail.js';
+import { sendEmail, message, connection, search, thread } from '../../../../functions-lib/gmail.js';
 import { attachmentsFor, listDocuments } from '../../../../functions-lib/documents.js';
 import { contactValues, afterEmail } from '../../../../functions-lib/contacts.js';
 
@@ -41,11 +44,30 @@ export async function onRequestGet({ request, env }) {
   }
 }
 
+async function linkGmail(env, c) {
+  try {
+    const [latest] = await search(env, `in:sent to:${c.email} newer_than:60d`, 1);
+    if (!latest) return json({ error: `No email to ${c.email} in your Gmail’s Sent mail in the last 60 days.` }, 404);
+    const gmail = await connection(env.DB);
+    const me = [(gmail?.email || '').toLowerCase(), 'tony@momentsinlight.co.nz'];
+    const msgs = await thread(env, latest.threadId);
+    await env.DB.batch(msgs.map((m) => env.DB.prepare(`INSERT INTO contact_messages (contact_id, direction, subject, body, gmail_message_id, gmail_thread_id, sent_at)
+      SELECT ?1, ?2, ?3, ?4, ?5, ?6, ?7 WHERE NOT EXISTS (SELECT 1 FROM contact_messages WHERE gmail_message_id = ?5)`)
+      .bind(c.id, me.includes(m.from) ? 'out' : 'in', m.subject, m.snippet, m.id, latest.threadId, m.at)));
+    await afterEmail(env.DB, c);
+    const last = msgs[msgs.length - 1];
+    return json({ ok: true, subject: last?.subject ?? '', count: msgs.length });
+  } catch (e) {
+    return json({ error: e.message }, 400);
+  }
+}
+
 export async function onRequestPost({ request, env }) {
   const d = await request.json().catch(() => null);
   const c = d?.contact_id && await contact(env, d.contact_id);
   if (!c) return json({ error: 'That contact doesn’t exist.' }, 404);
   if (!c.email) return json({ error: 'Add their email address first.' }, 400);
+  if (d.action === 'link-gmail') return linkGmail(env, c);
   const subject = (d.subject ?? '').toString().trim().slice(0, 300);
   const body = (d.body ?? '').toString().trim().slice(0, 50000);
   if (!subject || !body.replace(/<[^>]+>/g, '').trim()) return json({ error: 'The email needs a subject and some text.' }, 400);

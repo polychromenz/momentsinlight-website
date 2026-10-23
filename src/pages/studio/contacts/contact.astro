@@ -28,7 +28,7 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
             <button type="button" class="s-btn s-btn--quiet" data-check>Check now</button>
           </section>
           <section class="card">
-            <div class="card-head"><h2>Emails</h2><button type="button" class="s-btn" data-compose>✉ Write email</button></div>
+            <div class="card-head"><h2>Emails</h2><span><button type="button" class="s-btn s-btn--quiet" data-link-gmail title="Sent them an email from Gmail itself? Add it here, so their replies are tracked">Link an email from Gmail</button> <button type="button" class="s-btn" data-compose>✉ Write email</button></span></div>
             <ul class="list messages"></ul>
           </section>
           <section class="card">
@@ -218,6 +218,12 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
     }
     if (t.closest('[data-msg-close]')) { $<HTMLDialogElement>('dialog.msg-view').close(); return; }
     if (t.closest('[data-msg-reply]') && viewing) { $<HTMLDialogElement>('dialog.msg-view').close(); openCompose(viewing.id); return; }
+    if (t.closest('[data-link-gmail]')) {
+      const r = await fetch('/api/studio/crm/contact-email', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'link-gmail', contact_id: id }) });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) { toast(d.error || 'Couldn’t find it.', true); return; }
+      toast(`Linked “${d.subject}”${d.count > 1 ? ` (${d.count} emails in the conversation)` : ''}.`); load(); return;
+    }
     const cb = t.closest<HTMLButtonElement>('[data-compose]');
     if (cb && !cb.dataset.compose) { openCompose(null); return; }
     if (cb?.dataset.compose === 'cancel') { $<HTMLDialogElement>('dialog.compose').close(); return; }

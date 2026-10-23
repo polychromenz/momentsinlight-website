@@ -129,6 +129,14 @@ export async function sendEmail(env, msg) {
   return { id: d.id, threadId: d.threadId, to: out.to, redirected: out.redirected, intended: out.intended };
 }
 
+/** Gmail's search (the same words as its search box), newest first: [{ id, threadId }]. */
+export async function search(env, q, max = 5) {
+  const r = await fetch(`https://gmail.googleapis.com/gmail/v1/users/me/messages?q=${encodeURIComponent(q)}&maxResults=${max}`, { headers: { authorization: `Bearer ${await googleToken(env)}` } });
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(`Gmail couldn’t search (${r.status}): ${d.error?.message ?? ''}`);
+  return d.messages ?? [];
+}
+
 /** One email in full, for reading it in the studio: who, when, subject, its HTML (or text) and
  *  attachment names, and its Message-ID (to reply to it). */
 export async function message(env, id) {
