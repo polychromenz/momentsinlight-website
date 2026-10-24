@@ -167,7 +167,9 @@ function photosIn(dir) {
   return out;
 }
 function unzipAll(folder) {
-  for (const z of fs.readdirSync(folder).filter((f) => /\.zip$/i.test(f))) {
+  // Pic-Time's own download (pictime.zip) already unzipped into images\ (and maybe shrunk with JPEGmini): use those.
+  const done = (z) => /^pictime\.zip$/i.test(z) && fs.existsSync(path.join(folder, 'images'));
+  for (const z of fs.readdirSync(folder).filter((f) => /\.zip$/i.test(f) && !done(f))) {
     const dest = path.join(folder, '_unzipped', path.basename(z, path.extname(z)));
     if (fs.existsSync(path.join(dest, '.done'))) continue;
     log(`  Unzipping ${z}…`);
@@ -259,7 +261,10 @@ async function moveGallery(folder, link) {
   const files = layout.scenes.flatMap((s) => s.photos.filter((p) => p.file).map((p) => p.file));
   const practice = files.length && files.filter((f) => /practice/i.test(path.relative(folder, f))).length > files.length / 2;
   const name = practice && !/practice/i.test(layout.title) ? `${layout.title} – Practice shoot` : layout.title;
-  const g = await api({ action: 'gallery', set_id: `pt:${layout.project}`, name, type: practice ? 'Portraits' : 'Wedding', event_date: layout.date, source: 'pictime' });
+  // type.txt in the folder (Wedding, Portraits, Headshots or Events) says what it is, e.g. a headshot session.
+  const typeFile = path.join(folder, 'type.txt');
+  const type = (fs.existsSync(typeFile) && fs.readFileSync(typeFile, 'utf8').trim()) || (practice ? 'Portraits' : 'Wedding');
+  const g = await api({ action: 'gallery', set_id: `pt:${layout.project}`, name, type, event_date: layout.date, source: 'pictime' });
   log(`  ${g.made ? 'Made' : 'Adding to'} the gallery: ${g.studio}`);
   const jobs = [];
   for (const [order, s] of layout.scenes.entries()) {
