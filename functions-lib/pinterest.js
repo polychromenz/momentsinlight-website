@@ -12,6 +12,8 @@
 // Needs the Cloudflare settings PINTEREST_APP_ID and PINTEREST_APP_SECRET (a secret), and the app's
 // redirect URI set to REDIRECT below.
 
+import { PIN_BOARDS } from './social.js';
+
 export const SITE = 'https://www.momentsinlight.co.nz';
 export const REDIRECT = `${SITE}/api/studio/pinterest/callback`;
 const API = 'https://api.pinterest.com/v5';
@@ -112,8 +114,12 @@ export async function publishPin(env, p) {
   const media = JSON.parse(p.media || '[]');
   if (!media.length) throw new Error('Its image wasn’t made. Open the pin, Back to draft, then Approve again.');
   const photo = JSON.parse(p.photos || '[]')[0] ?? {};
+  // The pin's themed board (PIN_BOARDS in social.js), by name; the chosen board if it isn't made yet.
+  const want = PIN_BOARDS[p.board]?.toLowerCase();
+  let board = want && (c.boards ?? []).find((b) => b.name.toLowerCase() === want);
+  if (want && !board) { const fresh = await listBoards(env); board = fresh.find((b) => b.name.toLowerCase() === want); await saveConn(env.DB, { ...c, boards: fresh }); }
   const d = await api(env, 'POST', '/pins', {
-    board_id: c.board_id,
+    board_id: board?.id ?? c.board_id,
     title: String(p.label ?? '').slice(0, 100),
     description: String(p.caption ?? '').slice(0, 500),
     ...(p.link ? { link: p.link } : {}),

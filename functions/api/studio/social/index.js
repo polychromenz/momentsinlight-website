@@ -13,7 +13,7 @@
 //   POST /api/studio/social { action: 'drafts', on }        pause or resume the automatic drafts
 import { json } from '../../../../functions-lib/studio.js';
 import { adsBlocked } from '../../../../functions-lib/picks.js';
-import { PLATFORMS, ideas, recaption, swapDraft, socialTimer, freshPhotos } from '../../../../functions-lib/social.js';
+import { PLATFORMS, PIN_BOARDS, ideas, recaption, swapDraft, socialTimer, freshPhotos } from '../../../../functions-lib/social.js';
 import { metaStatus, connectedFor, publishPost } from '../../../../functions-lib/meta.js';
 import { pinterestStatus } from '../../../../functions-lib/pinterest.js';
 import { socialContacts, tagIds } from '../../../../functions-lib/social-tags.js';
@@ -37,7 +37,7 @@ export async function onRequestGet({ request, env }) {
   ]);
   const contacts = await socialContacts(db);
   const tags = await tagIds(env, posts.results, contacts);
-  return json({ posts: posts.results.map((p) => ({ ...shape(p), tag_ids: tags.get(p.id) ?? [] })), contacts, platforms: PLATFORMS, ideas: idea, marked: marked.n, drafts_on: !set || JSON.parse(set.value).drafts !== false, meta, music, pinterest });
+  return json({ posts: posts.results.map((p) => ({ ...shape(p), tag_ids: tags.get(p.id) ?? [] })), contacts, pin_boards: PIN_BOARDS, platforms: PLATFORMS, ideas: idea, marked: marked.n, drafts_on: !set || JSON.parse(set.value).drafts !== false, meta, music, pinterest });
 }
 
 const cropOk = (c) => c && ['x', 'y', 'w', 'h'].every((k) => Number.isFinite(c[k])) && c.x >= -0.001 && c.y >= -0.001 && c.w > 0.05 && c.h > 0.05 && c.x + c.w <= 1.001 && c.y + c.h <= 1.001;
@@ -96,9 +96,10 @@ export async function onRequestPost({ request, env }) {
       const musicId = format === 'reel' ? (await db.prepare('SELECT id FROM social_music WHERE id = ?1').bind(Number(d.music_id ?? p.music_id)).first())?.id ?? null : null;
       if (format === 'reel' && !musicId) return json({ error: 'Choose the music for the Reel (add some under Music first).' }, 400);
       // Tags: contact ids Tony ticked (left as they were if not sent).
+      const board = p.platform === 'pinterest' && PIN_BOARDS[d.board] ? d.board : p.board ?? null;
       const tags = Array.isArray(d.tags) ? JSON.stringify([...new Set(d.tags.map(Number).filter(Number.isInteger))].slice(0, 10)) : p.tags;
-      return set(`caption = ?2, post_at = ?3, link = ?4, label = ?5, photos = ?6, shape = ?7, format = ?8, music_id = ?9, ai = CASE WHEN caption = ?2 THEN ai ELSE 0 END, tags = ?10`,
-        caption, d.post_at, link, String(d.label ?? p.label ?? '').slice(0, 200), JSON.stringify(photos), shapeOk, format, musicId, tags);
+      return set(`caption = ?2, post_at = ?3, link = ?4, label = ?5, photos = ?6, shape = ?7, format = ?8, music_id = ?9, ai = CASE WHEN caption = ?2 THEN ai ELSE 0 END, tags = ?10, board = ?11`,
+        caption, d.post_at, link, String(d.label ?? p.label ?? '').slice(0, 200), JSON.stringify(photos), shapeOk, format, musicId, tags, board);
     }
     if (d.action === 'approve') {
       if (p.status !== 'draft') return json({ error: 'Only a draft can be approved.' }, 400);

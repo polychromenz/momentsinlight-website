@@ -31,8 +31,32 @@ const SLOTS = [
   { platform: 'instagram', days: [1, 3, 5], time: { default: '12:15', 5: '19:30' } },
   { platform: 'facebook', days: [1, 3, 5], time: { default: '12:30', 5: '19:45' } },
   { platform: 'google', days: [2], time: '10:00' },
-  { platform: 'pinterest', days: [1, 2, 3, 4, 5], time: '20:30' },
+  // Pinterest (26 Oct 2026): three a day, every day, for six weeks to build up the library; then one
+  // each weekday evening. A slot can have from/until dates (YYYY-MM-DD, inclusive).
+  { platform: 'pinterest', days: [1, 2, 3, 4, 5, 6, 7], time: '08:30', until: '2026-12-06' },
+  { platform: 'pinterest', days: [1, 2, 3, 4, 5, 6, 7], time: '12:45', until: '2026-12-06' },
+  { platform: 'pinterest', days: [1, 2, 3, 4, 5, 6, 7], time: '20:30', until: '2026-12-06' },
+  { platform: 'pinterest', days: [1, 2, 3, 4, 5], time: '20:30', from: '2026-12-07' },
 ];
+const slotOn = (s, date) => s.days.includes(dayOf(date)) && (!s.from || date >= s.from) && (!s.until || date <= s.until);
+
+/** Pinterest boards (Tony makes them in Pinterest with these names). Each pin gets one, which he can
+ *  change in the editor; until the app has Standard access, each board has its own RSS feed. */
+export const PIN_BOARDS = {
+  weddings: 'Moments In Light Weddings',
+  bw: 'Black and White Wedding Photos',
+  party: 'Bridal Party and Group Photos',
+  venues: 'Auckland Wedding Venues',
+  tips: 'Wedding Planning Tips',
+};
+/** The board that fits a pin best, from its post and photo. */
+function boardFor(post, photo) {
+  const alt = `${photo?.alt ?? ''} ${photo?.src ?? ''}`.toLowerCase();
+  if (post.categories?.includes('Info')) return /venue/i.test(post.title) ? 'venues' : 'tips';
+  if (/black and white|black-and-white|\bmono\b|\/mono\/|b&w/.test(alt)) return 'bw';
+  if (/bridesmaid|groomsm|bridal party|wedding party|group|family|guests/.test(alt)) return 'party';
+  return 'weddings';
+}
 const slotTime = (s, date) => (typeof s.time === 'string' ? s.time : s.time[dayOf(date)] ?? s.time.default);
 const AHEAD_DAYS = 8;
 const PER_RUN = 4;
@@ -45,17 +69,26 @@ const couple = (name) => String(name ?? '').replace(/\s+(wedding|gallery)$/i, ''
 /** The slots in the next week that don't have a post yet (any status: a skipped slot stays skipped). */
 export async function openSlots(db, today = nzNow()) {
   const until = addDays(today.date, AHEAD_DAYS);
-  const have = new Set((await db.prepare(`SELECT platform, post_at FROM social_posts WHERE post_at >= ?1 AND post_at <= ?2`)
-    .bind(today.date, `${until}T23:59`).all()).results.map((r) => `${r.platform} ${r.post_at.slice(0, 10)}`));
+  // Posts already there for each platform and day (a platform can have several slots a day).
+  const have = new Map();
+  for (const r of (await db.prepare(`SELECT platform, post_at FROM social_posts WHERE post_at >= ?1 AND post_at <= ?2`)
+    .bind(today.date, `${until}T23:59`).all()).results) {
+    const k = `${r.platform} ${r.post_at.slice(0, 10)}`;
+    (have.get(k) ?? have.set(k, []).get(k)).push(r.post_at.slice(11, 16));
+  }
   const out = [];
   for (let n = 0; n <= AHEAD_DAYS; n++) {
     const date = addDays(today.date, n);
-    for (const s of SLOTS) {
-      if (!s.days.includes(dayOf(date))) continue;
-      // Today only if it's still more than a couple of hours away.
-      const time = slotTime(s, date);
-      if (n === 0 && Number(time.slice(0, 2)) <= today.hour + 2) continue;
-      if (!have.has(`${s.platform} ${date}`)) out.push({ platform: s.platform, date, post_at: `${date}T${time}` });
+    for (const p of [...new Set(SLOTS.map((x) => x.platform))]) {
+      const day = SLOTS.filter((x) => x.platform === p && slotOn(x, date)).map((x) => slotTime(x, date)).sort();
+      const got = have.get(`${p} ${date}`) ?? [];
+      // The slots not taken yet (by time), as many as are still missing that day.
+      const free = day.filter((t) => !got.includes(t)).slice(0, Math.max(0, day.length - got.length));
+      for (const time of free) {
+        // Today only if it's still more than a couple of hours away.
+        if (n === 0 && Number(time.slice(0, 2)) <= today.hour + 2) continue;
+        out.push({ platform: p, date, post_at: `${date}T${time}` });
+      }
     }
   }
   return out;
@@ -195,14 +228,14 @@ async function pinIdea(env, date, src, blocked) {
     const fl = p.categories.includes('Wedding') ? flaggedFor(galleries, p.title).sort((a, b) => (b.h > b.w) - (a.h > a.w)) : [];
     if (fl.length) {
       const next = fl.find((ph) => !pinned.has(`${p.id}#g:${ph.image_id}`));
-      if (next) return { source: 'blog', source_ref: `${p.id}#g:${next.image_id}`, label: p.title.slice(0, 100), link: `${SITE}${p.url}`, photos: [next],
+      if (next) return { source: 'blog', source_ref: `${p.id}#g:${next.image_id}`, label: p.title.slice(0, 100), link: `${SITE}${p.url}`, photos: [next], board: boardFor(p, next),
         facts: `A pin linking to my blog post “${p.title}”: ${p.description}` };
       continue;
     }
     // Upright photos make the best pins; then any.
     const order = p.photos.map((ph, n) => ({ ph, n })).sort((a, b) => (b.ph.h > b.ph.w) - (a.ph.h > a.ph.w));
     const next = order.find(({ n }) => !pinned.has(`${p.id}#${n}`));
-    if (next) return { source: p.categories.includes('Info') ? 'tip' : 'blog', source_ref: `${p.id}#${next.n}`, label: p.title.slice(0, 100), link: `${SITE}${p.url}`, photos: [postPhoto(next.ph)],
+    if (next) return { source: p.categories.includes('Info') ? 'tip' : 'blog', source_ref: `${p.id}#${next.n}`, label: p.title.slice(0, 100), link: `${SITE}${p.url}`, photos: [postPhoto(next.ph)], board: boardFor(p, next.ph),
       facts: `A pin linking to my blog post “${p.title}”: ${p.description}${next.ph.alt ? ` The photo: ${next.ph.alt}.` : ''}` };
   }
   return null;
@@ -260,10 +293,11 @@ export async function draftSlot(env, slot, src, blocked, sameDay = null) {
   }
   const max = PLATFORMS[slot.platform].max;
   const c = await caption(env, slot.platform, it);
-  await db.prepare(`INSERT INTO social_posts (platform, post_at, status, source, source_ref, label, caption, link, photos, ai, error, created_at, format, music_id)
-      VALUES (?1, ?2, 'draft', ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13)`)
+  await db.prepare(`INSERT INTO social_posts (platform, post_at, status, source, source_ref, label, caption, link, photos, ai, error, created_at, format, music_id, board)
+      VALUES (?1, ?2, 'draft', ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14)`)
     .bind(slot.platform, slot.post_at, it.source, it.source_ref, it.label, c.text, PLATFORMS[slot.platform].link ? it.link : null,
-      JSON.stringify(it.photos.slice(0, max)), c.ai, c.error ?? null, new Date().toISOString(), format, format === 'reel' ? music : null).run();
+      JSON.stringify(it.photos.slice(0, max)), c.ai, c.error ?? null, new Date().toISOString(), format, format === 'reel' ? music : null,
+      slot.platform === 'pinterest' ? it.board ?? 'weddings' : null).run();
   return it;
 }
 

@@ -5,7 +5,8 @@
 // and downloads the photos to post them himself.
 type Crop = { x: number; y: number; w: number; h: number };
 type Photo = { src: string; w: number; h: number; image_id?: string; gallery_id?: string; alt?: string; crop?: Crop };
-type Post = { id: number; shape?: string | null; format?: string; music_id?: number | null; platform: string; post_at: string; status: string; source: string; label: string; caption: string; link: string | null; photos: Photo[]; ai: number; error: string | null; media: string | null; remote_url: string | null; tags?: string | null; tag_ids?: number[] };
+type Post = { id: number; shape?: string | null; format?: string; music_id?: number | null; platform: string; post_at: string; status: string; source: string; label: string; caption: string; link: string | null; photos: Photo[]; ai: number; error: string | null; media: string | null; remote_url: string | null; tags?: string | null; tag_ids?: number[]; board?: string | null };
+let pinBoards: Record<string, string> = {};
 // Venues and suppliers to tag (Contacts with an Instagram or Facebook): functions-lib/social-tags.js.
 type Contact = { id: number; business: string; type: string; instagram: string; facebook: string };
 let contacts: Contact[] = [];
@@ -54,7 +55,7 @@ async function load() {
   const r = await fetch(`/api/studio/social?from=${iso(start)}&to=${iso(end)}`);
   const d = await r.json().catch(() => null);
   if (!r.ok || !d) { $('.so-weeks').innerHTML = `<p class="muted">${esc(d?.error || 'Couldn’t load the drafts.')}</p>`; return; }
-  posts = d.posts; platforms = d.platforms; meta = d.meta; music = d.music ?? []; pin = d.pinterest ?? pin; contacts = d.contacts ?? [];
+  posts = d.posts; platforms = d.platforms; meta = d.meta; music = d.music ?? []; pin = d.pinterest ?? pin; contacts = d.contacts ?? []; pinBoards = d.pin_boards ?? {};
   drawMeta();
   drawPin();
   drawMusic();
@@ -83,7 +84,9 @@ function drawPin() {
   const c = pin.connection;
   // Until the Pinterest app is approved and connected, pins go out through the RSS feed.
   const feed = `<p>Approved pins go out through your Pinterest RSS feed: at a pin’s time it joins the feed, and Pinterest picks it up within about a day. Set up once in Pinterest: <strong>Settings › Bulk create Pins › Auto-publish › Connect RSS feed</strong>, paste this address and choose your weddings board.</p>
-    <p class="so-feed"><code>${FEED}</code> <button type="button" class="s-btn s-btn--quiet" data-copy-feed>Copy</button></p>`;
+    <p class="so-feed"><code>${FEED}</code> <button type="button" class="s-btn s-btn--quiet" data-copy-feed>Copy</button></p>
+    <p>Themed boards: make each board in Pinterest with exactly this name, then connect its feed to it the same way (each pin's board is in its editor).</p>
+    <ul class="so-boards">${Object.entries(pinBoards).filter(([k]) => k !== 'weddings').map(([k, n]) => `<li><strong>${esc(n)}</strong> <code>${FEED}?board=${k}</code> <button type="button" class="s-btn s-btn--quiet" data-copy-text="${FEED}?board=${k}">Copy</button></li>`).join('')}</ul>`;
   if (!c?.board_id) {
     box.innerHTML = feed + (pin.ready ? `<p class="muted">The Pinterest app: ${c ? 'connected; choose a board to post through it instead.' : 'once Pinterest approves it, you can connect it here instead.'}</p>${c ? '' : '<a class="s-btn s-btn--quiet" href="/api/studio/pinterest/connect">Connect Pinterest app</a>'}` : '');
     if (!c) return;
@@ -92,7 +95,8 @@ function drawPin() {
     <label>Board <select data-pin-board><option value="">Choose a board…</option>${c.boards.map((b) => `<option value="${esc(b.id)}"${b.id === c.board_id ? ' selected' : ''}>${esc(b.name)}</option>`).join('')}</select></label>
     <p class="muted">${c.board_id ? 'Approved pins go out on their own at their time.' : 'Choose the board pins go to, and approved pins go out on their own.'} Until Pinterest gives the app Standard access (Upgrade, on the app’s page at developers.pinterest.com), pins go out through the website’s feed instead, which Pinterest picks up within a day.</p>
     <a class="s-btn s-btn--quiet" href="/api/studio/pinterest/connect">Reconnect</a> <button type="button" class="s-btn s-btn--quiet" data-pin-off>Disconnect</button>${c.board_id ? ' <button type="button" class="s-btn s-btn--quiet" data-pin-test title="For Pinterest’s Standard access video: makes a pin in Pinterest’s sandbox (test area)">Make a test pin</button>' : ''}
-    <p class="so-pin-test muted" hidden></p>`;
+    <p class="so-pin-test muted" hidden></p>
+    <details class="so-feeds"><summary>RSS feeds (used until the app has Standard access)</summary>${feed}</details>`;
 }
 
 function draw() {
@@ -152,6 +156,9 @@ function openPost(p: Post) {
   $('.ed-label').firstChild!.textContent = p.platform === 'pinterest' ? 'Pin title ' : 'Note (only you see this) ';
   field<HTMLTextAreaElement>('caption').value = p.caption;
   field<HTMLTextAreaElement>('caption').maxLength = pf.chars;
+  // Pinterest: the themed board it goes to.
+  $('.ed-board').hidden = p.platform !== 'pinterest';
+  (form.elements.namedItem('board') as HTMLSelectElement).innerHTML = Object.entries(pinBoards).map(([k, n]) => `<option value="${k}"${(p.board ?? 'weddings') === k ? ' selected' : ''}>${esc(n)}</option>`).join('');
   field<HTMLInputElement>('link').value = p.link ?? '';
   (form.elements.namedItem('shape') as HTMLSelectElement).value = p.shape ?? '4:5';
   (form.elements.namedItem('format') as HTMLSelectElement).value = p.format ?? 'photos';
@@ -281,7 +288,7 @@ bigBox.addEventListener('wheel', (e) => {
 async function save() {
   const p = open!;
   p.photos.forEach((x) => cropOf(x));
-  const d = await api({ action: 'save', id: p.id, caption: field('caption').value, post_at: field('post_at').value, link: field('link').value || null, label: field('label').value, photos: p.photos, shape: p.shape ?? null, format: p.format ?? 'photos', music_id: p.music_id ?? null, tags: p.tag_ids ?? [] });
+  const d = await api({ action: 'save', id: p.id, caption: field('caption').value, post_at: field('post_at').value, link: field('link').value || null, label: field('label').value, photos: p.photos, shape: p.shape ?? null, format: p.format ?? 'photos', music_id: p.music_id ?? null, tags: p.tag_ids ?? [], board: (form.elements.namedItem('board') as HTMLSelectElement).value || null });
   replace(d.post);
   return d.post as Post;
 }
@@ -528,6 +535,10 @@ document.addEventListener('change', async (e) => {
   const d = await r.json().catch(() => ({}));
   if (!r.ok) { toast(d.error || 'That didn’t change.', true); return; }
   pin = d; drawPin(); draw(); toast('Board chosen.');
+});
+document.addEventListener('click', async (e) => {
+  const ct = (e.target as HTMLElement).closest<HTMLElement>('[data-copy-text]');
+  if (ct) { await navigator.clipboard.writeText(ct.dataset.copyText!); toast('Copied.'); }
 });
 document.addEventListener('click', async (e) => {
   if (!(e.target as HTMLElement).closest('[data-pin-off]')) return;

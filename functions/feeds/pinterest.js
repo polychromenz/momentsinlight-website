@@ -4,13 +4,22 @@
 // address and the board. When an approved pin's time comes, the timer marks it posted
 // (functions-lib/meta.js publish) and it appears here; Pinterest reads the feed about once a day and
 // makes a pin from each new item (its image, title, description and link).
-//   GET /feeds/pinterest   (public: Pinterest fetches it)
+//   GET /feeds/pinterest              the main board (Moments In Light Weddings), and older pins with no board
+//   GET /feeds/pinterest?board=bw     one themed board's pins (PIN_BOARDS in functions-lib/social.js), each
+//                                     connected in Pinterest to its own board
+// Pins the Pinterest app posted itself (remote_id set, once it has Standard access) are left out, so
+// they aren't made twice.
+import { PIN_BOARDS } from '../../functions-lib/social.js';
+
 const SITE = 'https://www.momentsinlight.co.nz';
 const x = (s) => String(s ?? '').replace(/[<>&'"]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', "'": '&apos;', '"': '&quot;' })[c]);
 
-export async function onRequestGet({ env }) {
+export async function onRequestGet({ request, env }) {
+  const board = new URL(request.url).searchParams.get('board') || 'weddings';
+  if (!PIN_BOARDS[board]) return new Response('No such board.', { status: 404 });
   const rows = (await env.DB.prepare(`SELECT id, label, caption, link, media, posted_at FROM social_posts
-      WHERE platform = 'pinterest' AND status = 'posted' AND media IS NOT NULL AND media <> '[]' ORDER BY posted_at DESC LIMIT 50`).all()).results;
+      WHERE platform = 'pinterest' AND status = 'posted' AND media IS NOT NULL AND media <> '[]' AND remote_id IS NULL
+        AND (board = ?1 OR (?1 = 'weddings' AND board IS NULL)) ORDER BY posted_at DESC LIMIT 50`).bind(board).all()).results;
   const items = rows.map((p) => {
     const img = JSON.parse(p.media)[0];
     const when = new Date(p.posted_at || Date.now()).toUTCString();
@@ -27,7 +36,7 @@ export async function onRequestGet({ env }) {
   const body = `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:media="http://search.yahoo.com/mrss/">
 <channel>
-  <title>Moments in Light: wedding photography, Auckland</title>
+  <title>Moments in Light: ${x(PIN_BOARDS[board])}</title>
   <link>${SITE}</link>
   <description>Wedding photos and stories from Moments in Light, Auckland, New Zealand.</description>
   <language>en-nz</language>
