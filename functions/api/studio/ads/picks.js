@@ -2,6 +2,7 @@
 //   GET  /api/studio/ads/picks                    -> { picks, campaign, images: { now, waiting, limit } }
 //   GET  /api/studio/ads/picks?image=<id>         the web-size photo (same origin, so the browser can crop it)
 //   POST /api/studio/ads/picks { action: 'toggle', gallery_id, image_id }      pick or unpick a photo
+//   POST /api/studio/ads/picks { action: 'pick', gallery_id, image_ids }       pick these (already picked: left as they are)
 //   POST /api/studio/ads/picks { action: 'crop', id, crop_wide, crop_square }   nudged crops (square null = none)
 //   PUT  /api/studio/ads/picks?id=…&kind=wide|square   (body: the cropped JPEG the browser made)
 //   POST /api/studio/ads/picks { action: 'approve', id }   the Ads Script adds the files on its next run
@@ -29,6 +30,18 @@ export async function onRequestPost({ request, env }) {
   const d = await request.json().catch(() => ({}));
   const db = env.DB;
   const now = new Date().toISOString();
+  if (d.action === 'pick') {
+    const gid = String(d.gallery_id ?? '');
+    const why = await adsBlocked(db, gid);
+    if (why) return json({ error: why }, 400);
+    const ids = (Array.isArray(d.image_ids) ? d.image_ids : []).map(String).slice(0, 2000);
+    const real = (await db.prepare('SELECT id FROM gallery_images WHERE gallery_id = ?1 AND id IN (SELECT value FROM json_each(?2))').bind(gid, JSON.stringify(ids)).all()).results.map((r) => r.id);
+    for (let n = 0; n < real.length; n += 50)
+      await db.batch(real.slice(n, n + 50).map((i) => db.prepare(`INSERT INTO photo_picks (image_id, gallery_id, purpose, created_at) SELECT ?1, ?2, 'ads', ?3
+        WHERE NOT EXISTS (SELECT 1 FROM photo_picks WHERE image_id = ?1 AND purpose = 'ads')`).bind(i, gid, now)));
+    const picked = (await db.prepare(`SELECT image_id, status FROM photo_picks WHERE gallery_id = ?1 AND purpose = 'ads'`).bind(gid).all()).results;
+    return json({ picks: Object.fromEntries(picked.map((r) => [r.image_id, r.status === 'added' ? 'added' : 'picked'])) });
+  }
   if (d.action === 'toggle') {
     const img = await db.prepare('SELECT id, gallery_id FROM gallery_images WHERE id = ?1 AND gallery_id = ?2').bind(String(d.image_id ?? ''), String(d.gallery_id ?? '')).first();
     if (!img) return json({ error: 'That photo isn’t in this gallery.' }, 404);

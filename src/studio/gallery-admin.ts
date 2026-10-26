@@ -125,7 +125,7 @@ function thumb(i: any) {
   return `<div class="th${i.is_hero ? ' hero' : ''}${i.hidden ? ' hid' : ''}${selected.has(i.id) ? ' sel' : ''}" data-id="${i.id}" draggable="true" style="width:${w}px;height:${thumbH}px" title="${esc(i.filename)}">
     <img src="${esc(i.thumb)}" alt="" loading="lazy" />
     <span class="marks">${i.is_hero ? '<span class="hero-mark">★</span>' : ''}${cover ? '<span>Cover</span>' : ''}${i.hidden ? '<span>Hidden</span>' : ''}${d.picks?.[i.id] ? `<span class="ad-mark" title="${d.picks[i.id] === 'added' ? 'In Google Ads' : 'Picked for Google Ads'}">Ad</span>` : ''}${d.social?.includes(i.id) ? '<span class="so-mark" title="Marked for social media posts">Social</span>' : ''}${d.blog?.includes(i.id) ? '<span class="so-mark bl-mark" title="Marked for blog posts">Blog</span>' : ''}</span>
-    <span class="tools"><button type="button" class="star" data-t="hero" title="${i.is_hero ? 'Not a highlight' : 'Highlight (a row of its own)'}">${i.is_hero ? '☆' : '★'}</button><button type="button" data-t="cover" title="Use as the cover">◎</button><button type="button" data-t="hide" title="${i.hidden ? 'Show' : 'Hide'}">${i.hidden ? '◉' : '⊘'}</button><button type="button" class="ad-t" data-t="ad" title="${d.ads_blocked ? esc(d.ads_blocked) : d.picks?.[i.id] ? 'Not for Google Ads' : 'Use in Google Ads (only you see this)'}"${d.ads_blocked && !d.picks?.[i.id] ? ' disabled' : ''}>Ad</button><button type="button" class="so-t" data-t="social" title="${d.ads_blocked ? esc(d.ads_blocked.replace('no ads', 'no marketing')) : d.social?.includes(i.id) ? 'Not for social media' : 'Use in social media posts (only you see this)'}"${d.ads_blocked && !d.social?.includes(i.id) ? ' disabled' : ''}>S</button><button type="button" class="so-t bl-t" data-t="blog" title="${d.blog?.includes(i.id) ? 'Not for the blog' : 'Use in a blog post (only you see this)'}">B</button></span></div>`;
+    <span class="tools"><button type="button" class="star" data-t="hero" title="${i.is_hero ? 'Not a highlight' : 'Highlight (a row of its own)'}">${i.is_hero ? '☆' : '★'}</button><button type="button" data-t="cover" title="Use as the cover">◎</button><button type="button" data-t="hide" title="${i.hidden ? 'Show' : 'Hide'}">${i.hidden ? '◉' : '⊘'}</button><button type="button" class="ad-t" data-t="ad" title="${d.ads_blocked ? esc(d.ads_blocked) : d.picks?.[i.id] ? 'Not for Google Ads' : 'Use in Google Ads (only you see this)'}"${d.ads_blocked && !d.picks?.[i.id] ? ' disabled' : ''}>Ad</button><button type="button" class="so-t" data-t="social" title="${d.ads_blocked ? esc(d.ads_blocked.replace('no ads', 'no marketing')) : d.social?.includes(i.id) ? 'Not for social media' : 'Use in social media posts (only you see this)'}"${d.ads_blocked && !d.social?.includes(i.id) ? ' disabled' : ''}>S</button><button type="button" class="so-t bl-t" data-t="blog" title="${d.blog?.includes(i.id) ? 'Not for the blog' : 'Use in a blog post (only you see this)'}">B</button><button type="button" class="so-t all-t" data-t="all3" title="Mark for Google Ads, social media and the blog (already marked: stays marked)">All</button></span></div>`;
 }
 function drawPhotos() {
   const secs = sorted();
@@ -156,6 +156,22 @@ function selbar() {
   $('.sel-n').textContent = `${n} selected`;
   $<HTMLSelectElement>('[data-move]').innerHTML = `<option value="">a section…</option>${sorted().map((s: any) => `<option value="${s.id}">${esc(s.name)}</option>`).join('')}`;
 }
+/** Ad + Social + Blog: marks the photos for all three (nothing is unmarked). Ads and social are left
+ *  out when the couple said no to marketing; the blog is still fine. */
+async function markAll3(ids: string[]) {
+  const done: string[] = [];
+  if (!d.ads_blocked) {
+    const a = await tryApi('/api/studio/ads/picks', 'POST', { action: 'pick', gallery_id: id, image_ids: ids });
+    if (a) { d.picks = a.picks; done.push('Google Ads'); }
+    const so = await tryApi('/api/studio/social', 'POST', { action: 'mark', gallery_id: id, image_ids: ids, on: true });
+    if (so) { d.social = so.marked; done.push('social media'); }
+  }
+  const bl = await tryApi('/api/studio/blog-photos', 'POST', { action: 'mark', gallery_id: id, image_ids: ids, on: true });
+  if (bl) { d.blog = bl.marked; done.push('the blog'); }
+  drawPhotos();
+  if (done.length) toast(`${ids.length} photo${ids.length === 1 ? '' : 's'} marked for ${done.join(', ').replace(/, ([^,]*)$/, ' and $1')}.${d.ads_blocked ? ' (No ads or social: the couple said no to marketing.)' : ''}`);
+}
+
 async function patch(ids: string[], set: Record<string, unknown>) {
   if (!(await tryApi('/api/studio/galleries/photos', 'PATCH', { gallery_id: id, ids, set }))) return;
   for (const i of d.images) if (ids.includes(i.id)) Object.assign(i, set);
@@ -404,6 +420,7 @@ document.addEventListener('click', async (e) => {
       if (r) { d.social = r.marked; drawPhotos(); toast(r.on ? 'Marked for social media. Drafts use it on the Social page.' : 'Not for social media.'); }
       return;
     }
+    if (tool.dataset.t === 'all3') return markAll3([iid]);
     if (tool.dataset.t === 'blog') {
       const r = await tryApi('/api/studio/blog-photos', 'POST', { action: 'mark', gallery_id: id, image_ids: [iid] });
       if (r) { d.blog = r.marked; drawPhotos(); toast(r.on ? 'Marked for the blog. In a post, use “From a gallery” to add it.' : 'Not for the blog.'); }
@@ -450,6 +467,7 @@ document.addEventListener('click', async (e) => {
       if (r) { selected.clear(); drawPhotos(); toast(`${r.name}’s vendor link now has ${r.photos} photo${r.photos === 1 ? '' : 's'}. Copy it from the Sharing tab.`); }
       return;
     }
+    if (k === 'all3') { await markAll3(ids); selected.clear(); drawPhotos(); return; }
     if (k === 'blog' || k === 'unblog') {
       const r = await tryApi('/api/studio/blog-photos', 'POST', { action: 'mark', gallery_id: id, image_ids: ids, on: k === 'blog' });
       if (r) { d.blog = r.marked; selected.clear(); drawPhotos(); toast(k === 'blog' ? `${ids.length} photo${ids.length === 1 ? '' : 's'} marked for the blog (${r.marked.length} in this gallery).` : 'Unmarked.'); }
