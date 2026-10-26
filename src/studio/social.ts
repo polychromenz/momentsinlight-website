@@ -629,3 +629,22 @@ document.addEventListener('click', async (e) => {
   toast('Removed.');
   load();
 });
+
+// Kept out: children-only photos (functions-lib/kids.js), with Tony's "Fine to post" / "Keep out".
+const thumb = (src: string) => (src.includes('imagedelivery.net/') ? src.replace(/\/[^/]+$/, '/w=300') : src.replace(/_2048\.jpg/, '_600.jpg'));
+async function drawKids() {
+  const r = await fetch('/api/studio/social?kids=1');
+  const d = await r.json().catch(() => null);
+  const box = $('.kids-list');
+  if (!r.ok || !d) { box.innerHTML = '<p class="muted">Couldn’t load them.</p>'; return; }
+  box.innerHTML = d.photos.length ? d.photos.map((p: { key: string; src: string; kids: number; manual: number; label: string }) => `<figure class="${p.kids ? '' : 'ok'}"><img src="${esc(thumb(p.src))}" alt="" loading="lazy" /><figcaption>${esc(p.label)}${p.manual ? ' · your call' : ''}</figcaption>
+    <button type="button" class="s-btn s-btn--quiet" data-kids="${esc(p.key)}" data-v="${p.kids ? 0 : 1}">${p.kids ? 'Fine to post' : 'Keep out'}</button></figure>`).join('') : '<p class="muted">None so far.</p>';
+  $('.kids-state').textContent = `${d.checked} photo${d.checked === 1 ? '' : 's'} checked so far.`;
+}
+document.addEventListener('click', async (e) => {
+  const b = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-kids]');
+  if (!b) return;
+  try { await api({ action: 'kids_flag', key: b.dataset.kids, kids: b.dataset.v === '1' }); toast(b.dataset.v === '1' ? 'Kept out of posts.' : 'It can be used in posts again.'); drawKids(); }
+  catch (err) { toast((err as Error).message, true); }
+});
+drawKids();

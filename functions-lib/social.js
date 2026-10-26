@@ -12,6 +12,7 @@
 import { webUrl } from './galleries.js';
 import { chat } from './ai.js';
 import { nzNow } from './schedules.js';
+import { kidsKeys, withoutKids, kidsScan } from './kids.js';
 
 const SITE = 'https://www.momentsinlight.co.nz';
 
@@ -95,10 +96,16 @@ export async function openSlots(db, today = nzNow()) {
 }
 
 // ---- What there is to post about ----
-export async function sources(env) {
+export async function sources(env, { all = false } = {}) {
   const r = await env.ASSETS.fetch(new Request(`${SITE}/studio/social-sources.json`));
   if (!r.ok) throw new Error(`social sources ${r.status}`);
-  return r.json();
+  const src = await r.json();
+  if (all) return src;
+  // Children-only photos are never posted (functions-lib/kids.js).
+  const kids = await kidsKeys(env.DB);
+  for (const p of src.posts) p.photos = p.photos.filter((ph) => !kids.has(ph.src));
+  for (const rv of src.reviews) rv.photos = rv.photos.filter((ph) => !kids.has(ph.src));
+  return src;
 }
 /** Clients who said no to marketing: their names, to keep their blog posts and reviews out too. */
 async function noMarketing(db) {
@@ -119,11 +126,12 @@ async function lastUsed(db, source, platform = null) {
 const usedSince = (used, ref, date, days) => { const at = used.get(ref); return at && at.slice(0, 10) > addDays(date, -days); };
 
 /** Gallery photos marked Social, by gallery, with the couple's details. */
-async function markedPhotos(db) {
+async function markedPhotos(db, { all = false } = {}) {
+  const kids = all ? new Set() : await kidsKeys(db);
   const rows = (await db.prepare(`SELECT p.image_id, p.gallery_id, g.name gallery, i.width, i.height, i.web_crc, j.venue, j.job_type
       FROM photo_picks p JOIN gallery_images i ON i.id = p.image_id JOIN photo_galleries g ON g.id = p.gallery_id
       LEFT JOIN jobs j ON j.id = g.job_id LEFT JOIN clients c ON c.id = COALESCE(g.client_id, j.client_id)
-      WHERE p.purpose = 'social' AND i.status = 'ready' AND COALESCE(c.ads_ok, 1) = 1 ORDER BY i.sort_order, i.id`).all()).results;
+      WHERE p.purpose = 'social' AND i.status = 'ready' AND COALESCE(c.ads_ok, 1) = 1 ORDER BY i.sort_order, i.id`).all()).results.filter((r) => !kids.has(r.image_id));
   const by = new Map();
   for (const r of rows) (by.get(r.gallery_id) ?? by.set(r.gallery_id, { gallery_id: r.gallery_id, name: couple(r.gallery), venue: r.venue ?? '', type: r.job_type ?? 'Wedding', photos: [] }).get(r.gallery_id)).photos.push(r);
   return [...by.values()];
@@ -244,7 +252,7 @@ async function pinIdea(env, date, src, blocked) {
 // ---- Captions ----
 const VOICE = `You write social media posts for Tony Gorham, a wedding and portrait photographer in West Auckland, New Zealand (Moments in Light).
 Voice: warm, relaxed and genuine, first person ("I"), New Zealand English spelling (colour, favourite, organise). Couples' first names only.
-Never mention prices. Never make up details that aren't in the facts. At most one emoji. Reply with only the post text, no quotes or headings.`;
+Never mention prices. Never make up details that aren't in the facts. Never use or invent anyone's name unless that name is in the facts: if no names are given, say "the couple" or "this couple". At most one emoji. Reply with only the post text, no quotes or headings.`;
 const RULES = {
   instagram: 'An Instagram caption: 2 to 4 short paragraphs (under 120 words), then a blank line and 8 to 12 relevant hashtags (e.g. #aucklandweddingphotographer, #nzwedding, the venue as a hashtag). If there is a blog post, say the full story is at the link in my bio.',
   facebook: 'A Facebook page post: 2 or 3 short paragraphs (under 100 words), no hashtags. If there is a link, end with a short line inviting people to read or see more (the link is added after your text).',
@@ -253,10 +261,17 @@ const RULES = {
 };
 async function caption(env, platform, it) {
   try {
-    let text = await chat(env, [{ role: 'system', content: VOICE }, { role: 'user', content: `${RULES[platform]}\n\nFacts: ${it.facts}` }], 400);
+    const ask = (extra = '') => chat(env, [{ role: 'system', content: VOICE }, { role: 'user', content: `${RULES[platform]}${extra}\n\nFacts: ${it.facts}` }], 400);
+    let text = await ask();
+    // The AI sometimes invents couples' names ("Emma and Mike", 27 Oct 2026): a name pair that isn't
+    // in the facts gets one retry with a firmer reminder, then a note for Tony to check.
+    const known = `${it.facts} ${it.label ?? ''}`.toLowerCase();
+    const madeUp = (t) => [...t.matchAll(/\b([A-Z][a-z]+) (?:and|&) ([A-Z][a-z]+)\b/g)].some((m) => !known.includes(m[1].toLowerCase()) || !known.includes(m[2].toLowerCase()));
+    if (madeUp(text)) text = await ask(' Do not mention any names at all; say "the couple".');
     text = text.replace(/^["“']|["”']$/g, '').trim();
+    const unsure = madeUp(text);
     if (platform === 'facebook' && it.link && !text.includes(it.link)) text += `\n\n${it.link}`;
-    return { text, ai: 1 };
+    return unsure ? { text, ai: 1, error: 'Check the names: they may not be right.' } : { text, ai: 1 };
   } catch (e) {
     // No AI today: a plain start Tony can finish.
     return { text: `${it.label}.${platform === 'facebook' && it.link ? `\n\n${it.link}` : ''}`, ai: 0, error: e.message };
@@ -285,6 +300,12 @@ export async function draftSlot(env, slot, src, blocked, sameDay = null) {
   const music = it?.format ? it.music_id ?? null : slot.platform === 'instagram' && dayOf(slot.date) === REEL_DAY ? await pickMusic(db) : null;
   const format = it?.format ?? (music ? 'reel' : 'photos');
   if (!it) it = slot.platform === 'pinterest' ? await pinIdea(env, slot.date, src, blocked) : await idea(env, slot.platform, slot.date, kindFor(slot.platform, slot.date), src, blocked, format === 'reel' ? 10 : null);
+  // Children-only photos out (checked now if they haven't been yet); none left: try again next run
+  // (they're remembered, so the next try picks something else).
+  if (it && !sameDay) {
+    it.photos = await withoutKids(env, it.photos, it.label);
+    if (!it.photos.length) return null;
+  }
   if (!it) {
     // Nothing fresh to say: hold the slot as a skipped one so it isn't retried every run.
     await db.prepare(`INSERT INTO social_posts (platform, post_at, status, source, label, created_at) VALUES (?1, ?2, 'skipped', 'none', 'Nothing new to post', ?3)`)
@@ -306,6 +327,7 @@ export async function socialTimer(env) {
   const db = env.DB;
   const set = await db.prepare(`SELECT value FROM settings WHERE key = 'social'`).first();
   if (set && JSON.parse(set.value).drafts === false) return 'off';
+  await kidsScan(env, await kidsCandidates(env), 6).catch((e) => console.error('kids: scan', e.message));
   const slots = (await openSlots(db)).slice(0, PER_RUN);
   if (!slots.length) return 'full';
   const src = await sources(env);
@@ -410,7 +432,10 @@ export async function freshPhotos(env, p) {
   for (let i = pool.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [pool[i], pool[j]] = [pool[j], pool[i]]; }
   const key = (x) => (use.get(x.image_id || x.src) ?? 0) * 4 + (x.image_id ? 0 : 1) * 2 + (p.platform === 'pinterest' && !(x.h > x.w) ? 1 : 0);
   pool.sort((a, b) => key(a) - key(b));
-  return pool.slice(0, p.platform === 'pinterest' ? 1 : count);
+  const want = p.platform === 'pinterest' ? 1 : count;
+  const out = [];
+  for (const x of pool) { if (out.length >= want) break; if (!(await withoutKids(env, [x], p.label)).length) continue; out.push(x); }
+  return out.length ? out : null;
 }
 
 /** Suggestions for the Ideas list: things that happened lately that would make a good post. */
@@ -430,5 +455,15 @@ export async function ideas(env) {
   for (const g of galleries) if (!g.marked) out.push({ kind: 'gallery', text: `${couple(g.name)}’s gallery is out: mark a few favourites Social for a sneak peek.`, link: `/studio/gallery?id=${g.id}` });
   const marked = (await db.prepare(`SELECT count(*) n FROM photo_picks WHERE purpose = 'social'`).first()).n;
   if (marked < 12) out.push({ kind: 'photos', text: `Only ${marked} gallery photo${marked === 1 ? '' : 's'} marked Social. Mark more (select them in a gallery, then Social) for Monday’s wedding posts.` });
+  return out;
+}
+
+/** Every photo the drafts could use (Social-marked gallery photos and blog photos), to check for
+ *  children-only ones ahead of time: [{ photo, label }]. */
+export async function kidsCandidates(env) {
+  const out = [];
+  for (const g of await markedPhotos(env.DB, { all: true })) for (const r of g.photos) out.push({ photo: galleryPhoto(r), label: g.name });
+  const src = await sources(env, { all: true });
+  for (const p of src.posts) for (const ph of p.photos) out.push({ photo: postPhoto(ph), label: p.title });
   return out;
 }

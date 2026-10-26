@@ -17,11 +17,19 @@ import { PLATFORMS, PIN_BOARDS, ideas, recaption, swapDraft, socialTimer, freshP
 import { metaStatus, connectedFor, publishPost } from '../../../../functions-lib/meta.js';
 import { pinterestStatus } from '../../../../functions-lib/pinterest.js';
 import { socialContacts, tagIds } from '../../../../functions-lib/social-tags.js';
+import { kidsScan } from '../../../../functions-lib/kids.js';
+import { kidsCandidates } from '../../../../functions-lib/social.js';
 
 const shape = (p) => ({ ...p, photos: JSON.parse(p.photos || '[]') });
 
 export async function onRequestGet({ request, env }) {
   const q = new URL(request.url).searchParams;
+  // Photos kept out of posts as children-only (functions-lib/kids.js), for Tony to check.
+  if (q.has('kids')) {
+    const rows = (await env.DB.prepare(`SELECT key, src, kids, manual, label, checked_at FROM photo_flags WHERE kids = 1 OR manual = 1 ORDER BY kids DESC, label`).all()).results;
+    const total = (await env.DB.prepare(`SELECT count(*) n FROM photo_flags`).first()).n;
+    return json({ photos: rows, checked: total });
+  }
   const ok = (s) => /^\d{4}-\d{2}-\d{2}$/.test(s ?? '');
   const from = ok(q.get('from')) ? q.get('from') : new Date().toISOString().slice(0, 10);
   const to = ok(q.get('to')) ? q.get('to') : from;
@@ -48,6 +56,12 @@ export async function onRequestPost({ request, env }) {
   const db = env.DB;
   const now = new Date().toISOString();
   try {
+    // Children-only photos: Tony's say (kids 0 = fine to post, 1 = keep out), and a quick extra scan.
+    if (d.action === 'kids_flag') {
+      await db.prepare(`UPDATE photo_flags SET kids = ?2, manual = 1, checked_at = ?3 WHERE key = ?1`).bind(String(d.key ?? ''), d.kids ? 1 : 0, now).run();
+      return json({ ok: true });
+    }
+    if (d.action === 'kids_scan') return json(await kidsScan(env, await kidsCandidates(env), Math.min(20, Number(d.max) || 15)));
     if (d.action === 'mark') {
       const gid = String(d.gallery_id ?? '');
       const ids = (Array.isArray(d.image_ids) ? d.image_ids : []).map(String).slice(0, 2000);

@@ -54,6 +54,13 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
       <label class="so-auto"><input type="checkbox" data-auto /> Make drafts automatically (a week ahead: Instagram and Facebook Mon, Wed, Fri; Google Tuesday; Pinterest weekdays)</label>
     </section>
 
+    <section class="card so-kids">
+      <h2>Kept out: children only</h2>
+      <p class="muted">Photos with only children in them are never used in posts or pins. The studio’s image AI checks each photo once (a few every few minutes in the background). Here are the ones it kept out: if it got one wrong, click <strong>Fine to post</strong>. In a gallery you can also untick Social on a photo you didn’t mean to mark.</p>
+      <div class="kids-list"><p class="muted">Loading…</p></div>
+      <p class="muted kids-state"></p>
+    </section>
+
     <section class="card so-times">
       <h2>Best times to post</h2>
       <p class="muted">When engaged couples are around, by day and hour (NZ time): when your wedding enquiries arrive and when people click your Google Ads, each counted equally. Darker means busier. The outlined squares are when Instagram and Facebook posts go out (12:15pm Mon and Wed, Friday’s Reel 7:30pm; Facebook 15 minutes later). Instagram, Facebook and Meta ads data can be added once there’s enough of it.</p>
@@ -261,4 +268,9 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
   .ed-tag-list { display: flex; flex-wrap: wrap; gap: 6px 14px; }
   .ed-tag-list label { display: inline-flex; gap: 6px; align-items: center; font-weight: 400; }
   .ed-credit { margin: 0; font-size: 12px; }
+  .kids-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; margin: 10px 0; }
+  .kids-list figure { margin: 0; font-size: 12px; color: #555; }
+  .kids-list img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 8px; display: block; background: #eee; }
+  .kids-list figcaption { margin: 4px 0; }
+  .kids-list .ok { opacity: 0.5; }
 </style>
