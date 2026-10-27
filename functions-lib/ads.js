@@ -46,9 +46,13 @@ export async function scriptRequest(request, env) {
 export async function scriptState(env) {
   const last = await env.DB.prepare(`SELECT max(run_at) at FROM ads_import_log WHERE ok = 1 AND report = 'done'`).first();
   const first = !last?.at;
-  // Asked for from the studio (Send everything on the next run), or a day since the last export.
+  // Asked for from the studio (Send everything on the next run), a day since the last export, or the
+  // first run from 3am NZ when the last export was before today: the 7am email then has all of yesterday.
   const force = await env.DB.prepare("SELECT 1 FROM settings WHERE key = 'ads_force'").first();
-  const due = first || !!force || Date.now() - Date.parse(last.at) > 20 * 3600_000;
+  const nzDay = (d) => d.toLocaleDateString('en-CA', { timeZone: 'Pacific/Auckland' });
+  const nzHour = Number(new Date().toLocaleString('en-NZ', { timeZone: 'Pacific/Auckland', hour: 'numeric', hour12: false }));
+  const newDay = !first && nzDay(new Date(last.at)) < nzDay(new Date()) && nzHour >= 3;
+  const due = first || !!force || newDay || Date.now() - Date.parse(last.at) > 20 * 3600_000;
   const actions = (await env.DB.prepare(`SELECT id, type, payload FROM ads_action WHERE status = 'pending' AND type IN ('add_negative', 'remove_image', 'add_image')
       ORDER BY type = 'add_image', id LIMIT 20`).all()).results
     .map((a) => {
