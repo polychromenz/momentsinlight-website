@@ -24,7 +24,9 @@ const css = `
 .dp.dp.dp .dp-day:hover { background: #f6f1ea; }
 .dp.dp.dp .dp-day.out { color: #bbb; }
 .dp.dp.dp .dp-day.today { font-weight: 700; color: var(--green, #5a5e3b); }
+.dp.dp.dp .dp-grid .dp-day.today { border-radius: 50%; box-shadow: inset 0 0 0 2px var(--gold, #b39a6b); }
 .dp.dp.dp .dp-day.on, .dp.dp.dp .dp-day.on:hover { background: var(--green, #5a5e3b); color: #fff; }
+.dp.dp.dp .dp-grid .dp-day.today.on { box-shadow: inset 0 0 0 2px var(--gold, #b39a6b), inset 0 0 0 4px #fff; }
 .dp.dp.dp .dp-months { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; }
 .dp.dp.dp .dp-months .dp-day { height: 36px; line-height: 36px; }
 .dp.dp.dp .dp-day:disabled { color: #ddd; cursor: default; background: none; }
