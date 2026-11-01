@@ -63,7 +63,7 @@ const ogImage = image ? sized(image, 1500) : undefined;
     <meta name="twitter:card" content="summary_large_image" />
 
     {jsonLd && <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />}
-    <Tracking />
+    <Tracking visits={!noindex || Astro.url.pathname.startsWith("/book")} />
   </head>
   <body class:list={{ 'bg-alt': background === 'alt' }}>
     <a class="skip-link" href="#main">Skip to content</a>

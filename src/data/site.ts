@@ -21,6 +21,8 @@ export const site = {
 export const tracking = {
   googleAnalytics: 'G-6S72EDGXNK',
   metaPixel: '813954996871495',
+  // Microsoft Clarity (visit recordings and heatmaps, clarity.microsoft.com): the project id.
+  clarity: '',
 };
 
 export const announcement = {

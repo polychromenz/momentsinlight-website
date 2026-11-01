@@ -10,6 +10,15 @@
 import { createLead } from '../../functions-lib/enquiry.js';
 import { spamCheck, keepSpam } from '../../functions-lib/spam.js';
 
+/** The Google ad that brought them (from the form, which the site's tracking filled in), as JSON or null. */
+function adClick(raw) {
+  try {
+    const a = JSON.parse(raw);
+    const s = (v, n) => String(v ?? '').slice(0, n);
+    return JSON.stringify({ at: new Date(Number(a.at) || Date.now()).toISOString(), term: s(a.term, 100), match: s(a.match, 10), campaign: s(a.campaign, 40), gclid: s(a.gclid, 200), page: s(a.page, 200) });
+  } catch { return null; }
+}
+
 const reply = (data, status = 200) => new Response(JSON.stringify(data), { status, headers: { 'content-type': 'application/json' } });
 
 export async function onRequestPost(context) {
@@ -31,6 +40,7 @@ export async function onRequestPost(context) {
     venue: clean('venue', 200),
     message: clean('message', 5000),
     source: clean('lead_source', 60),
+    ad: adClick(clean('ad', 1000)),
   };
   if (!f.first || !f.last || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f.email) || !f.date) {
     return reply({ error: 'Please fill in your name, email and event date.' }, 400);

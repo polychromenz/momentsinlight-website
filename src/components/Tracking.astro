@@ -7,14 +7,57 @@
 // guide signup's lead events); the two libraries themselves are only fetched once the page
 // has finished loading and the browser is idle, so they don't compete with the photos.
 // Their combined ~140KB of script cost phones about 0.7s while the page was loading.
+//
+// Also: an ad click's search is remembered for 30 days so the enquiry form can say which ad brought
+// it (EnquiryForm.astro); and on public pages (visits), the site's own visit log for Studio > SEO >
+// Pages (functions/api/visit.js) and Microsoft Clarity. Tony's own browsing (anyone who has opened
+// the studio in this browser) isn't logged or recorded.
 import { tracking } from '../data/site';
 
-const { googleAnalytics: ga, metaPixel: pixel } = tracking;
+interface Props { visits?: boolean }
+const { visits = true } = Astro.props;
+const { googleAnalytics: ga, metaPixel: pixel, clarity } = tracking;
 const enabled = import.meta.env.PROD;
 ---
 {enabled && (ga || pixel) && (
-  <script is:inline define:vars={{ ga, pixel }}>
+  <script is:inline define:vars={{ ga, pixel, clarity, visits }}>
     const scripts = [];
+    const q = new URLSearchParams(location.search);
+    const click = q.get('gclid') || q.get('gbraid') || q.get('wbraid');
+    const fromAd = !!click || /^(cpc|ppc|paid)$/i.test(q.get('utm_medium') || '');
+    try {
+      if (fromAd) localStorage.setItem('mil_ad', JSON.stringify({ at: Date.now(), gclid: click || '', term: q.get('utm_term') || '', match: q.get('mt') || '', campaign: q.get('utm_campaign') || '', page: location.pathname }));
+    } catch (e) {}
+    let me = false;
+    try { me = !!localStorage.getItem('mil_me'); } catch (e) {}
+    if (visits && !me) {
+      try {
+        let sid = sessionStorage.getItem('mil_sid');
+        const landing = !sid;
+        if (!sid) { sid = Math.random().toString(36).slice(2, 12) + Date.now().toString(36); sessionStorage.setItem('mil_sid', sid); }
+        if (landing && fromAd) sessionStorage.setItem('mil_sad', q.get('utm_term') || '-');
+        const seq = Number(sessionStorage.getItem('mil_seq') || 0) + 1;
+        sessionStorage.setItem('mil_seq', String(seq));
+        const adTerm = sessionStorage.getItem('mil_sad');
+        const host = landing && document.referrer ? new URL(document.referrer).hostname.replace(/^www\./, '') : '';
+        const ref = !landing ? '' : !host ? 'direct' : host === location.hostname.replace(/^www\./, '') ? '' : (host.match(/google|bing|facebook|instagram|pinterest|duckduckgo|yahoo/) || [host])[0];
+        let shown = document.visibilityState === 'visible' ? performance.now() : null, secs = 0, scroll = 0;
+        const deep = () => { const h = document.documentElement.scrollHeight - innerHeight; scroll = Math.max(scroll, h > 0 ? Math.round((scrollY / h) * 100) : 100); };
+        addEventListener('scroll', deep, { passive: true });
+        const send = () => {
+          if (shown !== null) { secs += (performance.now() - shown) / 1000; shown = null; }
+          deep();
+          const body = JSON.stringify({ sid, seq, path: location.pathname, ref, ad: !!adTerm, term: adTerm && adTerm !== '-' ? adTerm : '', secs, scroll, mobile: matchMedia('(max-width: 700px)').matches });
+          navigator.sendBeacon && navigator.sendBeacon('/api/visit', new Blob([body], { type: 'application/json' }));
+        };
+        addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') send(); else shown = performance.now(); });
+        addEventListener('pagehide', () => { if (shown !== null) send(); });
+      } catch (e) {}
+      if (clarity) {
+        window.clarity = window.clarity || function () { (window.clarity.q = window.clarity.q || []).push(arguments); };
+        scripts.push('https://www.clarity.ms/tag/' + clarity);
+      }
+    }
     if (ga) {
       window.dataLayer = window.dataLayer || [];
       window.gtag = function () { dataLayer.push(arguments); };

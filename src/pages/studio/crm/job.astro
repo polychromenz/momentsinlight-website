@@ -88,6 +88,7 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
           <section class="card" data-tab="emails">
             <h2>Their enquiry</h2>
             <p class="message"></p>
+            <p class="ad-from hint" hidden></p>
           </section>
           <section class="card" data-tab="emails">
             <div class="card-head"><h2>Emails</h2><button type="button" class="s-btn" data-compose>✉ Write email</button></div>
@@ -233,6 +234,7 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
   import { emailHtml } from '../../../../functions-lib/email-render.js';
   import { formHtml } from '../../../../functions-lib/questionnaire-form.js';
   import { attachRich } from '../../../studio/rich-editor';
+  import { adText } from '../../../../functions-lib/ad-text.js';
   import { attachPicker } from '../../../studio/attach-picker';
   import { attachAddressLookup } from '../../../studio/address-lookup';
   type Step = { id: number; kind: string; title: string; due_at: string; status: string; note: string; done_at: string | null; stop_on: string; config: string | null };
@@ -494,6 +496,9 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
     $('.autopay-text').textContent = `Pay their instalments automatically from their ${j.autopay_card || 'saved card'} on each due date`;
     $<HTMLAnchorElement>('[data-export]').href = `/api/studio/crm/export?job=${id}`;
     $('.message').textContent = j.message || 'No message.';
+    const adFrom = $('.ad-from');
+    adFrom.hidden = !j.ad_click;
+    adFrom.textContent = j.ad_click ? `From a Google ad: ${adText(j.ad_click)}` : '';
     const enquired = new Date(j.created_at).toLocaleDateString('en-NZ', { day: 'numeric', month: 'long', year: 'numeric' });
     $('.message').dataset.when = `Enquired ${enquired}`;
 

@@ -208,6 +208,8 @@ export async function onRequestPost({ request, env }) {
   log.ads_weekly = await adsWeekly(env).catch((e) => `error: ${e.message}`);
   // 13. Monthly: old enquiries that never booked, warned on the 1st and deleted from the 8th (functions-lib/cleanup.js).
   log.cleanup = await enquiryCleanup(env).catch((e) => `error: ${e.message}`);
+  // The site's visit log (Studio > SEO > Visits) keeps 13 months.
+  await db.prepare(`DELETE FROM page_views WHERE at < ?1`).bind(new Date(Date.now() - 400 * 86400_000).toISOString()).run().catch(() => {});
   // 14. Social drafts for the week ahead (functions-lib/social.js).
   log.social = await socialTimer(env).catch((e) => `error: ${e.message}`);
   // 14b. Approved Facebook and Instagram posts whose time has come publish themselves (functions-lib/meta.js).

@@ -4,6 +4,7 @@
 import { planEnquirySteps, alertTony, tidyName } from './crm.js';
 import { loadWorkflow } from './workflows.js';
 import { clashes, clashText, syncSoon } from './calendar.js';
+import { adText } from './ad-text.js';
 
 /** f = { first, last, email, phone, service, date, venue, message, source }. Returns the job id.
  *  context = the Pages Function context (for env and waitUntil); origin = the site's address for links. */
@@ -32,15 +33,15 @@ export async function createLead(context, f, origin, note = '') {
   if (recent) {
     jobId = recent.id;
     await env.DB.prepare(
-      `UPDATE jobs SET event_date = ?2, venue = ?3, lead_source = CASE WHEN ?4 <> '' THEN ?4 ELSE lead_source END,
+      `UPDATE jobs SET event_date = ?2, venue = ?3, lead_source = CASE WHEN ?4 <> '' THEN ?4 ELSE lead_source END, ad_click = COALESCE(ad_click, ?7),
          message = CASE WHEN ?5 <> '' AND ?5 <> message THEN trim(message || char(10) || char(10) || ?5) ELSE message END, updated_at = ?6
        WHERE id = ?1`,
-    ).bind(jobId, f.date, f.venue, f.source, f.message, at).run();
+    ).bind(jobId, f.date, f.venue, f.source, f.message, at, f.ad ?? null).run();
   } else {
     const job = await env.DB.prepare(
-      `INSERT INTO jobs (client_id, title, job_type, event_date, venue, lead_source, message, workflow, created_at, updated_at)
-       VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?9) RETURNING id`,
-    ).bind(client.id, `${f.first} ${f.last}`, f.service, f.date, f.venue, f.source, f.message, workflow, at).first();
+      `INSERT INTO jobs (client_id, title, job_type, event_date, venue, lead_source, message, workflow, created_at, updated_at, ad_click)
+       VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?9, ?10) RETURNING id`,
+    ).bind(client.id, `${f.first} ${f.last}`, f.service, f.date, f.venue, f.source, f.message, workflow, at, f.ad ?? null).first();
     jobId = job.id;
     await planEnquirySteps(env.DB, jobId, workflow, now);
   }
@@ -53,7 +54,7 @@ export async function createLead(context, f, origin, note = '') {
     ...(note ? [['Note', note]] : []),
     ...(clash.length ? [['⚠ Date clash', clashText(clash)]] : []),
     ['Name', `${f.first} ${f.last}`], ['Email', f.email], ['Phone', f.phone], ['Service', f.service], ['Date', nzDate],
-    ['Venue', f.venue], ['Heard via', f.source], ['Message', f.message],
+    ['Venue', f.venue], ['Heard via', f.source], ...(f.ad ? [['Google ad', adText(f.ad)]] : []), ['Message', f.message],
     ['Next', workflow ? 'Enquiry response (01) goes automatically in about an hour.' : 'No workflow for this type yet: reply from the studio.'],
   ], new URL(`/studio/crm/job?id=${jobId}`, origin).href);
   syncSoon(context, jobId);

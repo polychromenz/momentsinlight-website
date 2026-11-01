@@ -4,8 +4,9 @@
 // footer and under the enquiry form. No email address or phone number here on purpose (spam);
 // people get in touch through /contact.
 import BaseLayout from '../layouts/BaseLayout.astro';
+import { tracking } from '../data/site';
 
-const updated = '21 October 2026';
+const updated = '2 November 2026';
 ---
 <BaseLayout title="Privacy Policy | Moments In Light" description="How Moments in Light looks after your personal information: what I collect, why, where it’s kept and your rights under New Zealand’s Privacy Act.">
   <section class="intro wrap">
@@ -47,11 +48,13 @@ const updated = '21 October 2026';
       <li><strong>Resend</strong>: sends me a notification when you get in touch.</li>
       <li><strong>Xero</strong>: my accounting.</li>
       <li><strong>Facebook, Instagram and Pinterest</strong>: I post my own photos and stories to my own business accounts, using my own studio tools. Your personal information isn’t shared with them this way, and photos of you are only posted as your contract allows.</li>
-      <li><strong>Google Analytics</strong>, <strong>Google Ads</strong> and the <strong>Meta (Facebook) Pixel</strong>: see “Cookies and measuring my website” below.</li>
+      <li><strong>Google Analytics</strong>, <strong>Google Ads</strong>{tracking.clarity && <>, <strong>Microsoft Clarity</strong></>} and the <strong>Meta (Facebook) Pixel</strong>: see “Cookies and measuring my website” below.</li>
     </ul>
 
     <h2>Cookies and measuring my website</h2>
     <p>My website uses Google Analytics and Cloudflare Web Analytics to count visits and see which pages are useful. Google Ads and the Meta (Facebook) Pixel tell me when someone who saw one of my ads gets in touch, so I know which ads are worth paying for. These use cookies, small files your browser keeps.</p>
+    <p>My website also keeps its own simple record of which pages are viewed, for how long and how far down, and whether the visit started from one of my ads (and which ad keyword). It doesn’t record your name or IP address: each visit is a random number your browser keeps only until you close the tab. If you came from one of my Google ads, that keyword is sent with any enquiry you make, so I know which ads bring enquiries.</p>
+    {tracking.clarity && <p>Microsoft Clarity records how visitors use my pages (clicks, scrolling and where people leave), so I can make the website easier to use. It hides what you type into forms, and I use it only to improve my website.</p>}
     <p>When you send an enquiry, my website also gives Google a scrambled (hashed) version of your email address and phone number, so Google can match your enquiry to an ad you may have clicked. Google scrambles it in your browser before it’s sent, so the original isn’t shared, and it’s used only to measure my ads.</p>
     <p>You can block or delete cookies in your browser settings, and opt out of Google Analytics with <a href="https://tools.google.com/dlpage/gaoptout" target="_blank" rel="noopener">Google’s browser add-on</a>. My website still works without them.</p>
 
