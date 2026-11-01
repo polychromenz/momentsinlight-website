@@ -44,6 +44,7 @@ import { weeklyPositions, contentTasks, siteHealth, competitorWatch } from '../.
 import { rankingsTimer } from '../../../functions-lib/rankings.js';
 import { gscSync } from '../../../functions-lib/ads.js';
 import { adsWeekly } from '../../../functions-lib/ads-weekly.js';
+import { sendQueued } from '../../../functions-lib/picks.js';
 import { enquiryCleanup } from '../../../functions-lib/cleanup.js';
 import { socialTimer } from '../../../functions-lib/social.js';
 import { publishDue } from '../../../functions-lib/meta.js';
@@ -206,6 +207,8 @@ export async function onRequestPost({ request, env }) {
   log.gsc = await gscSync(env).catch((e) => `error: ${e.message}`);
   // 12. Monday morning: the Google Ads check email and task (functions-lib/ads-weekly.js).
   log.ads_weekly = await adsWeekly(env).catch((e) => `error: ${e.message}`);
+  // Approved ad images waiting for room in the campaign (functions-lib/picks.js).
+  log.ad_picks = await sendQueued(db).catch((e) => `error: ${e.message}`);
   // 13. Monthly: old enquiries that never booked, warned on the 1st and deleted from the 8th (functions-lib/cleanup.js).
   log.cleanup = await enquiryCleanup(env).catch((e) => `error: ${e.message}`);
   // The site's visit log (Studio > SEO > Visits) keeps 13 months.

@@ -8,6 +8,7 @@ const OUT: Record<Kind, [number, number]> = { wide: [1200, 628], square: [1200, 
 const STATUS: Record<string, string> = {
   picked: 'Check the crop, then Approve',
   approved: 'Approved: going into Google Ads on the script’s next run',
+  queued: 'Approved: on the waiting list. It goes in when there’s room (a weaker image is swapped out once it’s had a fair go)',
   added: 'In Google Ads',
   failed: 'Couldn’t be added',
 };
@@ -58,7 +59,8 @@ async function load() {
   const d = await r.json();
   picks = d.picks;
   if (d.campaign) $('.pk-camp').textContent = d.campaign.name;
-  $('.pk-count').textContent = d.images ? `The campaign has ${d.images.now} of Google’s ${d.images.limit} images${d.images.waiting ? `, ${d.images.waiting} more on the way` : ''}. Remove weaker ones in Google Ads to make room.` : '';
+  const queued = picks.filter((p) => p.status === 'queued').length;
+  $('.pk-count').textContent = d.images ? `The campaign has ${d.images.now} of Google’s ${d.images.limit} images${d.images.waiting ? `, ${d.images.waiting} more on the way` : ''}${queued ? `; ${queued} approved on the waiting list` : ''}. Google rotates through them and shows the best more often; when it’s full, a weak image that’s had a fair go (30 days, 100 views) is swapped for the next on the waiting list, up to 2 a week.` : '';
   draw();
 }
 
@@ -112,7 +114,7 @@ async function approve(p: any, btn: HTMLButtonElement) {
     const r = await post({ action: 'approve', id: p.id });
     const d = await r.json().catch(() => ({}));
     if (!r.ok) throw new Error(d.error || 'Couldn’t approve it.');
-    toast(d.swapped ? `Approved. Within the hour the script swaps out ${d.swapped} weak image${d.swapped > 1 ? 's' : ''} and adds this one.` : 'Approved. The script adds it within the hour.');
+    toast(d.queued ? 'Approved and on the waiting list: the campaign is full, so it goes in when a weaker image has had its fair go.' : d.swapped ? `Approved. Within the hour the script swaps out ${d.swapped} weak image${d.swapped > 1 ? 's' : ''} and adds this one.` : 'Approved. The script adds it within the hour.');
   } catch (err) {
     toast((err as Error).message, true);
   }

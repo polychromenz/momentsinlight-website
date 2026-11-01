@@ -100,3 +100,39 @@ export async function planSwaps(db, campaignId, needed) {
     : `No image has had a fair go yet (30 days live and 100 views) apart from your top ${SWAP_RULES.protectTop}.`;
   return { swaps, reason };
 }
+
+/** Send an approved pick to Google Ads. Room now (or a weak image that's had its fair go to swap
+ *  out): the script adds it on its next run. Otherwise, or while older picks are waiting, it waits
+ *  ('queued') and the timer's sendQueued tries again (Tony, 2 Nov 2026: a waiting list, not an error).
+ *  approvedAt also versions the files' addresses. Returns { queued, swapped }. */
+export async function sendPick(db, p, campaign, approvedAt, { first = false } = {}) {
+  const kinds = ['wide', ...(p.crop_square ? ['square'] : [])];
+  const ahead = !first && await db.prepare(`SELECT 1 FROM photo_picks WHERE status = 'queued' AND id <> ?1`).bind(p.id).first();
+  const count = await campaignImageCount(db, campaign.campaign_id);
+  const over = count.now - count.leaving + count.waiting + kinds.length - count.limit;
+  const plan = !ahead && over > 0 ? await planSwaps(db, campaign.campaign_id, over) : { swaps: [] };
+  if (ahead || (over > 0 && plan.swaps.length < over)) {
+    await db.prepare(`UPDATE photo_picks SET status = 'queued', approved_at = ?2, error = NULL WHERE id = ?1`).bind(p.id, approvedAt).run();
+    return { queued: true, swapped: 0 };
+  }
+  const v = approvedAt.slice(11, 19).replace(/:/g, '');
+  const now = new Date().toISOString();
+  await db.batch([
+    db.prepare(`UPDATE photo_picks SET status = 'approved', approved_at = ?2, error = NULL WHERE id = ?1`).bind(p.id, approvedAt),
+    ...plan.swaps.map((s) => db.prepare(`INSERT INTO ads_action (type, payload, status, created_at) VALUES ('remove_image', ?1, 'pending', ?2)`)
+      .bind(JSON.stringify({ campaign_id: campaign.campaign_id, campaign: campaign.name, asset_id: String(s.asset_id), name: s.name ?? '', views: s.views, clicks: s.clicks, for_pick: p.id }), now)),
+    ...kinds.map((k) => db.prepare(`INSERT INTO ads_action (type, payload, status, created_at) VALUES ('add_image', ?1, 'pending', ?2)`)
+      .bind(JSON.stringify({ campaign_id: campaign.campaign_id, campaign: campaign.name, url: pickFileUrl(p.id, k, v), name: `MIL pick ${p.id} ${k}`, pick_id: p.id, kind: k }), now)),
+  ]);
+  return { queued: false, swapped: plan.swaps.length };
+}
+
+/** The timer's step: the longest-waiting pick goes in once there's room (or a weak image to swap). */
+export async function sendQueued(db) {
+  const p = await db.prepare(`SELECT * FROM photo_picks WHERE status = 'queued' ORDER BY approved_at, id LIMIT 1`).first();
+  if (!p) return 'none waiting';
+  const campaign = await adsCampaign(db);
+  if (!campaign) return 'no campaign';
+  const r = await sendPick(db, p, campaign, p.approved_at, { first: true });
+  return r.queued ? 'still waiting' : `sent pick ${p.id}${r.swapped ? `, swapping ${r.swapped}` : ''}`;
+}
