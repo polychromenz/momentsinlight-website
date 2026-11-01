@@ -75,8 +75,10 @@ export async function alertTony(env, subject, rows, link, attachments = []) {
   const html = `<div style="font-family:Raleway,Arial,sans-serif;color:#1a1a1a;max-width:560px">
 <p style="margin:0 0 6px;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#5a5e3b">Moments Studio</p>
 <h1 style="margin:0 0 16px;font-size:24px;font-weight:300">${esc(subject)}</h1>
-<table cellpadding="0" cellspacing="0" style="font-size:15px;line-height:1.6">${rows.filter(([, v]) => v).map(([k, v]) =>
-    `<tr><td style="padding:4px 16px 4px 0;color:#777;vertical-align:top;white-space:nowrap">${esc(k)}</td><td style="padding:4px 0;white-space:pre-wrap">${esc(v)}</td></tr>`).join('')}</table>
+<table cellpadding="0" cellspacing="0" style="font-size:15px;line-height:1.6;width:100%">${rows.filter(([, v]) => v).map(([k, v]) => (v.html
+    // { html }: a section of its own, its heading above and the content full width (e.g. a table).
+    ? `<tr><td colspan="2" style="padding:18px 0 4px;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:#5a5e3b">${esc(k)}</td></tr><tr><td colspan="2" style="padding:0 0 6px">${v.html}</td></tr>`
+    : `<tr><td style="padding:4px 16px 4px 0;color:#777;vertical-align:top;white-space:nowrap">${esc(k)}</td><td style="padding:4px 0;white-space:pre-wrap">${esc(v)}</td></tr>`)).join('')}</table>
 ${link ? `<p style="margin:22px 0 0"><a href="${esc(link)}" style="display:inline-block;padding:11px 20px;background:#5a5e3b;color:#fff;text-decoration:none;border-radius:12px 0;font-size:14px">Open in the studio</a></p>` : ''}
 </div>`;
   return emailTony(env, subject, html, attachments);

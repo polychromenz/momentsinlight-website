@@ -20,7 +20,7 @@
  * signed with your key.
  */
 // The studio's Google Ads page compares this with the latest copy. Change it whenever this file changes.
-var VERSION = '2026-10-19.3';
+var VERSION = '2026-11-02.1';
 var SITE = 'https://www.momentsinlight.co.nz';
 var KEY = '__PASTE_KEY__';
 var CHUNK = 1000;
@@ -115,7 +115,7 @@ function removeImage(a) {
     var campaignId = String(p.campaign_id || '').replace(/[^0-9]/g, '');
     var assetId = String(p.asset_id || '').replace(/[^0-9]/g, '');
     if (!campaignId || !assetId) throw new Error('Which image?');
-    var it = search('SELECT campaign_asset.resource_name FROM campaign_asset WHERE campaign.id = ' + campaignId + ' AND asset.id = ' + assetId + ' AND campaign_asset.field_type = AD_IMAGE AND campaign_asset.status = ENABLED');
+    var it = search('SELECT campaign_asset.resource_name, campaign.id, asset.id FROM campaign_asset WHERE campaign.id = ' + campaignId + ' AND asset.id = ' + assetId + ' AND campaign_asset.field_type = AD_IMAGE AND campaign_asset.status = ENABLED');
     if (!it.hasNext()) throw new Error('That image isn’t on the campaign any more.');
     var res = AdsApp.mutate({ campaignAssetOperation: { remove: it.next().campaignAsset.resourceName } });
     if (!res.isSuccessful()) throw new Error(res.getErrorMessages().join('; '));
@@ -138,7 +138,7 @@ function addImage(a) {
     if (url.indexOf(IMAGE_HOME) !== 0) throw new Error('Not one of your photos, so it was skipped.');
     if (!campaignId) throw new Error('Which campaign?');
     var count = 0;
-    var it = search('SELECT campaign_asset.resource_name FROM campaign_asset WHERE campaign.id = ' + campaignId + ' AND campaign_asset.field_type = AD_IMAGE AND campaign_asset.status = ENABLED');
+    var it = search('SELECT campaign_asset.resource_name, campaign.id FROM campaign_asset WHERE campaign.id = ' + campaignId + ' AND campaign_asset.field_type = AD_IMAGE AND campaign_asset.status = ENABLED');
     while (it.hasNext()) { it.next(); count++; }
     if (count >= 20) throw new Error('The campaign already has 20 images (Google’s limit). Remove one in Google Ads first.');
     var res = UrlFetchApp.fetch(url, { muteHttpExceptions: true });

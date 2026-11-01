@@ -46,26 +46,43 @@ export async function adsWeekNumbers(env, today) {
 // Roughly 1 in 25 wedding ad clicks becomes an enquiry, so a keyword with fewer clicks and no enquiry
 // hasn't had a fair go yet; past that, it's worth pausing or fixing.
 export const FAIR_CLICKS = 25;
-export function keywordLine(k) {
+const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+const TH = 'padding:6px 8px;border-bottom:1px solid #e6dfd3;font-size:11px;letter-spacing:1px;text-transform:uppercase;color:#777;font-weight:600;text-align:right;white-space:nowrap';
+const TD = 'padding:7px 8px;border-bottom:1px solid #f1ebe1;font-size:14px;text-align:right;white-space:nowrap;vertical-align:top';
+/** What to make of a keyword's 30 days: [words, colour]. */
+export function keywordVerdict(k) {
   const conv = Math.round(k.conv * 10) / 10;
-  const each = k.clicks ? ` (${money(k.cost / k.clicks)} each)` : '';
-  const verdict = conv > 0 ? `${conv} enquir${conv === 1 ? 'y' : 'ies'}, ${money(k.cost / k.conv)} each`
-    : k.clicks >= FAIR_CLICKS ? 'no enquiries: worth pausing or fixing'
-    : `no enquiries yet: too early to tell (judge at about ${FAIR_CLICKS} clicks)`;
-  return `${k.text} (${String(k.match_type).toLowerCase()}): ${money(k.cost)}, ${k.clicks} click${k.clicks === 1 ? '' : 's'}${each}, ${verdict}`;
+  if (conv > 0) return [`${conv} enquir${conv === 1 ? 'y' : 'ies'} (${money(k.cost / k.conv)} each)`, '#5a5e3b'];
+  if (k.clicks >= FAIR_CLICKS) return ['Pause or fix', '#a8432a'];
+  return [`Too early (${k.clicks} of ~${FAIR_CLICKS} clicks)`, '#888'];
+}
+/** The keywords as a table for the email: { html }, so it gets the full width under its heading. */
+export function keywordTable(keywords) {
+  if (!keywords.length) return 'None has cost $30 or more.';
+  const rows = keywords.map((k) => {
+    const [verdict, colour] = keywordVerdict(k);
+    return `<tr><td style="${TD};text-align:left;white-space:normal">${esc(k.text)}<br><span style="font-size:12px;color:#888">${esc(String(k.match_type).toLowerCase())}</span></td>`
+      + `<td style="${TD}">${money(k.cost)}</td><td style="${TD}">${k.clicks}</td><td style="${TD}">${k.clicks ? money(k.cost / k.clicks) : '–'}</td>`
+      + `<td style="${TD};color:${colour};white-space:normal">${verdict}</td></tr>`;
+  }).join('');
+  return { html: `<table cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;font-family:Raleway,Arial,sans-serif">`
+    + `<tr><th style="${TH};text-align:left">Keyword</th><th style="${TH}">Spent</th><th style="${TH}">Clicks</th><th style="${TH}">Per click</th><th style="${TH}">Verdict</th></tr>${rows}</table>`
+    + `<p style="margin:6px 0 0;font-size:12px;color:#888">About 1 in ${FAIR_CLICKS} ad clicks becomes an enquiry, so a keyword isn’t judged until it’s had about ${FAIR_CLICKS} clicks.</p>` };
 }
 
 const VISITS_PAGE = 'https://www.momentsinlight.co.nz/studio/stats/visits';
 const secsText = (s) => (s < 60 ? `${Math.round(s)}s` : `${Math.floor(s / 60)}m ${String(Math.round(s % 60)).padStart(2, '0')}s`);
-/** The week's visits in a few lines, and the prompt to go and look. */
+/** The week's visits, and the prompt (with a link) to go and look: { html }. */
 export function visitsText(n) {
   const v = n.visits || {};
-  if (!v.visits) return `None counted yet (counting started 2 Nov). Have a look later: ${VISITS_PAGE}`;
-  const lines = [`${v.visits} visit${v.visits === 1 ? '' : 's'}, ${v.ads} from Google ads`];
-  if (v.ads) lines.push(`Ad visitors: ${Math.round(v.ad_pages * 10) / 10} pages and ${secsText(v.ad_secs || 0)} each; ${Math.round((v.ad_quick / v.ads) * 100)}% left straight away`);
-  if (n.exit?.exits) lines.push(`Ad visitors most often leave from ${n.exit.path} (${Math.round((n.exit.exits / n.exit.views) * 100)}% of its views)`);
-  lines.push(`Take 5 minutes to look at where people go and where they leave: ${VISITS_PAGE}`);
-  return lines.join('\n');
+  const lines = [];
+  if (!v.visits) lines.push('None counted yet (counting started 2 Nov).');
+  else {
+    lines.push(`${v.visits} visit${v.visits === 1 ? '' : 's'}, ${v.ads} from Google ads.`);
+    if (v.ads) lines.push(`Ad visitors looked at ${Math.round(v.ad_pages * 10) / 10} pages for ${secsText(v.ad_secs || 0)} on average; ${Math.round((v.ad_quick / v.ads) * 100)}% left straight away.`);
+    if (n.exit?.exits) lines.push(`Ad visitors most often leave from <strong>${esc(n.exit.path)}</strong> (${Math.round((n.exit.exits / n.exit.views) * 100)}% of its views).`);
+  }
+  return { html: `${lines.map((l) => `<p style="margin:0 0 6px;font-size:15px">${l}</p>`).join('')}<p style="margin:8px 0 0;font-size:15px"><a href="${VISITS_PAGE}" style="color:#5a5e3b;font-weight:600">Take 5 minutes to see where people go and where they leave →</a></p>` };
 }
 
 export async function adsWeekly(env) {
@@ -91,7 +108,7 @@ export async function adsWeekly(env) {
     ['Enquiries the site saw from ads', n.tagged.length ? n.tagged.map((t) => `${t.title}: ${adText(t.ad_click)}`).join('\n') : 'None this week.'],
     ['Cost per enquiry', `${per(n.week)} (the week before: ${per(n.prev)})`],
     ['Searches to block?', n.terms.length ? n.terms.map((t) => `${t.search_term}: ${money(t.cost)}, ${t.clicks} click${t.clicks === 1 ? '' : 's'}`).join('\n') : 'None: every search that cost $3+ brought an enquiry or is already blocked.'],
-    ['Keywords (30 days)', n.keywords.length ? n.keywords.map(keywordLine).join('\n') : 'None has cost $30 or more.'],
+    ['Keywords (last 30 days)', keywordTable(n.keywords)],
     ...(n.changes.length ? [['Ad images', n.changes.map((c) => c.status !== 'done' ? `Couldn’t ${c.type === 'add_image' ? 'add' : 'swap out'} ${c.payload.name || 'an image'}: ${c.error}`
       : c.type === 'add_image' ? `Added ${c.payload.name}` : `Swapped out ${c.payload.name || `image ${c.payload.asset_id}`} (${c.payload.views ?? '?'} views, ${c.payload.clicks ?? '?'} clicks in 30 days; still in your library)`).join('\n')]] : []),
     ['Visits to the site', visitsText(n)],
