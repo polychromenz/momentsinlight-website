@@ -24,16 +24,23 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
       </header>
 
       <div class="cols">
-        <div>
-          <section class="card ai-card">
+        <div class="main-col">
+          <nav class="job-tabs" role="tablist" aria-label="Sections">
+            <button type="button" role="tab" data-show="overview">Overview</button>
+            <button type="button" role="tab" data-show="emails">Emails</button>
+            <button type="button" role="tab" data-show="money">Quotes &amp; money</button>
+            <button type="button" role="tab" data-show="portal">Portal</button>
+            <button type="button" role="tab" data-show="activity">Activity</button>
+          </nav>
+          <section class="card ai-card" data-tab="overview">
             <div class="card-head"><h2>Where things are</h2><button type="button" class="s-btn s-btn--quiet" data-summary>Summarise</button></div>
             <p class="ai-summary muted">A short summary of this client from their emails, notes and invoices, written by AI when you click Summarise.</p>
           </section>
-          <section class="card">
+          <section class="card" data-tab="overview">
             <h2>Steps</h2>
             <ul class="steps"></ul>
           </section>
-          <section class="card appts-card">
+          <section class="card appts-card" data-tab="overview">
             <div class="card-head"><h2>Appointments</h2><button type="button" class="s-btn s-btn--quiet" data-appt-new>+ Add</button></div>
             <ul class="quotes appts"></ul>
             <form class="appt-form" autocomplete="off" hidden>
@@ -47,23 +54,19 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
             </form>
             <p class="hint gcal-note" hidden></p>
           </section>
-          <section class="card">
+          <section class="card" data-tab="money">
             <div class="card-head"><h2>Quotes</h2><button type="button" class="s-btn" data-act="new-quote">+ New quote</button></div>
             <ul class="quotes quote-list"></ul>
           </section>
-          <section class="card">
+          <section class="card" data-tab="money">
             <h2>Contracts</h2>
             <ul class="quotes contracts"></ul>
           </section>
-          <section class="card">
-            <h2>Questionnaire</h2>
-            <ul class="quotes questionnaires"></ul>
-          </section>
-          <section class="card">
+          <section class="card" data-tab="money">
             <div class="card-head"><h2>Invoices</h2><button type="button" class="s-btn s-btn--quiet" data-add-invoice>+ Add invoice</button></div>
             <ul class="quotes invoices"></ul>
           </section>
-          <section class="card portal-card">
+          <section class="card portal-card" data-tab="portal">
             <div class="card-head"><h2>Client portal</h2><span class="portal-actions"><a class="s-btn portal-open" href="#" target="_blank" rel="noopener">Open their portal ↗</a><button type="button" class="s-btn s-btn--quiet" data-portal-copy>Copy link</button></span></div>
             <p class="hint">What they see: their booking, quote, contract, questionnaire, payments, plus the files and galleries below.</p>
             <h3 class="sub">Galleries</h3>
@@ -78,15 +81,19 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
             <div class="sub-head"><h3 class="sub">Shared files <small>(theirs and yours; they see all of these)</small></h3><label class="s-btn s-btn--quiet up-btn">+ Add files<input type="file" multiple hidden /></label></div>
             <ul class="quotes portal-uploads"></ul>
           </section>
-          <section class="card">
+          <section class="card" data-tab="portal">
+            <h2>Questionnaire</h2>
+            <ul class="quotes questionnaires"></ul>
+          </section>
+          <section class="card" data-tab="emails">
             <h2>Their enquiry</h2>
             <p class="message"></p>
           </section>
-          <section class="card">
+          <section class="card" data-tab="emails">
             <div class="card-head"><h2>Emails</h2><button type="button" class="s-btn" data-compose>✉ Write email</button></div>
             <ul class="messages"></ul>
           </section>
-          <section class="card activity-card">
+          <section class="card activity-card" data-tab="activity">
             <h2>Activity</h2>
             <ul class="activity"></ul>
           </section>
@@ -247,6 +254,20 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
   const markDirty = () => { dirty = true; saveBtn.disabled = false; $('.save-state').textContent = 'Unsaved changes'; };
 
   let listsLoaded = false;
+  // Tabs: one group of cards at a time (the Wedding day and Details column always shows); the last
+  // tab used is remembered for the next client.
+  function showTab(name: string, remember = true) {
+    if (!document.querySelector(`.job-tabs [data-show="${name}"]`)) name = 'overview';
+    document.querySelectorAll<HTMLElement>('.main-col [data-tab]').forEach((c) => { c.hidden = c.dataset.tab !== name; });
+    document.querySelectorAll<HTMLElement>('.job-tabs [data-show]').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.show === name)));
+    if (remember) try { localStorage.setItem('job-tab', name); } catch {}
+  }
+  document.querySelector('.job-tabs')!.addEventListener('click', (e) => {
+    const b = (e.target as HTMLElement).closest<HTMLElement>('[data-show]');
+    if (b) showTab(b.dataset.show!);
+  });
+  showTab((() => { try { return localStorage.getItem('job-tab') || 'overview'; } catch { return 'overview'; } })(), false);
+
   async function loadLists() {
     if (listsLoaded) return;
     const r = await fetch('/api/studio/crm/settings');
@@ -578,7 +599,8 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
 
     dirty = false; saveBtn.disabled = true; $('.save-state').textContent = '';
     $('.content').hidden = false; $('.status').hidden = true;
-    if (location.hash) document.querySelector(location.hash)?.scrollIntoView({ block: 'center' });
+    const target = location.hash ? document.querySelector<HTMLElement>(location.hash) : null;
+    if (target) { const tab = target.closest<HTMLElement>('[data-tab]')?.dataset.tab; if (tab) showTab(tab, false); target.scrollIntoView({ block: 'center' }); }
   }
 
   async function save(extra: Record<string, unknown> = {}) {
@@ -948,6 +970,11 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
   .job-page .stage-now--completed { background: var(--olive); }
   .job-page .stage button.undo { border-color: transparent; background: transparent; text-decoration: underline; color: #666; }
   .job-page .cols { display: grid; gap: 16px; }
+  .job-page .job-tabs { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 14px; }
+  .job-page .job-tabs button { padding: 8px 16px; border: 1px solid #ddd3c4; border-radius: 999px; background: var(--white); color: var(--ink); font: inherit; font-size: 14px; cursor: pointer; }
+  .job-page .job-tabs button:hover { border-color: var(--green); }
+  .job-page .job-tabs button[aria-selected="true"] { background: var(--green); border-color: var(--green); color: var(--white); }
+  .job-page .main-col > [data-tab][hidden] { display: none; }
   .job-page .card { background: var(--white); border-radius: 24px 0; padding: 20px 24px; margin-bottom: 16px; }
   .job-page .card-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 8px; }
   .job-page .card-head h2 { margin: 0 !important; }
