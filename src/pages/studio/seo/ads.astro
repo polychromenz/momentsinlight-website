@@ -34,7 +34,7 @@ import script from '../../../../scripts/google-ads/sync.js?raw';
 
     <section class="card picks-card">
       <h2>Ad picks</h2>
-      <p class="muted">Photos you’ve marked <strong>Ad</strong> in your galleries. Check the suggested crop (move it with the arrows, or zoom), add a square one if you want, then <strong>Approve</strong>: the script adds them to <span class="pk-camp">your Search campaign</span> on its next hourly run.</p>
+      <p class="muted">Photos you’ve marked <strong>Ad</strong> in your galleries. Check the suggested crop (drag the photo to move the frame; zoom with the scroll wheel or ＋ －), add a square one if you want, then <strong>Approve</strong>: the script adds them to <span class="pk-camp">your Search campaign</span> on its next hourly run.</p>
       <p class="pk-count muted"></p>
       <div class="pk-list"><p class="muted">Loading…</p></div>
     </section>
@@ -215,6 +215,9 @@ import script from '../../../../scripts/google-ads/sync.js?raw';
   .ads .pk-img { position: relative; overflow: hidden; border-radius: 6px; background: #eee; }
   .ads .pk-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
   .ads .pk-frame { position: absolute; border: 2px solid #fff; pointer-events: none; }
+  .ads .pk-movable { cursor: grab; touch-action: none; user-select: none; }
+  .ads .pk-movable.dragging { cursor: grabbing; }
+  .ads .pk-movable img { pointer-events: none; }
   .ads .pk-wide { box-shadow: 0 0 0 999px rgb(0 0 0 / 0.45); }
   .ads .pk-square { border-style: dashed; border-color: #ffd54f; }
   .ads .pk-frame span { position: absolute; left: 4px; top: 2px; font-size: 11px; color: #fff; text-shadow: 0 1px 2px #000; }

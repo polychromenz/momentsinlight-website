@@ -36,7 +36,7 @@ function draw() {
     const c: Crop = kind === 'square' ? p.crop_square : p.crop_wide;
     const numbers = [stat(p.stats.wide) && `Wide: ${stat(p.stats.wide)}`, stat(p.stats.square) && `Square: ${stat(p.stats.square)}`].filter(Boolean).join(' · ');
     return `<div class="pk" data-pick="${p.id}">
-      <div class="pk-img" style="aspect-ratio:${p.width}/${p.height};width:min(100%, ${Math.round((360 * p.width) / p.height)}px)"><img src="${esc(p.thumb)}" alt="" />${frame(p.crop_wide, 'wide')}${p.crop_square ? frame(p.crop_square, 'square') : ''}</div>
+      <div class="pk-img${open ? ' pk-movable' : ''}" style="aspect-ratio:${p.width}/${p.height};width:min(100%, ${Math.round((360 * p.width) / p.height)}px)"><img src="${esc(p.thumb)}" alt="" />${frame(p.crop_wide, 'wide')}${p.crop_square ? frame(p.crop_square, 'square') : ''}</div>
       <div class="pk-side">
         <strong>${esc(p.gallery)}</strong> <small class="muted">${esc(p.filename)}</small>
         <p class="pk-st st-${p.status}">${STATUS[p.status] ?? esc(p.status)}${p.error ? ` <small class="warn">${esc(p.error)}</small>` : ''}${p.blocked ? ` <small class="warn">${esc(p.blocked)}</small>` : ''}</p>
@@ -44,7 +44,7 @@ function draw() {
         ${open ? `<div class="pk-tools">
           <label><input type="checkbox" data-sq ${p.crop_square ? 'checked' : ''} /> Square one too</label>
           ${p.crop_square ? `<span class="seg"><button type="button" data-edit="wide" class="${kind === 'wide' ? 'on' : ''}">Wide</button><button type="button" data-edit="square" class="${kind === 'square' ? 'on' : ''}">Square</button></span>` : ''}
-          <span class="nudge"><button type="button" data-n="up" title="Up">↑</button><button type="button" data-n="down" title="Down">↓</button><button type="button" data-n="left" title="Left">←</button><button type="button" data-n="right" title="Right">→</button><button type="button" data-n="in" title="Closer">＋</button><button type="button" data-n="out" title="Wider">－</button></span>
+          <span class="nudge"><button type="button" data-n="in" title="Closer">＋</button><button type="button" data-n="out" title="Wider">－</button></span>
           ${c && !bigEnough(p, c, kind) ? '<small class="warn">Too close for Google’s size: zoom out a little.</small>' : ''}
           <span class="pk-act"><button type="button" class="s-btn s-btn--solid" data-approve ${p.blocked ? 'disabled' : ''}>Approve</button> <button type="button" class="s-btn s-btn--quiet" data-unpick>Remove</button></span>
         </div>` : `<p class="pk-files">${p.files?.wide ? `<a href="${esc(p.files.wide)}" target="_blank" rel="noopener">Wide file</a>` : ''}${p.files?.square ? ` · <a href="${esc(p.files.square)}" target="_blank" rel="noopener">Square file</a>` : ''}</p>`}
@@ -139,6 +139,40 @@ list.addEventListener('click', async (e) => {
   const ap = t.closest<HTMLButtonElement>('[data-approve]');
   if (ap) return approve(p, ap);
 });
+// Drag the photo to move the frame being edited (wide or square); the scroll wheel over the photo zooms in and out.
+let drag: { p: any; kind: Kind; sx: number; sy: number; c: Crop; w: number; h: number; box: HTMLElement } | null = null;
+const pickOf = (el: Element) => picks.find((x) => x.id === Number(el.closest<HTMLElement>('[data-pick]')?.dataset.pick));
+list.addEventListener('pointerdown', (e) => {
+  const box = (e.target as HTMLElement).closest<HTMLElement>('.pk-movable');
+  const p = box && pickOf(box);
+  if (!box || !p) return;
+  const kind = editing[p.id] ?? 'wide';
+  const r = box.getBoundingClientRect();
+  drag = { p, kind, sx: e.clientX, sy: e.clientY, c: { ...(kind === 'square' ? p.crop_square : p.crop_wide) }, w: r.width, h: r.height, box };
+  box.setPointerCapture(e.pointerId);
+  box.classList.add('dragging');
+  e.preventDefault();
+});
+list.addEventListener('pointermove', (e) => {
+  if (!drag) return;
+  const c = clamp({ ...drag.c, x: drag.c.x + (e.clientX - drag.sx) / drag.w, y: drag.c.y + (e.clientY - drag.sy) / drag.h });
+  if (drag.kind === 'square') drag.p.crop_square = c; else drag.p.crop_wide = c;
+  const fr = drag.box.querySelector<HTMLElement>(`.pk-${drag.kind}`);
+  if (fr) { fr.style.left = `${c.x * 100}%`; fr.style.top = `${c.y * 100}%`; }
+});
+const endDrag = () => { if (!drag) return; const p = drag.p; drag = null; saveCrop(p); draw(); };
+list.addEventListener('pointerup', endDrag);
+list.addEventListener('pointercancel', endDrag);
+list.addEventListener('wheel', (e) => {
+  const box = (e.target as HTMLElement).closest<HTMLElement>('.pk-movable');
+  const p = box && pickOf(box);
+  if (!p) return;
+  e.preventDefault();
+  nudge(p, editing[p.id] ?? 'wide', e.deltaY < 0 ? 'in' : 'out');
+  saveCrop(p);
+  draw();
+}, { passive: false });
+
 list.addEventListener('change', (e) => {
   const t = e.target as HTMLInputElement;
   if (!t.matches('[data-sq]')) return;
