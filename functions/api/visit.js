@@ -1,4 +1,4 @@
-// The site's own visit log (src/components/Tracking.astro sends it; Studio > SEO > Pages reads it):
+// The site's own visit log (src/components/Tracking.astro sends it; Studio > SEO > Visits reads it):
 //   POST /api/visit { sid, seq, path, ref, ad, term, secs, scroll, mobile }
 // Sent when a page is hidden or left, and again if they come back to it (the longer time is kept).
 // Nothing personal: a random id per browser tab, the page, and how long it was on screen.

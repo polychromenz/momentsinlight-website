@@ -29,7 +29,18 @@ export async function adsWeekNumbers(env, today) {
     // Enquiries the site itself saw arrive from an ad click (EnquiryForm.astro), with their keywords.
     db.prepare(`SELECT title, ad_click FROM jobs WHERE ad_click IS NOT NULL AND created_at >= ?1 AND created_at < ?2 ORDER BY created_at`).bind(`${start}T00:00:00`, `${day(end, 1)}T00:00:00`).all(),
   ]);
-  return { start, end, week, prev, terms: terms.slice(0, 12), keywords: keywords.results, last: last?.at ?? null, changes: changes.results.map((c) => ({ ...c, payload: JSON.parse(c.payload) })), tagged: tagged.results };
+  // The site's own visit log (Studio > SEO > Visits): last 7 days, everyone and ad visits, and the
+  // page ad visitors most often leave from.
+  const since = `${start}T00:00:00`, until = `${day(end, 1)}T00:00:00`;
+  const [visits, exit] = await Promise.all([
+    db.prepare(`WITH v AS (SELECT sid, max(ad) ad, count(*) pages, sum(secs) secs FROM page_views WHERE at >= ?1 AND at < ?2 GROUP BY sid)
+      SELECT count(*) visits, COALESCE(sum(ad), 0) ads, avg(CASE WHEN ad = 1 THEN pages END) ad_pages, avg(CASE WHEN ad = 1 THEN secs END) ad_secs,
+        COALESCE(sum(ad = 1 AND pages = 1 AND secs < 15), 0) ad_quick FROM v`).bind(since, until).first(),
+    db.prepare(`WITH v AS (SELECT sid, max(seq) last FROM page_views WHERE at >= ?1 AND at < ?2 GROUP BY sid HAVING max(ad) = 1)
+      SELECT pv.path, count(*) views, sum(pv.seq = v.last) exits FROM page_views pv JOIN v ON v.sid = pv.sid WHERE pv.at >= ?1
+      GROUP BY pv.path HAVING views >= 3 ORDER BY exits * 1.0 / views DESC, views DESC LIMIT 1`).bind(since, until).first(),
+  ]);
+  return { start, end, week, prev, terms: terms.slice(0, 12), keywords: keywords.results, last: last?.at ?? null, changes: changes.results.map((c) => ({ ...c, payload: JSON.parse(c.payload) })), tagged: tagged.results, visits, exit };
 }
 
 // Roughly 1 in 25 wedding ad clicks becomes an enquiry, so a keyword with fewer clicks and no enquiry
@@ -42,6 +53,19 @@ export function keywordLine(k) {
     : k.clicks >= FAIR_CLICKS ? 'no enquiries: worth pausing or fixing'
     : `no enquiries yet: too early to tell (judge at about ${FAIR_CLICKS} clicks)`;
   return `${k.text} (${String(k.match_type).toLowerCase()}): ${money(k.cost)}, ${k.clicks} click${k.clicks === 1 ? '' : 's'}${each}, ${verdict}`;
+}
+
+const VISITS_PAGE = 'https://www.momentsinlight.co.nz/studio/stats/visits';
+const secsText = (s) => (s < 60 ? `${Math.round(s)}s` : `${Math.floor(s / 60)}m ${String(Math.round(s % 60)).padStart(2, '0')}s`);
+/** The week's visits in a few lines, and the prompt to go and look. */
+export function visitsText(n) {
+  const v = n.visits || {};
+  if (!v.visits) return `None counted yet (counting started 2 Nov). Have a look later: ${VISITS_PAGE}`;
+  const lines = [`${v.visits} visit${v.visits === 1 ? '' : 's'}, ${v.ads} from Google ads`];
+  if (v.ads) lines.push(`Ad visitors: ${Math.round(v.ad_pages * 10) / 10} pages and ${secsText(v.ad_secs || 0)} each; ${Math.round((v.ad_quick / v.ads) * 100)}% left straight away`);
+  if (n.exit?.exits) lines.push(`Ad visitors most often leave from ${n.exit.path} (${Math.round((n.exit.exits / n.exit.views) * 100)}% of its views)`);
+  lines.push(`Take 5 minutes to look at where people go and where they leave: ${VISITS_PAGE}`);
+  return lines.join('\n');
 }
 
 export async function adsWeekly(env) {
@@ -70,7 +94,8 @@ export async function adsWeekly(env) {
     ['Keywords (30 days)', n.keywords.length ? n.keywords.map(keywordLine).join('\n') : 'None has cost $30 or more.'],
     ...(n.changes.length ? [['Ad images', n.changes.map((c) => c.status !== 'done' ? `Couldn’t ${c.type === 'add_image' ? 'add' : 'swap out'} ${c.payload.name || 'an image'}: ${c.error}`
       : c.type === 'add_image' ? `Added ${c.payload.name}` : `Swapped out ${c.payload.name || `image ${c.payload.asset_id}`} (${c.payload.views ?? '?'} views, ${c.payload.clicks ?? '?'} clicks in 30 days; still in your library)`).join('\n')]] : []),
-    ['What to do', 'Block any searches that aren’t for you: Studio > SEO > Google Ads > Block searches, then Approve. The script adds them within the hour. Ask Claude if anything looks odd.'],
+    ['Visits to the site', visitsText(n)],
+    ['What to do','Block any searches that aren’t for you: Studio > SEO > Google Ads > Block searches, then Approve. The script adds them within the hour. Ask Claude if anything looks odd.'],
   ];
   await alertTony(env, `Google Ads this week: ${money(n.week.cost)} spent, ${Math.round(n.week.conv * 10) / 10} enquiries`, rows, 'https://www.momentsinlight.co.nz/studio/seo/ads');
   await db.prepare(`INSERT INTO tasks (title, notes, due_date, created_at) VALUES (?1, ?2, ?3, ?4)`)
