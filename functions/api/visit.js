@@ -6,7 +6,7 @@ const ok = () => new Response(null, { status: 204 });
 
 export async function onRequestPost({ request, env }) {
   const d = await request.json().catch(() => null);
-  if (!d || !/^[a-z0-9]{8,32}$/.test(String(d.sid)) || !env.DB) return ok();
+  if (!d || typeof d.sid !== 'string' || !/^[a-z0-9]{8,32}$/.test(d.sid) || !env.DB) return ok();
   const seq = Math.max(1, Math.min(200, Number(d.seq) | 0));
   const path = String(d.path || '/').split('?')[0].slice(0, 200);
   if (!path.startsWith('/') || path.startsWith('/studio') || path.startsWith('/api')) return ok();
