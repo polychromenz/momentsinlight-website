@@ -158,6 +158,8 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
     if (stage === 'lead' || stage === 'booked') {
       head(['Name', 'Type', 'Date', 'Venue', 'Enquired']);
       const list = jobs.filter((j) => j.stage === stage && matches(q, j.title, j.venue, j.job_type, (j as any).email));
+      // Booked: the next wedding first (no date yet at the end); leads stay newest enquiry first.
+      if (stage === 'booked') list.sort((a, b) => (a.event_date || '9999').localeCompare(b.event_date || '9999'));
       body.innerHTML = list.length
         ? list.map((j) => `<tr><td><a href="/studio/crm/job?id=${j.id}">${esc(j.title)}</a>${testTag(j)}</td><td>${esc(j.job_type)}</td><td>${nzDate(j.event_date)}</td><td>${esc(j.venue)}</td><td>${when(j.created_at)}</td></tr>`).join('')
         : `<tr><td colspan="5" class="empty">${q ? 'Nothing matches.' : `No ${stage === 'lead' ? 'open leads' : 'booked jobs'} yet.`}</td></tr>`;
