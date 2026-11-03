@@ -76,7 +76,9 @@ export async function thread(env, threadId) {
   const d = await r.json().catch(() => ({}));
   if (!r.ok) throw new Error(`Gmail couldn’t read the conversation (${r.status}): ${d.error?.message ?? ''}`);
   const h = (m, name) => m.payload?.headers?.find((x) => x.name.toLowerCase() === name)?.value ?? '';
-  return (d.messages ?? []).map((m) => ({
+  // Drafts are left out: a reply Tony has only started in Gmail isn't a sent email (and its id goes
+  // when he sends or discards it).
+  return (d.messages ?? []).filter((m) => !(m.labelIds ?? []).includes('DRAFT')).map((m) => ({
     id: m.id,
     at: new Date(Number(m.internalDate)).toISOString(),
     from: (h(m, 'from').match(/<([^>]+)>/)?.[1] ?? h(m, 'from')).trim().toLowerCase(),
