@@ -56,6 +56,7 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
       <div class="card">
         <h2>Add photos</h2>
         <p>Choose a folder (from Lightroom: a folder per section, with <em>Color</em> and <em>Mono</em> inside if you split them) or just a few photos. With <em>Use folder names</em>, each folder of photos becomes a section, in name order, and photos under <em>Mono</em> (or folders ending in <em>B+W</em>) go into “… B+W” sections. Or pick a section and everything goes into it. Web copies are skipped (the studio makes its own), and photos already here are skipped, so you can run it again if it stops.</p>
+        <div class="ga-drop" data-drop>Drop a folder (or photos) here <small>No browser pop-up this way. Or use the buttons below.</small></div>
         <p class="ga-add">Section: <select data-into></select>
           <label class="s-btn s-btn--solid pick">Choose a folder… <input type="file" data-folder webkitdirectory multiple hidden /></label>
           <label class="s-btn pick">Choose photos… <input type="file" data-files accept="image/jpeg" multiple hidden /></label></p>
@@ -166,6 +167,9 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
   .ga .card p { margin: 0 0 12px; line-height: 1.6; }
   .ga .hint { font-size: 13px; color: #888; margin: 0 0 12px; }
   .ga .pick { cursor: pointer; }
+  .ga-drop { margin: 6px 0 14px; padding: 26px 16px; border: 2px dashed #cfc6b4; border-radius: 14px 0; text-align: center; color: var(--green); font-weight: 600; transition: background 0.2s, border-color 0.2s; }
+  .ga-drop small { display: block; margin-top: 4px; font-weight: 400; color: #888; }
+  .ga-drop.over { background: #eef0e6; border-color: var(--green); }
   .ga select, .ga input, .ga textarea, .ga-dlg select, .ga-dlg input:not([type="checkbox"]), .ga-dlg textarea { font: inherit; font-size: 15px; padding: 8px 10px; border: 1px solid #ddd3c4; border-radius: 10px 0; background: var(--white); }
 
   /* Photos */

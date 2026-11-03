@@ -306,6 +306,42 @@ function showPlan(p: Plan) {
     <div class="bar"><span></span></div><p class="prog hint"></p><div class="fails"></div>
     ${todo ? '<button type="button" class="s-btn s-btn--solid" data-start>Start</button> <button type="button" class="s-btn" data-stop hidden>Stop</button>' : ''}`;
 }
+// Dropping a folder (or photos) on the Add photos box: Chrome doesn't ask "Upload 100 files to this
+// site?" for a drop. Each file gets its path inside the dropped folder, as "Choose a folder…" gives.
+async function droppedFiles(items: DataTransferItemList): Promise<File[]> {
+  const out: File[] = [];
+  const walk = async (entry: any, path: string): Promise<void> => {
+    if (entry.isFile) {
+      const f: File = await new Promise((ok, no) => entry.file(ok, no));
+      Object.defineProperty(f, 'webkitRelativePath', { value: path + f.name });
+      out.push(f);
+    } else if (entry.isDirectory) {
+      const reader = entry.createReader();
+      // readEntries hands them over in batches (100 at a time in Chrome) until it returns none.
+      for (;;) {
+        const batch: any[] = await new Promise((ok, no) => reader.readEntries(ok, no));
+        if (!batch.length) break;
+        for (const e of batch) await walk(e, `${path}${entry.name}/`);
+      }
+    }
+  };
+  const entries = [...items].map((i) => i.webkitGetAsEntry?.()).filter(Boolean);
+  for (const e of entries) await walk(e, '');
+  return out;
+}
+const dropBox = $('[data-drop]');
+dropBox.addEventListener('dragover', (e) => { e.preventDefault(); dropBox.classList.add('over'); });
+dropBox.addEventListener('dragleave', () => dropBox.classList.remove('over'));
+dropBox.addEventListener('drop', async (e) => {
+  e.preventDefault();
+  dropBox.classList.remove('over');
+  if (busy || !e.dataTransfer) return;
+  const files = await droppedFiles(e.dataTransfer.items);
+  if (!files.length) return toast('Nothing to add there.', true);
+  // A folder: folder names (or the chosen section); loose photos: the chosen section, else Photos.
+  choose(files, into(files.some((f) => f.webkitRelativePath.includes('/'))));
+});
+
 function choose(files: File[], into?: string) {
   current = { files, into };
   showPlan(plan(files, d, into));
