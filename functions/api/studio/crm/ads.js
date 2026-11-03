@@ -45,7 +45,7 @@ export async function onRequestPost({ request, env }) {
   // The latest script with the key already in use (after the script itself has been updated).
   if (d.action === 'current') { const secret = await currentSyncSecret(env); return secret ? json({ secret }) : json({ error: 'Make the script first.' }, 400); }
   if (d.action === 'negative') {
-    const text = String(d.text ?? '').toLowerCase().replace(/s+/g, ' ').trim();
+    const text = String(d.text ?? '').toLowerCase().replace(/\s+/g, ' ').trim();
     const match = ['BROAD', 'PHRASE', 'EXACT'].includes(d.match) ? d.match : null;
     if (!NEGATIVE_OK.test(text) || text.split(' ').length > 10) return json({ error: 'Use plain words only (letters, numbers, spaces), up to 10 words.' }, 400);
     if (!match) return json({ error: 'Choose broad, phrase or exact.' }, 400);
