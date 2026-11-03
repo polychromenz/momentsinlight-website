@@ -34,6 +34,10 @@ export function plan(files: File[], detail: Detail, intoSection?: string): Plan 
     (by.get(section) ?? by.set(section, []).get(section)!).push(f);
   }
   const ready = new Set(detail.images.filter((i) => i.status === 'ready').map((i) => i.lightroom_id));
+  // Also "already here": the same file name in a section of that name (e.g. sent as Photos, then the
+  // section renamed Colour), so choosing the folder again doesn't send them twice.
+  const secName = new Map(detail.sections.map((s) => [s.id, String(s.name).toLowerCase()]));
+  for (const i of detail.images) if (i.status === 'ready') ready.add(`file:${secName.get(i.section_id)}/${String(i.filename).toLowerCase()}`);
   const names = [...by.keys()].sort(natural.compare);
   const jobs: Job[] = [];
   const sections = names.map((name) => {
@@ -41,7 +45,7 @@ export function plan(files: File[], detail: Detail, intoSection?: string): Plan 
     let done = 0;
     list.forEach((file, order) => {
       const key = `file:${name}/${file.name}`;
-      if (ready.has(key)) done++;
+      if (ready.has(key) || ready.has(`file:${name.toLowerCase()}/${file.name.toLowerCase()}`)) done++;
       else jobs.push({ file, section: name, key, order });
     });
     return { name, is_bw: isBw(name), files: list.length, done };
