@@ -4,7 +4,8 @@
   Sends a wedding to Moments Studio as a client gallery (a draft until Tony puts it online):
     - the gallery = this catalog (one catalog per wedding), or the selected collection set
     - each collection = a section: green-labelled photos -> "Ceremony",
-      purple-labelled photos -> "Ceremony B+W"; other labels are skipped
+      purple-labelled photos -> "Ceremony B+W"; other labels are skipped. Smart collections are
+      ignored; a catalog with no collections goes as one section, "Photos"
       (the same rules as the Wedding Collection Export plugin)
     - sections in the order of the standard list (plug-in settings), photos in Lightroom's order
   Each photo goes up in three sizes: full size (sRGB, JPEG quality 90), 2048px and 600px.
@@ -70,7 +71,8 @@ end
 local function collect(sources, out, sets)
   for _, src in ipairs(sources) do
     local t = src.type and src:type()
-    if t == 'LrCollection' then table.insert(out, src)
+    -- Smart collections are skipped: Lightroom's built-in ones (Past Month, Recently Modified…) hold every photo.
+    if t == 'LrCollection' then if not src:isSmartCollection() then table.insert(out, src) end
     elseif t == 'LrCollectionSet' then
       sets[#sets + 1] = src
       collect(src:getChildCollections(), out, sets)
@@ -106,8 +108,8 @@ LrTasks.startAsyncTask(function()
       collect(catalog:getChildCollectionSets(), colls, sets)
     end
     if #colls == 0 then
-      LrDialogs.message('Send to MIL Galleries', 'There are no collections to send. Make a collection per section (Ceremony, Groups…) and label the photos green (colour) or purple (B+W).', 'warning')
-      return
+      -- No collections (a practice shoot or portraits): the whole catalog is one section, "Photos".
+      colls[1] = { localIdentifier = 'all', getName = function() return 'Photos' end, getPhotos = function() return catalog:getAllPhotos() end }
     end
 
     -- Sort photos into sections by label.
