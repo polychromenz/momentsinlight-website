@@ -10,6 +10,7 @@ type Detail = { sections: any[]; images: any[] };
 const BW = /(\bb\s*\+\s*w\b|\bb\s*&\s*w\b|\bbw\b|black\s*(and|&)\s*white|\bmono\b)/i;
 const natural = new Intl.Collator('en', { numeric: true, sensitivity: 'base' });
 export const isBw = (name: string) => BW.test(name);
+const folderSection = (name: string) => (/^colou?r$/i.test(name) ? 'Colour' : /^(mono|b\s*\+?\s*w|black and white)$/i.test(name) ? 'Black and White' : name);
 
 /** Work out sections and photos from the chosen files (folder names → sections). */
 export function plan(files: File[], detail: Detail, intoSection?: string): Plan {
@@ -26,7 +27,9 @@ export function plan(files: File[], detail: Detail, intoSection?: string): Plan 
     const between = parts.slice(0, -2); // the chosen folder and any between it and the section (e.g. Mono)
     if (hasFull && parts.slice(0, -1).some((p) => COPY.test(p))) { web++; continue; }
     const mono = between.some((p) => /^(mono|b\s*\+?\s*w|black and white)$/i.test(p));
-    const base = intoSection ?? (parts.length >= 3 ? parts[parts.length - 2] : 'Photos');
+    // Photos straight inside the chosen folder: the section is named after it (a Color folder is
+    // "Colour", a Mono one "Black and White"), so a Mono folder doesn't look like its colour twins.
+    const base = intoSection ?? (parts.length >= 3 ? parts[parts.length - 2] : parts.length === 2 ? folderSection(parts[0]) : 'Photos');
     const section = !intoSection && mono && !isBw(base) ? `${base} B+W` : base;
     (by.get(section) ?? by.set(section, []).get(section)!).push(f);
   }
