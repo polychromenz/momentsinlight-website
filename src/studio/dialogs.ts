@@ -12,8 +12,8 @@ const css = `.mdlg{border:0;padding:0;border-radius:24px 0;max-width:min(460px,c
 .mdlg form{display:flex;flex-direction:column;gap:14px;padding:22px 24px 20px}
 .mdlg h2{margin:0;font-weight:300;font-size:22px;line-height:1.25}
 .mdlg p{margin:0;font-size:15px;line-height:1.6;white-space:pre-line;color:#444}
-.mdlg input{font:inherit;font-size:15px;padding:9px 12px;border:1px solid #ddd3c4;border-radius:12px 0;background:var(--white,#fff);color:inherit;width:100%;box-sizing:border-box}
-.mdlg input:focus{outline:2px solid var(--green,#5a5e3b);outline-offset:1px}
+.mdlg :is(input,select){font:inherit;font-size:15px;padding:9px 12px;border:1px solid #ddd3c4;border-radius:12px 0;background:var(--white,#fff);color:inherit;width:100%;box-sizing:border-box}
+.mdlg :is(input,select):focus{outline:2px solid var(--green,#5a5e3b);outline-offset:1px}
 .mdlg .mdlg-field{display:flex;flex-direction:column;gap:5px;font-size:13px;color:#666}
 .mdlg .mdlg-acts{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;margin-top:4px}
 .mdlg button{font:inherit;font-size:14px;padding:9px 18px;border-radius:12px 0;border:1px solid var(--green,#5a5e3b);background:var(--white,#fff);color:var(--green,#5a5e3b);cursor:pointer;transition:border-radius .35s,background .2s}
@@ -37,7 +37,7 @@ function open(html: string, focus: string): Promise<{ ok: boolean; value: string
     d.querySelector('form')!.addEventListener('submit', (e) => {
       e.preventDefault();
       const ok = (e as SubmitEvent).submitter?.classList.contains('mdlg-ok') ?? true;
-      result = { ok, value: d.querySelector('input')?.value ?? '', values: Object.fromEntries([...d.querySelectorAll('input')].map((i) => [i.name, i.value])) };
+      result = { ok, value: d.querySelector('input')?.value ?? '', values: Object.fromEntries([...d.querySelectorAll<HTMLInputElement | HTMLSelectElement>('input, select')].map((i) => [i.name, i.value])) };
       d.close();
     });
     d.addEventListener('close', () => { d.remove(); done(result); });
@@ -46,6 +46,7 @@ function open(html: string, focus: string): Promise<{ ok: boolean; value: string
     let downOn: EventTarget | null = null;
     d.addEventListener('mousedown', (e) => { downOn = e.target; });
     d.addEventListener('click', (e) => { if (e.target === d && downOn === d) d.close(); });
+    d.addEventListener('change', (e) => { const sel = e.target as HTMLSelectElement; if (sel.name === 'to') d.querySelector<HTMLElement>('[data-web]')!.hidden = !!sel.value; });
     d.showModal();
     d.querySelector<HTMLElement>(focus)?.focus();
   });
@@ -76,6 +77,22 @@ export async function askFields(message: string, fields: { name: string; label: 
     ${fields.map((f) => `<label class="mdlg-field"><span>${esc(f.label)}</span><input name="${esc(f.name)}" type="${esc(f.type ?? 'text')}" value="${esc(f.value ?? '')}" placeholder="${esc(f.placeholder ?? '')}" /></label>`).join('')}
     <div class="mdlg-acts"><button type="submit" class="mdlg-cancel">${esc(o.cancel ?? 'Cancel')}</button><button type="submit" class="mdlg-ok">${esc(o.ok ?? 'OK')}</button></div>`, 'input');
   return r.ok ? r.values : null;
+}
+
+/** An email button: its words, and where it goes (one of the fill-in links, or a web address). Returns
+ *  { label, href } with href like {{portal_link}}, or null if cancelled. */
+export async function askButton(links: [string, string][], o: { label?: string; href?: string } = {}): Promise<{ label: string; href: string } | null> {
+  const known = links.some(([f]) => `{{${f}}}` === o.href);
+  const pick = known ? o.href!.slice(2, -2) : o.href ? '' : links[0]?.[0] ?? '';
+  const r = await open(`<h2>Add a button</h2>
+    <label class="mdlg-field"><span>Button words</span><input name="label" value="${esc(o.label ?? '')}" placeholder="e.g. Visit your portal" /></label>
+    <label class="mdlg-field"><span>Goes to</span><select name="to">${links.map(([f, l]) => `<option value="${esc(f)}"${f === pick ? ' selected' : ''}>${esc(l)}</option>`).join('')}<option value=""${pick ? '' : ' selected'}>A web address…</option></select></label>
+    <label class="mdlg-field" data-web${pick ? ' hidden' : ''}><span>Web address</span><input name="web" type="url" value="${esc(known ? '' : o.href ?? '')}" placeholder="https://…" /></label>
+    <div class="mdlg-acts"><button type="submit" class="mdlg-cancel">Cancel</button><button type="submit" class="mdlg-ok">Add button</button></div>`, 'input');
+  if (!r.ok) return null;
+  const label = r.values.label.trim();
+  const href = r.values.to ? `{{${r.values.to}}}` : r.values.web.trim();
+  return label && href ? { label, href } : null;
 }
 
 /** "Unsaved changes" when a link inside the site is clicked, and the browser's box for closing the tab. */

@@ -1,4 +1,4 @@
-import { askText } from './dialogs';
+import { askText, askButton } from './dialogs';
 // The studio CRM's rich text editor (TipTap): bold, italic, underline, text size, colours,
 // headings, lists, links, buttons and fill-ins like {{first_name}}. Used for email templates,
 // "Review and send", and quote packages, introduction and notes.
@@ -38,6 +38,9 @@ const COLOURS: [string, string][] = [['#1a1a1a', 'Ink'], ['#5a5e3b', 'Green'], [
 const SIZES: [string, string][] = [['13px', 'Small'], ['', 'Normal'], ['20px', 'Large'], ['26px', 'Extra large']];
 
 export const FIELDS = ['first_name', 'last_name', 'partner_name', 'couple', 'event_date', 'venue', 'quote_link', 'quote_valid_until', 'payment_plan', 'portal_link', 'gallery_link', 'contract_link', 'payment_amount', 'payment_due_date', 'invoice_number', 'invoice_label', 'invoice_link', 'questionnaire_link', 'shoot_date', 'shoot_time', 'location', 'booking_link', 'contact_name', 'business', 'our_page'];
+
+// The fill-ins that are links, with plain names, for the Button pop-up.
+const LINKS: [string, string][] = [['portal_link', 'Their portal'], ['gallery_link', 'Their gallery'], ['quote_link', 'Their quote'], ['invoice_link', 'Their invoice'], ['contract_link', 'Their contract'], ['questionnaire_link', 'Their questionnaire'], ['booking_link', 'Your booking page'], ['our_page', 'Our page about them']];
 
 export type Rich = { editor: Editor; set: (text: string) => void; get: () => string };
 
@@ -111,11 +114,11 @@ export function attachRich(textarea: HTMLTextAreaElement, opts: { fields?: strin
         break;
       }
       case 'button': {
-        const label = await askText('Button text:', 'View your quote');
-        if (!label) return;
-        const href = await askText('Button link (a web address, or a fill-in like {{quote_link}}):', '{{quote_link}}');
-        if (!href) return;
-        ch.insertContent(`<p><a href="${href.replace(/"/g, '')}" class="button">${label.replace(/[<>]/g, '')}</a></p>`).run();
+        // Where it goes: one of the fill-in links this editor offers (their portal first), or a web address.
+        const links = LINKS.filter(([f]) => fields.includes(f));
+        const r = await askButton(links);
+        if (!r) return;
+        ch.insertContent(`<p><a href="${r.href.replace(/"/g, '')}" class="button">${r.label.replace(/[<>]/g, '')}</a></p>`).run();
         break;
       }
     }
