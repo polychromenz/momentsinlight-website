@@ -108,7 +108,7 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
   }
 
   async function load() {
-    const r = await fetch('/api/studio/galleries');
+    const r = await fetch('/api/studio/galleries', { cache: 'no-store' });
     const d = await r.json().catch(() => ({}));
     if (!r.ok) { $('.gl-grid').innerHTML = `<li>${esc(d.error || 'Couldn’t load galleries.')}</li>`; return; }
     all = d.galleries; today = d.today; settings = d.settings;
@@ -164,6 +164,8 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
   $('.search').addEventListener('input', draw);
   $('.type').addEventListener('change', draw);
   load();
+  // Back from a gallery: the browser shows this page from memory, so fetch the latest covers and status.
+  addEventListener('pageshow', (e) => { if (e.persisted) load(); });
 </script>
 
 <style is:global>

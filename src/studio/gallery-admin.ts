@@ -275,11 +275,10 @@ document.addEventListener('drop', async (e) => {
 // The section photos go into: '' = make sections from the folder names, a section's name, or a new one.
 const FOLDERS = '';
 const NEW = '__new__';
-let added: string[] = []; // new section names typed here, made when the photos go
 function fillInto() {
   const sel = $<HTMLSelectElement>('[data-into]');
   const keep = sel.value;
-  const names = [...new Set([...sorted().map((s: any) => s.name), ...added])];
+  const names = [...new Set(sorted().map((s: any) => s.name as string))];
   sel.innerHTML = `<option value="${FOLDERS}">Use folder names</option>${names.map((n) => `<option value="${esc(n)}">${esc(n)}</option>`).join('')}<option value="${NEW}">New section…</option>`;
   sel.value = names.includes(keep) ? keep : FOLDERS;
 }
@@ -585,10 +584,11 @@ document.addEventListener('change', async (e) => {
     return;
   }
   if (t.matches('[data-into]') && (t as HTMLSelectElement).value === NEW) {
+    // Made straight away, so it shows on the Photos tab too.
     const name = (await askText('New section name:'))?.trim();
-    if (name && !added.includes(name)) added.push(name);
+    if (name && !sorted().some((s: any) => s.name === name) && (await tryApi('/api/studio/galleries/photos', 'POST', { action: 'section', gallery_id: id, name, is_bw: / b\+?w$|mono$/i.test(name) }))) await load();
     fillInto();
-    if (name) (t as HTMLSelectElement).value = name;
+    if (name) { (t as HTMLSelectElement).value = name; toast(`Section “${name}” added. Now choose the photos.`); }
     return;
   }
   if (t.matches('[data-folder]') && t.files?.length) { choose([...t.files], into(true)); t.value = ''; return; }
