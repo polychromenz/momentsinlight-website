@@ -245,8 +245,8 @@ import { site } from '../data/site';
   function tile(i: Img, w: number, h: number) {
     const n = current.indexOf(i);
     const tools = live() ? `<span class="ph-tools">${view.rights.lists ? `<span class="pt pt-fav${isFav(i.id) ? ' on' : ''}" data-fav="${i.id}" role="button" tabindex="0" aria-label="Favourite">${isFav(i.id) ? '♥' : '♡'}</span>` : ''}${view.rights.hide ? `<span class="pt" data-hide="${i.id}" role="button" tabindex="0" title="${i.ch ? 'Show it again' : 'Hide it from anyone you share with'}">${i.ch ? '◉' : '⊘'}</span>` : ''}</span>` : '';
-    return `<button type="button" class="ph${i.ch ? ' ph--hidden' : ''}${selected.has(i.id) ? ' sel' : ''}" data-n="${n}" data-id="${i.id}" style="width:${w}px;height:${h}px" aria-label="Open photo ${n + 1}">${selecting ? '<span class="ph-tick" aria-hidden="true">✓</span>' : ''}${i.ch ? '<span class="ph-hid">Hidden</span>' : ''}${tools}
-      <img src="${esc(i.thumb)}" srcset="${esc(i.thumb)} ${thumbW(i)}w, ${esc(i.web)} ${webW(i)}w" sizes="${Math.ceil(w)}px" width="${Math.round(w)}" height="${Math.round(h)}" alt="" loading="lazy" decoding="async" />${view.preview ? `<span class="ph-star" data-star="${i.id}" role="button" tabindex="0" title="${i.hero ? 'Make it normal size' : 'Show it big (a highlight)'}">${i.hero ? SHRINK : GROW}</span>` : ''}</button>`;
+    return `<div role="button" tabindex="0" class="ph${i.ch ? ' ph--hidden' : ''}${selected.has(i.id) ? ' sel' : ''}" data-n="${n}" data-id="${i.id}" style="width:${w}px;height:${h}px" aria-label="Open photo ${n + 1}">${selecting ? '<span class="ph-tick" aria-hidden="true">✓</span>' : ''}${i.ch ? '<span class="ph-hid">Hidden</span>' : ''}${tools}
+      <img src="${esc(i.thumb)}" srcset="${esc(i.thumb)} ${thumbW(i)}w, ${esc(i.web)} ${webW(i)}w" sizes="${Math.ceil(w)}px" width="${Math.round(w)}" height="${Math.round(h)}" alt="" loading="lazy" decoding="async" />${view.preview ? `<span class="ph-star" data-star="${i.id}" role="button" tabindex="0" title="${i.hero ? 'Make it normal size' : 'Show it big (a highlight)'}">${i.hero ? SHRINK : GROW}</span>` : ''}</div>`;
   }
   function rows(list: Img[], width: number) {
     const phone = width < 600;
@@ -441,6 +441,9 @@ import { site } from '../data/site';
     if (t.closest('.more-list a')) (t.closest('details') as HTMLDetailsElement).open = false;
   });
   document.addEventListener('keydown', (e) => {
+    // A photo tile is a div acting as a button (taps on its ♡ and ⊘ must reach them on phones): Enter or Space opens it.
+    const tile = (e.target as HTMLElement).closest?.('.ph');
+    if (lb.hidden && tile && (e.key === 'Enter' || e.key === ' ') && e.target === tile) { e.preventDefault(); (tile as HTMLElement).click(); return; }
     if (lb.hidden) return;
     if (e.key === 'Escape') close();
     else if (e.key === 'ArrowRight') { stop(); show(at + 1); }
@@ -761,7 +764,7 @@ import { site } from '../data/site';
   .ph img { display: block; width: 100%; height: 100%; transition: opacity 0.4s var(--ease), transform 0.8s var(--ease); -webkit-user-drag: none; user-select: none; }
   .ph:hover img { opacity: 0.92; }
   .ph { position: relative; }
-  .ph-star { position: absolute; top: 8px; right: 8px; width: 34px; height: 34px; display: grid; place-items: center; border-radius: 50%; background: rgb(255 255 255 / 0.9); color: var(--ink); font-size: 18px; cursor: pointer; opacity: 0; transition: opacity 0.25s; box-shadow: 0 4px 12px -6px rgb(0 0 0 / 0.5); }
+  .ph-star { position: absolute; z-index: 2; top: 8px; right: 8px; width: 34px; height: 34px; display: grid; place-items: center; border-radius: 50%; background: rgb(255 255 255 / 0.9); color: var(--ink); font-size: 18px; cursor: pointer; opacity: 0; transition: opacity 0.25s; box-shadow: 0 4px 12px -6px rgb(0 0 0 / 0.5); }
   .ph:hover .ph-star, .ph-star:focus { opacity: 1; }
   .ph-star .sz { display: grid; place-items: center; transition: transform 0.35s var(--ease); }
   .ph-star:hover .sz { transform: scale(1.08); }
@@ -786,14 +789,15 @@ import { site } from '../data/site';
   /* Favourites, lists, select mode, hiding (1d) */
   .g-btn--fav { color: #a8432a; border-color: #d9b3a6; }
   .g-actions { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
-  .ph-tools { position: absolute; left: 8px; bottom: 8px; display: flex; gap: 6px; opacity: 0; transition: opacity 0.25s; }
+  /* z-index: the photo fades a touch when hovered or tapped, which would put it in front of these. */
+  .ph-tools { position: absolute; z-index: 2; left: 8px; bottom: 8px; display: flex; gap: 6px; opacity: 0; transition: opacity 0.25s; }
   .ph:hover .ph-tools, .ph-tools:focus-within { opacity: 1; }
   .pt { width: 34px; height: 34px; display: grid; place-items: center; border-radius: 50%; background: rgb(255 255 255 / 0.9); color: var(--ink); font-size: 17px; cursor: pointer; box-shadow: 0 4px 12px -6px rgb(0 0 0 / 0.5); }
   .pt-fav.on { color: #c0392b; }
   .ph:has(.pt-fav.on) .ph-tools { opacity: 1; }
   .ph:has(.pt-fav.on) .ph-tools .pt:not(.pt-fav) { opacity: 0; }
   .ph:hover:has(.pt-fav.on) .ph-tools .pt { opacity: 1; }
-  @media (hover: none) { .ph-tools { opacity: 0.9; } }
+  @media (hover: none) { .ph-tools { opacity: 0.9; } .pt { width: 40px; height: 40px; font-size: 20px; } }
   .ph--hidden img { opacity: 0.35; filter: grayscale(0.6); }
   .ph-hid { position: absolute; top: 8px; left: 8px; z-index: 2; padding: 3px 9px; border-radius: 999px; background: rgb(0 0 0 / 0.6); color: #fff; font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; }
   .selecting .ph { cursor: pointer; }
@@ -851,6 +855,18 @@ import { site } from '../data/site';
   .g-toast.show { opacity: 1; transform: translate(-50%, 0); }
   .lb-fav.on { color: #ff8a7a; border-color: #ff8a7a; }
   @media (max-width: 640px) { .g-actions .g-btn { padding: 7px 9px; font-size: 11px; } }
+  /* Phones: the bar is two rows, the sections (and More) then the buttons on one line that scrolls
+     sideways if needed, so nothing overlaps or pushes the page wider than the screen. */
+  .gallery { overflow-x: clip; }
+  .more-list { z-index: 5; }
+  @media (max-width: 640px) {
+    .g-bar { flex-wrap: wrap; gap: 4px 8px; padding: 6px 10px; }
+    .g-sections { flex: 1 1 100%; }
+    .g-actions { flex: 1 1 100%; flex-wrap: nowrap; overflow-x: auto; justify-content: flex-start; scrollbar-width: none; padding-bottom: 2px; }
+    .g-actions::-webkit-scrollbar { display: none; }
+    .g-actions .g-btn { flex: none; white-space: nowrap; }
+    .g-sec { scroll-margin-top: 100px; }
+  }
 
   /* Lightbox */
   .lb-open { overflow: hidden; }
@@ -864,6 +880,19 @@ import { site } from '../data/site';
   .lb-tool { font: inherit; font-size: 12px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; padding: 7px 12px; border: 1px solid rgb(255 255 255 / 0.35); border-radius: 10px 0; background: transparent; color: #eee; cursor: pointer; text-decoration: none; }
   .lb-tool:hover { background: rgb(255 255 255 / 0.12); opacity: 1; }
   @media (max-width: 640px) { .lb-btn { display: none; } }
+  /* Phones: the buttons sit in a strip above the photo, on one line (it scrolls sideways if needed,
+     with ✕ always showing), and the photo fills the rest. */
+  @media (max-width: 640px) {
+    .lb { flex-direction: column; align-items: stretch; }
+    .lb-top { position: static; order: -1; flex: none; padding: 8px 10px; gap: 8px; background: #121210; }
+    .lb-count { flex: none; font-size: 12px; }
+    .lb-tools { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; justify-content: flex-start; min-width: 0; }
+    .lb-tools::-webkit-scrollbar { display: none; }
+    .lb-dl { display: flex; gap: 6px; }
+    .lb-tool { flex: none; white-space: nowrap; padding: 7px 10px; font-size: 11px; letter-spacing: 0.06em; }
+    .lb-tools [data-lb-close] { position: sticky; right: 0; background: #121210; }
+    .lb-img { flex: 1 1 auto; min-height: 0; width: 100%; max-height: none; }
+  }
   @keyframes gv-in { from { opacity: 0; transform: translateY(12px); } }
   @keyframes gv-fade { from { opacity: 0; } }
   @media (prefers-reduced-motion: reduce) { .gv * { animation: none !important; } }
