@@ -4,7 +4,8 @@
 // and send" in the studio (functions/api/studio/crm/send.js) for ready-to-send ones.
 // Every send goes through sendEmail(), so the test-mode lock always applies.
 import { sendEmail } from './gmail.js';
-import { jobGalleries, GALLERY_ORIGIN } from './gallery-access.js';
+import { jobGalleries, createLink, GALLERY_ORIGIN } from './gallery-access.js';
+import { setOnline } from './galleries.js';
 import { renderTemplate, fields, studioLinks } from './email-render.js';
 import { attachmentsFor } from './documents.js';
 import { portalToken, portalLink } from './portal.js';
@@ -46,6 +47,25 @@ export async function draftFor(db, step, job, env = null, extra = {}) {
   return { template, ...renderTemplate(template, fields(job, { ...(await jobLinks(db, job, step, env)), ...extra })) };
 }
 
+/** Get a studio gallery ready to send to this job: linked to them, online (a draft is put online), and
+ *  with the couple's own link. Returns that link. */
+async function readyGallery(env, job, galleryId) {
+  const db = env.DB;
+  const g = await db.prepare('SELECT id, name, status, expires_at, job_id FROM photo_galleries WHERE id = ?1').bind(galleryId).first();
+  if (!g) throw new Error('That gallery doesn’t exist any more.');
+  if (g.job_id && g.job_id !== job.id) throw new Error(`“${g.name}” is linked to another client. Unlink it there first.`);
+  if (g.status === 'offline') throw new Error(`“${g.name}” is offline. Put it back online (Galleries), then send.`);
+  if (g.status === 'online' && g.expires_at && g.expires_at < new Date().toLocaleDateString('en-CA', { timeZone: 'Pacific/Auckland' })) throw new Error(`“${g.name}” has expired. Give it a new expiry date (Galleries), then send.`);
+  if (!g.job_id) await db.prepare('UPDATE photo_galleries SET job_id = ?2, client_id = ?3, updated_at = ?4 WHERE id = ?1').bind(g.id, job.id, job.client_id, new Date().toISOString()).run();
+  if (g.status !== 'online') await setOnline(env, g.id);
+  let mine = (await jobGalleries(db, job.id)).find((x) => x.id === g.id);
+  if (!mine?.url) {
+    await createLink(env, g.id, { kind: 'main_client', name: job.title });
+    mine = (await jobGalleries(db, job.id)).find((x) => x.id === g.id);
+  }
+  return mine.url;
+}
+
 /**
  * Send a step's email. edits = { subject, body, attachments (document ids) } from Tony's review
  * (optional; without them, the template's own text and documents are used).
@@ -56,6 +76,9 @@ export async function sendStep(env, step, edits = {}) {
   const job = await loadJob(db, step.job_id);
   if (!job) throw new Error('That job no longer exists.');
   const rule = ruleOf(step);
+  // A studio gallery chosen by id: it's linked to them (so it shows on their portal) and a draft goes
+  // online first, so the link opens for them.
+  if (edits.gallery_id) edits = { ...edits, gallery_link: await readyGallery(env, job, String(edits.gallery_id)) };
   const gallery = (edits.gallery_link ?? '').toString().trim();
   if (rule.gallery && !/^https?:\/\/\S+$/i.test(gallery)) throw new Error('Choose their gallery (or paste a link) first.');
   // A studio gallery (galleries.momentsinlight.co.nz) must be online, or the link won't open for them.

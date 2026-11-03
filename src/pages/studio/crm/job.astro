@@ -169,7 +169,7 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
       <p class="review-to"></p>
       <p class="review-missing" hidden></p>
       <div class="review-gallery" hidden>
-        <label>Their gallery <small>(its link goes into the email; it must be online)</small><select name="gallery_pick"></select></label>
+        <label>Their gallery <small>(its link goes into the email and it shows on their portal)</small><select name="gallery_pick"></select></label>
         <label class="review-gallery-url">Gallery link <small>(e.g. Pic-Time; it goes into the email and onto their portal)</small><input name="gallery_link" type="url" placeholder="https://…" /></label>
       </div>
       <label>Subject<input name="subject" /></label>
@@ -252,6 +252,7 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
   };
   let stage = 'lead';
   let dirty = false;
+  const PASTE = '__paste__'; // the gallery chooser's "Paste a link instead…"
   let lastJob: any = null; // the job as last loaded (for Delete permanently)
   const markDirty = () => { dirty = true; saveBtn.disabled = false; $('.save-state').textContent = 'Unsaved changes'; };
 
@@ -286,7 +287,7 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
   let messages: Message[] = [];
   // ---- Portal ----
   type StudioGallery = { id: string; name: string; status: string; expires_at: string | null; photos: number; link_id: number | null; url: string | null; online: boolean };
-  let portal: { link: string; path: string; galleries: { id: number; title: string; url: string }[]; studio_galleries: StudioGallery[]; unlinked: { id: string; name: string; status: string }[]; documents: { id: number; name: string; size: number; shared: boolean }[]; uploads: { id: number; name: string; size: number; created_at: string; questionnaire_id: number | null }[] };
+  let portal: { link: string; path: string; galleries: { id: number; title: string; url: string }[]; studio_galleries: StudioGallery[]; unlinked: { id: string; name: string; status: string; expires_at: string | null }[]; documents: { id: number; name: string; size: number; shared: boolean }[]; uploads: { id: number; name: string; size: number; created_at: string; questionnaire_id: number | null }[] };
   const kb = (n: number) => (n > 1048576 ? `${(n / 1048576).toFixed(1)} MB` : `${Math.max(1, Math.round(n / 1024))} KB`);
   async function loadPortal() {
     const r = await fetch(`/api/studio/crm/portal?job=${id}`);
@@ -315,7 +316,7 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
   // Review and send: "Paste a link instead…" shows the link box.
   document.addEventListener('change', (e) => {
     const sel = (e.target as HTMLElement).closest<HTMLSelectElement>('select[name="gallery_pick"]');
-    if (sel) $('.review-gallery-url').hidden = !!sel.value;
+    if (sel) $('.review-gallery-url').hidden = sel.value !== PASTE;
   });
   $<HTMLFormElement>('.gallery-link').addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -648,13 +649,24 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
     miss.textContent = d.missing.length ? `Fill in the gaps in [square brackets]: ${d.missing.join(', ')}` : '';
     $('.review-gallery').hidden = !d.gallery;
     (rf.elements.namedItem('gallery_link') as HTMLInputElement).value = '';
-    // Their studio galleries to choose from (online ones first); or paste a link for an older Pic-Time one.
-    const choices = [...(portal?.studio_galleries ?? [])].filter((g) => g.url).sort((a, b) => Number(b.online) - Number(a.online));
+    // Their studio galleries first, then every unlinked one (picking one links it to them when sent, and
+    // a draft goes online); or paste a link for an older Pic-Time one.
     const pick = rf.elements.namedItem('gallery_pick') as HTMLSelectElement;
-    pick.innerHTML = choices.map((g) => `<option value="${esc(g.url!)}"${g.online ? '' : ' disabled'}>${esc(g.name)}${g.online ? '' : ' (not online yet)'}</option>`).join('') + '<option value="">Paste a link instead…</option>';
-    pick.value = choices.find((g) => g.online)?.url ?? '';
-    pick.closest('label')!.hidden = !choices.length;
-    $('.review-gallery-url').hidden = !!pick.value;
+    const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Pacific/Auckland' });
+    const note = (status: string, expires: string | null) => (status === 'draft' ? ' (draft: it goes online when you send)' : status !== 'online' ? ' (offline)' : expires && expires < today ? ' (expired)' : '');
+    const usable = (status: string, expires: string | null) => status === 'draft' || (status === 'online' && !(expires && expires < today));
+    const opt = (id: string, name: string, status: string, expires: string | null) => `<option value="${esc(id)}"${usable(status, expires) ? '' : ' disabled'}>${esc(name)}${note(status, expires)}</option>`;
+    const hers = [...(portal?.studio_galleries ?? [])].sort((a, b) => Number(b.online) - Number(a.online));
+    // Galleries with their first name in come first among the others (e.g. "Candice and Chandu - Practice").
+    const first = String(lastJob?.first_name ?? '').trim().toLowerCase();
+    const named = (n: string) => !!first && n.toLowerCase().split(/[^a-z]+/).includes(first);
+    const others = [...(portal?.unlinked ?? [])].sort((a, b) => Number(named(b.name)) - Number(named(a.name)));
+    pick.innerHTML = '<option value="">Choose a gallery…</option>'
+      + (hers.length ? `<optgroup label="Theirs">${hers.map((g) => opt(g.id, g.name, g.status, g.expires_at)).join('')}</optgroup>` : '')
+      + (others.length ? `<optgroup label="Other galleries (linked to them when you send)">${others.map((g) => opt(g.id, g.name, g.status, g.expires_at)).join('')}</optgroup>` : '')
+      + `<option value="${PASTE}">Paste a link instead…</option>`;
+    pick.value = hers.find((g) => usable(g.status, g.expires_at))?.id ?? others.find((g) => named(g.name) && usable(g.status, g.expires_at))?.id ?? '';
+    $('.review-gallery-url').hidden = pick.value !== PASTE;
     reviewDocs.set(d.documents, d.attachments);
     (rf.elements.namedItem('subject') as HTMLInputElement).value = d.subject;
     reviewRich.set(d.body);
@@ -710,7 +722,9 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
     const r = await fetch('/api/studio/crm/send', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({
       step: reviewStep,
       attachments: reviewDocs.get(),
-      gallery_link: (rf.elements.namedItem('gallery_pick') as HTMLSelectElement).value || (rf.elements.namedItem('gallery_link') as HTMLInputElement).value.trim(),
+      ...((rf.elements.namedItem('gallery_pick') as HTMLSelectElement).value === PASTE
+        ? { gallery_link: (rf.elements.namedItem('gallery_link') as HTMLInputElement).value.trim() }
+        : { gallery_id: (rf.elements.namedItem('gallery_pick') as HTMLSelectElement).value }),
       subject: (rf.elements.namedItem('subject') as HTMLInputElement).value,
       body: (rf.elements.namedItem('body') as HTMLTextAreaElement).value,
     }) });

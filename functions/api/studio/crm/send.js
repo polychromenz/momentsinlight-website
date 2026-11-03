@@ -50,7 +50,7 @@ export async function onRequestPost({ request, env }) {
   const claim = await env.DB.prepare(`UPDATE steps SET status = 'sending', done_at = ?2 WHERE id = ?1 AND status IN ('scheduled', 'due', 'failed')`).bind(id, now).run();
   if (!claim.meta.changes) return json({ error: 'That email is already being sent.' }, 409);
   try {
-    const sent = await sendStep(env, step, { subject, body, attachments: Array.isArray(d.attachments) ? d.attachments : undefined, gallery_link: d.gallery_link });
+    const sent = await sendStep(env, step, { subject, body, attachments: Array.isArray(d.attachments) ? d.attachments : undefined, gallery_link: d.gallery_link, gallery_id: d.gallery_id });
     return json({ ok: true, to: sent.to, redirected: sent.redirected, intended: sent.intended });
   } catch (e) {
     await env.DB.prepare(`UPDATE steps SET status = ?2, done_at = NULL, note = ?3 WHERE id = ?1`).bind(id, step.status, String(e.message).slice(0, 300)).run();

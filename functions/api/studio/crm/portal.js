@@ -37,7 +37,7 @@ export async function onRequestGet({ request, env }) {
       // This couple's own documents (e.g. their signed Studio Ninja contract), listed first.
       env.DB.prepare('SELECT id, name, size FROM documents WHERE job_id = ?1 ORDER BY name').bind(jobId).all(),
       jobGalleries(env.DB, jobId),
-      env.DB.prepare(`SELECT id, name, status FROM photo_galleries WHERE job_id IS NULL ORDER BY created_at DESC LIMIT 200`).all(),
+      env.DB.prepare(`SELECT id, name, status, expires_at FROM photo_galleries WHERE job_id IS NULL ORDER BY created_at DESC LIMIT 200`).all(),
     ]);
     const on = new Set(shared.results.map((r) => r.document_id));
     return json({ link: portalLink(t), path: `/portal?t=${t}`, galleries: galleries.results, studio_galleries: studio, unlinked: free.results,
