@@ -6,6 +6,8 @@ import '@fontsource/raleway/300.css';
 import '@fontsource/raleway/400.css';
 import '@fontsource/raleway/500.css';
 import '@fontsource/raleway/600.css';
+import '@fontsource/source-sans-3/400.css';
+import '@fontsource/source-sans-3/600.css';
 import '../styles/global.css';
 
 type Section = 'dashboard' | 'clients' | 'galleries' | 'calendar' | 'contacts' | 'blog' | 'pages' | 'reviews' | 'stats' | 'visits' | 'seo' | 'rankings' | 'payments' | 'mileage' | 'xero' | 'reports' | 'reconcile' | 'social' | 'settings';
@@ -61,6 +63,8 @@ const areaAttr = (href: string) => areaOfPage(href) ?? undefined;
     <link rel="icon" href="/studio-icon-32.png" sizes="32x32" type="image/png" />
     <link rel="icon" href="/studio-icon.png" sizes="192x192" type="image/png" />
     <link rel="apple-touch-icon" href="/studio-icon.png" />
+    <!-- The studio's look (Tony, 3 Nov 2026): the simpler one unless "Classic look" is chosen at the bottom of a page. -->
+    <script is:inline>try { if (localStorage.getItem('studio-look') === 'classic') document.documentElement.dataset.look = 'classic'; } catch {}</script>
   </head>
   <body class="studio-body">
     <header class="studio-bar">
@@ -84,7 +88,7 @@ const areaAttr = (href: string) => areaOfPage(href) ?? undefined;
     <p class="studio-ro" hidden>You can look at this part of the studio but not change it. Ask Tony if you need to.</p>
     <p class="studio-ro studio-hidden-note" hidden>That part of the studio isn’t part of your access, so you’ve been brought back here.</p>
     <slot />
-    <p class="studio-version">Moments Studio, updated {version}</p>
+    <p class="studio-version">Moments Studio, updated {version} · <button type="button" class="look-switch" data-look-switch>Classic look</button></p>
     <script>
       // Per-person access (Settings > People): hidden areas leave the menu; a note on look-only pages.
       import { areaOfPage, levelFor } from '../../functions-lib/areas.js';
@@ -111,6 +115,16 @@ const areaAttr = (href: string) => areaOfPage(href) ?? undefined;
       document.querySelector('[data-write-email]')?.addEventListener('click', async () => {
         const { openCompose } = await import('../studio/compose');
         openCompose();
+      });
+      // Simpler look or the classic one (remembered in this browser).
+      const lookBtn = document.querySelector<HTMLButtonElement>('[data-look-switch]')!;
+      const showLook = () => { lookBtn.textContent = document.documentElement.dataset.look === 'classic' ? 'Simpler look' : 'Classic look'; };
+      showLook();
+      lookBtn.addEventListener('click', () => {
+        const classic = document.documentElement.dataset.look !== 'classic';
+        if (classic) document.documentElement.dataset.look = 'classic'; else delete document.documentElement.dataset.look;
+        try { localStorage.setItem('studio-look', classic ? 'classic' : 'simple'); } catch {}
+        showLook();
       });
       // The Website menu closes when you click elsewhere.
       document.addEventListener('click', (e) => {
@@ -182,6 +196,19 @@ const areaAttr = (href: string) => areaOfPage(href) ?? undefined;
   .studio-write + .studio-actions { margin-left: 0; }
   .studio-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-left: auto; }
   .studio-version { text-align: center; color: #aaa; font-size: 12px; margin: 40px 0 20px; }
+  .look-switch { font: inherit; color: var(--green); background: none; border: 0; padding: 0; cursor: pointer; text-decoration: underline; }
+
+  /* ---- The simpler look (style C, 3 Nov 2026): one plain font, no spaced capitals, firmer
+     headings, tighter cards. Undone by "Classic look" (html[data-look=classic]). ---- */
+  html:not([data-look='classic']) .studio-body { font-family: 'Source Sans 3', system-ui, sans-serif; font-size: 15px; }
+  html:not([data-look='classic']) .studio-body :is(input, select, textarea, button) { font-family: inherit; }
+  html:not([data-look='classic']) .studio-body * { letter-spacing: normal !important; text-transform: none !important; }
+  html:not([data-look='classic']) .studio-body main :is(h1, h2, h3, h4, legend) { font-weight: 600; line-height: 1.25; }
+  html:not([data-look='classic']) .studio-body main h1 { font-size: clamp(22px, 2.4vw, 28px); margin-top: 0; }
+  html:not([data-look='classic']) .studio-body main h2 { font-size: 18px; }
+  html:not([data-look='classic']) .studio-body main h3 { font-size: 15px; }
+  html:not([data-look='classic']) .studio-body main .card { padding: 16px 20px; }
+  html:not([data-look='classic']) .studio-body main :is(p, li, td, label) { line-height: 1.45; }
   .studio-actions:empty { display: none; }
   @media (max-width: 760px) { .studio-nav { order: 3; flex-basis: 100%; margin: 0 -6px; } .studio-nav { position: relative; } .nav-group { position: static; } .nav-menu { left: 6px; right: 6px; top: calc(100% + 4px); flex-direction: row; flex-wrap: wrap; } }
   .studio-brand span { font-weight: 600; color: var(--green); }
