@@ -272,9 +272,19 @@ document.addEventListener('drop', async (e) => {
 });
 
 // ---- Add photos ----
+// The section photos go into: '' = make sections from the folder names, a section's name, or a new one.
+const FOLDERS = '';
+const NEW = '__new__';
+let added: string[] = []; // new section names typed here, made when the photos go
 function fillInto() {
-  $<HTMLSelectElement>('[data-into]').innerHTML = sorted().map((s: any) => `<option>${esc(s.name)}</option>`).join('') || '<option>Photos</option>';
+  const sel = $<HTMLSelectElement>('[data-into]');
+  const keep = sel.value;
+  const names = [...new Set([...sorted().map((s: any) => s.name), ...added])];
+  sel.innerHTML = `<option value="${FOLDERS}">Use folder names</option>${names.map((n) => `<option value="${esc(n)}">${esc(n)}</option>`).join('')}<option value="${NEW}">New section…</option>`;
+  sel.value = names.includes(keep) ? keep : FOLDERS;
 }
+// Photos chosen one by one have no folder, so "Use folder names" puts them in Photos.
+const into = (folder: boolean) => $<HTMLSelectElement>('[data-into]').value || (folder ? undefined : 'Photos');
 let current: { files: File[]; into?: string } | null = null;
 let busy = false;
 let stop = false;
@@ -574,8 +584,15 @@ document.addEventListener('change', async (e) => {
     if (await tryApi('/api/studio/galleries/photos', 'PATCH', { gallery_id: id, ids, set: { section_id: Number(t.value) } })) { selected.clear(); toast(`Moved ${ids.length} photo${ids.length === 1 ? '' : 's'}.`); load(); }
     return;
   }
-  if (t.matches('[data-folder]') && t.files?.length) { choose([...t.files]); t.value = ''; return; }
-  if (t.matches('[data-files]') && t.files?.length) { choose([...t.files], $<HTMLSelectElement>('[data-into]').value || 'Photos'); t.value = ''; }
+  if (t.matches('[data-into]') && (t as HTMLSelectElement).value === NEW) {
+    const name = (await askText('New section name:'))?.trim();
+    if (name && !added.includes(name)) added.push(name);
+    fillInto();
+    if (name) (t as HTMLSelectElement).value = name;
+    return;
+  }
+  if (t.matches('[data-folder]') && t.files?.length) { choose([...t.files], into(true)); t.value = ''; return; }
+  if (t.matches('[data-files]') && t.files?.length) { choose([...t.files], into(false)); t.value = ''; }
 });
 
 load().then(() => tab(new URLSearchParams(location.search).get('tab') ?? 'photos'));

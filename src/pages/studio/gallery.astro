@@ -54,13 +54,11 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
 
     <section class="pane" data-pane="add" hidden>
       <div class="card">
-        <h2>Bring in a folder of photos</h2>
-        <p>Choose the wedding’s folder from your Wedding Collection Export (the one with <em>Color</em> and <em>Mono</em> inside), or just its Color or Mono folder, or an unzipped Pic-Time download. Each folder of photos becomes a section, in name order; photos under <em>Mono</em> (or folders ending in <em>B+W</em>) become “… B+W” sections. Web copies are skipped (the studio makes its own). Photos already here are skipped, so you can run it again if it stops.</p>
-        <label class="s-btn s-btn--solid pick">Choose a folder… <input type="file" data-folder webkitdirectory multiple hidden /></label>
-      </div>
-      <div class="card">
-        <h2>Add a few photos</h2>
-        <p>Into one section: <select data-into></select> <label class="s-btn pick">Choose photos… <input type="file" data-files accept="image/jpeg" multiple hidden /></label></p>
+        <h2>Add photos</h2>
+        <p>Choose a folder (from Lightroom: a folder per section, with <em>Color</em> and <em>Mono</em> inside if you split them) or just a few photos. With <em>Use folder names</em>, each folder of photos becomes a section, in name order, and photos under <em>Mono</em> (or folders ending in <em>B+W</em>) go into “… B+W” sections. Or pick a section and everything goes into it. Web copies are skipped (the studio makes its own), and photos already here are skipped, so you can run it again if it stops.</p>
+        <p class="ga-add">Section: <select data-into></select>
+          <label class="s-btn s-btn--solid pick">Choose a folder… <input type="file" data-folder webkitdirectory multiple hidden /></label>
+          <label class="s-btn pick">Choose photos… <input type="file" data-files accept="image/jpeg" multiple hidden /></label></p>
       </div>
       <div class="card ga-plan" hidden></div>
     </section>
