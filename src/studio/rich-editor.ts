@@ -1,4 +1,4 @@
-import { askText, askButton } from './dialogs';
+import { askText, askButton, askGalleryButton } from './dialogs';
 // The studio CRM's rich text editor (TipTap): bold, italic, underline, text size, colours,
 // headings, lists, links, buttons and fill-ins like {{first_name}}. Used for email templates,
 // "Review and send", and quote packages, introduction and notes.
@@ -44,7 +44,9 @@ const LINKS: [string, string][] = [['portal_link', 'Their portal'], ['gallery_li
 
 export type Rich = { editor: Editor; set: (text: string) => void; get: () => string };
 
-export function attachRich(textarea: HTMLTextAreaElement, opts: { fields?: string[]; minHeight?: number } = {}): Rich {
+// opts.galleries: the client's galleries, for the "Gallery button" tool (only on a client's page).
+type GalleryChoice = { name: string; url: string | null; online: boolean };
+export function attachRich(textarea: HTMLTextAreaElement, opts: { fields?: string[]; minHeight?: number; galleries?: () => GalleryChoice[] } = {}): Rich {
   const wrap = document.createElement('div');
   wrap.className = 'rich';
   const fields = opts.fields ?? FIELDS;
@@ -59,6 +61,7 @@ export function attachRich(textarea: HTMLTextAreaElement, opts: { fields?: strin
     <button type="button" data-c="ordered" title="Numbered list">1. List</button>
     <button type="button" data-c="link" title="Link">🔗 Link</button>
     <button type="button" data-c="button" title="Button">▭ Button</button>
+    ${opts.galleries ? '<button type="button" data-c="gallery" title="A button to one of their galleries">▣ Gallery button</button>' : ''}
     ${fields.length ? `<select data-c="field" title="Insert a fill-in"><option value="">+ Fill-in</option>${fields.map((f) => `<option value="${f}">${f.replace(/_/g, ' ')}</option>`).join('')}</select>` : ''}
   </div><div class="rich-area"></div>`;
   textarea.before(wrap);
@@ -119,6 +122,12 @@ export function attachRich(textarea: HTMLTextAreaElement, opts: { fields?: strin
         const r = await askButton(links);
         if (!r) return;
         ch.insertContent(`<p><a href="${r.href.replace(/"/g, '')}" class="button">${r.label.replace(/[<>]/g, '')}</a></p>`).run();
+        break;
+      }
+      case 'gallery': {
+        const r = await askGalleryButton(opts.galleries?.() ?? []);
+        if (!r) return;
+        editor.chain().focus().insertContent(`<p><a href="${r.href.replace(/"/g, '')}" class="button">${r.label.replace(/[<>]/g, '')}</a></p>`).run();
         break;
       }
     }

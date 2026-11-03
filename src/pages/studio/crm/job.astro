@@ -631,7 +631,9 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
     const body = (rf.elements.namedItem('body') as HTMLTextAreaElement).value;
     preview.srcdoc = emailHtml({ subject, body });
   };
-  const reviewRich = attachRich(rf.elements.namedItem('body') as HTMLTextAreaElement, { minHeight: 380 });
+  // Their studio galleries (online first), for the editors' "Gallery button".
+  const theirGalleries = () => [...(portal?.studio_galleries ?? [])].sort((a, b) => Number(b.online) - Number(a.online));
+  const reviewRich = attachRich(rf.elements.namedItem('body') as HTMLTextAreaElement, { minHeight: 380, galleries: theirGalleries });
   const reviewDocs = attachPicker($('.review-attach'));
   rf.addEventListener('input', showPreview);
   async function openReview(stepId: number) {
@@ -676,7 +678,7 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
   // ---- Write an email ----
   const cf = $<HTMLFormElement>('.compose-form');
   const composePreview = cf.querySelector('iframe')!;
-  const composeRich = attachRich(cf.elements.namedItem('body') as HTMLTextAreaElement, { minHeight: 340 });
+  const composeRich = attachRich(cf.elements.namedItem('body') as HTMLTextAreaElement, { minHeight: 340, galleries: theirGalleries });
   const composeDocs = attachPicker($('.compose-attach'));
   let replyingTo: number | null = null;
   let viewing: Message | null = null;

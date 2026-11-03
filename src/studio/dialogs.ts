@@ -95,6 +95,20 @@ export async function askButton(links: [string, string][], o: { label?: string; 
   return label && href ? { label, href } : null;
 }
 
+/** A button to one of the client's galleries: which gallery, and the button's words. Galleries that
+ *  aren't online can't be chosen (their link wouldn't open). Returns { label, href } or null. */
+export async function askGalleryButton(galleries: { name: string; url: string | null; online: boolean }[]): Promise<{ label: string; href: string } | null> {
+  const usable = galleries.filter((g) => g.url && g.online);
+  if (!usable.length) { await tell(galleries.length ? 'None of their galleries is online yet. Put one online (Galleries), then add the button.' : 'They have no galleries linked yet. Link one on this page (Client portal), then add the button.', 'No gallery to link to'); return null; }
+  const r = await open(`<h2>Add a gallery button</h2>
+    <label class="mdlg-field"><span>Gallery</span><select name="url">${galleries.map((g) => `<option value="${esc(g.url ?? '')}"${g.url && g.online ? '' : ' disabled'}>${esc(g.name)}${g.online ? '' : ' (not online yet)'}</option>`).join('')}</select></label>
+    <label class="mdlg-field"><span>Button words</span><input name="label" value="View your gallery" /></label>
+    <div class="mdlg-acts"><button type="submit" class="mdlg-cancel">Cancel</button><button type="submit" class="mdlg-ok">Add button</button></div>`, 'select');
+  if (!r.ok) return null;
+  const label = r.values.label.trim();
+  return label && r.values.url ? { label, href: r.values.url } : null;
+}
+
 /** "Unsaved changes" when a link inside the site is clicked, and the browser's box for closing the tab. */
 export function guardLeaving(isDirty: () => boolean) {
   let leaving = false;
