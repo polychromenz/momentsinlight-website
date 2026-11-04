@@ -1,9 +1,9 @@
-// PDFs for the studio CRM (pdf-lib, runs on Cloudflare): quotes, contracts, invoices, receipts
-// and questionnaire answers. A4 in the email design: a champagne band with the logo, Raleway
+// PDFs for the studio CRM (pdf-lib, runs on Cloudflare): quotes, contracts, invoices, receipts,
+// questionnaire answers and the galleries' print release. A4 in the email design: a champagne band with the logo, Raleway
 // (public/fonts/pdf, fetched from the site like the logo), green letter-spaced labels, and
 // leaf-cornered champagne panels; the page itself stays white so it prints cleanly. If the fonts
 // can't be fetched it falls back to Helvetica, so a PDF is always made.
-import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
+import { PDFDocument, StandardFonts, rgb, pushGraphicsState, popGraphicsState, moveTo, lineTo, appendQuadraticCurve, closePath, clip, endPath } from 'pdf-lib';
 import fontkit from '@pdf-lib/fontkit';
 import { clean, toHtml } from './rich-html.js';
 import { longDate, payments, quoteText } from './quotes.js';
@@ -214,12 +214,27 @@ async function setup() {
     inset = 0;
     if (page === p0) y = Math.min(y, top - size - 12);
   };
+  /** A photo across the page in a leaf-cornered frame, cropped to fill it (a little above centre, so
+   *  faces stay in). bytes: a JPEG or PNG. Nothing is drawn if it can't be read. */
+  const photo = async (bytes, h = 220) => {
+    let img = null;
+    try { img = bytes[0] === 0x89 && bytes[1] === 0x50 ? await pdf.embedPng(bytes) : bytes[0] === 0xff && bytes[1] === 0xd8 ? await pdf.embedJpg(bytes) : null; } catch { /* no photo */ }
+    if (!img) return;
+    need(h + 10);
+    const x = M; const yb = y - h; const r = 26;
+    const s = Math.max(W / img.width, h / img.height); const iw = img.width * s; const ih = img.height * s;
+    page.pushOperators(pushGraphicsState(), moveTo(x + r, yb + h), lineTo(x + W, yb + h), lineTo(x + W, yb + r), appendQuadraticCurve(x + W, yb, x + W - r, yb),
+      lineTo(x, yb), lineTo(x, yb + h - r), appendQuadraticCurve(x, yb + h, x + r, yb + h), closePath(), clip(), endPath());
+    page.drawImage(img, { x: x + (W - iw) / 2, y: yb - (ih - h) * 0.6, width: iw, height: ih });
+    page.pushOperators(popGraphicsState());
+    y = yb - 30;
+  };
   const footer = (text) => pdf.getPages().forEach((p, i, all) => {
     const t = txt(`${text}  ·  momentsinlight.co.nz  ·  Page ${i + 1} of ${all.length}`);
     p.drawLine({ start: { x: M, y: 40 }, end: { x: A4[0] - M, y: 40 }, thickness: 0.5, color: LINE });
     p.drawText(t, { x: A4[0] / 2 - F.regular.widthOfTextAtSize(t, 7.5) / 2, y: 26, size: 7.5, font: F.regular, color: GREY });
   });
-  return { pdf, write, title, label, rule, columns, rows, panel, html, beside, footer, get y() { return y; } };
+  return { pdf, write, title, label, rule, columns, rows, panel, html, beside, photo, footer, get y() { return y; } };
 }
 
 const FROM = ['Moments in Light', 'Tony Gorham', '021 625 943', 'tony@momentsinlight.co.nz', '985a Hibiscus Coast Highway', 'Waiwera, Auckland 0994'];
@@ -344,6 +359,27 @@ export async function questionnairePdf(q, job, uploads = []) {
     d.write([{ text: shown || 'No answer' }], { size: 10, color: shown ? TEXT : GREY, gap: 10 });
   }
   d.footer(`Moments in Light  ·  ${q.name}`);
+  return d.pdf.save();
+}
+
+/** The print release that comes with every gallery download. text: Tony's wording (Studio ›
+ *  Galleries › Settings), plain text with blank lines between paragraphs; gallery: the gallery row;
+ *  cover: its cover photo's bytes (optional). */
+export async function printReleasePdf({ text, gallery, cover }) {
+  const d = await setup();
+  if (cover) await d.photo(cover);
+  d.title('Print release', [gallery.name, gallery.event_date && longDate(gallery.event_date)].filter(Boolean).join('  ·  '), `Print release · ${gallery.name}`);
+  // The wording's own "PRINT RELEASE" heading is the title already.
+  const paras = String(text ?? '').replace(/\r/g, '').trim().replace(/^print release\s*\n/i, '').trim().split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean);
+  paras.forEach((p, i) => {
+    // A short last paragraph is the sign-off ("Thank you… Tony"): set apart in green.
+    const signOff = i === paras.length - 1 && paras.length > 1 && p.length < 160;
+    if (signOff) d.write([{ text: p, weight: 'medium' }], { size: 10.5, color: GREEN, lead: 1.6, gap: 10 });
+    else d.write([{ text: p }], { size: 10.5, lead: 1.65, gap: 9 });
+  });
+  const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Pacific/Auckland' });
+  d.panel([['Gallery', gallery.name], ['Photographer', 'Tony Gorham, Moments in Light'], ['Issued', longDate(today)]], { heading: 'This release covers', size: 9.5 });
+  d.footer('Moments in Light  ·  Print release');
   return d.pdf.save();
 }
 

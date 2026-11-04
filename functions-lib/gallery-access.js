@@ -91,7 +91,7 @@ export async function createLink(env, galleryId, input = {}) {
 }
 
 // ---- The client gallery ----
-async function coverOf(env, g) {
+export async function coverOf(env, g) {
   const id = g.cover_image_id ?? (await env.DB.prepare(`SELECT id FROM gallery_images WHERE gallery_id = ?1 AND status = 'ready' AND hidden = 0 ORDER BY is_hero DESC, sort_order LIMIT 1`).bind(g.id).first())?.id;
   const img = id ? await env.DB.prepare(`SELECT id, width, height, web_crc FROM gallery_images WHERE id = ?1 AND status = 'ready'`).bind(id).first() : null;
   return img ? { id: img.id, w: img.width, h: img.height, v: img.web_crc } : null;

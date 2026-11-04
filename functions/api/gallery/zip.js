@@ -1,10 +1,11 @@
 // The client gallery: download many photos as one ZIP, made as it downloads (functions-lib/zip.js).
 //   GET /api/gallery/zip?v=<visitor token>&what=all|section:<id>|list:<id>|ids:<id>,<id>…&size=original|web
-// A folder per section, plus the print release. Full size only if the link allows it; links with a
+// A folder per section, plus the print release (a PDF with the cover photo; text if that fails). Full size only if the link allows it; links with a
 // watermark can't download ZIPs (their photos come one at a time, watermarked).
 import { json } from '../../../functions-lib/studio.js';
 import { fileKey, crc32, gallerySettings } from '../../../functions-lib/galleries.js';
-import { viewerAccess, galleryView, logEvent } from '../../../functions-lib/gallery-access.js';
+import { viewerAccess, galleryView, logEvent, coverOf } from '../../../functions-lib/gallery-access.js';
+import { printReleasePdf } from '../../../functions-lib/pdf.js';
 import { zipStream } from '../../../functions-lib/zip.js';
 
 const safe = (s) => String(s ?? '').replace(/[\\/:*?"<>|\u0000-\u001f]+/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 80) || 'Photos';
@@ -19,6 +20,23 @@ Moments In Light keeps the copyright. Please don't sell the photographs, use the
 
 Thank you, and enjoy your photos.
 Tony Gorham · Moments In Light · 021 625 943`;
+
+/** The print release for the ZIP: a PDF in the studio's look, with the gallery's cover photo. If the
+ *  PDF can't be made, the plain text instead, so a release is always there. */
+async function releaseFile(env, gallery, text) {
+  let bytes = null;
+  try {
+    const c = await coverOf(env, gallery).catch(() => null);
+    const o = c ? await env.GALLERY_WEB.get(fileKey(gallery.id, c.id, 'web')) : null;
+    const cover = o ? new Uint8Array(await o.arrayBuffer()) : null;
+    bytes = new Uint8Array(await printReleasePdf({ text, gallery, cover }));
+  } catch (err) {
+    console.error('print release PDF failed', err?.message);
+  }
+  if (bytes) return { name: 'Print release.pdf', size: bytes.length, crc: crc32(bytes), open: async () => bytes };
+  const t = new TextEncoder().encode(text.replace(/\r?\n/g, '\r\n'));
+  return { name: 'Print release.txt', size: t.length, crc: crc32(t), open: async () => t };
+}
 
 export async function onRequestGet({ request, env }) {
   const u = new URL(request.url);
@@ -71,8 +89,7 @@ export async function onRequestGet({ request, env }) {
     entries.push({ name, size, crc, open: async () => (await (full ? env.GALLERY_FILES : env.GALLERY_WEB).get(fileKey(a.gallery.id, i.id, full ? 'original' : 'web')))?.body ?? null });
   }
   const s = await gallerySettings(env.DB);
-  const release = new TextEncoder().encode((s.print_release || PRINT_RELEASE).replace(/\r?\n/g, '\r\n'));
-  entries.push({ name: 'Print release.txt', size: release.length, crc: crc32(release), open: async () => release });
+  entries.push(await releaseFile(env, a.gallery, s.print_release || PRINT_RELEASE));
   const { stream, length } = zipStream(entries);
   await logEvent(env, a, 'download', null, { what, size: full ? 'original' : 'web', n: entries.length - 1 });
   const fileName = safe(`${a.gallery.name} - ${label}${full ? '' : ' (web size)'}`);
