@@ -2,7 +2,8 @@
 // phone instead sends its own key ("Authorization: Bearer …", see functions-lib/app-devices.js),
 // and /api/app/<path> runs the studio's own /api/studio/<path> code as that person, through the
 // same access rules and activity log (functions-lib/studio-gate.js). Only the parts the app uses
-// are open here: clients, emails, the calendar and contacts.
+// are open here: clients, emails, the calendar and contacts, plus quote, contract and invoice PDFs
+// to look at (LOOK_ONLY: the app can't send, void or mark anything paid).
 //   GET /api/app/claim?code=…   the phone collects its key after Tony approves it (no key needed)
 //   GET /api/app/latest         the newest app version, for the app's update check (no key needed)
 import { json } from '../../../functions-lib/studio.js';
@@ -21,12 +22,17 @@ import * as tasks from '../studio/crm/tasks.js';
 import * as portal from '../studio/crm/portal.js';
 import * as settings from '../studio/crm/settings.js';
 import * as people from '../studio/people.js';
+import * as contract from '../studio/crm/contract.js';
+import * as invoice from '../studio/crm/invoice.js';
 
 const ROUTES = {
   'crm/today': today, 'crm/job': job, 'crm/email': email, 'crm/send': send, 'crm/step': step,
   'crm/calendar': calendar, 'crm/appointment': appointment, 'crm/contacts': contacts, 'crm/contact-email': contactEmail,
   'crm/tasks': tasks, 'crm/portal': portal, 'crm/settings': settings, people,
+  'crm/contract': contract, 'crm/invoice': invoice,
 };
+// Money is look-only from the phone: only their PDFs (?pdf=1).
+const LOOK_ONLY = new Set(['crm/contract', 'crm/invoice']);
 // The app is served from https://localhost inside the phone (Capacitor), or from the app's Vite dev
 // server (studio-app, any localhost port) when testing. Every call still needs a phone's key.
 const ORIGIN = /^(https?|capacitor):\/\/localhost(:\d+)?$/;
@@ -58,6 +64,7 @@ async function handle(context) {
   }
   const mod = ROUTES[path];
   if (!mod) return json({ error: 'The app can’t do that.' }, 404);
+  if (LOOK_ONLY.has(path) && (request.method !== 'GET' || !url.searchParams.get('pdf'))) return json({ error: 'Money can only be looked at from the app. Use the studio on a computer to change it.' }, 403);
   const who = await deviceFor(env.DB, request);
   if (!who) return json({ error: 'This phone isn’t linked to the studio (or was switched off). Link it again.', unlinked: true }, 401);
   // Run the studio function as if it had been asked at /api/studio/<path>.

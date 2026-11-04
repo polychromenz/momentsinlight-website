@@ -8,6 +8,7 @@ import { Loading, longDate, money, Problem, shortDate, STAGE, time12, toast, Top
 import { Appointment } from './Appointment';
 import { Compose } from './Compose';
 import { EmailView } from './EmailView';
+import { PdfView } from './PdfView';
 
 export type JobData = {
   mode: string;
@@ -161,18 +162,26 @@ function Todos({ data, changed }: { data: JobData; changed: () => void }) {
 }
 
 function Money({ data }: { data: JobData }) {
+  const nav = useNav();
+  const who = data.job.title;
   const owing = data.invoices.filter((i) => i.status !== 'paid' && i.status !== 'void').reduce((n, i) => n + Number(i.amount || 0), 0);
   const paid = data.invoices.filter((i) => i.status === 'paid').reduce((n, i) => n + Number(i.amount || 0), 0);
+  // Tap one to see its PDF (the same one the studio makes); a paid invoice also has its receipt.
+  const pdf = (title: string, path: string, fileName: string) => nav.push(<PdfView title={title} sub={who} path={path} fileName={fileName} />);
+  const slim = { minHeight: 34, padding: '2px 10px', fontWeight: 400 };
   return (
     <>
-      <section className="card pad"><strong>{money(paid)}</strong> paid · <strong>{money(owing)}</strong> to come<p className="small muted" style={{ margin: '4px 0 0' }}>To change money, use the studio on a computer.</p></section>
+      <section className="card pad"><strong>{money(paid)}</strong> paid · <strong>{money(owing)}</strong> to come<p className="small muted" style={{ margin: '4px 0 0' }}>Tap one to see it. To change money, use the studio on a computer.</p></section>
       <section className="card">
         <h2>Invoices</h2>
         <ul className="list">
           {data.invoices.map((i) => (
             <li key={i.id} className="row">
-              <span className="row-main"><strong>{i.label || `Invoice ${i.number}`}</strong><small>{i.status === 'paid' ? `Paid ${shortDate(i.paid_at)}${i.paid_method ? ` · ${i.paid_method}` : ''}` : `Due ${longDate(i.due_date)} · ${i.status}`}</small></span>
+              <button type="button" className="row-main" style={{ border: 0, background: 'none', padding: 0, textAlign: 'left' }} onClick={() => pdf(`Invoice ${i.number}`, `crm/invoice?id=${i.id}&pdf=1`, `Invoice ${i.number}.pdf`)}>
+                <strong>{i.label || `Invoice ${i.number}`}</strong><small>{i.status === 'paid' ? `Paid ${shortDate(i.paid_at)}${i.paid_method ? ` · ${i.paid_method}` : ''}` : `Due ${longDate(i.due_date)} · ${i.status}`}</small>
+              </button>
               <span className="row-side">{money(i.amount)}</span>
+              {i.status === 'paid' && <button type="button" className="btn" style={slim} onClick={() => pdf(`Receipt ${i.number}`, `crm/invoice?id=${i.id}&pdf=1&receipt=1`, `Receipt ${i.number}.pdf`)}>Receipt</button>}
             </li>
           ))}
           {!data.invoices.length && <li className="empty">No invoices.</li>}
@@ -182,10 +191,14 @@ function Money({ data }: { data: JobData }) {
         <h2>Quotes and contracts</h2>
         <ul className="list">
           {data.quotes.map((q) => (
-            <li key={`q${q.id}`} className="row"><span className="row-main"><strong>Quote</strong><small>{q.accepted_at ? `Accepted ${shortDate(q.accepted_at)}` : q.sent_at ? `Sent ${shortDate(q.sent_at)}` : q.status}</small></span><span className="row-side">{money(q.total)}</span></li>
+            <li key={`q${q.id}`}><button type="button" className="row" onClick={() => pdf('Quote', `crm/contract?quote=${q.id}&pdf=1`, `Quote ${q.id}.pdf`)}>
+              <span className="row-main"><strong>Quote</strong><small>{q.accepted_at ? `Accepted ${shortDate(q.accepted_at)}` : q.sent_at ? `Sent ${shortDate(q.sent_at)}` : q.status}</small></span><span className="row-side">{money(q.total)}</span><span className="chev">›</span>
+            </button></li>
           ))}
           {data.contracts.map((c) => (
-            <li key={`c${c.id}`} className="row"><span className="row-main"><strong>{c.name || 'Contract'}</strong><small>{c.signed_at ? `Signed by ${c.signed_name} ${shortDate(c.signed_at)}` : c.status}</small></span></li>
+            <li key={`c${c.id}`}><button type="button" className="row" onClick={() => pdf(c.name || 'Contract', `crm/contract?id=${c.id}&pdf=1`, `${(c.name || 'Contract').replace(/[\/:*?"<>|]/g, '')}${c.signed_at ? ' (signed)' : ''}.pdf`)}>
+              <span className="row-main"><strong>{c.name || 'Contract'}</strong><small>{c.signed_at ? `Signed by ${c.signed_name} ${shortDate(c.signed_at)}` : c.status}</small></span><span className="chev">›</span>
+            </button></li>
           ))}
           {!data.quotes.length && !data.contracts.length && <li className="empty">None yet.</li>}
         </ul>

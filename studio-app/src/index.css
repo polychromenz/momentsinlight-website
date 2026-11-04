@@ -90,6 +90,11 @@ a { color: var(--green); }
 .dir { font-size: 12px; font-weight: 600; color: var(--muted); width: 54px; flex: none; }
 .dir.in { color: var(--green); }
 
+/* PDFs (quotes, contracts, invoices) */
+.pdf-wrap { overflow-x: auto; padding: 12px; }
+.pdf-pages { width: 100%; }
+.pdf-page { display: block; margin: 0 0 12px; background: var(--white); box-shadow: 0 2px 10px -4px rgb(0 0 0 / 0.3); }
+
 /* Calendar */
 .day-head { padding: 14px 16px 4px; font-size: 14px; font-weight: 600; color: var(--green-dark); }
 .day-head.today { color: var(--red); }

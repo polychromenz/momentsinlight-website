@@ -46,6 +46,22 @@ export async function api<T = any>(path: string, opts: { method?: string; body?:
   return d as T;
 }
 
+/** A file from the studio (e.g. an invoice PDF), as bytes. */
+export async function apiFile(path: string): Promise<Uint8Array> {
+  let r: Response;
+  try {
+    r = await fetch(`${SITE}/api/app/${path}`, { headers: { authorization: `Bearer ${key ?? ''}` }, cache: 'no-store' });
+  } catch {
+    throw new Error('No connection to the studio. Check your signal and try again.');
+  }
+  if (!r.ok) {
+    const d = await r.json().catch(() => ({}));
+    if (r.status === 401 && d.unlinked) { onUnlinked(); throw new Unlinked(d.error); }
+    throw new Error(d.error || `The studio said ${r.status}.`);
+  }
+  return new Uint8Array(await r.arrayBuffer());
+}
+
 /** Before a phone is linked: has Tony approved this code yet? The key once he has. */
 export async function claim(code: string): Promise<{ token: string; name: string } | null> {
   const r = await fetch(`${SITE}/api/app/claim?code=${code}`, { cache: 'no-store' }).catch(() => null);
