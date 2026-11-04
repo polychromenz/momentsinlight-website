@@ -10,5 +10,6 @@ const pkg = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   define: { __APP_VERSION__: JSON.stringify(pkg.version) },
-  server: { port: 5174, strictPort: true, fs: { allow: ['..'] } },
+  // The Android project isn't watched: on Windows the watcher's handles stop Capacitor clearing its copy.
+  server: { port: 5174, strictPort: true, fs: { allow: ['..'] }, watch: { ignored: ['**/android/**'] } },
 });
