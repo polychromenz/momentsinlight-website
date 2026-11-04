@@ -1,0 +1,87 @@
+---
+// Moments Studio > Phone app: approve a phone that's linking (the app opens this page with ?code=…),
+// see linked phones and switch one off, and download the app (Android, side-loaded).
+// Data from functions/api/studio/app.js; how linking works is in functions-lib/app-devices.js.
+import StudioLayout from '../../layouts/StudioLayout.astro';
+---
+<StudioLayout title="Phone app" section="settings">
+  <main class="papp">
+    <h1>Phone app</h1>
+    <section class="card link-card" hidden>
+      <h2>Link this phone?</h2>
+      <p>The Moments Studio app on your phone asked to link. Only approve it if you just tapped <strong>Link this phone</strong> in the app.</p>
+      <form class="link-form" autocomplete="off">
+        <label>Name for this phone <input name="name" maxlength="60" required /></label>
+        <button type="submit" class="s-btn s-btn--solid">Link this phone</button>
+      </form>
+      <p class="linked-msg" hidden><strong>Linked.</strong> Go back to the app: it carries on by itself in a few seconds.</p>
+    </section>
+    <section class="card">
+      <h2>Get the app</h2>
+      <p class="latest">Loading…</p>
+      <p><a class="s-btn" href="/api/studio/app?download=1">Download the app (Android)</a></p>
+      <p class="hint">On your phone, open the downloaded file to install it. The first time, Android asks you to allow installs from your browser: allow it, then install.</p>
+    </section>
+    <section class="card">
+      <h2>Linked phones</h2>
+      <ul class="devices"><li class="muted">Loading…</li></ul>
+      <p class="hint">Switch a phone off if it’s lost or you stop using it. It can’t see or change anything after that (link it again to use it).</p>
+    </section>
+  </main>
+</StudioLayout>
+
+<script>
+  import { ask } from '../../studio/dialogs';
+  const $ = <T extends HTMLElement = HTMLElement>(s: string) => document.querySelector<T>(s)!;
+  const esc = (s: unknown) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
+  const when = (iso: string | null) => (iso ? new Date(iso).toLocaleString('en-NZ', { day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit' }) : 'never');
+  const q = new URLSearchParams(location.search);
+  const code = q.get('code');
+
+  async function load() {
+    const r = await fetch('/api/studio/app', { cache: 'no-store' });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) { $('.devices').innerHTML = `<li class="muted">${esc(d.error || 'Couldn’t load.')}</li>`; return; }
+    $('.latest').textContent = d.latest?.version ? `Newest version: ${d.latest.version}${d.latest.builtAt ? ` (${when(d.latest.builtAt)})` : ''}` : 'The app hasn’t been uploaded yet.';
+    $('.devices').innerHTML = d.devices.length
+      ? d.devices.map((x: any) => `<li><span><strong>${esc(x.name)}</strong><br><small>${esc(x.email)} · linked ${when(x.created_at)} · last used ${when(x.last_used_at)}${x.revoked_at ? ` · <b>switched off ${when(x.revoked_at)}</b>` : ''}</small></span>${x.revoked_at ? '' : `<button type="button" class="s-btn s-btn--quiet" data-revoke="${x.id}">Switch off</button>`}</li>`).join('')
+      : '<li class="muted">No phones linked yet.</li>';
+  }
+
+  if (code) {
+    $('.link-card').hidden = false;
+    ($('.link-form').elements.namedItem('name') as HTMLInputElement).value = q.get('name') || 'My phone';
+    $<HTMLFormElement>('.link-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const name = ($('.link-form').elements.namedItem('name') as HTMLInputElement).value;
+      const r = await fetch('/api/studio/app', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'link', code, name }) });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) { alert(d.error || 'Couldn’t link it.'); return; }
+      $('.link-form').hidden = true;
+      $('.linked-msg').hidden = false;
+      history.replaceState(null, '', '/studio/app');
+      load();
+    });
+  }
+  document.addEventListener('click', async (e) => {
+    const b = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-revoke]');
+    if (!b || !(await ask('Switch this phone off? The app on it stops working until you link it again.', { ok: 'Switch off', danger: true }))) return;
+    await fetch('/api/studio/app', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'revoke', id: Number(b.dataset.revoke) }) });
+    load();
+  });
+  load();
+</script>
+
+<style>
+  .papp { max-width: 720px; margin: 0 auto; padding: 24px 16px 60px; }
+  .papp .card { margin-bottom: 18px; }
+  .papp h2 { margin-top: 0; }
+  .link-card { border: 2px solid var(--green, #5a5e3b); }
+  .link-form { display: flex; gap: 10px; flex-wrap: wrap; align-items: end; }
+  .link-form label { display: flex; flex-direction: column; gap: 4px; flex: 1 1 220px; font-size: 14px; }
+  .link-form input { font: inherit; padding: 9px 12px; border: 1px solid #ddd3c4; border-radius: 12px 0; }
+  .devices { list-style: none; margin: 0; padding: 0; }
+  .devices li { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid #eee6d9; }
+  .devices li:last-child { border-bottom: 0; }
+  .hint, .muted { color: #777; font-size: 14px; }
+</style>

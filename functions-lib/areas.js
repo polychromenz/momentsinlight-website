@@ -18,7 +18,7 @@ export const LEVELS = { hidden: 'Hidden', look: 'Look only', change: 'Can change
 // Most specific first.
 const API = [
   [/^\/api\/studio\/crm\/(settings|send-mode|sn-gmail|sn-switch|gmail-connect|gmail-callback|gmail-test|digest)\b/, 'settings'],
-  [/^\/api\/studio\/(booking|people|notices)\b/, 'settings'],
+  [/^\/api\/studio\/(booking|people|notices|app)\b/, 'settings'], // app: linking phones to the studio app
   [/^\/api\/studio\/crm\/(invoice|payments)\b/, 'payments'],
   [/^\/api\/studio\/(mileage|xero|reports|reconcile|receipts)\b/, 'payments'],
   [/^\/api\/studio\/crm\/ads\b|^\/api\/studio\/ads\//, 'ads'],
@@ -33,7 +33,7 @@ const API = [
   [/^\/api\/studio\/(post|page|menu|reviews|upload|describe|blog-photos)\b/, 'website'],
 ];
 const PAGES = [
-  [/^\/studio\/crm\/settings\b/, 'settings'],
+  [/^\/studio\/(crm\/settings|app)\b/, 'settings'],
   [/^\/studio\/seo\/ads\b/, 'ads'],
   [/^\/studio\/(crm|calendar|contacts)\b/, 'clients'],
   [/^\/studio\/(payments|mileage|xero|reports|reconcile)\b/, 'payments'],
