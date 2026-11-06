@@ -25,12 +25,13 @@ import * as people from '../studio/people.js';
 import * as crmPeople from '../studio/crm/people.js';
 import * as contract from '../studio/crm/contract.js';
 import * as invoice from '../studio/crm/invoice.js';
+import * as weather from '../studio/crm/weather.js';
 
 const ROUTES = {
   'crm/today': today, 'crm/job': job, 'crm/email': email, 'crm/send': send, 'crm/step': step,
   'crm/calendar': calendar, 'crm/appointment': appointment, 'crm/contacts': contacts, 'crm/contact-email': contactEmail,
   'crm/tasks': tasks, 'crm/portal': portal, 'crm/settings': settings, people,
-  'crm/people': crmPeople, 'crm/contract': contract, 'crm/invoice': invoice,
+  'crm/people': crmPeople, 'crm/contract': contract, 'crm/invoice': invoice, 'crm/weather': weather,
 };
 // Money is look-only from the phone: only their PDFs (?pdf=1).
 const LOOK_ONLY = new Set(['crm/contract', 'crm/invoice']);

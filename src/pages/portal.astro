@@ -5,6 +5,7 @@
 // section menu. The banner photo is shown whole (never cropped). Hidden from Google; data from
 // functions/api/portal.js.
 import BaseLayout from '../layouts/BaseLayout.astro';
+import { WEATHER_CSS } from '../studio/weather-card-css';
 ---
 <BaseLayout title="Your client portal | Moments In Light" description="Your booking with Moments in Light." noindex>
   <main class="portal">
@@ -26,6 +27,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         <p class="p-contact">Tony Gorham · <a href="tel:+6421625943">021 625 943</a> · <a href="mailto:tony@momentsinlight.co.nz">tony@momentsinlight.co.nz</a></p>
       </section>
 
+      <section id="weather" class="p-card wx-card" hidden aria-live="polite"></section>
       <section id="quote" class="p-card" hidden><h2>Your quote</h2><div class="p-quote"></div></section>
       <section id="contract" class="p-card" hidden><h2>Contract</h2><ul class="p-list p-contracts"></ul></section>
       <section id="questionnaire" class="p-card" hidden><h2>Questionnaire</h2><ul class="p-list p-questionnaires"></ul></section>
@@ -44,6 +46,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
 <script>
   import { ask } from '../studio/dialogs';
+  import { drawWeather } from '../studio/weather-card';
   const $ = <T extends HTMLElement = HTMLElement>(s: string) => document.querySelector<T>(s)!;
   const esc = (s: unknown) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
   const money = (c: number) => `$${(c / 100).toLocaleString('en-NZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -117,7 +120,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     $('.p-galleries').innerHTML = d.galleries.map((g: any) => `<li><a href="${esc(g.url)}" target="_blank" rel="noopener"><span><strong>${esc(g.title)}</strong>${g.note ? `<small>${esc(g.note)}</small>` : ''}</span><span class="arrow" aria-hidden="true">→</span></a></li>`).join('');
 
     // The section menu: only what's there.
-    $('.p-nav').innerHTML = [['overview', 'Overview'], ['quote', 'Quote'], ['contract', 'Contract'], ['questionnaire', 'Questionnaire'], ['payments', 'Payments'], ['files', 'Files'], ['gallery', 'Gallery']]
+    $('.p-nav').innerHTML = [['overview', 'Overview'], ['weather', 'Weather'], ['quote', 'Quote'], ['contract', 'Contract'], ['questionnaire', 'Questionnaire'], ['payments', 'Payments'], ['files', 'Files'], ['gallery', 'Gallery']]
       .filter(([id]) => !document.getElementById(id)!.hidden).map(([id, label]) => `<a href="#${id}">${label}</a>`).join('');
   }
 
@@ -129,6 +132,19 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     render();
     $('.p').hidden = false; $('.p-status').hidden = true;
     if (location.hash) document.querySelector(location.hash)?.scrollIntoView();
+    loadWeather();
+  }
+
+  // Wedding-day weather: only in the 7 days up to their wedding (functions-lib/weather.js).
+  async function loadWeather() {
+    const any = new URLSearchParams(location.search).get('weather') === 'any';
+    const r = await fetch(`/api/portal?t=${T}&weather=${any ? 'any' : '1'}`).catch(() => null);
+    const w = r && r.ok ? await r.json().catch(() => null) : null;
+    if (!w?.due) return;
+    const card = $('#weather');
+    card.hidden = false;
+    drawWeather(card, w, { couple: true });
+    render(); // adds Weather to the section menu
   }
 
   $<HTMLInputElement>('.p-upload input').addEventListener('change', async (e) => {
@@ -160,6 +176,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   if (token) load(); else $('.p-status').textContent = 'This portal link isn’t complete. Please use the link in your email.';
 </script>
 
+<style is:inline set:html={WEATHER_CSS}></style>
 <style>
   .portal { background: var(--champagne); padding: 0 0 90px; min-height: 60vh; }
   .p-status { text-align: center; color: #666; padding: 48px var(--pad); }

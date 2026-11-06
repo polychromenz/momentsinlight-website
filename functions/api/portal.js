@@ -10,6 +10,7 @@ import { loadDocument, loadNamed, storeNamed } from '../../functions-lib/documen
 import { alertTony } from '../../functions-lib/crm.js';
 import { MAX_UPLOAD } from '../../functions-lib/questionnaire-form.js';
 import { toBase64 } from '../../functions-lib/pdf.js';
+import { jobWeather } from '../../functions-lib/weather.js';
 
 const reply = (data, status = 200) => new Response(JSON.stringify(data), { status, headers: { 'content-type': 'application/json', 'cache-control': 'no-store' } });
 const GONE = 'This portal isn’t available. Please get in touch with Tony.';
@@ -32,6 +33,8 @@ export async function onRequestGet({ request, env }) {
     const f = u && await loadNamed(env.DB, `upload-${u.id}`);
     return f ? file(bytesOf(f.base64), u.type, u.name) : reply({ error: 'That file isn’t here any more.' }, 404);
   }
+  // The wedding-day weather card, in the 7 days up to their wedding (functions-lib/weather.js).
+  if (url.searchParams.has('weather')) return reply(await jobWeather(env, job, { couple: true, any: url.searchParams.get('weather') === 'any' }));
   return reply(await portalData(env.DB, job));
 }
 

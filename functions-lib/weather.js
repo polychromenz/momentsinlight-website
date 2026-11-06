@@ -2,6 +2,7 @@
 // from Open-Meteo (free, no key; it picks the best models for NZ), plus sunrise, sunset and golden
 // hour worked out from the sun's height. The rain radar is drawn in the browser (RainViewer tiles).
 // Forecasts are kept in the edge cache for 30 minutes.
+import { locate } from './places.js';
 
 /** NZ date today, as YYYY-MM-DD. */
 export const nzToday = () => new Date().toLocaleDateString('en-CA', { timeZone: 'Pacific/Auckland' });
@@ -56,6 +57,23 @@ export function sunTimes(date, lat, lng, offsetSec) {
     morning: cross.bUp && cross.gUp ? [cross.bUp, cross.gUp] : null,
     evening: cross.gDown && cross.bDown ? [cross.gDown, cross.bDown] : null,
   };
+}
+
+/** The card's data for a job ({ event_date, event_time, venue, venue_address }): { due: false } outside
+ *  the 7 days (any: up to 16 days ahead, for testing), else the forecast at the venue or { error }. */
+export async function jobWeather(env, j, { any = false, couple = false } = {}) {
+  const d = j.event_date ? daysUntil(j.event_date) : -1;
+  if (!(weatherDue(j.event_date) || (any && d >= 0 && d <= 15))) return { due: false };
+  const where = j.venue_address || j.venue;
+  if (!where) return couple ? { due: false } : { due: true, error: 'Add their venue to see the weather there.' };
+  const place = (await locate(env, where).catch(() => null)) ?? (await townOf(where));
+  if (!place) return couple ? { due: false } : { due: true, error: `Couldn’t find “${where}” on the map.` };
+  try {
+    const f = await forecast(j.event_date, place.lat, place.lng);
+    return { due: true, date: j.event_date, days: d, event_time: j.event_time || null, place: { name: j.venue || place.name, lat: place.lat, lng: place.lng }, ...f };
+  } catch (e) {
+    return { due: true, error: e.message || 'The weather isn’t available right now.' };
+  }
 }
 
 /** If Google can't place the venue: the town in its address, from Open-Meteo's place names (NZ only).

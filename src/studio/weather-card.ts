@@ -25,8 +25,8 @@ const compass = (deg: number) => ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'][Ma
 const when = (days: number) => (days === 0 ? 'Today' : days === 1 ? 'Tomorrow' : `In ${days} days`);
 
 /** Draw the card into `el` from the weather data. Returns nothing; the radar starts when its tab opens. */
-export function drawWeather(el: HTMLElement, w: Weather) {
-  if (w.error) { el.innerHTML = `<div class="card-head"><h2>Wedding-day weather</h2></div><p class="muted">${esc(w.error)}</p>`; return; }
+export function drawWeather(el: HTMLElement, w: Weather, { couple = false }: { couple?: boolean } = {}) {
+  if (w.error) { el.innerHTML = `<div class="card-head"><h2>Wedding-day weather</h2></div><p class="wx-note">${esc(w.error)}</p>`; return; }
   const dayName = new Date(`${w.date}T12:00:00Z`).toLocaleDateString('en-NZ', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' });
   const eventHour = w.event_time ? `${w.event_time.slice(0, 2)}:00` : null;
   // From 6am (or an hour before an early start) to 11pm.
@@ -66,11 +66,11 @@ export function drawWeather(el: HTMLElement, w: Weather) {
           <span class="wx-wind">${h.wind}<small>${compass(h.dir)}</small></span>
         </div>`).join('')}
       </div>
-      <p class="wx-key"><span class="k-gold"></span> golden hour <span class="k-event"></span> their start time · rain chance %, rain mm, wind km/h</p>
+      <p class="wx-key"><span class="k-gold"></span> golden hour${eventHour ? ` <span class="k-event"></span> ${couple ? 'your' : 'their'} start time` : ''} · rain chance %, rain mm, wind km/h</p>
     </div>
     <div class="wx-pane" data-pane="radar" hidden>
       <div class="wx-map"></div>
-      <div class="wx-radar-bar"><button type="button" class="s-btn s-btn--quiet" data-wx-play>❚❚ Pause</button><span class="wx-frame-time"></span><span class="muted">Last 2 hours, every 10 minutes</span></div>
+      <div class="wx-radar-bar"><button type="button" class="wx-play" data-wx-play>❚❚ Pause</button><span class="wx-frame-time"></span><span class="wx-note">Last 2 hours, every 10 minutes</span></div>
     </div>
     <p class="wx-foot">Forecast from Open-Meteo, checked ${new Date(w.updated).toLocaleTimeString('en-NZ', { hour: 'numeric', minute: '2-digit', timeZone: 'Pacific/Auckland' })}.${w.days > 3 ? ' More than 3 days out, it can still change a lot.' : ''}</p>`;
 

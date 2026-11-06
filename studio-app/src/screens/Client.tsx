@@ -9,6 +9,7 @@ import { Appointment } from './Appointment';
 import { Compose } from './Compose';
 import { EmailView } from './EmailView';
 import { PdfView } from './PdfView';
+import { WeatherCard } from './WeatherCard';
 
 export type JobData = {
   mode: string;
@@ -46,6 +47,7 @@ export function Client({ id }: { id: number }) {
       <div className="seg" style={{ paddingTop: 0 }}>
         {TABS.map((t) => <button key={t} type="button" className={tab === t ? 'on' : ''} onClick={() => setTab(t)}>{t}{t === 'To-dos' && openSteps ? ` (${openSteps})` : ''}</button>)}
       </div>
+      {tab === 'Details' && <WeatherCard jobId={id} k={[j.event_date, j.event_time, j.venue, j.venue_address].join('|')} />}
       {tab === 'Details' && <Details data={data} saved={reload} />}
       {tab === 'Emails' && <Emails data={data} />}
       {tab === 'To-dos' && <Todos data={data} changed={reload} />}
