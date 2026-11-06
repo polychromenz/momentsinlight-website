@@ -61,3 +61,25 @@ export async function drivingKm(env, from, to) {
 }
 
 const cleanSession = (s) => (/^[\w-]{8,64}$/.test(String(s ?? '')) ? String(s) : undefined);
+
+/** Where a venue or address is: { lat, lng, name, address } from Google's text search, or null.
+ *  Kept for 30 days in the edge cache, so each venue is looked up about once a month. */
+export async function locate(env, text) {
+  const q = String(text ?? '').trim().slice(0, 200);
+  if (!mapsReady(env) || q.length < 3) return null;
+  const cache = typeof caches !== 'undefined' ? caches.default : null;
+  const key = new Request(`https://cache.momentsinlight.internal/locate?q=${encodeURIComponent(q.toLowerCase())}`);
+  const hit = await cache?.match(key);
+  if (hit) return hit.json();
+  const r = await fetch(`${PLACES}/places:searchText`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', 'X-Goog-Api-Key': env.GOOGLE_MAPS_KEY, 'X-Goog-FieldMask': 'places.displayName,places.formattedAddress,places.location' },
+    body: JSON.stringify({ textQuery: /new zealand|\bnz\b/i.test(q) ? q : `${q}, New Zealand`, regionCode: 'nz', languageCode: 'en-NZ', pageSize: 1 }),
+  });
+  if (!r.ok) { console.error('places: locate', r.status, (await r.text()).slice(0, 300)); return null; }
+  const p = (await r.json()).places?.[0];
+  if (!p?.location) return null;
+  const out = { lat: p.location.latitude, lng: p.location.longitude, name: p.displayName?.text ?? '', address: String(p.formattedAddress ?? '').replace(/, New Zealand$/, '') };
+  await cache?.put(key, new Response(JSON.stringify(out), { headers: { 'content-type': 'application/json', 'cache-control': 'max-age=2592000' } }));
+  return out;
+}

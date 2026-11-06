@@ -4,6 +4,7 @@
 // Data from functions/api/studio/crm/job.js and step.js.
 import StudioLayout from '../../../layouts/StudioLayout.astro';
 import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
+import { WEATHER_CSS } from '../../../studio/weather-card-css';
 ---
 <StudioLayout title="Client" section="clients">
   <a slot="bar" class="s-btn s-btn--quiet portal-open" href="#" target="_blank" rel="noopener" hidden>Open their portal ↗</a>
@@ -32,6 +33,7 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
             <button type="button" role="tab" data-show="portal">Portal</button>
             <button type="button" role="tab" data-show="activity">Activity</button>
           </nav>
+          <section class="card wx-card wx-off" data-tab="overview" aria-live="polite"></section>
           <section class="card ai-card" data-tab="overview">
             <div class="card-head"><h2>Where things are</h2><button type="button" class="s-btn s-btn--quiet" data-summary>Summarise</button></div>
             <p class="ai-summary muted">A short summary of this client from their emails, notes and invoices, written by AI when you click Summarise.</p>
@@ -222,6 +224,7 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
   </dialog>
   <div class="s-toast" role="status"></div>
 </StudioLayout>
+<style is:inline set:html={WEATHER_CSS}></style>
 <style is:inline set:html={FORM_CSS}>  .inv--group { background: #faf6f0; }
   .inv-parts { list-style: none; padding: 0 0 6px 22px !important; border: 0 !important; }
   .inv-parts ul { list-style: none; margin: 0; padding: 0; border-left: 2px solid #ece4d7; }
@@ -237,6 +240,7 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
   import { adText } from '../../../../functions-lib/ad-text.js';
   import { attachPicker } from '../../../studio/attach-picker';
   import { attachAddressLookup } from '../../../studio/address-lookup';
+  import { drawWeather } from '../../../studio/weather-card';
   type Step = { id: number; kind: string; title: string; due_at: string; status: string; note: string; done_at: string | null; stop_on: string; config: string | null };
   const $ = <T extends HTMLElement = HTMLElement>(s: string) => document.querySelector<T>(s)!;
   const esc = (s: unknown) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
@@ -253,6 +257,22 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
   let stage = 'lead';
   let dirty = false;
   const PASTE = '__paste__'; // the gallery chooser's "Paste a link instead…"
+  // Wedding-day weather: shown from 7 days before the day (functions/api/studio/crm/weather.js).
+  // Fetched again only when the date, time or venue changes (load() runs after every save).
+  // ?weather=any on the page address shows it for any date in the next 16 days (testing).
+  let weatherKey = '';
+  async function loadWeather(j: any) {
+    const card = document.querySelector<HTMLElement>('.wx-card')!;
+    const any = new URLSearchParams(location.search).get('weather') === 'any';
+    const k = [j.event_date, j.event_time, j.venue, j.venue_address].join('|');
+    if (k === weatherKey) return;
+    weatherKey = k;
+    const r = await fetch(`/api/studio/crm/weather?job=${id}${any ? '&any=1' : ''}`).catch(() => null);
+    const w = r && r.ok ? await r.json().catch(() => null) : null;
+    if (!w?.due) { card.classList.add('wx-off'); card.innerHTML = ''; return; }
+    card.classList.remove('wx-off');
+    drawWeather(card, w);
+  }
   let lastJob: any = null; // the job as last loaded (for Delete permanently)
   const markDirty = () => { dirty = true; saveBtn.disabled = false; $('.save-state').textContent = 'Unsaved changes'; };
 
@@ -471,6 +491,7 @@ import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
     const j = d.job;
     jobEventDate = j.event_date ?? null;
     lastJob = j;
+    loadWeather(j);
     document.title = `${j.title} · Moments Studio`;
     $('.title').textContent = j.title;
     $('.hold-note').hidden = !j.hold;
