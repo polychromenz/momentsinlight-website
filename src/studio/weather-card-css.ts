@@ -22,6 +22,9 @@ export const WEATHER_CSS = `
   .wx-h.is-gold { border-top-color: #e0b64a; background: #fdf7e6; }
   .wx-h.is-event { background: #eef0e4; outline: 1.5px solid var(--green, #5a5e3b); outline-offset: -1.5px; }
   .wx-h.is-event .wx-t { color: var(--green, #5a5e3b); font-weight: 700; }
+  .wx-hours { padding-top: 16px; }
+  .wx-h { position: relative; }
+  .wx-tag { position: absolute; top: -15px; left: 0; padding: 1px 8px; border-radius: 8px 0; background: var(--green, #5a5e3b); color: #fff; font-size: 11px; font-weight: 600; white-space: nowrap; z-index: 1; }
   .wx-t { font-weight: 600; color: var(--ink, #2b2d1f); white-space: nowrap; }
   .wx-i { font-size: 20px; line-height: 1.2; }
   .wx-temp { font-size: 15px; font-weight: 600; color: var(--ink, #2b2d1f); }

@@ -29,6 +29,10 @@ export function drawWeather(el: HTMLElement, w: Weather, { couple = false }: { c
   if (w.error) { el.innerHTML = `<div class="card-head"><h2>Wedding-day weather</h2></div><p class="wx-note">${esc(w.error)}</p>`; return; }
   const dayName = new Date(`${w.date}T12:00:00Z`).toLocaleDateString('en-NZ', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' });
   const eventHour = w.event_time ? `${w.event_time.slice(0, 2)}:00` : null;
+  // The ceremony: the time next to the date, for about an hour (2:30pm lights up 2pm and 3pm).
+  const start = w.event_time ? mins(w.event_time.slice(0, 5)) : null;
+  const inCeremony = (hour: string) => start !== null && mins(hour) < start + 60 && mins(hour) + 60 > start;
+  const firstCeremony = w.hours.find((h) => inCeremony(h.time))?.time;
   // From 6am (or an hour before an early start) to 11pm.
   const from = Math.min(6, eventHour ? Number(eventHour.slice(0, 2)) - 1 : 6);
   const hours = w.hours.filter((h) => Number(h.time.slice(0, 2)) >= from);
@@ -56,8 +60,8 @@ export function drawWeather(el: HTMLElement, w: Weather, { couple = false }: { c
     </div>
     <div class="wx-pane" data-pane="hours">
       <div class="wx-hours">${hours.map((h) => `
-        <div class="wx-h${h.time === eventHour ? ' is-event' : ''}${inRange(h.time, w.sun.evening) || inRange(h.time, w.sun.morning) ? ' is-gold' : ''}" title="${esc(h.label)} · feels like ${h.feels}° · cloud ${h.cloud}% · wind ${h.wind} km/h from the ${compass(h.dir)}, gusts ${h.gust}">
-          <span class="wx-t">${h.time === eventHour ? 'Start' : ampm(h.time)}</span>
+        <div class="wx-h${inCeremony(h.time) ? ' is-event' : ''}${inRange(h.time, w.sun.evening) || inRange(h.time, w.sun.morning) ? ' is-gold' : ''}" title="${esc(h.label)} · feels like ${h.feels}° · cloud ${h.cloud}% · wind ${h.wind} km/h from the ${compass(h.dir)}, gusts ${h.gust}">
+          ${h.time === firstCeremony ? `<span class="wx-tag">Ceremony ${ampm(w.event_time!.slice(0, 5))}</span>` : ''}<span class="wx-t">${ampm(h.time)}</span>
           <span class="wx-i">${h.icon}</span>
           <span class="wx-temp">${h.temp}°</span>
           <span class="wx-bar"><i style="height:${Math.round((h.rain / maxRain) * 100)}%"></i></span>
@@ -66,13 +70,18 @@ export function drawWeather(el: HTMLElement, w: Weather, { couple = false }: { c
           <span class="wx-wind">${h.wind}<small>${compass(h.dir)}</small></span>
         </div>`).join('')}
       </div>
-      <p class="wx-key"><span class="k-gold"></span> golden hour${eventHour ? ` <span class="k-event"></span> ${couple ? 'your' : 'their'} start time` : ''} · rain chance %, rain mm, wind km/h</p>
+      <p class="wx-key"><span class="k-gold"></span> golden hour${eventHour ? ` <span class="k-event"></span> ${couple ? 'your' : 'the'} ceremony (about an hour)` : ''} · rain chance %, rain mm, wind km/h</p>
     </div>
     <div class="wx-pane" data-pane="radar" hidden>
       <div class="wx-map"></div>
       <div class="wx-radar-bar"><button type="button" class="wx-play" data-wx-play>❚❚ Pause</button><span class="wx-frame-time"></span><span class="wx-note">Last 2 hours, every 10 minutes</span></div>
     </div>
     <p class="wx-foot">Forecast from Open-Meteo, checked ${new Date(w.updated).toLocaleTimeString('en-NZ', { hour: 'numeric', minute: '2-digit', timeZone: 'Pacific/Auckland' })}.${w.days > 3 ? ' More than 3 days out, it can still change a lot.' : ''}</p>`;
+
+  // Open the hour strip at the ceremony (with a couple of hours before it showing).
+  const strip = el.querySelector<HTMLElement>('.wx-hours');
+  const cer = el.querySelector<HTMLElement>('.wx-h.is-event');
+  if (strip && cer) setTimeout(() => { strip.scrollLeft += cer.getBoundingClientRect().left - strip.getBoundingClientRect().left - 2 * cer.offsetWidth; }, 150);
 
   let radar: { stop: () => void } | null = null;
   el.querySelector('.wx-tabs')!.addEventListener('click', (e) => {
