@@ -38,6 +38,11 @@ import { WEATHER_CSS } from '../../../studio/weather-card-css';
             <div class="card-head"><h2>Where things are</h2><button type="button" class="s-btn s-btn--quiet" data-summary>Summarise</button></div>
             <p class="ai-summary muted">A short summary of this client from their emails, notes and invoices, written by AI when you click Summarise.</p>
           </section>
+          <section class="card path-card path-off" data-tab="overview">
+            <div class="card-head"><h2>Their path through the site</h2><a class="s-btn s-btn--quiet path-clarity" target="_blank" rel="noopener" hidden>Watch in Clarity ↗</a></div>
+            <table class="path-table"><thead><tr><th>Time</th><th>Page</th><th>On screen</th><th>Scrolled</th></tr></thead><tbody></tbody></table>
+            <p class="hint path-note"></p>
+          </section>
           <section class="card" data-tab="overview">
             <h2>Steps</h2>
             <ul class="steps"></ul>
@@ -521,6 +526,21 @@ import { WEATHER_CSS } from '../../../studio/weather-card-css';
     const adFrom = $('.ad-from');
     adFrom.hidden = !j.ad_click;
     adFrom.textContent = j.ad_click ? `From a Google ad: ${adText(j.ad_click)}` : '';
+    // Their path through the site before enquiring (functions-lib/visitor-path.js).
+    const steps: any[] = d.visitorPath ?? [];
+    $('.path-card').classList.toggle('path-off', !steps.length);
+    if (steps.length) {
+      const e = (x: unknown) => String(x ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
+      const dur = (n: number) => (n < 60 ? `${Math.round(n)} sec` : `${Math.round(n / 60)} min`);
+      $('.path-table tbody').innerHTML = steps.map((p) => [
+        p.newDay && steps.length > 1 ? `<tr class="path-day"><td colspan="4">${e(p.day)}</td></tr>` : '',
+        p.gap ? `<tr class="path-gap"><td></td><td colspan="3">… away for ${e(p.gap)}</td></tr>` : '',
+        `<tr><td class="muted">${e(p.time)}</td><td><a href="https://www.momentsinlight.co.nz${e(p.path)}" target="_blank" rel="noopener">${e(p.path)}</a>${p.came ? `<small>${e(p.came)}</small>` : ''}${p.newTab ? '<small>new tab or window</small>' : ''}</td><td>${p.secs ? dur(p.secs) : '–'}</td><td class="muted">${p.scroll != null ? `${p.scroll}%` : ''}</td></tr>`,
+      ].join('')).join('');
+      $('.path-note').textContent = `${steps.some((p) => p.mobile) ? 'On a phone.' : 'On a computer or tablet.'} In Clarity, filter Recordings by Custom user ID ${j.visitor_id}.`;
+      const cl = $<HTMLAnchorElement>('.path-clarity');
+      cl.hidden = !d.clarity; if (d.clarity) cl.href = d.clarity;
+    }
     const enquired = new Date(j.created_at).toLocaleDateString('en-NZ', { day: 'numeric', month: 'long', year: 'numeric' });
     $('.message').dataset.when = `Enquired ${enquired}`;
 
@@ -1018,6 +1038,13 @@ import { WEATHER_CSS } from '../../../studio/weather-card-css';
   .job-page .job-tabs button[aria-selected="true"] { background: var(--green); border-color: var(--green); color: var(--white); }
   .job-page .main-col > [data-tab][hidden] { display: none; }
   .job-page .card { background: var(--white); border-radius: 24px 0; padding: 20px 24px; margin-bottom: 16px; }
+  .job-page .path-card.path-off { display: none; }
+  .job-page .path-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  .job-page .path-table th { text-align: left; font-size: 12px; font-weight: 500; color: #999; padding: 0 10px 4px 0; }
+  .job-page .path-table td { padding: 6px 10px 6px 0; border-top: 1px solid #f0e9df; vertical-align: top; }
+  .job-page .path-table td small { display: block; color: #888; font-size: 12px; }
+  .job-page .path-table .path-day td { border: 0; padding-top: 10px; font-size: 12px; font-weight: 600; color: var(--green); }
+  .job-page .path-table .path-gap td { border: 0; padding: 2px 0; font-size: 12px; color: #999; }
   .job-page .card-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 8px; }
   .job-page .card-head h2 { margin: 0 !important; }
   .job-page .quotes { list-style: none; margin: 0; padding: 0; }

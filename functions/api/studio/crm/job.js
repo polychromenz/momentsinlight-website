@@ -9,6 +9,7 @@
 //        nothing is planned and nothing is sent.
 // Marking a lead booked or lost stops any steps waiting on that ('booked' in stop_on).
 import { json } from '../../../../functions-lib/studio.js';
+import { visitorPath, clarityLink } from '../../../../functions-lib/visitor-path.js';
 import { sendMode } from '../../../../functions-lib/crm.js';
 import { clashes, syncSoon, calendarReady, unsyncAppointment } from '../../../../functions-lib/calendar.js';
 import { deleteClient, deleteJob } from '../../../../functions-lib/cleanup.js';
@@ -41,7 +42,9 @@ export async function onRequestGet({ request, env }) {
   ]);
   return json({ mode: sendMode(env), job, steps: steps.results, messages: messages.results, otherJobs: others.results, quotes: quotes.results, contracts: contracts.results, invoices: invoices.results,
     questionnaires: questionnaires.results, questionnaireTemplates: qTemplates.results, defaultQuestionnaire: qDefault?.questionnaire_key ?? null,
-    clashes: clash, appointments: appointments.results, googleCalendar: gcal, activity: activity.results });
+    clashes: clash, appointments: appointments.results, googleCalendar: gcal, activity: activity.results,
+    // The path they took through the site before enquiring (functions-lib/visitor-path.js).
+    visitorPath: job.visitor_id ? await visitorPath(env.DB, job.visitor_id, job.created_at) : [], clarity: job.visitor_id ? clarityLink() : null });
 }
 
 export async function onRequestPut(context) {

@@ -32,6 +32,11 @@ const enabled = import.meta.env.PROD;
     try { me = !!localStorage.getItem('mil_me'); } catch (e) {}
     if (visits && !me) {
       try {
+        // vid: a random id this browser keeps (the same in every tab), so an enquiry can show the
+        // path its sender took through the site (functions-lib/visitor-path.js).
+        let vid = localStorage.getItem('mil_vid');
+        if (!vid) { vid = Math.random().toString(36).slice(2, 12) + Date.now().toString(36); localStorage.setItem('mil_vid', vid); }
+        window.milVid = vid;
         let sid = sessionStorage.getItem('mil_sid');
         const landing = !sid;
         if (!sid) { sid = Math.random().toString(36).slice(2, 12) + Date.now().toString(36); sessionStorage.setItem('mil_sid', sid); }
@@ -47,7 +52,7 @@ const enabled = import.meta.env.PROD;
         const send = () => {
           if (shown !== null) { secs += (performance.now() - shown) / 1000; shown = null; }
           deep();
-          const body = JSON.stringify({ sid, seq, path: location.pathname, ref, ad: !!adTerm, term: adTerm && adTerm !== '-' ? adTerm : '', secs, scroll, mobile: matchMedia('(max-width: 700px)').matches });
+          const body = JSON.stringify({ sid, vid, seq, path: location.pathname, ref, ad: !!adTerm, term: adTerm && adTerm !== '-' ? adTerm : '', secs, scroll, mobile: matchMedia('(max-width: 700px)').matches });
           navigator.sendBeacon && navigator.sendBeacon('/api/visit', new Blob([body], { type: 'application/json' }));
         };
         addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') send(); else shown = performance.now(); });
@@ -55,6 +60,8 @@ const enabled = import.meta.env.PROD;
       } catch (e) {}
       if (clarity) {
         window.clarity = window.clarity || function () { (window.clarity.q = window.clarity.q || []).push(arguments); };
+        // The same random id, so an enquirer's recordings can be found in Clarity (Custom user ID).
+        if (window.milVid) window.clarity('identify', window.milVid);
         scripts.push('https://www.clarity.ms/tag/' + clarity);
       }
     }

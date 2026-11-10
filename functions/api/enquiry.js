@@ -41,6 +41,9 @@ export async function onRequestPost(context) {
     message: clean('message', 5000),
     source: clean('lead_source', 60),
     ad: adClick(clean('ad', 1000)),
+    vid: /^[a-z0-9]{8,32}$/.test(clean('vid', 40)) ? clean('vid', 40) : null,
+    fromPage: clean('from_page', 200).split('?')[0],
+    fromSecs: Math.max(0, Math.min(7200, Number(clean('from_secs', 8)) || 0)),
   };
   if (!f.first || !f.last || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f.email) || !f.date) {
     return reply({ error: 'Please fill in your name, email and event date.' }, 400);
