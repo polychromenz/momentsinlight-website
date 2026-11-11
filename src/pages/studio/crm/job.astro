@@ -20,14 +20,13 @@ import { WEATHER_CSS } from '../../../studio/weather-card-css';
         <h1 class="title"></h1>
         <p class="clash" role="alert" hidden></p>
         <p class="hold-note" hidden>Imported from Studio Ninja. Automatic emails, invoices and reminders are off for this job until switch-over day.</p>
-        <div class="stage" role="group" aria-label="Where they're at">
-        </div>
       </header>
 
       <div class="cols">
         <div class="main-col">
           <nav class="job-tabs" role="tablist" aria-label="Sections">
             <button type="button" role="tab" data-show="overview">Overview</button>
+            <button type="button" role="tab" data-show="steps">Steps</button>
             <button type="button" role="tab" data-show="emails">Emails</button>
             <button type="button" role="tab" data-show="money">Quotes &amp; money</button>
             <button type="button" role="tab" data-show="portal">Portal</button>
@@ -38,12 +37,17 @@ import { WEATHER_CSS } from '../../../studio/weather-card-css';
             <div class="card-head"><h2>Where things are</h2><button type="button" class="s-btn s-btn--quiet" data-summary>Summarise</button></div>
             <p class="ai-summary muted">A short summary of this client from their emails, notes and invoices, written by AI when you click Summarise.</p>
           </section>
+          <section class="card" data-tab="overview">
+            <h2>Their enquiry</h2>
+            <p class="message"></p>
+            <p class="ad-from hint" hidden></p>
+          </section>
           <section class="card path-card path-off" data-tab="overview">
             <div class="card-head"><h2>Their path through the site</h2><a class="s-btn s-btn--quiet path-clarity" target="_blank" rel="noopener" hidden>Watch in Clarity ↗</a></div>
             <table class="path-table"><thead><tr><th>Time</th><th>Page</th><th>On screen</th><th>Scrolled</th></tr></thead><tbody></tbody></table>
             <p class="hint path-note"></p>
           </section>
-          <section class="card" data-tab="overview">
+          <section class="card" data-tab="steps">
             <h2>Steps</h2>
             <ul class="steps"></ul>
           </section>
@@ -93,11 +97,6 @@ import { WEATHER_CSS } from '../../../studio/weather-card-css';
             <ul class="quotes questionnaires"></ul>
           </section>
           <section class="card" data-tab="emails">
-            <h2>Their enquiry</h2>
-            <p class="message"></p>
-            <p class="ad-from hint" hidden></p>
-          </section>
-          <section class="card" data-tab="emails">
             <div class="card-head"><h2>Emails</h2><button type="button" class="s-btn" data-compose>✉ Write email</button></div>
             <ul class="messages"></ul>
           </section>
@@ -126,13 +125,27 @@ import { WEATHER_CSS } from '../../../studio/weather-card-css';
         </section>
         <form class="card details" id="job-details" autocomplete="off">
           <h2>Details</h2>
-          <div class="two">
-            <label>First name<input name="first_name" /></label>
-            <label>Last name<input name="last_name" /></label>
-          </div>
-          <label>Partner's name<input name="partner_name" /></label>
-          <label>Email<input name="email" type="email" /></label>
-          <label>Phone<input name="phone" type="tel" /></label>
+          <label class="status-field">Status
+            <select class="stage-select" aria-label="Where they're at">
+              <option value="lead">Lead</option><option value="booked">Booked</option><option value="completed">Completed</option><option value="lost">Not going ahead</option>
+            </select>
+          </label>
+          <fieldset class="person">
+            <legend>Them</legend>
+            <div class="two">
+              <label>First name<input name="first_name" /></label>
+              <label>Last name<input name="last_name" /></label>
+            </div>
+            <label>Email<input name="email" type="email" /></label>
+            <label>Phone<input name="phone" type="tel" /></label>
+          </fieldset>
+          <fieldset class="person">
+            <legend>Partner</legend>
+            <label>Name<input name="partner_name" /></label>
+            <label>Email<input name="partner_email" type="email" /></label>
+            <label>Phone<input name="partner_phone" type="tel" /></label>
+          </fieldset>
+          <h3 class="sub both-sub">Both of them</h3>
           <label>Address<textarea name="address" rows="3" placeholder="Added when they accept a quote"></textarea></label>
           <label class="tick"><input type="checkbox" name="ads_ok" value="1" /> Their photos can be used in ads and marketing <small>(untick if their contract says no)</small></label>
           <label class="tick autopay-tick" hidden><input type="checkbox" name="autopay" value="1" /> <span class="autopay-text">Pay their instalments automatically</span></label>
@@ -294,6 +307,10 @@ import { WEATHER_CSS } from '../../../studio/weather-card-css';
     const b = (e.target as HTMLElement).closest<HTMLElement>('[data-show]');
     if (b) showTab(b.dataset.show!);
   });
+  // The side column starts level with the first card, below the tab bar (which can wrap).
+  const lineUp = () => { const nav = document.querySelector<HTMLElement>('.job-tabs')!; document.documentElement.style.setProperty('--tabs-h', `${nav.offsetHeight + parseFloat(getComputedStyle(nav).marginBottom || '0')}px`); };
+  addEventListener('resize', lineUp);
+  requestAnimationFrame(lineUp);
   showTab((() => { try { return localStorage.getItem('job-tab') || 'overview'; } catch { return 'overview'; } })(), false);
 
   async function loadLists() {
@@ -502,15 +519,10 @@ import { WEATHER_CSS } from '../../../studio/weather-card-css';
     $('.hold-note').hidden = !j.hold;
     $('.eyebrow-line').textContent = [j.job_type, j.event_date && new Date(`${j.event_date}T12:00:00Z`).toLocaleDateString('en-NZ', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }), j.venue].filter(Boolean).join(' · ');
     stage = j.stage;
-    // Where they're at, and only the next sensible actions (no Lost on a booked job).
-    const STAGE: Record<string, [string, [string, string][]]> = {
-      lead: ['Lead', [['booked', 'Mark as booked'], ['lost', 'Not going ahead']]],
-      booked: ['Booked', [['completed', 'Mark as completed']]],
-      completed: ['Completed', [['booked', 'Undo']]],
-      lost: ['Not going ahead', [['lead', 'Undo']]],
-    };
-    const [now, acts] = STAGE[stage] ?? STAGE.lead;
-    $('.stage').innerHTML = `<span class="stage-now stage-now--${stage}">${now}</span>${acts.map(([to, label]) => `<button type="button" data-stage="${to}" class="${label === 'Undo' ? 'undo' : ''}">${label}</button>`).join('')}`;
+    // Where they're at: the Status drop-down at the top of Details.
+    const stageSel = $<HTMLSelectElement>('.stage-select');
+    stageSel.value = stage;
+    stageSel.className = `stage-select stage-select--${stage}`;
     const typeSel = form.elements.namedItem('job_type') as HTMLSelectElement;
     if (j.job_type && ![...typeSel.options].some((o) => o.value === j.job_type)) typeSel.add(new Option(j.job_type, j.job_type));
     for (const el of Array.from(form.elements) as HTMLInputElement[]) if (el.name && el.type !== 'checkbox') el.value = j[el.name] ?? '';
@@ -798,20 +810,25 @@ import { WEATHER_CSS } from '../../../studio/weather-card-css';
     if (added) { toast(added === 1 ? 'Added. It’s in their portal too.' : `${added} files added. They’re in their portal too.`); await loadPortal(); }
   });
   saveBtn.addEventListener('click', () => save());
+  // Status: Booked and Not going ahead start or stop workflows, so they're confirmed first.
+  $<HTMLSelectElement>('.stage-select').addEventListener('change', async (e) => {
+    const sel = e.target as HTMLSelectElement;
+    const next = sel.value;
+    const undo = () => { sel.value = stage; };
+    if (next === stage) return;
+    if (next === 'lost' && !await ask('Mark as not going ahead? Any follow-ups waiting will stop.')) return undo();
+    if (next === 'booked') {
+      const taken = clashList.filter((c) => c.stage === 'booked');
+      const msg = taken.length ? `This date is already booked: ${taken.map((c) => c.title).join(', ')}. Mark this one booked as well? Their booking steps will start.` : 'Mark as booked? Their booking steps (emails, invoices and reminders) will start.';
+      if (!await ask(msg)) return undo();
+    }
+    stage = next;
+    await save();
+  });
   guardLeaving(() => dirty);
 
   document.addEventListener('click', async (e) => {
     const t = e.target as HTMLElement;
-    const st = t.closest<HTMLButtonElement>('.stage button');
-    if (st && st.dataset.stage !== stage) {
-      const next = st.dataset.stage!;
-      if (next === 'lost' && !await ask('Mark as not going ahead? Any follow-ups waiting will stop.')) return;
-      const taken = clashList.filter((c) => c.stage === 'booked');
-      if (next === 'booked' && taken.length && !await ask(`This date is already booked: ${taken.map((c) => c.title).join(', ')}. Mark this one booked as well?`)) return;
-      stage = next;
-      await save();
-      return;
-    }
     if (t.closest('[data-act="new-quote"]')) {
       const r = await fetch('/api/studio/crm/quote', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ job_id: id }) });
       const d = await r.json().catch(() => ({}));
@@ -1045,6 +1062,13 @@ import { WEATHER_CSS } from '../../../studio/weather-card-css';
   .job-page .path-table td small { display: block; color: #888; font-size: 12px; }
   .job-page .path-table .path-day td { border: 0; padding-top: 10px; font-size: 12px; font-weight: 600; color: var(--green); }
   .job-page .path-table .path-gap td { border: 0; padding: 2px 0; font-size: 12px; color: #999; }
+  .job-page .status-field select { font-weight: 600; }
+  .job-page .stage-select--booked { border-color: var(--green) !important; color: var(--green); }
+  .job-page .stage-select--lost { color: #8a8a80; }
+  .job-page fieldset.person { border: 0; margin: 4px 0 6px; padding: 10px 14px 4px; background: #faf6f0; border-radius: 16px 0; display: grid; gap: 10px; min-width: 0; }
+  .job-page fieldset.person legend { float: left; padding: 0; margin: 0 0 2px; font-size: 13px; font-weight: 600; color: var(--green); }
+  .job-page .both-sub { margin: 10px 0 0; }
+  @media (min-width: 900px) { .job-page .side { margin-top: var(--tabs-h, 52px); } }
   .job-page .card-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 8px; }
   .job-page .card-head h2 { margin: 0 !important; }
   .job-page .quotes { list-style: none; margin: 0; padding: 0; }

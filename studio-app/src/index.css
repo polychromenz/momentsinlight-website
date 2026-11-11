@@ -125,3 +125,9 @@ a { color: var(--green); }
 .rich-area .ProseMirror ul, .rich-area .ProseMirror ol { padding-left: 22px; margin: 0 0 12px; }
 .rich-area .ProseMirror a { color: var(--green); }
 .rich-area .ProseMirror a.button { display: inline-block; padding: 8px 16px; background: var(--green); color: var(--white); border-radius: 10px 0; text-decoration: none; }
+
+/* Details grouped by person (client Details tab). */
+fieldset.person { border: 0; margin: 0; padding: 10px 12px 2px; background: #faf6f0; border-radius: 14px 0; display: grid; gap: 10px; min-width: 0; }
+fieldset.person legend { float: left; width: 100%; display: flex; justify-content: space-between; padding: 0; font-size: 14px; font-weight: 600; color: var(--green-dark); }
+.person-acts { display: flex; gap: 14px; font-weight: 600; }
+.person-acts a { text-decoration: none; }

@@ -13,7 +13,7 @@ import { WeatherCard } from './WeatherCard';
 
 export type JobData = {
   mode: string;
-  job: Record<string, any> & { id: number; title: string; stage: string; job_type: string; first_name: string; last_name: string; email: string; phone: string; partner_name: string; event_date: string | null; event_time: string | null; venue: string; venue_address: string; notes: string };
+  job: Record<string, any> & { id: number; title: string; stage: string; job_type: string; first_name: string; last_name: string; email: string; phone: string; partner_name: string; partner_email?: string; partner_phone?: string; message?: string; event_date: string | null; event_time: string | null; venue: string; venue_address: string; notes: string };
   steps: { id: number; kind: string; title: string; template_key: string | null; due_at: string; status: string; done_at: string | null; note: string }[];
   messages: { id: number; direction: string; subject: string; body: string; sent_at: string; attachments: string | null }[];
   quotes: { id: number; status: string; total: number; sent_at: string | null; accepted_at: string | null; created_at: string }[];
@@ -59,23 +59,38 @@ export function Client({ id }: { id: number }) {
 function Details({ data, saved }: { data: JobData; saved: () => void }) {
   const nav = useNav();
   const j = data.job;
-  const pick = () => ({ first_name: j.first_name ?? '', last_name: j.last_name ?? '', partner_name: j.partner_name ?? '', email: j.email ?? '', phone: j.phone ?? '', stage: j.stage, event_date: j.event_date ?? '', event_time: j.event_time ?? '', venue: j.venue ?? '', venue_address: j.venue_address ?? '', notes: j.notes ?? '' });
+  const pick = () => ({ first_name: j.first_name ?? '', last_name: j.last_name ?? '', partner_name: j.partner_name ?? '', partner_email: j.partner_email ?? '', partner_phone: j.partner_phone ?? '', email: j.email ?? '', phone: j.phone ?? '', stage: j.stage, event_date: j.event_date ?? '', event_time: j.event_time ?? '', venue: j.venue ?? '', venue_address: j.venue_address ?? '', notes: j.notes ?? '' });
   const [f, setF] = useState(pick);
   const [busy, setBusy] = useState(false);
   useEffect(() => setF(pick()), [data]); // eslint-disable-line react-hooks/exhaustive-deps
   const dirty = JSON.stringify(f) !== JSON.stringify(pick());
   const set = (k: keyof typeof f) => (e: { target: { value: string } }) => setF({ ...f, [k]: e.target.value });
-  async function save() {
+  async function save(over: Partial<typeof f> = {}) {
     setBusy(true);
     try {
-      await api('crm/job', { method: 'PUT', body: { id: j.id, ...f } });
+      await api('crm/job', { method: 'PUT', body: { id: j.id, ...f, ...over } });
       toast('Saved.');
       saved();
     } catch (e) { toast((e as Error).message, true); }
     setBusy(false);
   }
+  // Status saves straight away, as in the studio; Booked and Not going ahead start or stop workflows,
+  // so they're confirmed first.
+  async function setStage(next: string) {
+    if (next === f.stage) return;
+    if (next === 'booked' && !window.confirm('Mark as booked? Their booking steps (emails, invoices and reminders) will start.')) return;
+    if (next === 'lost' && !window.confirm('Mark as not going ahead? Any follow-ups waiting will stop.')) return;
+    await save({ stage: next });
+  }
+  const ptel = (f.partner_phone || '').replace(/[^\d+]/g, '');
   return (
     <>
+      {!!j.message && (
+        <section className="card pad">
+          <h2 style={{ padding: '0 0 6px' }}>Their enquiry</h2>
+          <p style={{ margin: 0, whiteSpace: 'pre-wrap' }}>{j.message}</p>
+        </section>
+      )}
       <section className="card">
         <h2>Appointments</h2>
         <ul className="list">
@@ -88,17 +103,25 @@ function Details({ data, saved }: { data: JobData; saved: () => void }) {
         </ul>
       </section>
       <section className="card form">
-        <label>Stage<select value={f.stage} onChange={set('stage')}>{Object.entries(STAGE).map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></label>
-        <div className="two"><label>First name<input value={f.first_name} onChange={set('first_name')} /></label><label>Last name<input value={f.last_name} onChange={set('last_name')} /></label></div>
-        <label>Partner<input value={f.partner_name} onChange={set('partner_name')} /></label>
-        <label>Email<input type="email" value={f.email} onChange={set('email')} /></label>
-        <label>Phone<input type="tel" value={f.phone} onChange={set('phone')} /></label>
+        <label>Status<select value={f.stage} disabled={busy} onChange={(e) => setStage(e.target.value)}>{Object.entries(STAGE).map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></label>
+        <fieldset className="person">
+          <legend>Them</legend>
+          <div className="two"><label>First name<input value={f.first_name} onChange={set('first_name')} /></label><label>Last name<input value={f.last_name} onChange={set('last_name')} /></label></div>
+          <label>Email<input type="email" value={f.email} onChange={set('email')} /></label>
+          <label>Phone<input type="tel" value={f.phone} onChange={set('phone')} /></label>
+        </fieldset>
+        <fieldset className="person">
+          <legend>Partner{ptel && <span className="person-acts"><a href={`tel:${ptel}`}>Call</a><a href={`sms:${ptel}`}>Text</a></span>}</legend>
+          <label>Name<input value={f.partner_name} onChange={set('partner_name')} /></label>
+          <label>Email<input type="email" value={f.partner_email} onChange={set('partner_email')} /></label>
+          <label>Phone<input type="tel" value={f.partner_phone} onChange={set('partner_phone')} /></label>
+        </fieldset>
         <div className="two"><label>Date<input type="date" value={f.event_date} onChange={set('event_date')} /></label><label>Time<input type="time" value={f.event_time} onChange={set('event_time')} /></label></div>
         <label>Venue<input value={f.venue} onChange={set('venue')} /></label>
         <label>Venue address<input value={f.venue_address} onChange={set('venue_address')} /></label>
         <label>Notes<textarea value={f.notes} onChange={set('notes')} /></label>
       </section>
-      {dirty && <div className="bar"><button type="button" className="btn" onClick={() => setF(pick())}>Undo</button><button type="button" className="btn solid" disabled={busy} onClick={save}>{busy ? 'Saving…' : 'Save'}</button></div>}
+      {dirty && <div className="bar"><button type="button" className="btn" onClick={() => setF(pick())}>Undo</button><button type="button" className="btn solid" disabled={busy} onClick={() => save()}>{busy ? 'Saving…' : 'Save'}</button></div>}
     </>
   );
 }

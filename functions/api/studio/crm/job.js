@@ -2,7 +2,7 @@
 //   GET  /api/studio/crm/job?id=12      the job, its client, its planned steps and its emails
 //   PUT  /api/studio/crm/job            { id, ...fields } update the details Tony can edit
 //   POST /api/studio/crm/job            add a client by hand (a phone, Facebook or walk-in enquiry):
-//        { first_name, last_name, email, phone, partner_name, job_type, event_date, event_time, venue,
+//        { first_name, last_name, email, phone, partner_name, partner_email, partner_phone, job_type, event_date, event_time, venue,
 //          lead_source, notes, stage: 'lead'|'booked', workflow: true|false } → { id, clashes }
 //        The same email as an existing client adds the job to them. workflow: start the job
 //        type's workflow (a lead: its enquiry emails; booked: its planning steps); without it,
@@ -62,6 +62,8 @@ export async function onRequestPut(context) {
     job_type: d.job_type !== undefined ? text(d.job_type, 60) : job.job_type,
     stage: STAGES.includes(d.stage) ? d.stage : job.stage,
     partner_name: d.partner_name !== undefined ? text(d.partner_name, 200) : job.partner_name,
+    partner_email: d.partner_email !== undefined ? text(d.partner_email, 254).toLowerCase() : job.partner_email ?? '',
+    partner_phone: d.partner_phone !== undefined ? text(d.partner_phone, 40) : job.partner_phone ?? '',
     event_date: d.event_date !== undefined ? (/^\d{4}-\d{2}-\d{2}$/.test(d.event_date) ? d.event_date : null) : job.event_date,
     event_time: d.event_time !== undefined ? (/^([01]\d|2[0-3]):[0-5]\d$/.test(d.event_time) ? d.event_time : null) : job.event_time,
     venue: d.venue !== undefined ? text(d.venue, 200) : job.venue,
@@ -71,11 +73,11 @@ export async function onRequestPut(context) {
   };
   const stmts = [
     env.DB.prepare(
-      `UPDATE jobs SET title = ?2, job_type = ?3, stage = ?4, partner_name = ?5, event_date = ?6, venue = ?7, lead_source = ?8, notes = ?9, event_time = ?11, venue_address = ?12,
+      `UPDATE jobs SET title = ?2, job_type = ?3, stage = ?4, partner_name = ?5, event_date = ?6, venue = ?7, lead_source = ?8, notes = ?9, event_time = ?11, venue_address = ?12, partner_email = ?13, partner_phone = ?14,
          booked_at = CASE WHEN ?4 = 'booked' AND booked_at IS NULL THEN ?10 ELSE booked_at END,
          lost_at = CASE WHEN ?4 = 'lost' AND lost_at IS NULL THEN ?10 ELSE lost_at END,
          updated_at = ?10 WHERE id = ?1`,
-    ).bind(id, jobFields.title, jobFields.job_type, jobFields.stage, jobFields.partner_name, jobFields.event_date, jobFields.venue, jobFields.lead_source, jobFields.notes, now, jobFields.event_time, jobFields.venue_address),
+    ).bind(id, jobFields.title, jobFields.job_type, jobFields.stage, jobFields.partner_name, jobFields.event_date, jobFields.venue, jobFields.lead_source, jobFields.notes, now, jobFields.event_time, jobFields.venue_address, jobFields.partner_email, jobFields.partner_phone),
   ];
   // Client details (name, email, phone) live on the client.
   if (d.first_name !== undefined || d.last_name !== undefined || d.email !== undefined || d.phone !== undefined || d.address !== undefined) {
