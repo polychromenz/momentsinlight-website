@@ -23,8 +23,7 @@ import { WEATHER_CSS } from '../../../studio/weather-card-css';
       </header>
 
       <div class="cols">
-        <div class="main-col">
-          <nav class="job-tabs" role="tablist" aria-label="Sections">
+        <nav class="job-tabs" role="tablist" aria-label="Sections">
             <button type="button" role="tab" data-show="overview">Overview</button>
             <button type="button" role="tab" data-show="steps">Steps</button>
             <button type="button" role="tab" data-show="emails">Emails</button>
@@ -32,6 +31,7 @@ import { WEATHER_CSS } from '../../../studio/weather-card-css';
             <button type="button" role="tab" data-show="portal">Portal</button>
             <button type="button" role="tab" data-show="activity">Activity</button>
           </nav>
+        <div class="main-col">
           <section class="card wx-card wx-off" data-tab="overview" aria-live="polite"></section>
           <section class="card ai-card" data-tab="overview">
             <div class="card-head"><h2>Where things are</h2><button type="button" class="s-btn s-btn--quiet" data-summary>Summarise</button></div>
@@ -307,10 +307,6 @@ import { WEATHER_CSS } from '../../../studio/weather-card-css';
     const b = (e.target as HTMLElement).closest<HTMLElement>('[data-show]');
     if (b) showTab(b.dataset.show!);
   });
-  // The side column starts level with the first card, below the tab bar (which can wrap).
-  const lineUp = () => { const nav = document.querySelector<HTMLElement>('.job-tabs')!; document.documentElement.style.setProperty('--tabs-h', `${nav.offsetHeight + parseFloat(getComputedStyle(nav).marginBottom || '0')}px`); };
-  addEventListener('resize', lineUp);
-  requestAnimationFrame(lineUp);
   showTab((() => { try { return localStorage.getItem('job-tab') || 'overview'; } catch { return 'overview'; } })(), false);
 
   async function loadLists() {
@@ -1068,7 +1064,8 @@ import { WEATHER_CSS } from '../../../studio/weather-card-css';
   .job-page fieldset.person { border: 0; margin: 4px 0 6px; padding: 10px 14px 4px; background: #faf6f0; border-radius: 16px 0; display: grid; gap: 10px; min-width: 0; }
   .job-page fieldset.person legend { float: left; padding: 0; margin: 0 0 2px; font-size: 13px; font-weight: 600; color: var(--green); }
   .job-page .both-sub { margin: 10px 0 0; }
-  @media (min-width: 900px) { .job-page .side { margin-top: var(--tabs-h, 52px); } }
+  /* Wide screens: the tab bar is a row of its own over the cards, so the side column's top lines up with the first card. */
+  @media (min-width: 900px) { .job-page .job-tabs { grid-column: 1; grid-row: 1; margin: 0; } .job-page .main-col { grid-column: 1; grid-row: 2; } .job-page .side { grid-column: 2; grid-row: 2; } }
   .job-page .card-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 8px; }
   .job-page .card-head h2 { margin: 0 !important; }
   .job-page .quotes { list-style: none; margin: 0; padding: 0; }
