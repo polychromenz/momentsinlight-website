@@ -1120,7 +1120,7 @@ import { WEATHER_CSS } from '../../../studio/weather-card-css';
   .job-page .empty { color: #888; }
   .job-page .message { margin: 0; white-space: pre-wrap; line-height: 1.7; color: #333; }
   .job-page .message[data-when]::after { content: attr(data-when); display: block; margin-top: 10px; font-size: 13px; color: #888; }
-  .job-page .side { display: flex; flex-direction: column; gap: 20px; align-self: start; min-width: 0; }
+  .job-page .side { display: flex; flex-direction: column; gap: 0; align-self: start; min-width: 0; } /* cards space themselves (16px), as in the main column */
   .job-page .details { display: flex; flex-direction: column; gap: 12px; }
   .job-page .day-card .practice { display: flex; flex-direction: column; gap: 12px; margin-top: 6px; padding-top: 14px; border-top: 1px solid #eee5d8; }
   .job-page .day-card .sub, .job-page .sub-head .sub { margin: 0; }
