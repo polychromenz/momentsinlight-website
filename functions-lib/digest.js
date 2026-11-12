@@ -43,6 +43,8 @@ export async function buildDigest(db, today = nzDate()) {
     db.prepare(`SELECT t.id, t.title, t.due_date, t.contact_id, c.business FROM tasks t LEFT JOIN contacts c ON c.id = t.contact_id
       WHERE t.status = 'open' AND t.due_date IS NOT NULL AND t.due_date <= ?1 ORDER BY t.due_date`).bind(today).all(),
   ]);
+  // Social posts: a warning when the approved ones run out within three days (studio Social page).
+  const social = await socialRunway(db, today).catch(() => null);
   // Gallery activity yesterday (functions-lib/gallery-insights.js), like Pic-Time's daily report.
   const galleries = await yesterday(db).catch(() => []);
 
@@ -54,6 +56,7 @@ export async function buildDigest(db, today = nzDate()) {
   const add = (heading, items) => { if (items.length) sections.push({ heading, items }); };
   add('To do today', tasks.results.map((s) => `${jobLink(s.job_id, s.who)}: ${esc(s.title)}${s.kind === 'ready_email' ? ' <span style="color:#777">(email to review and send)</span>' : ''}${s.due_at < new Date(Date.parse(endOfToday) - 24 * HOUR).toISOString() ? ' <b style="color:#a8432a">overdue</b>' : ''}`));
   add('Your tasks', own.results.map((t) => `${t.contact_id ? `<a href="${SITE}/studio/contacts/contact?id=${t.contact_id}" style="color:#2b2d1f">${esc(t.title)}</a>` : esc(t.title)}${t.due_date < today ? ` <b style="color:#a8432a">overdue since ${esc(longDay(t.due_date))}</b>` : ''}`));
+  if (social) add('Social media', [social]);
   add('Didn’t send (needs you)', failed.results.map((s) => `${jobLink(s.job_id, s.who)}: ${esc(s.title)}${s.note ? ` <span style="color:#777">(${esc(s.note)})</span>` : ''}`));
   add('Appointments today', appts.results.map((a) => `<b>${time(a.start_time)}${a.end_time ? `–${time(a.end_time)}` : ''}</b> ${esc(a.title)}: ${jobLink(a.job_id, a.who)}${a.location ? ` · ${esc(a.location)}` : ''}`));
   add('Weddings and shoots coming up', shoots.results.map((j) => `<b>${j.event_date === today ? 'Today' : esc(longDay(j.event_date))}</b>${j.event_time ? ` ${time(j.event_time)}` : ''}: ${jobLink(j.id, j.partner_name ? `${j.title.split(' ')[0]} & ${j.partner_name}` : j.title)} (${esc(j.job_type)})${j.venue ? ` · ${esc(j.venue)}` : ''}`));
@@ -86,6 +89,21 @@ ${sections.map((s) => `<h2 style="margin:20px 0 8px;font-size:12px;letter-spacin
 <p style="margin:26px 0 0"><a href="${SITE}/studio" style="display:inline-block;padding:11px 20px;background:#5a5e3b;color:#fff;text-decoration:none;border-radius:12px 0;font-size:14px">Open the studio</a></p>
 </div>`;
   return { count, subject, html };
+}
+
+/** If fewer than three days of social posts are approved: a line for the morning email, else null.
+ *  "Three days" = an approved post still to go out on or after the day after tomorrow. */
+async function socialRunway(db, today) {
+  const now = new Date().toLocaleString('sv-SE', { timeZone: 'Pacific/Auckland' }).slice(0, 16).replace(' ', 'T');
+  const row = await db.prepare(`SELECT max(post_at) AS last, count(*) AS n FROM social_posts WHERE status = 'approved' AND post_at >= ?1`).bind(now).first();
+  const drafts = (await db.prepare(`SELECT count(*) AS n FROM social_posts WHERE status = 'draft' AND post_at >= ?1`).bind(now).first())?.n ?? 0;
+  const last = row?.last?.slice(0, 10) ?? null;
+  if (last && last >= addDays(today, 2)) return null;
+  const left = !last ? 'No approved social posts are waiting to go out.'
+    : last === today ? 'Your approved social posts run out today.'
+    : `Your approved social posts run out ${last === addDays(today, 1) ? 'tomorrow' : `on ${esc(longDay(last).replace(/ \d{4}$/, ''))}`}.`;
+  const waiting = drafts ? ` ${drafts} draft${drafts > 1 ? 's are' : ' is'} waiting for you to approve.` : ' There are no drafts waiting either.';
+  return `<b style="color:#a8432a">${left}</b>${waiting} <a href="${SITE}/studio/social" style="color:#2b2d1f">Open Social</a>`;
 }
 
 /** Once a day, between 7am and midday NZ: send the morning email if there's anything in it.
