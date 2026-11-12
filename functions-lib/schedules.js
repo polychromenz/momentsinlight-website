@@ -88,7 +88,7 @@ ${rows.length ? rows.map((r) => `<tr>${r.map((c, i) => cell(c, i)).join('')}</tr
 const button = (label, href) => `<p style="margin:28px 0 0"><a href="${href}" style="display:inline-block;padding:12px 22px;background:#5a5e3b;color:#ffffff;text-decoration:none;border-radius:14px 0;font-size:14px">${label}</a></p>`;
 
 async function stats(env, { from, to }) {
-  const filter = { AND: [{ date_geq: from, date_leq: to }, { requestHost: HOST }] };
+  const filter = { AND: [{ date_geq: from, date_leq: to }, { requestHost: HOST }, { requestPath_notlike: '/studio%' }] }; // the studio is Tony's own work, not visitors
   const group = (dims, limit) => `rumPageloadEventsAdaptiveGroups(filter: $filter, limit: ${limit}, orderBy: [count_DESC]) { count sum { visits } dimensions { ${dims} } }`;
   const query = `query Stats($account: string!, $filter: AccountRumPageloadEventsAdaptiveGroupsFilter_InputObject!) {
     viewer { accounts(filter: { accountTag: $account }) {

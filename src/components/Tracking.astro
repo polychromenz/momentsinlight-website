@@ -16,11 +16,11 @@ import { tracking } from '../data/site';
 
 interface Props { visits?: boolean }
 const { visits = true } = Astro.props;
-const { googleAnalytics: ga, metaPixel: pixel, clarity } = tracking;
+const { googleAnalytics: ga, metaPixel: pixel, clarity, cloudflare: cfBeacon } = tracking;
 const enabled = import.meta.env.PROD;
 ---
 {enabled && (ga || pixel) && (
-  <script is:inline define:vars={{ ga, pixel, clarity, visits }}>
+  <script is:inline define:vars={{ ga, pixel, clarity, visits, cfBeacon }}>
     const scripts = [];
     const q = new URLSearchParams(location.search);
     const click = q.get('gclid') || q.get('gbraid') || q.get('wbraid');
@@ -92,12 +92,24 @@ const enabled = import.meta.env.PROD;
       fbq('track', 'PageView');
       scripts.push('https://connect.facebook.net/en_US/fbevents.js');
     }
-    const load = () => scripts.forEach((src) => {
-      const s = document.createElement('script');
-      s.async = true;
-      s.src = src;
-      document.head.appendChild(s);
-    });
+    const load = () => {
+      scripts.forEach((src) => {
+        const s = document.createElement('script');
+        s.async = true;
+        s.src = src;
+        document.head.appendChild(s);
+      });
+      // Cloudflare Web Analytics (the weekly website email, Studio > Stats), except in Tony's own
+      // browsers. If Cloudflare is still adding its beacon to every page itself, that one counts and
+      // this stands aside, so a visit is never counted twice.
+      if (cfBeacon && !me && !document.querySelector('script[src*="cloudflareinsights.com"]')) {
+        const s = document.createElement('script');
+        s.defer = true;
+        s.src = 'https://static.cloudflareinsights.com/beacon.min.js';
+        s.setAttribute('data-cf-beacon', JSON.stringify({ token: cfBeacon }));
+        document.head.appendChild(s);
+      }
+    };
     const idle = () => (window.requestIdleCallback ? requestIdleCallback(load, { timeout: 3000 }) : setTimeout(load, 1500));
     if (document.readyState === 'complete') idle();
     else addEventListener('load', idle, { once: true });

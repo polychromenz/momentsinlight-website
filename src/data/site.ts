@@ -23,6 +23,9 @@ export const tracking = {
   metaPixel: '813954996871495',
   // Microsoft Clarity (visit recordings and heatmaps, clarity.microsoft.com): the project id.
   clarity: 'z70vge8li0',
+  // Cloudflare Web Analytics (the weekly website email and Studio > Stats): the site's beacon token.
+  // Added by Tracking.astro so Tony's own browsers aren't counted.
+  cloudflare: '410f7feaaf0041c78a09286b5bc7faf1',
 };
 
 export const announcement = {

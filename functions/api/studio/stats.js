@@ -11,7 +11,7 @@ export async function onRequestGet({ request, env }) {
   const days = Math.min(90, Math.max(1, Number(new URL(request.url).searchParams.get('days')) || 30));
   const to = new Date();
   const from = new Date(Date.now() - (days - 1) * 86400_000);
-  const filter = { AND: [{ date_geq: day(from), date_leq: day(to) }, { requestHost: HOST }] };
+  const filter = { AND: [{ date_geq: day(from), date_leq: day(to) }, { requestHost: HOST }, { requestPath_notlike: '/studio%' }] }; // the studio is Tony's own work, not visitors
   const group = (dims, limit, order = 'count_DESC') =>
     `rumPageloadEventsAdaptiveGroups(filter: $filter, limit: ${limit}, orderBy: [${order}]) { count sum { visits } dimensions { ${dims} } }`;
   const query = `query Stats($account: string!, $filter: AccountRumPageloadEventsAdaptiveGroupsFilter_InputObject!) {
