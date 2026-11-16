@@ -259,11 +259,14 @@ import { site } from '../data/site';
     const cap = target * 1.6;
     // The last full row of plain photos, so a few left over can share it rather than leave a gap.
     let prev: { items: Img[]; at: number } | null = null;
+    // The last full row of plain photos (a highlight with too few photos beside it borrows from its end).
+    let plain: { items: Img[]; at: number } | null = null;
     const flush = (last: boolean, onlyIfFull = false): boolean => {
       if (!row.length) return true;
       const full = fill(row);
       if (!last || full <= cap) {
         if (!last) prev = { items: row, at: out.length };
+        plain = { items: row, at: out.length };
         out.push(line(row, full));
         row = [];
         return true;
@@ -281,6 +284,7 @@ import { site } from '../data/site';
         }
         if (best) {
           out[prev.at] = line(all.slice(0, best), fill(all.slice(0, best)));
+          plain = { items: all.slice(best), at: out.length };
           out.push(line(all.slice(best), fill(all.slice(best))));
           row = [];
           prev = null;
@@ -339,6 +343,28 @@ import { site } from '../data/site';
         const body = b.left.length ? html(b.left, H) + big + cols : colsFirst ? cols + big : big + cols;
         out.push(`<div class="row row--block" style="gap:${GAP}px;margin-bottom:${GAP}px;justify-content:center">${body}</div>`);
       };
+      // Too few photos to fill the width beside it: borrow the last two or four from the row just above
+      // (which keeps at least three and still fills the width), or the whole row. They come before it, so
+      // they go on its left, in columns of two (or three).
+      const COLS: Record<number, number[]> = { 2: [2], 3: [3], 4: [2, 2], 5: [2, 3], 6: [2, 2, 2] };
+      const borrow = (right: Img[]) => {
+        if (phone || !plain || plain.at !== out.length - 1) return null;
+        for (const k of [2, 4, plain.items.length]) {
+          const keep = plain.items.slice(0, -k), take = plain.items.slice(-k);
+          if (k > plain.items.length || !COLS[k] || (keep.length && (keep.length < 3 || fill(keep) > cap * 1.35))) continue; // that row may come out a little taller
+          const left: Img[][] = [];
+          let at = 0;
+          for (const z of COLS[k]) { left.push(take.slice(at, at + z)); at += z; }
+          const b = right.length >= 2 ? fit(right, { left }) : { left, cols: [] as Img[][], used: 0, H: height(left) };
+          if (b && b.H <= capH) return { b, keep, at: plain.at };
+        }
+        return null;
+      };
+      const borrowed = (x: { b: { left: Img[][]; cols: Img[][]; H: number }; keep: Img[]; at: number }) => {
+        out[x.at] = x.keep.length ? line(x.keep, fill(x.keep)) : '';
+        plain = null;
+        put(x.b, false);
+      };
       const stack: Img[] = [];
       if (!phone) {
         // Photos waiting before it that can't make a full row of their own go beside it, on its left.
@@ -364,12 +390,15 @@ import { site } from '../data/site';
       const b = stack.length ? fit(stack) : null;
       if (b) {
         prev = null;
+        const more = b.H > capH && !waiting ? borrow(stack) : null;
+        if (more) { n -= stack.length - more.b.used; borrowed(more); continue; }
         n -= stack.length - b.used; // photos not needed beside it go back into the rows
         put(b, !!(side++ % 2));
       } else {
         // Not enough to stack beside it: it goes on its own. A photo that was waiting before it finishes
         // the row above; the ones after it go back to the rows below.
         n -= stack.length - waiting;
+        if (!waiting) { const more = borrow([]); if (more) { prev = null; borrowed(more); continue; } }
         if (waiting) row.push(stack[0]);
         flush(true);
         prev = null;
