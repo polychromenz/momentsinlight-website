@@ -26,6 +26,13 @@ export const loadJob = (db, jobId) => db.prepare(
 export async function jobLinks(db, job, step = null, env = null) {
   const t = await portalToken(db, job.id);
   const out = { ...(await studioLinks(db)), portal_link: portalLink(t) };
+  // Their galleries' expiry and the price to keep them online (functions-lib/gallery-keep.js), for
+  // emails like "Your galleries have moved": {{gallery_expiry}}, {{keep_price}}.
+  const exp = await db.prepare(`SELECT min(expires_at) d FROM photo_galleries WHERE job_id = ?1 AND status = 'online' AND expires_at IS NOT NULL`).bind(job.id).first();
+  if (exp?.d) out.gallery_expiry = new Date(`${exp.d}T12:00:00Z`).toLocaleDateString('en-NZ', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
+  const gs = await db.prepare(`SELECT value FROM settings WHERE key = 'galleries'`).first();
+  const price = gs ? JSON.parse(gs.value).extension_price ?? 4900 : 4900;
+  out.keep_price = `$${(price / 100).toLocaleString('en-NZ', { minimumFractionDigits: price % 100 ? 2 : 0 })}`;
   // The studio's own booking page knows them from this (their details filled in, booked onto their page).
   if (/^https:\/\/www\.momentsinlight\.co\.nz\/book\/?(\?|$)/.test(out.booking_link || '')) out.booking_link = `${out.booking_link.replace(/\/$/, '')}${out.booking_link.includes('?') ? '&' : '?'}c=${t}`;
   const want = ruleOf(step).questionnaire;

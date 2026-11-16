@@ -1,6 +1,8 @@
-// Keeping a gallery online past its expiry (decided with Tony 2026-11-16): galleries are online for
-// 6 months, then the couple can keep theirs for another 12 months for NZ$49 (Galleries > Defaults;
-// a gallery's own price can be a special price, or 0 = free, which extends it straight away).
+// Keeping galleries online past their expiry (decided with Tony 2026-11-16): galleries are online for
+// 12 months from the wedding (Galleries > Defaults), then the couple can keep them for another 12 months
+// for NZ$49 (a gallery's own price can be a special price, or 0 = free, which extends it straight away).
+// It's per couple: all the galleries on their client (job), e.g. the wedding and the practice shoot,
+// share one expiry date, one payment keeps them all online, and one reminder goes for them all.
 //   keepOffer()       what the couple's link may see: { price, months } from 30 days before expiry
 //   keepCheckout()    a Stripe Checkout page for it
 //   keptPaid()        Stripe says it's paid: extend it, and record the payment as a paid studio
@@ -35,11 +37,23 @@ export async function keepOffer(db, g, linkKind) {
   return { ...t, until: g.expires_at, expired: g.expires_at < today() };
 }
 
-/** The gallery's new expiry: 12 months on from its expiry, or from today if it has already passed. */
+/** The couple's galleries that expire: all the online ones on the same client (job) with an expiry
+ *  date, or just this one if it isn't on a client. */
+export async function coupleGalleries(db, g) {
+  if (!g.job_id) return [g];
+  const all = (await db.prepare(`SELECT * FROM photo_galleries WHERE job_id = ?1 AND status = 'online' AND expires_at IS NOT NULL`).bind(g.job_id).all()).results;
+  return all.length ? all : [g];
+}
+
+/** All the couple's galleries move to one new expiry: 12 months on from the latest of them, or from
+ *  today if that has already passed. */
 export async function extendGallery(db, g, months) {
-  const from = g.expires_at && g.expires_at >= today() ? g.expires_at : today();
+  const gs = await coupleGalleries(db, g);
+  const latest = gs.reduce((a, x) => (x.expires_at && x.expires_at > a ? x.expires_at : a), '');
+  const from = latest && latest >= today() ? latest : today();
   const until = addMonths(from, months);
-  await db.prepare(`UPDATE photo_galleries SET expires_at = ?2, reminded_for = NULL, updated_at = ?3 WHERE id = ?1`).bind(g.id, until, new Date().toISOString()).run();
+  const now = new Date().toISOString();
+  await db.batch(gs.map((x) => db.prepare(`UPDATE photo_galleries SET expires_at = ?2, reminded_for = NULL, updated_at = ?3 WHERE id = ?1`).bind(x.id, until, now)));
   return until;
 }
 
@@ -60,11 +74,11 @@ export async function keepCheckout(env, g, back) {
     'line_items[0][quantity]': '1',
     'line_items[0][price_data][currency]': 'nzd',
     'line_items[0][price_data][unit_amount]': String(price),
-    'line_items[0][price_data][product_data][name]': `Keep your gallery online for ${months} more months: ${g.name}`,
+    'line_items[0][price_data][product_data][name]': `Keep your galleries online for ${months} more months`,
     ...(job?.email ? { customer_email: job.email } : {}),
     'metadata[gallery_keep]': g.id,
     'metadata[months]': String(months),
-    'payment_intent_data[description]': `Gallery: ${months} more months online (${g.name})`,
+    'payment_intent_data[description]': `Galleries: ${months} more months online (${g.name})`,
     'payment_intent_data[metadata][gallery_keep]': g.id,
     success_url: `${back}${back.includes('?') ? '&' : '?'}kept=1`,
     cancel_url: back,
@@ -93,7 +107,7 @@ export async function keptPaid(env, s) {
       try {
         inv = await db.prepare(`INSERT INTO invoices (job_id, number, label, description, amount, due_date, send_at, token, status, sent_at, gallery_id, created_at)
           VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, 'sent', ?7, ?9, ?7) RETURNING *`)
-          .bind(g.job_id, await nextNumber(db, today().slice(0, 4)), `Gallery: ${months} more months online`, `${g.name}, now online until ${longDate(until)}`, s.amount_total, today(), now, token(), g.id).first();
+          .bind(g.job_id, await nextNumber(db, today().slice(0, 4)), `Galleries: ${months} more months online`, `${(await coupleGalleries(db, g)).map((x) => x.name).join(', ')}: now online until ${longDate(until)}`, s.amount_total, today(), now, token(), g.id).first();
       } catch (e) { if (!String(e).includes('UNIQUE') || tries === 4) throw e; }
     }
     await markPaid(env, inv, { method: 'card', stripeSession: s.id, stripePayment: s.payment_intent });
@@ -124,21 +138,27 @@ export async function expiryReminders(env) {
   const template = await db.prepare(`SELECT * FROM templates WHERE key = 'gallery-expiring'`).first();
   if (!template) return 'no template';
   let sent = 0;
+  const done = new Set(); // one reminder per couple (job), for all their galleries
   for (const g of due) {
+    if (done.has(g.job_id)) continue;
+    done.add(g.job_id);
     const left = Math.round((Date.parse(`${g.expires_at}T00:00:00Z`) - Date.parse(`${t}T00:00:00Z`)) / 86400_000);
     const stage = left <= 7 ? '7' : '30';
     if (g.reminded_for === `${g.expires_at}:${stage}` || (stage === '30' && g.reminded_for === `${g.expires_at}:7`)) continue;
     const { price, months } = await keepTerms(db, g);
     if (!price) continue; // free to keep: Tony looks after it
     const job = await loadJob(db, g.job_id);
-    const link = await db.prepare(`SELECT token FROM gallery_links WHERE gallery_id = ?1 AND kind = 'main_client' ORDER BY id LIMIT 1`).bind(g.id).first();
+    const gs = await coupleGalleries(db, g);
+    // Their wedding gallery's link if they have one (the button keeps them all online).
+    const main = gs.find((x) => x.type === 'Wedding') ?? g;
+    const link = await db.prepare(`SELECT token FROM gallery_links WHERE gallery_id = ?1 AND kind = 'main_client' ORDER BY id LIMIT 1`).bind(main.id).first();
     if (!job?.email || !link) continue;
-    const galleryLink = linkUrl(g.slug, link.token);
+    const galleryLink = linkUrl(main.slug, link.token);
     const values = {
       ...(await studioLinks(db)),
       first_name: job.first_name, last_name: job.last_name, partner_name: job.partner_name || '',
       couple: job.partner_name ? `${job.first_name} & ${job.partner_name}` : job.first_name,
-      gallery_name: g.name, gallery_link: galleryLink, keep_link: `${galleryLink}&keep=1`,
+      gallery_name: gs.map((x) => x.name).join(', '), gallery_link: galleryLink, keep_link: `${galleryLink}&keep=1`,
       expiry_date: longDate(g.expires_at), keep_price: money(price).replace(/\.00$/, ''), keep_months: String(months), days_left: String(left),
     };
     const email = renderTemplate(template, values);
@@ -148,7 +168,7 @@ export async function expiryReminders(env) {
       const out = await sendEmail(env, { to: job.email, subject: email.subject, html: email.html, threadId: last?.gmail_thread_id });
       const now = new Date().toISOString();
       await db.batch([
-        db.prepare('UPDATE photo_galleries SET reminded_for = ?2 WHERE id = ?1').bind(g.id, `${g.expires_at}:${stage}`),
+        ...gs.map((x) => db.prepare('UPDATE photo_galleries SET reminded_for = ?2 WHERE id = ?1').bind(x.id, `${g.expires_at}:${stage}`)),
         db.prepare(`INSERT INTO messages (job_id, client_id, direction, subject, body, gmail_message_id, gmail_thread_id, sent_at) VALUES (?1, ?2, 'out', ?3, ?4, ?5, ?6, ?7)`)
           .bind(job.id, job.client_id, email.subject, email.body, out.id, out.threadId, now),
       ]);

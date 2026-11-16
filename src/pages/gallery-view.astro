@@ -119,7 +119,7 @@ import { site } from '../data/site';
   // way back from paying.
   type Keep = { price: number; months: number; until: string; expired: boolean } | null;
   const nzd = (c: number) => `$${(c / 100).toLocaleString('en-NZ', { minimumFractionDigits: c % 100 ? 2 : 0 })}`;
-  const keepButton = (k: NonNullable<Keep>) => `<button type="button" class="g-cta" data-keep>${k.price ? `Keep it online for ${k.months} more months (${nzd(k.price)})` : `Keep it online for ${k.months} more months`}</button>`;
+  const keepButton = (k: NonNullable<Keep>) => `<button type="button" class="g-cta" data-keep>${k.price ? `Keep it online for ${k.months} more months (${nzd(k.price)})` : `Keep it online for ${k.months} more months`}</button><span class="g-keep-all">This keeps all your galleries online, e.g. your wedding and practice shoot.</span>`;
   async function keepNow(btn?: HTMLButtonElement | null) {
     if (btn) { btn.disabled = true; btn.textContent = 'One moment…'; }
     const r = await fetch('/api/gallery/keep', { method: 'POST', headers: { 'content-type': 'application/json' },
@@ -890,6 +890,7 @@ import { site } from '../data/site';
   .g-actions { flex: none; }
   .g-btn { font: inherit; font-size: 12px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; padding: 8px 14px; border: 1px solid var(--green); border-radius: 10px 0; background: var(--white); color: var(--green); cursor: pointer; }
   .g-note-cta { display: block; margin: 8px 0 0; }
+  .g-keep-all { display: block; margin: 6px 0 0; font-size: 13px; opacity: 0.8; }
   .g-note { margin: 12px auto 0; max-width: 900px; padding: 10px 16px; background: var(--blush); border-radius: 12px 0; font-size: 14px; text-align: center; }
   .g-main { padding: 6px clamp(8px, 3vw, 56px) 40px; overflow-x: clip; }
   .g-sec { scroll-margin-top: 60px; }

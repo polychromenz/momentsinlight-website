@@ -37,7 +37,7 @@ const RichLink = Link.extend({
 const COLOURS: [string, string][] = [['#1a1a1a', 'Ink'], ['#5a5e3b', 'Green'], ['#3e4229', 'Olive'], ['#b39a6b', 'Gold'], ['#a3b07a', 'Sage'], ['#8c1d18', 'Red']];
 const SIZES: [string, string][] = [['13px', 'Small'], ['', 'Normal'], ['20px', 'Large'], ['26px', 'Extra large']];
 
-export const FIELDS = ['first_name', 'last_name', 'partner_name', 'couple', 'event_date', 'venue', 'quote_link', 'quote_valid_until', 'payment_plan', 'portal_link', 'gallery_link', 'contract_link', 'payment_amount', 'payment_due_date', 'invoice_number', 'invoice_label', 'invoice_link', 'questionnaire_link', 'shoot_date', 'shoot_time', 'location', 'booking_link', 'contact_name', 'business', 'our_page'];
+export const FIELDS = ['first_name', 'last_name', 'partner_name', 'couple', 'event_date', 'venue', 'quote_link', 'quote_valid_until', 'payment_plan', 'portal_link', 'gallery_link', 'contract_link', 'payment_amount', 'payment_due_date', 'invoice_number', 'invoice_label', 'invoice_link', 'questionnaire_link', 'shoot_date', 'shoot_time', 'location', 'booking_link', 'contact_name', 'business', 'our_page', 'gallery_expiry', 'keep_price'];
 
 // The fill-ins that are links, with plain names, for the Button pop-up.
 const LINKS: [string, string][] = [['portal_link', 'Their portal'], ['gallery_link', 'Their gallery'], ['quote_link', 'Their quote'], ['invoice_link', 'Their invoice'], ['contract_link', 'Their contract'], ['questionnaire_link', 'Their questionnaire'], ['booking_link', 'Your booking page'], ['our_page', 'Our page about them']];
