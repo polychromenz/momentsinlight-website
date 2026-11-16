@@ -404,6 +404,18 @@ import { site } from '../data/site';
         // the row above; the ones after it go back to the rows below.
         n -= stack.length - waiting;
         { const more = borrow([], waiting ? [stack[0]] : []); if (more) { prev = null; borrowed(more); continue; } }
+        // Just one photo to go with it and nothing to borrow: side by side, that photo clearly smaller (at
+        // most 60% of the highlight's height) and centred beside it, rather than left on a row of its own.
+        if (!phone && stack.length === 1) {
+          const o = stack[0];
+          let H = Math.min((width - GAP) / (ar(i) + 0.6 * ar(o)), capH);
+          const h = Math.min(0.6 * H, (width - GAP - ar(i) * H) / ar(o));
+          if (!waiting) n++; // it was put back for the rows; it goes here instead
+          prev = null;
+          const pair = [tile(i, ar(i) * H, H), tile(o, ar(o) * h, h)];
+          out.push(`<div class="row row--block" style="gap:${GAP}px;margin-bottom:${GAP}px;justify-content:center;align-items:center">${waiting ? pair[1] + pair[0] : pair[0] + pair[1]}</div>`);
+          continue;
+        }
         if (waiting) row.push(stack[0]);
         flush(true);
         prev = null;
