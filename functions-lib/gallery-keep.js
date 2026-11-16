@@ -15,6 +15,7 @@ import { loadJob } from './crm-send.js';
 import { sendEmail } from './gmail.js';
 import { renderTemplate, studioLinks } from './email-render.js';
 import { alertTony } from './crm.js';
+import { portalToken, portalLink } from './portal.js';
 
 const SITE = 'https://www.momentsinlight.co.nz';
 const today = () => new Date().toLocaleDateString('en-CA', { timeZone: 'Pacific/Auckland' });
@@ -158,7 +159,7 @@ export async function expiryReminders(env) {
       ...(await studioLinks(db)),
       first_name: job.first_name, last_name: job.last_name, partner_name: job.partner_name || '',
       couple: job.partner_name ? `${job.first_name} & ${job.partner_name}` : job.first_name,
-      gallery_name: gs.map((x) => x.name).join(', '), gallery_link: galleryLink, keep_link: `${galleryLink}&keep=1`,
+      gallery_name: gs.map((x) => x.name).join(', '), gallery_link: galleryLink, portal_link: portalLink(await portalToken(db, job.id)), keep_link: `${galleryLink}&keep=1`,
       expiry_date: longDate(g.expires_at), keep_price: money(price).replace(/\.00$/, ''), keep_months: String(months), days_left: String(left),
     };
     const email = renderTemplate(template, values);
