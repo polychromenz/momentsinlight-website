@@ -32,6 +32,33 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
       </div>
 
       <section class="card">
+        <h2>From visit to enquiry</h2>
+        <p class="hint">Each visitor once (the same browser across tabs since 10 Nov; before that, each tab). “Enquired” means their enquiry came in from that browser, which the site can tell from 10 November 2026, so earlier enquirers show as not enquiring.</p>
+        <div class="funnel"></div>
+      </section>
+
+      <div class="two-cards">
+        <section class="card">
+          <h2>How far they scrolled on your prices</h2>
+          <p class="hint">On the Weddings page, for visitors who saw it. If most people who leave never get far down, the packages may be too far down the page.</p>
+          <table class="table scrolls"><thead><tr><th>Scrolled</th><th>Left</th><th>Enquired</th></tr></thead><tbody></tbody></table>
+        </section>
+        <section class="card">
+          <h2>Where they came from</h2>
+          <table class="table sources"><thead><tr><th>Came from</th><th>Visitors</th><th>Saw prices</th><th>Left after</th><th>Enquired</th></tr></thead><tbody></tbody></table>
+        </section>
+      </div>
+
+      <section class="card">
+        <h2>Left after seeing your prices</h2>
+        <p class="hint">Visitors who saw the Weddings page and didn’t enquire, newest first. “Then” is where they went after the prices (or that they left the site from there). To watch one in Clarity, copy its ID and filter Recordings by <strong>Custom user ID</strong> (visits from 10 Nov on).</p>
+        <div class="scroll-x">
+          <table class="table leavers"><thead><tr><th>When</th><th>Came from</th><th>On prices</th><th>Scrolled</th><th>Then</th><th>Pages</th><th>Watch</th></tr></thead><tbody></tbody></table>
+        </div>
+        <p><a class="clarity" href="https://clarity.microsoft.com/projects/view/z70vge8li0/impressions" target="_blank" rel="noopener">Open Clarity recordings ↗</a></p>
+      </section>
+
+      <section class="card">
         <h2>Pages</h2>
         <p class="hint">“Left here” is how often this was the last page they looked at. A high number on a page that should lead somewhere (a gallery, Weddings) is where to look first.</p>
         <div class="scroll-x">
@@ -98,12 +125,35 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
       rows('.journeys', d.journeys.map((j: { landing: string; next: string; n: number }) => `<tr><td>${link(j.landing)} → ${link(j.next)}</td><td>${num(j.n)}</td></tr>`), 2);
       $('.ads-card').hidden = who === 'other';
       rows('.keywords', d.keywords.map((k: { term: string; visits: number; pages: number; secs: number }) => `<tr><td>${esc(k.term)}</td><td>${num(k.visits)}</td><td>${k.pages}</td><td>${time(k.secs)}</td></tr>`), 4);
+      await loadDropoffs();
       $('.content').hidden = false;
       $('.status').hidden = true;
     } catch (err) {
       $('.status').textContent = (err as Error).message;
     }
   }
+
+  // Drop-offs: who sees the prices and doesn't enquire (functions/api/studio/stats/dropoffs.js).
+  async function loadDropoffs() {
+    const r = await fetch(`/api/studio/stats/dropoffs?days=${days}&who=${who}`);
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error || `Drop-offs: ${r.status}`);
+    const f = d.funnel;
+    const steps: [string, number, number][] = [['Visitors', f.visitors, f.visitors], ['Saw your prices', f.pricing, f.visitors], ['Then reached Contact', f.pricing_contact, f.pricing], ['Then enquired', f.pricing_enquired, f.pricing]];
+    $('.funnel').innerHTML = steps.map(([label, n, of], i) => `<div class="step"><span class="n">${num(n)}</span><span class="l">${label}</span>${i ? `<span class="p">${pct(n, of)} of ${i === 1 ? 'visitors' : 'those who saw prices'}</span>` : ''}<span class="fbar" style="width:${f.visitors ? Math.max(2, (n / f.visitors) * 100) : 0}%"></span></div>`).join('')
+      + `<p class="hint">All enquiries in this period: ${num(f.enquired)} (${num(f.enquired - f.pricing_enquired)} without seeing the prices first).</p>`;
+    const label: Record<number, string> = { 0: 'Under a quarter', 25: 'A quarter to half', 50: 'Half to three-quarters', 75: 'Most of the page' };
+    const smax = Math.max(1, ...d.scroll.map((x: any) => x.gone + x.enquired));
+    rows('.scrolls', d.scroll.map((x: any) => `<tr><td><span class="bar" style="width:${((x.gone + x.enquired) / smax) * 100}%"></span><span class="label">${label[x.bucket]}</span></td><td>${num(x.gone)}</td><td>${num(x.enquired)}</td></tr>`), 3);
+    rows('.sources', d.sources.map((x: any) => `<tr><td>${esc(x.source)}</td><td>${num(x.visitors)}</td><td>${num(x.pricing)}</td><td${x.pricing >= 5 && x.left_prices / x.pricing > 0.9 ? ' class="high"' : ''}>${num(x.left_prices)}</td><td>${num(x.enquired)}</td></tr>`), 5);
+    const when = (iso: string) => new Date(iso).toLocaleString('en-NZ', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit', timeZone: 'Pacific/Auckland' });
+    rows('.leavers', d.leavers.map((l: any) => `<tr title="${esc(l.path.map(name).join(' → '))}"><td>${when(l.when)}${l.mobile ? ' <small>phone</small>' : ''}</td><td>${esc(l.source)}</td><td>${time(l.secs)}</td><td>${l.scroll == null ? '–' : `${l.scroll}%`}</td><td>${l.next ? link(l.next) : '–'}${l.contact ? ' <small>(saw Contact)</small>' : ''}</td><td>${num(l.pages)}</td><td>${l.vid ? `<button type="button" class="copy" data-copy="${esc(l.vid)}">Copy ID</button>` : '–'}</td></tr>`), 7);
+  }
+  document.addEventListener('click', async (e) => {
+    const b = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-copy]');
+    if (!b) return;
+    try { await navigator.clipboard.writeText(b.dataset.copy!); b.textContent = 'Copied'; setTimeout(() => { b.textContent = 'Copy ID'; }, 1500); } catch { prompt('Custom user ID', b.dataset.copy!); }
+  });
 
   const group = (sel: string, set: (b: HTMLButtonElement) => void) => document.querySelectorAll<HTMLButtonElement>(`${sel} button`).forEach((b) =>
     b.addEventListener('click', () => {
@@ -146,4 +196,18 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
   .table :global(.label) { position: relative; z-index: 1; }
   .table :global(.empty) { color: #999; text-align: center !important; }
   .note { font-size: 13px; color: #888; line-height: 1.6; }
+  .two-cards { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); }
+  .two-cards .card { margin-bottom: 0; }
+  .two-cards + .card { margin-top: 16px; }
+  .funnel { display: grid; gap: 10px; margin-bottom: 8px; }
+  .funnel :global(.step) { position: relative; display: flex; align-items: baseline; gap: 12px; padding: 8px 12px; }
+  .funnel :global(.fbar) { position: absolute; left: 0; top: 0; bottom: 0; background: #eef1e4; border-radius: 10px 0; z-index: 0; }
+  .funnel :global(.n), .funnel :global(.l), .funnel :global(.p) { position: relative; z-index: 1; }
+  .funnel :global(.n) { font-size: 24px; font-weight: 300; color: var(--ink); min-width: 70px; }
+  .funnel :global(.l) { font-weight: 600; color: var(--ink); }
+  .funnel :global(.p) { color: #777; font-size: 13px; }
+  .table :global(small) { color: #999; }
+  .table :global(.copy) { padding: 3px 10px; border: 1px solid #ddd3c4; border-radius: 999px; background: var(--white); font: inherit; font-size: 12px; cursor: pointer; }
+  .leavers :global(td:nth-child(2)) { max-width: 260px; }
+  .clarity { font-size: 14px; color: var(--green); }
 </style>
