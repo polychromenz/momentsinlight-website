@@ -347,14 +347,16 @@ import { site } from '../data/site';
       // (which keeps at least three and still fills the width), or the whole row. They come before it, so
       // they go on its left, in columns of two (or three).
       const COLS: Record<number, number[]> = { 2: [2], 3: [3], 4: [2, 2], 5: [2, 3], 6: [2, 2, 2] };
-      const borrow = (right: Img[]) => {
+      // extra: a photo that was waiting after that row (it joins the borrowed ones, last).
+      const borrow = (right: Img[], extra: Img[] = []) => {
         if (phone || !plain || plain.at !== out.length - 1) return null;
-        for (const k of [2, 4, plain.items.length]) {
-          const keep = plain.items.slice(0, -k), take = plain.items.slice(-k);
-          if (k > plain.items.length || !COLS[k] || (keep.length && (keep.length < 3 || fill(keep) > cap * 1.35))) continue; // that row may come out a little taller
+        const e = extra.length;
+        for (const k of [2 - e, 4 - e, plain.items.length]) {
+          const keep = plain.items.slice(0, -k), take = [...plain.items.slice(-k), ...extra];
+          if (k < 1 || k > plain.items.length || !COLS[k + e] || (keep.length && (keep.length < 3 || fill(keep) > cap * 1.35))) continue; // that row may come out a little taller
           const left: Img[][] = [];
           let at = 0;
-          for (const z of COLS[k]) { left.push(take.slice(at, at + z)); at += z; }
+          for (const z of COLS[k + e]) { left.push(take.slice(at, at + z)); at += z; }
           const b = right.length >= 2 ? fit(right, { left }) : { left, cols: [] as Img[][], used: 0, H: height(left) };
           if (b && b.H <= capH) return { b, keep, at: plain.at };
         }
@@ -387,7 +389,10 @@ import { site } from '../data/site';
         while (stack.length < 6 && n + 1 < list.length && !list[n + 1].hero) stack.push(list[++n]);
       } else flush(true);
       const waiting = stack.length && !list.slice(n - stack.length + 1, n + 1).includes(stack[0]) ? 1 : 0;
-      const b = stack.length ? fit(stack) : null;
+      let b = stack.length ? fit(stack) : null;
+      // All the photos up to the next highlight (or the end) are here: don't strand one on its own.
+      const allHere = stack.length < 6 && (n + 1 >= list.length || list[n + 1].hero);
+      if (b && allHere && stack.length - b.used === 1) b = fit(stack, { all: true }) ?? b;
       if (b) {
         prev = null;
         const more = b.H > capH && !waiting ? borrow(stack) : null;
@@ -398,7 +403,7 @@ import { site } from '../data/site';
         // Not enough to stack beside it: it goes on its own. A photo that was waiting before it finishes
         // the row above; the ones after it go back to the rows below.
         n -= stack.length - waiting;
-        if (!waiting) { const more = borrow([]); if (more) { prev = null; borrowed(more); continue; } }
+        { const more = borrow([], waiting ? [stack[0]] : []); if (more) { prev = null; borrowed(more); continue; } }
         if (waiting) row.push(stack[0]);
         flush(true);
         prev = null;
