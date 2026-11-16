@@ -147,7 +147,8 @@ export async function markPaid(env, inv, { method, note = '', stripeSession = nu
   // The first payment confirms the booking: "Thanks for booking" goes out (wedding workflow).
   const first = await db.prepare(`SELECT count(*) n FROM invoices WHERE job_id = ?1 AND status = 'paid'`).bind(job.id).first();
   let planned = 0;
-  if (first.n === 1) {
+  // (Not for a payment to keep a gallery online: past clients may have no other invoices here.)
+  if (first.n === 1 && !paid.gallery_id) {
     planned = await planSteps(db, await db.prepare('SELECT * FROM jobs WHERE id = ?1').bind(job.id).first(), ['deposit']);
     await db.prepare(`UPDATE steps SET status = 'done', done_at = ?2, note = 'Deposit paid' WHERE job_id = ?1 AND step_key LIKE 'deposit-invoice-%' AND status IN ('scheduled', 'due')`).bind(job.id, now).run();
   }

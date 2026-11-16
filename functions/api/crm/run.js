@@ -52,6 +52,7 @@ import { xeroTimer } from '../../../functions-lib/xero.js';
 import { hasReviewed } from '../../../functions-lib/reviewed.js';
 import { chargeDue } from '../../../functions-lib/autopay.js';
 import { lapseHolds } from '../../../functions-lib/booking.js';
+import { galleryReminderTimer } from '../../../functions-lib/gallery-keep.js';
 
 const reply = (data, status = 200) => new Response(JSON.stringify(data), { status, headers: { 'content-type': 'application/json' } });
 const stops = (step, ev) => (',' + step.stop_on + ',').includes(`,${ev},`);
@@ -195,6 +196,8 @@ export async function onRequestPost({ request, env }) {
   log.publish = await publishScheduledPosts(env).catch((e) => `error: ${e.message}`);
   log.weekly_stats = await weeklyStatsEmail(env).catch((e) => `error: ${e.message}`);
   log.speed = await monthlySpeed(env).catch((e) => `error: ${e.message}`);
+  // Galleries expiring in 30 and 7 days: a reminder to the couple (functions-lib/gallery-keep.js).
+  log.gallery_reminders = await galleryReminderTimer(env).catch((e) => `error: ${e.message}`);
   // 9. Contacts.
   log.contacts = await contactsTimer(env, gmail).catch((e) => `error: ${e.message}`);
   // 10. SEO.

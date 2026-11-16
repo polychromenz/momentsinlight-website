@@ -47,13 +47,17 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
   <dialog class="gl-dlg" data-defaults-dlg>
     <form method="dialog" class="gl-form">
       <h2>Gallery defaults</h2>
-      <label>Months online after a gallery goes online <input name="expiry_months" type="number" min="0" max="120" /></label>
-      <p class="hint">0 = galleries stay online until you take them offline.</p>
+      <div class="two">
+        <label>Months online free <input name="expiry_months" type="number" min="0" max="120" /></label>
+        <label>Counted from <select name="expiry_from"><option value="date">the wedding or shoot date</option><option value="online">when it goes online</option></select></label>
+      </div>
+      <label>But at least this many months after it goes online <input name="min_months" type="number" min="0" max="120" /></label>
+      <p class="hint">0 months free = galleries stay online until you take them offline. A gallery with no date counts from when it goes online.</p>
       <div class="two">
         <label>Price to keep a gallery longer (NZ$) <input name="extension_price" type="number" min="0" step="1" /></label>
         <label>For how many months <input name="extension_months" type="number" min="1" max="120" /></label>
       </div>
-      <p class="hint">Each gallery can have its own price (or free) on its Details tab. Paying online comes with a later step.</p>
+      <p class="hint">Each gallery can have its own price (or free) on its Details tab. Couples can pay online from 30 days before it expires, and get reminder emails 30 and 7 days before.</p>
       <label>Print release (a PDF with the cover photo in every download; leave a blank line between paragraphs) <textarea name="print_release" rows="9"></textarea></label>
       <div class="lr-key">
         <strong>Lightroom plugin key</strong>
@@ -123,6 +127,8 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
     if (t.closest('[data-defaults]')) {
       const f = $<HTMLFormElement>('[data-defaults-dlg] form');
       (f.elements.namedItem('expiry_months') as HTMLInputElement).value = settings.expiry_months;
+      (f.elements.namedItem('expiry_from') as HTMLSelectElement).value = settings.expiry_from ?? 'date';
+      (f.elements.namedItem('min_months') as HTMLInputElement).value = settings.min_months ?? 6;
       (f.elements.namedItem('extension_price') as HTMLInputElement).value = String(settings.extension_price / 100);
       (f.elements.namedItem('extension_months') as HTMLInputElement).value = settings.extension_months;
       (f.elements.namedItem('print_release') as HTMLTextAreaElement).value = settings.print_release ?? '';
@@ -154,7 +160,7 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
     e.preventDefault();
     const f = new FormData(e.target as HTMLFormElement);
     const r = await fetch('/api/studio/galleries/settings', { method: 'PUT', headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ expiry_months: f.get('expiry_months'), extension_price: Math.round(Number(f.get('extension_price')) * 100), extension_months: f.get('extension_months'), print_release: f.get('print_release') }) });
+      body: JSON.stringify({ expiry_months: f.get('expiry_months'), expiry_from: f.get('expiry_from'), min_months: f.get('min_months'), extension_price: Math.round(Number(f.get('extension_price')) * 100), extension_months: f.get('extension_months'), print_release: f.get('print_release') }) });
     const d = await r.json().catch(() => ({}));
     if (!r.ok) return toast(d.error || 'Couldn’t save.', true);
     settings = d.settings;

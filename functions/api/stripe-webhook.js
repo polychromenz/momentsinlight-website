@@ -8,6 +8,7 @@ import { verifyStripe, markPaid } from '../../functions-lib/invoices.js';
 import { recordFee, recordPayout } from '../../functions-lib/stripe-sync.js';
 import { confirmBooking } from '../../functions-lib/booking.js';
 import { saveCard } from '../../functions-lib/autopay.js';
+import { keptPaid } from '../../functions-lib/gallery-keep.js';
 
 export async function onRequestPost({ request, env }) {
   const payload = await request.text();
@@ -17,6 +18,17 @@ export async function onRequestPost({ request, env }) {
   const event = JSON.parse(payload);
   if (event.type === 'checkout.session.completed' || event.type === 'checkout.session.async_payment_succeeded') {
     const s = event.data.object;
+    // A couple keeping their gallery online (functions-lib/gallery-keep.js).
+    if (s.metadata?.gallery_keep && s.payment_status === 'paid' && s.currency === 'nzd') {
+      try {
+        const inv = await keptPaid(env, s);
+        if (inv) await recordFee(env, inv, s.payment_intent, event.livemode).catch((e) => console.error('stripe webhook: fee', inv, e.message));
+      } catch (e) {
+        console.error('stripe webhook: gallery keep', e.message);
+        return new Response('Not recorded', { status: 500 }); // Stripe tries again later
+      }
+      return new Response('ok');
+    }
     const id = Number(s.metadata?.invoice_id || s.client_reference_id);
     if (id && s.payment_status === 'paid') {
       const inv = await env.DB.prepare('SELECT * FROM invoices WHERE id = ?1').bind(id).first();

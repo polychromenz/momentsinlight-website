@@ -114,6 +114,26 @@ import { site } from '../data/site';
   if (params.get('sv')) { save(params.get('sv')!); params.delete('sv'); history.replaceState(null, '', location.pathname + (params.size ? `?${params}` : '')); }
   const day = (d: string) => new Date(`${d}T12:00:00Z`).toLocaleDateString('en-NZ', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
   let viewer = '';
+  // Keeping the gallery online (functions/api/gallery/keep.js): the couple's own link, from 30 days
+  // before it expires. ?keep=1 (the reminder email's button) goes straight to paying; ?kept=1 is the
+  // way back from paying.
+  type Keep = { price: number; months: number; until: string; expired: boolean } | null;
+  const nzd = (c: number) => `$${(c / 100).toLocaleString('en-NZ', { minimumFractionDigits: c % 100 ? 2 : 0 })}`;
+  const keepButton = (k: NonNullable<Keep>) => `<button type="button" class="g-cta" data-keep>${k.price ? `Keep it online for ${k.months} more months (${nzd(k.price)})` : `Keep it online for ${k.months} more months`}</button>`;
+  async function keepNow(btn?: HTMLButtonElement | null) {
+    if (btn) { btn.disabled = true; btn.textContent = 'One moment…'; }
+    const r = await fetch('/api/gallery/keep', { method: 'POST', headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ slug, key: params.get('k') || undefined, viewer: saved() || undefined, back: location.origin + location.pathname }) });
+    const d = await r.json().catch(() => ({}));
+    if (d.url) { location.href = d.url; return; }
+    if (d.kept) { alert(`Done: your gallery is now online until ${day(d.until)}.`); location.reload(); return; }
+    alert(d.error || 'Sorry, that didn’t work. Please try again, or get in touch with Tony.');
+    if (btn) { btn.disabled = false; btn.textContent = 'Try again'; }
+  }
+  document.addEventListener('click', (e) => { const b = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-keep]'); if (b) keepNow(b); });
+  const wantKeep = params.get('keep') === '1';
+  const justKept = params.get('kept') === '1';
+  if (wantKeep || justKept) { params.delete('keep'); params.delete('kept'); history.replaceState(null, '', location.pathname + (params.size ? `?${params}` : '')); }
   let view: View;
   // Favourites, lists, select mode and the list being viewed (1d). Nothing of this in the studio preview.
   let current: Img[] = [];            // the photos on the page now, in order (what the lightbox steps through)
@@ -161,7 +181,12 @@ import { site } from '../data/site';
       return load();
     }
     if (d.status === 'gone') return gate('<p>This gallery isn’t available. If you were expecting to see photos here, please <a href="https://www.momentsinlight.co.nz/contact">get in touch with Tony</a>.</p>');
-    if (d.status === 'expired') return gate(`<p>This gallery was online until ${d.gallery?.expires_at ? day(d.gallery.expires_at) : 'recently'}.</p><p>To bring it back online, please <a href="https://www.momentsinlight.co.nz/contact">get in touch with Tony</a>.</p>`);
+    if (d.status === 'expired') {
+      const k = d.keep as Keep;
+      if (justKept) return gate(`<p>Thank you! Your payment has gone through and your gallery will be back online in a moment.</p><p><a class="g-cta" href="${esc(location.pathname)}">Open my gallery</a></p>`);
+      if (k && wantKeep) { gate('<p>Taking you to the payment page…</p>'); return keepNow(); }
+      return gate(`<p>This gallery was online until ${d.gallery?.expires_at ? day(d.gallery.expires_at) : 'recently'}.</p>${k ? `<p>You can bring it back online for another ${k.months} months${k.price ? ` for ${nzd(k.price)}` : ''}.</p>${keepButton(k)}` : '<p>To bring it back online, please <a href="https://www.momentsinlight.co.nz/contact">get in touch with Tony</a>.</p>'}`);
+    }
     if (d.status === 'email') {
       gate(`<form class="g-form" data-email>
         <p>Please add your name and email to see the photos.</p>
@@ -222,9 +247,17 @@ import { site } from '../data/site';
       p.innerHTML = `Preview${view.preview.link ? ` as “${esc(view.preview.link)}”` : ''}${view.preview.status !== 'online' ? ` · this gallery is <strong>${esc(view.preview.status)}</strong>, so clients can’t see it yet` : ''}${view.rights.watermark ? ' · this link’s visitors see your monogram on each photo' : ''}`;
     }
     const exp = view.gallery.expires_at;
-    if (exp && !preview) {
+    const keep = (view as any).keep as Keep;
+    if (justKept && !preview) {
+      const n = $('.g-note'); n.hidden = false;
+      n.textContent = `Thank you! Your gallery will stay online for another ${keep?.months ?? 12} months. A receipt is on its way by email.`;
+    } else if (exp && !preview) {
       const days = Math.round((Date.parse(`${exp}T12:00:00Z`) - Date.now()) / 86400000);
-      if (days <= 30) { const n = $('.g-note'); n.hidden = false; n.textContent = `This gallery is online until ${day(exp)}. Download your favourites before then.`; }
+      if (days <= 30) {
+        const n = $('.g-note'); n.hidden = false;
+        n.innerHTML = `This gallery is online until ${esc(day(exp))}. Download your favourites before then${keep ? `, or keep it online for another ${keep.months} months${keep.price ? ` for ${nzd(keep.price)}` : ''}.<span class="g-note-cta">${keepButton(keep)}</span>` : '.'}`;
+        if (keep && wantKeep) keepNow();
+      }
     }
     $('.gallery').hidden = false;
     draw();
@@ -856,6 +889,7 @@ import { site } from '../data/site';
   .more-list { position: absolute; right: 0; top: 100%; display: grid; min-width: 200px; padding: 6px; background: var(--white); border-radius: 12px 0; box-shadow: 0 16px 34px -18px rgb(0 0 0 / 0.45); }
   .g-actions { flex: none; }
   .g-btn { font: inherit; font-size: 12px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; padding: 8px 14px; border: 1px solid var(--green); border-radius: 10px 0; background: var(--white); color: var(--green); cursor: pointer; }
+  .g-note-cta { display: block; margin: 8px 0 0; }
   .g-note { margin: 12px auto 0; max-width: 900px; padding: 10px 16px; background: var(--blush); border-radius: 12px 0; font-size: 14px; text-align: center; }
   .g-main { padding: 6px clamp(8px, 3vw, 56px) 40px; overflow-x: clip; }
   .g-sec { scroll-margin-top: 60px; }

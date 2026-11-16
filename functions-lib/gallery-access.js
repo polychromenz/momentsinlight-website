@@ -113,7 +113,13 @@ export async function enterGallery(env, d) {
   const studio = viewer?.role === 'studio';
   if (!g || (g.status !== 'online' && !studio)) return { status: 'gone' };
   const info = publicInfo(g);
-  if (g.expires_at && g.expires_at < today() && !studio) return { status: 'expired', gallery: info, cover: await frontCover(env, g, false) };
+  if (g.expires_at && g.expires_at < today() && !studio) {
+    // The couple's own link (or their saved visit) can keep it online from here (functions-lib/gallery-keep.js).
+    const own = d.key ? await db.prepare('SELECT kind FROM gallery_links WHERE token = ?1 AND gallery_id = ?2').bind(String(d.key), g.id).first()
+      : viewer ? await db.prepare('SELECT kind FROM gallery_links WHERE id = ?1').bind(viewer.link_id).first() : null;
+    const { keepOffer } = await import('./gallery-keep.js');
+    return { status: 'expired', gallery: info, cover: await frontCover(env, g, false), keep: await keepOffer(db, g, own?.kind).catch(() => null) };
+  }
   let link = null;
   if (d.key) link = await db.prepare('SELECT * FROM gallery_links WHERE token = ?1 AND gallery_id = ?2').bind(String(d.key), g.id).first();
   else if (d.code) link = await db.prepare('SELECT * FROM gallery_links WHERE gallery_id = ?1 AND access_code IS NOT NULL AND lower(access_code) = lower(?2)').bind(g.id, String(d.code).trim()).first();

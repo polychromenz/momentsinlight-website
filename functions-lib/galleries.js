@@ -35,7 +35,9 @@ export function crc32(bytes, crc = 0) {
 // ---- Settings (defaults Tony can change in the studio) ----
 export async function gallerySettings(db) {
   const row = await db.prepare(`SELECT value FROM settings WHERE key = 'galleries'`).first();
-  return { expiry_months: 6, extension_price: 4900, extension_months: 12, ...(row ? JSON.parse(row.value) : {}) };
+  // expiry_from: 'date' (the wedding/shoot date) or 'online' (when it goes online); min_months: at least this
+  // long online however old the date (decided with Tony 2026-11-16: 12 months from the date, at least 6).
+  return { expiry_months: 12, expiry_from: 'date', min_months: 6, extension_price: 4900, extension_months: 12, ...(row ? JSON.parse(row.value) : {}) };
 }
 const addMonths = (iso, m) => { const d = new Date(`${iso}T12:00:00Z`); d.setUTCMonth(d.getUTCMonth() + m); return d.toISOString().slice(0, 10); };
 
@@ -57,12 +59,22 @@ export async function createGallery(env, input) {
       input.client_id ? Number(input.client_id) : null, input.job_id ? Number(input.job_id) : null, ['studio', 'lightroom', 'pictime'].includes(input.source) ? input.source : 'studio', now).run();
   return { id, slug };
 }
-/** When a gallery first goes online it gets its expiry date (the default months from today). */
+/** The expiry a gallery gets when it first goes online (Galleries > Defaults): the free months from its
+ *  wedding/shoot date (its own, else its client's), or from today, but at least min_months from today. */
+export async function firstExpiry(db, g, s) {
+  if (!s.expiry_months) return null;
+  const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Pacific/Auckland' });
+  const date = g.event_date || (g.job_id ? (await db.prepare('SELECT event_date FROM jobs WHERE id = ?1').bind(g.job_id).first())?.event_date : null);
+  const from = s.expiry_from === 'date' && date ? addMonths(date, s.expiry_months) : addMonths(today, s.expiry_months);
+  const least = addMonths(today, s.min_months ?? 0);
+  return from > least ? from : least;
+}
+/** When a gallery first goes online it gets its expiry date (firstExpiry). */
 export async function setOnline(env, galleryId) {
-  const g = await env.DB.prepare('SELECT status, expires_at FROM photo_galleries WHERE id = ?1').bind(galleryId).first();
+  const g = await env.DB.prepare('SELECT status, expires_at, event_date, job_id FROM photo_galleries WHERE id = ?1').bind(galleryId).first();
   if (!g) throw new Error('That gallery doesn’t exist.');
   const s = await gallerySettings(env.DB);
-  const expires = g.expires_at ?? (s.expiry_months ? addMonths(new Date().toISOString().slice(0, 10), s.expiry_months) : null);
+  const expires = g.expires_at ?? (await firstExpiry(env.DB, g, s));
   await env.DB.prepare(`UPDATE photo_galleries SET status = 'online', expires_at = ?2, updated_at = ?3 WHERE id = ?1`).bind(galleryId, expires, new Date().toISOString()).run();
   return expires;
 }

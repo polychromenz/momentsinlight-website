@@ -1,5 +1,6 @@
 // Gallery defaults: how long galleries stay online and the price to keep one longer.
-//   PUT /api/studio/galleries/settings { expiry_months, extension_price (cents), extension_months, print_release }
+//   PUT /api/studio/galleries/settings { expiry_months, expiry_from ('date'|'online'), min_months, extension_price (cents),
+//                                        extension_months, print_release }
 import { json } from '../../../../functions-lib/studio.js';
 import { gallerySettings } from '../../../../functions-lib/galleries.js';
 
@@ -8,6 +9,8 @@ export async function onRequestPut({ request, env }) {
   const s = await gallerySettings(env.DB);
   const n = (v, max) => Math.min(max, Math.max(0, Math.round(Number(v))));
   if (d.expiry_months !== undefined) s.expiry_months = n(d.expiry_months, 120);
+  if (d.expiry_from !== undefined) s.expiry_from = d.expiry_from === 'online' ? 'online' : 'date';
+  if (d.min_months !== undefined) s.min_months = n(d.min_months, 120);
   if (d.extension_price !== undefined) s.extension_price = n(d.extension_price, 1000000);
   if (d.extension_months !== undefined) s.extension_months = n(d.extension_months, 120) || 12;
   if (d.print_release !== undefined) s.print_release = String(d.print_release).trim().slice(0, 4000);
