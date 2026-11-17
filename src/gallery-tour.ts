@@ -12,7 +12,11 @@ const markSeen = () => { try { localStorage.setItem(SEEN, '1'); } catch { /* fin
 const esc = (s: string) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
 const shown = (el: Element | null) => !!el && !(el as HTMLElement).hidden && (el as HTMLElement).offsetParent !== null && el.getBoundingClientRect().width > 0;
 
+// Where the visitor was when the tour began (kept if the tour is started again while it's open).
+let openFrom: number | null = null;
+
 export function startTour(o: TourOptions) {
+  if (!document.querySelector('.tour')) openFrom = null;
   document.querySelector('.tour')?.remove();
   const t = (i: number) => o.thumbs[i % Math.max(1, o.thumbs.length)] ?? '';
   const img = (i: number, cls = '') => (t(i) ? `<img class="${cls}" src="${esc(t(i))}" alt="" />` : `<span class="${cls} blank"></span>`);
@@ -110,6 +114,8 @@ export function startTour(o: TourOptions) {
   };
   const close = () => {
     markSeen();
+    openFrom = null;
+    scrollTo({ top: startY }); // back to where they were (e.g. the cover)
     removeEventListener('resize', place);
     removeEventListener('scroll', place, true);
     removeEventListener('keydown', key);
@@ -128,6 +134,11 @@ export function startTour(o: TourOptions) {
   addEventListener('resize', place);
   addEventListener('scroll', place, true);
   addEventListener('keydown', key);
+  // Start past the cover, with the photos showing and the top bar stuck at the top of the screen.
+  const startY = openFrom ?? scrollY;
+  openFrom = startY;
+  const photos = document.querySelector<HTMLElement>('#photos');
+  if (photos && photos.getBoundingClientRect().top > 0) scrollTo({ top: scrollY + photos.getBoundingClientRect().top });
   show(0);
   (root.querySelector('.tour-next') as HTMLButtonElement).focus();
 }
