@@ -276,7 +276,13 @@ import { TOUR_CSS } from '../gallery-tour-css';
     }
     $('.gallery').hidden = false;
     draw();
-    if (live() && !tourSeen() && !justKept && !wantKeep) setTimeout(() => { if (!document.querySelector('.lb:not([hidden])')) runTour(); }, 900);
+    // Testing: ?tour=always makes it run on every visit in this browser (on this address), ?tour=off stops that.
+    try {
+      if (params.get('tour') === 'always') localStorage.setItem('mil-tour-always', '1');
+      if (params.get('tour') === 'off') localStorage.removeItem('mil-tour-always');
+    } catch { /* fine */ }
+    const always = (() => { try { return !!localStorage.getItem('mil-tour-always'); } catch { return false; } })();
+    if ((always || (live() && !tourSeen())) && !justKept && !wantKeep) setTimeout(() => { if (!document.querySelector('.lb:not([hidden])')) runTour(); }, 900);
     if (location.hash === '#photos') $('.gallery').scrollIntoView();
   }
 
