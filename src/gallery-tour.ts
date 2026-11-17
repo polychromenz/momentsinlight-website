@@ -69,7 +69,9 @@ export function startTour(o: TourOptions) {
     if (!el || !shown(el)) {
       spot.style.cssText = `left:${vw / 2}px;top:${vh / 2}px;width:0;height:0`;
       hand.style.opacity = '0';
-      card.style.cssText = `left:50%;top:50%;transform:translate(-50%,-50%)`;
+      const cw0 = Math.min(380, vw - 24);
+      card.style.cssText = `left:${(vw - cw0) / 2}px;width:${cw0}px;`;
+      card.style.top = `${Math.max(12, (vh - card.offsetHeight) / 2)}px`;
       return;
     }
     const r = el.getBoundingClientRect();
@@ -148,14 +150,18 @@ export function startTour(o: TourOptions) {
     else if (e.key === 'ArrowLeft') show(at - 1);
   };
   // Pink hearts float up from Next (the gallery's own selection-bar hearts).
+  // They go on the card, over the button (the button's own label is rewritten each step, which would
+  // remove anything inside it).
   const hearts = (btn: Element) => {
-    const left = 35 + Math.random() * 30;
+    // Where the button is on screen as it's pressed (the card then moves on to the next step).
+    const r = btn.getBoundingClientRect();
+    const x = r.left + r.width * (0.35 + Math.random() * 0.3);
     for (const small of [false, true]) {
       const h = document.createElement('span');
       h.className = small ? 'sb-heart sb-heart--small' : 'sb-heart';
       h.setAttribute('aria-hidden', 'true');
-      h.style.left = `${left + (small ? -12 : 0)}%`;
-      btn.append(h);
+      h.style.cssText = `position:fixed;left:${x - (small ? 22 : 17)}px;top:${r.top - (small ? 6 : 14)}px;bottom:auto;z-index:5`;
+      root.append(h);
       setTimeout(() => h.remove(), 1900);
     }
   };
