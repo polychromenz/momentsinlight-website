@@ -231,6 +231,22 @@ import { TOUR_CSS } from '../gallery-tour-css';
     }).catch(() => {});
   }
 
+  // The tour's select steps: select mode on, and three photos ticked one after another (the bar pops
+  // with its hearts each time); then back as it was. Nothing is saved.
+  let demo: { timers: number[]; was: boolean } | null = null;
+  function demoSelect(on: boolean) {
+    if (on && !demo) {
+      demo = { timers: [], was: selecting };
+      selecting = true; selected.clear(); draw();
+      const phs = [...document.querySelectorAll<HTMLElement>('.g-main .ph')].slice(0, 3);
+      phs.forEach((x, k) => demo!.timers.push(window.setTimeout(() => {
+        selected.add(x.dataset.id!); x.classList.add('sel'); drawCounts();
+      }, 500 + k * 650)));
+    } else if (!on && demo) {
+      demo.timers.forEach(clearTimeout);
+      selecting = demo.was; selected.clear(); demo = null; draw();
+    }
+  }
   // The guided tour (src/gallery-tour.ts): the first time on this device, and from the ? button.
   function runTour() {
     const g = view.gallery;
@@ -241,6 +257,7 @@ import { TOUR_CSS } from '../gallery-tour-css';
       names: g.spouse_a && g.spouse_b ? `${g.spouse_a} & ${g.spouse_b}` : g.spouse_a || g.name,
       openLists: () => { if (!dlg('lists').open) listsPanel(false); },
       closeLists: () => { if (dlg('lists').open) dlg('lists').close(); },
+      demoSelect,
     });
   }
   document.addEventListener('click', (e) => { if ((e.target as HTMLElement).closest('[data-tour]') && view) runTour(); });

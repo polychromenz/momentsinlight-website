@@ -5,9 +5,10 @@
 // nothing in the gallery changes.
 // panel: the step shows the real Favourites & lists panel (opened by the page without blocking the tour);
 // whole: spotlight the whole target however tall (the panel), not just its top.
-type Step = { target?: () => Element | null; title: string; text: string; art?: () => string; tap?: boolean; panel?: boolean; whole?: boolean };
+// select: the step shows select mode for real (a few photos ticked one by one), undone afterwards.
+type Step = { target?: () => Element | null; title: string; text: string; art?: () => string; tap?: boolean; panel?: boolean; whole?: boolean; select?: boolean };
 export type TourOptions = { lists: boolean; zip: boolean; couple: boolean; multi: boolean; thumbs: string[]; cover?: string; names: string;
-  openLists?: () => void; closeLists?: () => void };
+  openLists?: () => void; closeLists?: () => void; demoSelect?: (on: boolean) => void };
 
 const SEEN = 'mil-gallery-tour';
 export const tourSeen = () => { try { return !!localStorage.getItem(SEEN); } catch { return true; } };
@@ -35,8 +36,10 @@ export function startTour(o: TourOptions) {
       art: () => `<div class="tour-lists"><span class="tour-chip">♥ Favourites <b>12</b></span><span class="tour-chip d1">For Mum <b>8</b></span><span class="tour-chip d2">Album picks <b>40</b></span></div>` },
     { when: o.lists, panel: true, whole: true, target: () => document.querySelector('[data-lists-dlg] .dlg-body'), title: 'Your lists', text: 'Here they all are. View a list, download it, share it with family, or send it to me (handy for album and print choices).' },
     { when: o.lists, panel: true, target: () => document.querySelector('[data-lists-dlg] .new-list'), title: 'Make a new list', text: 'Type a name, like “For Mum” or “Album picks”, and press Add list. Then add photos with the heart on each photo, or with Select.' },
-    { when: o.lists, target: () => document.querySelector('[data-select]'), tap: true, title: 'Choose several at once', text: 'Press Select, tap the photos you want, then save them to a list in one go' + (o.zip ? ' or download just those.' : '.'),
+    { when: o.lists, target: () => document.querySelector('[data-select]'), tap: true, title: 'Choose several at once', text: 'Press Select, then tap the photos you want. Each one gets a tick.',
       art: () => `<div class="tour-sel">${[0, 1, 2, 3].map((i) => `<span class="tour-t${i < 3 ? ' on' : ''}" style="--d:${i * 0.35}s">${img(i + 1)}<i>✓</i></span>`).join('')}</div>` },
+    { when: o.lists, select: true, target: () => document.querySelector('.g-main .ph.sel') ?? document.querySelector('.g-main .ph'), title: 'Tap to tick them', text: 'Like this: tap each photo you want and it’s ticked. Tap it again to untick it.' },
+    { when: o.lists, select: true, target: () => document.querySelector('.selbar [data-sel-list]'), tap: true, title: 'Save them to a list', text: 'Then press Save to list and choose a list, or make a new one. ' + (o.zip ? 'You can download just those photos from here too.' : 'Press Done at the top when you’ve finished.') },
     { when: o.lists, panel: true, target: () => document.querySelector('[data-lists-dlg] [data-share-list]') ?? document.querySelector('[data-lists-dlg] .dlg-body'), tap: true, title: 'Share a list', text: 'Press Share next to a list to get a link for it. Family see just the photos in that list, which is perfect for choosing album or print photos together.',
       art: () => `<div class="tour-share"><div class="tour-row">${img(4, 'tour-mini')}<span>For Mum <small>8 photos</small></span><span class="tour-btn">Share</span></div><span class="tour-copied">Link copied ✓</span></div>` },
     { when: o.zip, target: () => document.querySelector('[data-dl]'), tap: true, title: 'Download your photos', text: 'Download the whole gallery, a section, or just a list. Keep a copy somewhere safe: your gallery won’t be online forever.' },
@@ -102,8 +105,9 @@ export function startTour(o: TourOptions) {
     root.querySelector<HTMLButtonElement>('.tour-back')!.hidden = at === 0;
     root.querySelector<HTMLButtonElement>('.tour-next')!.textContent = at === steps.length - 1 ? 'Done' : 'Next';
     card.classList.remove('in'); void card.offsetWidth; card.classList.add('in');
-    // The real lists panel for the lists steps, closed again for the others.
+    // The real lists panel for the lists steps, and select mode for the select steps; undone for the others.
     if (s.panel) o.openLists?.(); else o.closeLists?.();
+    o.demoSelect?.(!!s.select);
     const el = s.target?.();
     if (el && (el as HTMLElement).closest('dialog')) {
       // Inside the lists panel: scroll the panel to it (e.g. the new-list box at the bottom), unless it's the whole panel.
@@ -129,6 +133,7 @@ export function startTour(o: TourOptions) {
     markSeen();
     openFrom = null;
     o.closeLists?.();
+    o.demoSelect?.(false);
     scrollTo({ top: startY }); // back to where they were (e.g. the cover)
     removeEventListener('resize', place);
     removeEventListener('scroll', place, true);
@@ -142,7 +147,19 @@ export function startTour(o: TourOptions) {
     else if (e.key === 'ArrowRight' || e.key === 'Enter') { e.preventDefault(); at === steps.length - 1 ? close() : show(at + 1); }
     else if (e.key === 'ArrowLeft') show(at - 1);
   };
-  root.querySelector('.tour-next')!.addEventListener('click', () => (at === steps.length - 1 ? close() : show(at + 1)));
+  // Pink hearts float up from Next (the gallery's own selection-bar hearts).
+  const hearts = (btn: Element) => {
+    const left = 35 + Math.random() * 30;
+    for (const small of [false, true]) {
+      const h = document.createElement('span');
+      h.className = small ? 'sb-heart sb-heart--small' : 'sb-heart';
+      h.setAttribute('aria-hidden', 'true');
+      h.style.left = `${left + (small ? -12 : 0)}%`;
+      btn.append(h);
+      setTimeout(() => h.remove(), 1900);
+    }
+  };
+  root.querySelector('.tour-next')!.addEventListener('click', (e) => { hearts(e.currentTarget as Element); at === steps.length - 1 ? close() : show(at + 1); });
   root.querySelector('.tour-back')!.addEventListener('click', () => show(at - 1));
   root.querySelector('.tour-skip')!.addEventListener('click', close);
   addEventListener('resize', place);
