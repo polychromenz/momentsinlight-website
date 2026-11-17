@@ -3,8 +3,11 @@
 // link allows are shown. It shows itself the first time someone opens a gallery on a device
 // (remembered in localStorage) and runs again from the gallery's "?" button. It only demonstrates:
 // nothing in the gallery changes.
-type Step = { target?: () => Element | null; title: string; text: string; art?: () => string; tap?: boolean };
-export type TourOptions = { lists: boolean; zip: boolean; couple: boolean; multi: boolean; thumbs: string[]; cover?: string; names: string };
+// panel: the step shows the real Favourites & lists panel (opened by the page without blocking the tour);
+// whole: spotlight the whole target however tall (the panel), not just its top.
+type Step = { target?: () => Element | null; title: string; text: string; art?: () => string; tap?: boolean; panel?: boolean; whole?: boolean };
+export type TourOptions = { lists: boolean; zip: boolean; couple: boolean; multi: boolean; thumbs: string[]; cover?: string; names: string;
+  openLists?: () => void; closeLists?: () => void };
 
 const SEEN = 'mil-gallery-tour';
 export const tourSeen = () => { try { return !!localStorage.getItem(SEEN); } catch { return true; } };
@@ -28,11 +31,13 @@ export function startTour(o: TourOptions) {
     { target: firstPhoto, tap: true, title: 'See every photo big', text: 'Tap any photo to open it full screen. Swipe (or use the arrow keys) to move through them, or press Slideshow to sit back and watch.' },
     { when: o.lists, target: firstPhoto, title: 'Keep your favourites', text: 'Tap the heart on any photo you love. Your favourites are kept together, ready to come back to.',
       art: () => `<div class="tour-fav">${img(0, 'tour-ph')}<span class="tour-heart">♥</span></div>` },
-    { when: o.lists, target: () => document.querySelector('[data-lists]'), tap: true, title: 'Make lists', text: 'Your favourites and lists live here. Make a list for anything: photos for Mum, album picks, prints for the wall.',
+    { when: o.lists, target: () => document.querySelector('[data-lists]'), tap: true, title: 'Favourites and lists', text: 'Tap the ♥ at the top to open your favourites and all your lists. It’s more than favourites: you can make as many lists as you like.',
       art: () => `<div class="tour-lists"><span class="tour-chip">♥ Favourites <b>12</b></span><span class="tour-chip d1">For Mum <b>8</b></span><span class="tour-chip d2">Album picks <b>40</b></span></div>` },
+    { when: o.lists, panel: true, whole: true, target: () => document.querySelector('[data-lists-dlg] .dlg-body'), title: 'Your lists', text: 'Here they all are. View a list, download it, share it with family, or send it to me (handy for album and print choices).' },
+    { when: o.lists, panel: true, target: () => document.querySelector('[data-lists-dlg] .new-list'), title: 'Make a new list', text: 'Type a name, like “For Mum” or “Album picks”, and press Add list. Then add photos with the heart on each photo, or with Select.' },
     { when: o.lists, target: () => document.querySelector('[data-select]'), tap: true, title: 'Choose several at once', text: 'Press Select, tap the photos you want, then save them to a list in one go' + (o.zip ? ' or download just those.' : '.'),
       art: () => `<div class="tour-sel">${[0, 1, 2, 3].map((i) => `<span class="tour-t${i < 3 ? ' on' : ''}" style="--d:${i * 0.35}s">${img(i + 1)}<i>✓</i></span>`).join('')}</div>` },
-    { when: o.lists, target: () => document.querySelector('[data-lists]'), title: 'Share a list', text: 'Open your lists and press Share next to one. Family see just the photos in that list, which is perfect for choosing album or print photos together.',
+    { when: o.lists, panel: true, target: () => document.querySelector('[data-lists-dlg] [data-share-list]') ?? document.querySelector('[data-lists-dlg] .dlg-body'), tap: true, title: 'Share a list', text: 'Press Share next to a list to get a link for it. Family see just the photos in that list, which is perfect for choosing album or print photos together.',
       art: () => `<div class="tour-share"><div class="tour-row">${img(4, 'tour-mini')}<span>For Mum <small>8 photos</small></span><span class="tour-btn">Share</span></div><span class="tour-copied">Link copied ✓</span></div>` },
     { when: o.zip, target: () => document.querySelector('[data-dl]'), tap: true, title: 'Download your photos', text: 'Download the whole gallery, a section, or just a list. Keep a copy somewhere safe: your gallery won’t be online forever.' },
     { when: o.couple, target: () => document.querySelector('[data-share-family]'), tap: true, title: 'Share with family and friends', text: 'Get a link to send to family and friends so they can enjoy the photos too (they can’t download unless you’ve asked me to allow it).' },
@@ -66,8 +71,8 @@ export function startTour(o: TourOptions) {
     }
     const r = el.getBoundingClientRect();
     const pad = 8;
-    const big = r.height > vh * 0.5; // a photo bigger than half the screen: show only the top part
-    const h = big ? Math.min(r.height, vh * 0.45) : r.height;
+    const big = !s.whole && r.height > vh * 0.5; // a photo bigger than half the screen: show only the top part
+    const h = big ? Math.min(r.height, vh * 0.45) : s.whole ? Math.min(r.bottom, vh - pad) - Math.max(r.top, pad) : r.height;
     spot.style.cssText = `left:${r.left - pad}px;top:${r.top - pad}px;width:${r.width + pad * 2}px;height:${h + pad * 2}px`;
     hand.style.opacity = s.tap ? '1' : '0';
     hand.style.left = `${r.left + Math.min(r.width / 2, 60)}px`;
@@ -97,8 +102,16 @@ export function startTour(o: TourOptions) {
     root.querySelector<HTMLButtonElement>('.tour-back')!.hidden = at === 0;
     root.querySelector<HTMLButtonElement>('.tour-next')!.textContent = at === steps.length - 1 ? 'Done' : 'Next';
     card.classList.remove('in'); void card.offsetWidth; card.classList.add('in');
+    // The real lists panel for the lists steps, closed again for the others.
+    if (s.panel) o.openLists?.(); else o.closeLists?.();
     const el = s.target?.();
-    if (el && shown(el)) {
+    if (el && (el as HTMLElement).closest('dialog')) {
+      // Inside the lists panel: scroll the panel to it (e.g. the new-list box at the bottom), unless it's the whole panel.
+      if (!s.whole) (el as HTMLElement).scrollIntoView({ block: 'center' });
+      setTimeout(place, 60);
+      setTimeout(place, 300);
+    }
+    else if (el && shown(el)) {
       // Buttons in the top bar are always on screen (it's sticky); scroll their row sideways on phones.
       // Anything else (a photo): scroll it to just under the bar, leaving room for the card below it.
       const inBar = !!(el as HTMLElement).closest('.g-bar');
@@ -108,13 +121,14 @@ export function startTour(o: TourOptions) {
         const bar = document.querySelector('.g-bar')?.getBoundingClientRect().bottom ?? 0;
         if (r.top < bar + 12 || r.top > innerHeight * 0.4) scrollTo({ top: scrollY + r.top - bar - 24 });
       }
-      requestAnimationFrame(place);
+      setTimeout(place, 60);
     }
     place();
   };
   const close = () => {
     markSeen();
     openFrom = null;
+    o.closeLists?.();
     scrollTo({ top: startY }); // back to where they were (e.g. the cover)
     removeEventListener('resize', place);
     removeEventListener('scroll', place, true);

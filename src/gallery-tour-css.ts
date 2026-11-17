@@ -13,7 +13,8 @@ export const TOUR_CSS = `
   @keyframes tour-card { from { opacity: 0; transform: translateY(6px); } }
   .tour-card h2 { margin: 4px 0 6px; font-size: 20px; font-weight: 400; letter-spacing: 0.01em; }
   .tour-card p { margin: 0 0 12px; font-size: 15px; line-height: 1.55; color: #4a4a44; }
-  .tour-foot { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+  .tour-foot { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px; }
+  .tour-btns { margin-left: auto; }
   .tour-dots { display: flex; gap: 5px; }
   .tour-dots i { width: 7px; height: 7px; border-radius: 50%; background: #e3ddd2; }
   .tour-dots i.on { background: #5a5e3b; }

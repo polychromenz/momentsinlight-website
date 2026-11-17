@@ -239,6 +239,8 @@ import { TOUR_CSS } from '../gallery-tour-css';
       multi: view.sections.length > 1, thumbs: view.images.slice(0, 8).map((i) => i.thumb),
       cover: view.cover?.web || view.cover?.thumb || undefined,
       names: g.spouse_a && g.spouse_b ? `${g.spouse_a} & ${g.spouse_b}` : g.spouse_a || g.name,
+      openLists: () => { if (!dlg('lists').open) listsPanel(false); },
+      closeLists: () => { if (dlg('lists').open) dlg('lists').close(); },
     });
   }
   document.addEventListener('click', (e) => { if ((e.target as HTMLElement).closest('[data-tour]') && view) runTour(); });
@@ -620,10 +622,11 @@ import { TOUR_CSS } from '../gallery-tour-css';
   // ---- Favourites, lists, select mode, hiding and downloads (1d) ----
   const plural = (n: number, w = 'photo') => `${n} ${w}${n === 1 ? '' : 's'}`;
   const dlg = (name: string) => $<HTMLDialogElement>(`[data-${name}-dlg]`);
-  function openDlg(name: string, html: string) {
+  // modal false: opened without blocking the page (the guided tour shows the lists panel this way).
+  function openDlg(name: string, html: string, modal = true) {
     const d = dlg(name);
     $('.dlg-body', d).innerHTML = `<button type="button" class="dlg-x" data-close-dlg aria-label="Close">✕</button>${html}`;
-    if (!d.open) d.showModal();
+    if (!d.open) modal ? d.showModal() : d.show();
   }
   const closeDlgs = () => document.querySelectorAll<HTMLDialogElement>('.g-dlg[open]').forEach((d) => d.close());
   let shownN = 0; // photos selected when the bar was last drawn
@@ -682,11 +685,11 @@ import { TOUR_CSS } from '../gallery-tour-css';
         ${l.kind === 'custom' && !locked ? `<button type="button" data-rename-list="${l.id}">Rename</button><button type="button" data-del-list="${l.id}">Delete</button>` : ''}
       </div></li>`;
   }
-  function listsPanel() {
+  function listsPanel(modal = true) {
     openDlg('lists', `<h2>Favourites &amp; lists</h2>
       <p class="dlg-hint">Tap ♡ on any photo to make it a favourite. Make lists for anything (“For Mum”, “Album picks”), share them, download them, or send one to Tony.</p>
       <ul class="lc-list">${lists().map(listCard).join('') || '<li class="muted">No favourites yet.</li>'}</ul>
-      <form class="new-list" data-new-list><input name="name" placeholder="New list name, e.g. For Mum" maxlength="60" required /><button class="g-cta" type="submit">Add list</button></form>`);
+      <form class="new-list" data-new-list><input name="name" placeholder="New list name, e.g. For Mum" maxlength="60" required /><button class="g-cta" type="submit">Add list</button></form>`, modal);
   }
   let picking: string[] = [];
   function pickList(ids: string[]) {
@@ -897,6 +900,8 @@ import { TOUR_CSS } from '../gallery-tour-css';
   .g-form--code { text-align: center; }
 
   /* The gallery */
+  /* The lists panel as the tour shows it (opened without blocking the page): pinned to the right like normal. */
+  .g-dlg--side[open]:not(:modal) { position: fixed; inset: 0 0 0 auto; margin: 0; z-index: 150; overflow: auto; }
   .g-btn--help { min-width: 36px; padding-left: 0; padding-right: 0; font-weight: 600; }
   .g-bar { position: sticky; top: 0; z-index: 30; display: flex; align-items: center; gap: 14px; padding: 8px clamp(10px, 2vw, 24px); background: rgb(255 255 255 / 0.96); backdrop-filter: blur(6px); border-bottom: 1px solid #ecebe6; }
   .gv-preview:not([hidden]) ~ .gallery .g-bar { top: 34px; }
