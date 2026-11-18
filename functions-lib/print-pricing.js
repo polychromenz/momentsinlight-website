@@ -9,12 +9,34 @@
 export const KINDS = {
   'Prints': 'print', 'Panoramic Prints': 'print', 'Deckled Prints': 'deckled', 'Matted Prints': 'matted',
   'Canvas': 'canvas', 'Frames': 'frame', 'Float Frames': 'float', 'Matted Frames': 'matted-frame',
-  'Circular Frames': 'circle', 'Gallery Boards': 'board',
+  'Circular Frames': 'circle', 'Gallery Boards': 'board', 'Print Pack': 'pack',
 };
 export const kindOf = (category) => KINDS[category] ?? 'other';
 export const SOLD = new Set(Object.values(KINDS));
 /** Paper prints go in an envelope; everything else is wall art (the lab's higher freight). */
-export const PAPER = new Set(['print', 'deckled', 'matted']);
+export const PAPER = new Set(['print', 'deckled', 'matted', 'pack']);
+
+/** Print quality (decided with Tony 2026-11-18): a warning under 200 dpi, and crops can't go under 150. */
+export const DPI_WARN = 200;
+export const DPI_MIN = 150;
+/** How many prints a pack has ("24-Print Pack 10x15cm"). */
+export const packCount = (p) => Number(String(p?.name ?? '').match(/(\d+)\s*-?\s*Print Pack/i)?.[1]) || 24;
+/** The smallest crop width (fraction of the photo) that still prints at DPI_MIN. origW: the original's width in px. */
+export const minCropW = (origW, p, landscape) => {
+  const cm = landscape ? p.h_cm : p.w_cm;
+  return origW && cm ? ((cm / 2.54) * DPI_MIN) / origW : 0;
+};
+/** A pack's photos with how many prints of each, filled up to `count` by repeating them evenly. */
+export function fillPack(picks, count) {
+  const out = picks.map((x) => ({ ...x, n: Math.max(0, Math.floor(Number(x.n) || 0)) }));
+  if (!out.length) return out;
+  let left = count - out.reduce((a, x) => a + x.n, 0);
+  while (left > 0) {
+    const low = out.reduce((m, x) => (x.n < m.n ? x : m), out[0]);
+    low.n++; left--;
+  }
+  return out;
+}
 
 // A-sizes in cm (short side first).
 const A_SIZES = { A2: [42, 59.4], A3: [29.7, 42], A4: [21, 29.7] };
@@ -94,14 +116,15 @@ export function centredCrop(pr, r) {
   const h = pr / r; return { x: 0, y: (1 - h) / 2, w: 1, h };
 }
 
-/** A crop sent by a browser, made safe (inside the photo, the right shape); fallback: centred. */
-export function cleanCrop(c, pr, r) {
+/** A crop sent by a browser, made safe (inside the photo, the right shape, not smaller than minW
+ *  of the photo's width when given); fallback: centred. */
+export function cleanCrop(c, pr, r, minW = 0) {
   const n = (v) => (Number.isFinite(Number(v)) ? Number(v) : NaN);
   let { x, y, w, h } = { x: n(c?.x), y: n(c?.y), w: n(c?.w), h: n(c?.h) };
   if (![x, y, w, h].every(Number.isFinite) || w <= 0 || h <= 0) return centredCrop(pr, r);
   // Keep the shape (w·pr / h = r), at most the whole photo, at least 15% of it.
   const full = centredCrop(pr, r);
-  w = Math.min(full.w, Math.max(full.w * 0.15, w));
+  w = Math.min(full.w, Math.max(full.w * 0.15, minW, w));
   h = (w * pr) / r;
   x = Math.min(1 - w, Math.max(0, x));
   y = Math.min(1 - h, Math.max(0, y));

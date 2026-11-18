@@ -281,7 +281,7 @@ import { TOUR_CSS } from '../gallery-tour-css';
     $('[data-dl]').hidden = !(live() && view.rights.zip);
     $('.g-vendor').hidden = view.rights.kind !== 'vendor';
     $('[data-share-family]').hidden = !(live() && view.rights.kind === 'main_client');
-    if (shopOn() && !shop) shop = initShop({ slug, viewer: () => viewer, images: () => view.images, shop: () => (shopOn() ? view.shop ?? null : null), toast });
+    if (shopOn() && !shop) shop = initShop({ slug, viewer: () => viewer, images: () => view.images, favourites: () => favList()?.ids ?? [], shop: () => (shopOn() ? view.shop ?? null : null), toast });
     shop?.drawCartButton();
     const printed = shop?.afterPayment();
     gate(`<a class="g-cta" href="#photos">View the gallery</a>`);

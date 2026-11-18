@@ -67,6 +67,7 @@ export function mockup(p: Product, src: string, crop: Crop, landscape: boolean, 
   }
   if (k === 'board') return `<div class="mk mk--board" style="${box};--d:${px(depth)}">${photo}</div>`;
   if (k === 'print') return `<div class="mk mk--print" style="${box}">${photo}</div>`;
+  if (k === 'pack') return `<div class="mk mk--print mk--pack" style="${box}">${photo}</div>`;
   if (k === 'deckled') return `<div class="mk mk--deckled" style="${box};padding:${px(mat)};clip-path:${deckle}">${photo}</div>`;
   if (k === 'matted') return `<div class="mk mk--matted" style="${box};padding:${px(mat)}"><div class="mk-open">${photo}</div></div>`;
   const fr = FRAME[p.type] ?? FRAME.Black;
@@ -80,6 +81,9 @@ export const MOCKUP_CSS = `
 .mk-photo img{position:absolute;max-width:none;display:block;user-select:none;-webkit-user-select:none;pointer-events:none}
 .mk-photo--round{border-radius:50%}
 .mk--print{box-shadow:0 1px 2px rgb(0 0 0/.18),0 12px 28px -12px rgb(0 0 0/.45);background:#fff}
+.mk--pack::before,.mk--pack::after{content:"";position:absolute;inset:0;background:#fff;box-shadow:0 1px 3px rgb(0 0 0/.2);z-index:-1}
+.mk--pack::before{transform:rotate(-5deg) translate(-6%,3%)}.mk--pack::after{transform:rotate(4deg) translate(5%,2%)}
+.mk--pack{isolation:isolate}
 .mk--deckled{background:#fbfaf6;filter:drop-shadow(0 6px 10px rgb(0 0 0/.22))}
 .mk--matted{background:#fbfaf6;box-shadow:0 1px 2px rgb(0 0 0/.15),0 14px 30px -14px rgb(0 0 0/.45)}
 .mk-open{width:100%;height:100%;box-shadow:inset 0 0 0 1px rgb(0 0 0/.08),0 0 0 3px #fff,0 0 0 4px rgb(0 0 0/.06);position:relative}
@@ -113,35 +117,39 @@ export function styleMockups() {
  * The crop editor: the whole photo with the print's shape on top. Drag to move it; zoom (0–1, from
  * the biggest crop to a third of it) with a slider the caller draws. Calls onChange with the new crop.
  */
-export function cropEditor(host: HTMLElement, src: string, pr: number, r: number, crop: Crop, onChange: (c: Crop) => void, round = false) {
+export function cropEditor(host: HTMLElement, src: string, pr: number, r: number, crop: Crop, onChange: (c: Crop) => void, round = false, minW = 0) {
   const W = host.clientWidth || 600, H = host.clientHeight || 400;
   const s = Math.min(W / pr, H); // the photo's height in px
   const w = s * pr, h = s;
   host.innerHTML = `<div class="crop" style="width:${w}px;height:${h}px"><img src="${esc(src)}" alt="" draggable="false" /><div class="crop-box${round ? ' crop-box--round' : ''}"></div></div>`;
   const box = host.querySelector<HTMLElement>('.crop-box')!;
-  let c = cleanCrop(crop, pr, r);
+  let c = cleanCrop(crop, pr, r, minW);
   const full = centredCrop(pr, r);
+  const floor = Math.min(full.w, Math.max(full.w * 0.34, minW)); // the most it zooms in
   const draw = () => Object.assign(box.style, { left: `${c.x * w}px`, top: `${c.y * h}px`, width: `${c.w * w}px`, height: `${c.h * h}px` });
   draw();
   let start: { x: number; y: number; c: Crop } | null = null;
   box.addEventListener('pointerdown', (e) => { start = { x: e.clientX, y: e.clientY, c: { ...c } }; box.setPointerCapture(e.pointerId); e.preventDefault(); });
   box.addEventListener('pointermove', (e) => {
     if (!start) return;
-    c = cleanCrop({ ...start.c, x: start.c.x + (e.clientX - start.x) / w, y: start.c.y + (e.clientY - start.y) / h }, pr, r);
+    c = cleanCrop({ ...start.c, x: start.c.x + (e.clientX - start.x) / w, y: start.c.y + (e.clientY - start.y) / h }, pr, r, minW);
     draw();
   });
   const end = () => { if (start) { start = null; onChange(c); } };
   box.addEventListener('pointerup', end);
   box.addEventListener('pointercancel', end);
   return {
-    /** 0 = the biggest crop, 1 = the smallest (a third of it), keeping the middle where it is. */
+    /** 0 = the biggest crop, 1 = the smallest allowed (a third of it, or as far as the print quality
+     *  allows: minW), keeping the middle where it is. */
     zoom(z: number) {
       const cx = c.x + c.w / 2, cy = c.y + c.h / 2;
-      const nw = full.w * (1 - 0.66 * z), nh = (nw * pr) / r;
-      c = cleanCrop({ x: cx - nw / 2, y: cy - nh / 2, w: nw, h: nh }, pr, r);
+      const nw = full.w - (full.w - floor) * z, nh = (nw * pr) / r;
+      c = cleanCrop({ x: cx - nw / 2, y: cy - nh / 2, w: nw, h: nh }, pr, r, minW);
       draw(); onChange(c);
     },
-    zoomOf: () => (1 - c.w / full.w) / 0.66,
+    zoomOf: () => (full.w > floor ? (full.w - c.w) / (full.w - floor) : 0),
+    /** Zooming in is possible at all (the photo has pixels to spare for this size). */
+    canZoom: full.w - floor > 0.01,
     get: () => c,
   };
 }

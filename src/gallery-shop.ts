@@ -1,36 +1,41 @@
-// Prints in the client gallery (MIL Galleries 3a; server: functions-lib/prints.js). From a photo
-// (lightbox "Order a print") or a selection ("Order prints"): choose a product (paper prints or wall
-// art), paper or frame colour and size, see the photo in it, set the crop, add to the cart; the cart
-// goes to Stripe Checkout, which takes the delivery address. Only Tony sees it until he switches it on;
-// his studio visits can also place test orders without paying.
+// Prints in the client gallery (MIL Galleries 3a; server: functions-lib/prints.js).
+// Three ways in, like Pic-Time: the Shop button (product cards shown with the couple's own photos,
+// then choose photos), "Order a print" on a photo, or "Order prints" for a selection. Then choose
+// the product, paper or frame colour and size, see the photo in it, set the crop (never below
+// 150 dpi; a warning under 200), and add to the cart. Print packs take up to 24 photos, repeated to
+// fill the pack. The cart goes to Stripe Checkout, which takes the delivery address. Only Tony sees
+// it until he switches it on; his studio visits can also place test orders without paying.
 import { mockup, cropEditor, styleMockups, croppedPhoto, type Product, type Crop } from './prints/mockup';
-import { orderTotals, productTotal, ratioOf, centredCrop, cleanCrop, dpi, money, PAPER } from '../functions-lib/print-pricing.js';
+import { orderTotals, productTotal, ratioOf, centredCrop, cleanCrop, dpi, money, minCropW, packCount, fillPack, DPI_WARN, DPI_MIN, PAPER } from '../functions-lib/print-pricing.js';
 
-type Img = { id: string; w: number; h: number; thumb: string; web: string };
+type Img = { id: string; w: number; h: number; thumb: string; web: string; hero?: number; s?: number };
 export type Shop = { products: Product[]; freight_prints: number; freight_wall: number; free_over: number; intro: string; trial: { live: boolean } | null };
-type Line = { key: string; image_id: string; product_id: number; qty: number; crop: Crop; landscape: boolean };
-type Ctx = { slug: string; viewer: () => string; images: () => Img[]; shop: () => Shop | null; toast: (m: string) => void };
+type PackPhoto = { image_id: string; n: number; crop: Crop; landscape: boolean };
+type Line = { key: string; image_id: string; product_id: number; qty: number; crop: Crop; landscape: boolean; pack?: PackPhoto[] };
+type Ctx = { slug: string; viewer: () => string; images: () => Img[]; favourites: () => string[]; shop: () => Shop | null; toast: (m: string) => void };
 
 const esc = (s: unknown) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
 const nzd = (c: number) => money(c).replace(/\.00$/, '');
 const plural = (n: number, w: string) => `${n} ${w}${n === 1 ? '' : 's'}`;
 const GROUPS: [string, string[]][] = [
-  ['Prints', ['Prints', 'Deckled Prints', 'Panoramic Prints', 'Matted Prints']],
-  ['Wall art', ['Canvas', 'Frames', 'Matted Frames', 'Float Frames', 'Circular Frames', 'Gallery Boards']],
+  ['Prints', ['Prints', 'Print Pack', 'Deckled Prints', 'Panoramic Prints', 'Matted Prints']],
+  ['Wall art', ['Frames', 'Matted Frames', 'Float Frames', 'Circular Frames', 'Canvas', 'Gallery Boards']],
 ];
-const NICE: Record<string, string> = { 'Prints': 'Photo prints', 'Deckled Prints': 'Deckled edge', 'Panoramic Prints': 'Panoramic', 'Matted Prints': 'Print in a mat', 'Canvas': 'Canvas', 'Frames': 'Framed', 'Matted Frames': 'Framed with mat', 'Float Frames': 'Float frame', 'Circular Frames': 'Circle frame', 'Gallery Boards': 'Gallery board' };
+const NICE: Record<string, string> = { 'Prints': 'Photo prints', 'Print Pack': 'Print pack', 'Deckled Prints': 'Deckled edge', 'Panoramic Prints': 'Panoramic', 'Matted Prints': 'Matted print', 'Canvas': 'Canvas', 'Frames': 'Framed print', 'Matted Frames': 'Framed with mat', 'Float Frames': 'Float frame', 'Circular Frames': 'Circle frame', 'Gallery Boards': 'Gallery board' };
 const ABOUT: Record<string, string> = {
   'Prints': 'Professional photo prints. Fine Art is a heavy cotton rag paper with a soft texture; Matte has no shine; Semi Gloss has a gentle sheen and deep colour.',
+  'Print Pack': 'A set of 24 prints, one size, from up to 24 of your photos. Choose fewer and your favourites are repeated to fill the pack.',
   'Deckled Prints': 'Fine art paper with a hand-torn edge, for a soft, timeless look.',
   'Panoramic Prints': 'A long, wide print for panoramic photos.',
-  'Matted Prints': 'A print set in a white mat, ready to put in a standard frame.',
+  'Matted Prints': 'A thick archival print set in a white mat, to display on its own or in a frame.',
   'Canvas': 'Gallery-wrapped canvas on a wooden frame, ready to hang. The edge is the photo itself (Natural) or a colour.',
-  'Frames': 'A framed print behind glass, ready to hang.',
-  'Matted Frames': 'A framed print with a white mat around it, behind glass, ready to hang.',
-  'Float Frames': 'The print floats inside the frame with a little space around it.',
+  'Frames': 'A modern box-style frame with the print behind glass, ready to hang.',
+  'Matted Frames': 'A box-style frame with a thick white mat, ready to hang and display anywhere.',
+  'Float Frames': 'A box-style frame with a floating deckled print, ready to hang.',
   'Circular Frames': 'A round, deckled-edge print in a square frame with a mat.',
   'Gallery Boards': 'The print mounted on a rigid board with a dark edge, to lean or hang.',
 };
+const firstSentence = (s: string) => s.split(/(?<=\.)\s/)[0];
 
 export function initShop(ctx: Ctx) {
   const store = `mil-cart-${ctx.slug}`;
@@ -40,219 +45,407 @@ export function initShop(ctx: Ctx) {
   const products = () => ctx.shop()?.products ?? [];
   const byId = () => new Map(products().map((p) => [p.id, p]));
   const img = (id: string) => ctx.images().find((i) => i.id === id);
-  // Lines whose photo or product has gone are dropped quietly.
-  const tidyCart = () => { const m = byId(); cart = cart.filter((l) => m.has(l.product_id) && img(l.image_id)); save(cart); };
+  // Lines whose photos or product have gone are dropped quietly.
+  const tidyCart = () => {
+    const m = byId();
+    cart = cart.filter((l) => m.has(l.product_id) && (l.pack ? l.pack.length && l.pack.every((x) => img(x.image_id)) : img(l.image_id)));
+    save(cart);
+  };
 
-  // ---- The page parts: a Cart button in the top bar, and the two dialogs ----
+  // ---- The page parts: Shop and Cart buttons in the top bar, and the two dialogs ----
   const css = document.createElement('style');
   css.textContent = SHOP_CSS;
   document.head.append(css);
   styleMockups();
   const shopDlg = document.createElement('dialog');
-  shopDlg.className = 'g-dlg shop-dlg'; shopDlg.setAttribute('aria-label', 'Order a print');
+  shopDlg.className = 'g-dlg shop-dlg'; shopDlg.setAttribute('aria-label', 'Prints and wall art');
   const cartDlg = document.createElement('dialog');
   cartDlg.className = 'g-dlg g-dlg--side cart-dlg'; cartDlg.setAttribute('aria-label', 'Your cart');
   document.body.append(shopDlg, cartDlg);
   [shopDlg, cartDlg].forEach((d) => d.addEventListener('click', (e) => { if (e.target === d) d.close(); }));
   const cartBtn = document.createElement('button');
   cartBtn.type = 'button'; cartBtn.className = 'g-btn g-btn--cart'; cartBtn.hidden = true;
-  document.querySelector('.g-actions')?.prepend(cartBtn);
+  const shopBtn = document.createElement('button');
+  shopBtn.type = 'button'; shopBtn.className = 'g-btn g-btn--shop'; shopBtn.textContent = 'Shop'; shopBtn.hidden = true;
+  document.querySelector('.g-actions')?.prepend(shopBtn, cartBtn);
   cartBtn.addEventListener('click', () => openCart());
+  shopBtn.addEventListener('click', () => openBrowse());
 
   function drawCartButton() {
     const on = !!ctx.shop();
     if (on) tidyCart();
-    const n = cart.reduce((a, l) => a + l.qty, 0);
+    const n = cart.reduce((a, l) => a + (l.pack ? 1 : l.qty), 0);
+    shopBtn.hidden = !on;
     cartBtn.hidden = !on || !n;
     cartBtn.innerHTML = `Cart <span>${n}</span>`;
   }
 
-  // ---- Choosing a print ----
-  // Several photos: each has its own choice (product, size, quantity, way round). Until someone taps
+  // ---- State ----
+  // Several photos: each has its own choice (product, size, copies, way round). Until someone taps
   // another photo in the strip, a choice applies to them all (linked); after that, to the photo shown.
+  // A print pack instead has one product for its photos, and how many prints of each (counts).
   type Choice = { cat: string; type: string; pid: number; qty: number; landscape: boolean };
-  type State = Choice & { ids: string[]; at: number; crops: Map<string, Crop>; cropping: boolean; editing: string | null; choices: Map<string, Choice>; linked: boolean };
-  let st: State;
+  type State = Choice & {
+    view: 'browse' | 'pick' | 'product'; ids: string[]; at: number; crops: Map<string, Crop>; cropping: boolean; editing: string | null;
+    choices: Map<string, Choice>; linked: boolean; counts: Map<string, number>; picked: Set<string>; pickCat: string; favsOnly: boolean;
+  };
+  let st: State = blank();
+  function blank(): State {
+    return { view: 'browse', ids: [], at: 0, cat: '', type: '', pid: 0, qty: 1, landscape: false, crops: new Map(), cropping: false, editing: null,
+      choices: new Map(), linked: true, counts: new Map(), picked: new Set(), pickCat: '', favsOnly: false };
+  }
   const cats = () => {
     const have = new Set(products().map((p) => p.category));
     return GROUPS.map(([g, list]) => [g, list.filter((c) => have.has(c))] as [string, string[]]).filter(([, l]) => l.length);
   };
+  const allCats = () => cats().flatMap(([, l]) => l);
   const typesOf = (cat: string) => [...new Set(products().filter((p) => p.category === cat).map((p) => p.type))];
   const sizesOf = (cat: string, type: string) => products().filter((p) => p.category === cat && p.type === type);
   const prod = () => byId().get(st.pid)!;
+  const isPack = () => prod()?.kind === 'pack';
   const photo = () => img(st.ids[st.at])!;
   const pr = (i: Img) => i.w / i.h;
   const defaultLandscape = (i: Img) => i.w > i.h;
+  const landFor = (p: Product, i: Img, want: boolean) => p.w_cm !== p.h_cm && want;
+  // Quality: the dpi of the whole photo on this product (the most it can be), and the smallest crop allowed.
+  const fullDpi = (i: Img, p: Product, land: boolean) => dpi(i.w, centredCrop(pr(i), ratioOf(p, land)), p, land);
+  const minW = (i: Img, p: Product, land: boolean) => minCropW(i.w, p, land);
   // Crops are kept per photo and print shape, so changing size and back keeps a crop that was set.
   const cropKey = (i: Img, p: Product, land: boolean) => `${i.id}|${ratioOf(p, land).toFixed(4)}`;
-  const cropWith = (i: Img, p: Product, land: boolean) => cleanCrop(st.crops.get(cropKey(i, p, land)) ?? centredCrop(pr(i), ratioOf(p, land)), pr(i), ratioOf(p, land));
-  const cropFor = (i: Img) => cropWith(i, prod(), st.landscape);
-  const setCrop = (i: Img, c: Crop) => st.crops.set(cropKey(i, prod(), st.landscape), c);
+  const cropWith = (i: Img, p: Product, land: boolean) => cleanCrop(st.crops.get(cropKey(i, p, land)) ?? centredCrop(pr(i), ratioOf(p, land)), pr(i), ratioOf(p, land), minW(i, p, land));
+  const cropFor = (i: Img) => cropWith(i, prod(), curLand(i));
+  const setCrop = (i: Img, c: Crop) => st.crops.set(cropKey(i, prod(), curLand(i)), c);
+  // A pack's photos each print their own way round; otherwise the choice says.
+  const curLand = (i: Img) => (isPack() ? landFor(prod(), i, defaultLandscape(i)) : landFor(prod(), i, st.landscape));
   const mine = (): Choice => ({ cat: st.cat, type: st.type, pid: st.pid, qty: st.qty, landscape: st.landscape });
-  // The choice for another photo: the same print, the way round that suits that photo.
   const adapt = (c: Choice, i: Img): Choice => { const p = byId().get(c.pid); return { ...c, landscape: p && p.w_cm !== p.h_cm ? defaultLandscape(i) : false }; };
-  /** Save what's shown: for this photo, or for every photo while they're linked. */
   function commit() {
+    if (!st.ids.length) return;
     const c = mine();
     st.choices.set(st.ids[st.at], c);
-    if (st.linked) for (const id of st.ids) if (id !== st.ids[st.at]) { const i = img(id); if (i) st.choices.set(id, adapt(c, i)); }
+    if (st.linked || isPack()) for (const id of st.ids) if (id !== st.ids[st.at]) { const i = img(id); if (i) st.choices.set(id, adapt(c, i)); }
   }
   const choiceOf = (id: string) => st.choices.get(id) ?? mine();
-  function show(k: number) {
-    commit();
-    st.at = k;
-    Object.assign(st, choiceOf(st.ids[k]));
-  }
+  function showPhoto(k: number) { commit(); st.at = k; if (!isPack()) Object.assign(st, choiceOf(st.ids[k])); }
 
+  /** Choose a category (and paper or colour, and size): the size kept if it exists, otherwise the
+   *  one nearest the photo's shape and a 20 × 30 cm print that prints well. */
   function pick(cat: string, type?: string, pid?: number) {
     st.cat = cat;
     const types = typesOf(cat);
     st.type = type && types.includes(type) ? type : types.includes(st.type) ? st.type : types[0];
     const sizes = sizesOf(st.cat, st.type);
-    // Keep the same size when changing paper or colour; otherwise the first that fits the photo best.
-    const same = sizes.find((p) => p.id === pid) ?? sizes.find((p) => p.name.split(' ')[0] === byId().get(st.pid)?.name.split(' ')[0]);
-    const fit = (p: Product) => Math.abs(Math.log(ratioOf(p, st.landscape) / pr(photo())));
-    // Of the sizes nearest the photo's shape, the one nearest a 20 × 30 cm print.
+    const i = photo();
+    const ok = (p: Product) => !i || fullDpi(i, p, landFor(p, i, st.landscape)) >= DPI_MIN;
+    const same = sizes.find((p) => p.id === pid) ?? sizes.find((p) => p.name.split(' ')[0] === byId().get(st.pid)?.name.split(' ')[0] && ok(p));
+    const fit = (p: Product) => (i ? Math.abs(Math.log(ratioOf(p, st.landscape) / pr(i))) : 0);
     const near = (p: Product) => Math.abs(Math.log((p.w_cm * p.h_cm) / 600));
-    const top = Math.min(...sizes.map(fit));
-    const best = sizes.filter((p) => fit(p) <= top + 0.03).sort((a, b) => near(a) - near(b))[0];
+    const good = sizes.filter(ok);
+    const pool = good.length ? good : sizes;
+    const top = Math.min(...pool.map(fit));
+    const best = pool.filter((p) => fit(p) <= top + 0.03).sort((a, b) => near(a) - near(b))[0];
     st.pid = (same ?? best ?? sizes[0]).id;
+    if (isPack()) {
+      st.qty = 1;
+      if (st.ids.length > packCount(prod())) { st.ids = st.ids.slice(0, packCount(prod())); st.at = Math.min(st.at, st.ids.length - 1); ctx.toast(`A pack takes up to ${packCount(prod())} photos: the first ${packCount(prod())} are used.`); }
+    }
     commit();
   }
 
-  /** Open the shop for these photos (one or several). edit: a cart line to change instead of adding. */
-  function openShop(ids: string[], edit: Line | null = null) {
-    const shop = ctx.shop();
-    if (!shop || !ids.length) return;
+  /** Start on chosen photos (from a photo or a selection). edit: a cart line to change. */
+  function openShop(ids: string[], edit: Line | null = null, cat = '') {
+    if (!ctx.shop() || !ids.length) return;
     const first = img(ids[0]);
     if (!first) return;
     const p0 = edit ? byId().get(edit.product_id) : null;
-    st = { ids, at: 0, cat: '', type: '', pid: 0, qty: edit?.qty ?? 1, landscape: edit ? edit.landscape : defaultLandscape(first), crops: new Map(), cropping: false, editing: edit?.key ?? null, choices: new Map(), linked: true };
-    if (p0 && edit) st.crops.set(cropKey(first, p0, edit.landscape), edit.crop);
-    if (p0) { st.pid = p0.id; pick(p0.category, p0.type, p0.id); } else pick(cats()[0][1][0]);
-    drawShop();
+    st = { ...blank(), view: 'product', ids, qty: edit?.qty ?? 1, landscape: edit ? edit.landscape : defaultLandscape(first), editing: edit?.key ?? null };
+    if (edit?.pack && p0) for (const x of edit.pack) { st.counts.set(x.image_id, x.n); const i = img(x.image_id); if (i) st.crops.set(cropKey(i, p0, x.landscape), x.crop); }
+    else if (p0 && edit) st.crops.set(cropKey(first, p0, edit.landscape), edit.crop);
+    if (p0) { st.pid = p0.id; pick(p0.category, p0.type, p0.id); } else pick(cat && allCats().includes(cat) ? cat : allCats()[0]);
+    draw();
     if (!shopDlg.open) shopDlg.showModal();
+  }
+  /** The Shop button: the product cards. */
+  function openBrowse() {
+    if (!ctx.shop()) return;
+    st = blank();
+    draw();
+    if (!shopDlg.open) shopDlg.showModal();
+  }
+  /** Choose photos for a product (from a card, or "Change photos"). */
+  function openPick(cat: string) {
+    commit();
+    st.pickCat = cat;
+    st.picked = new Set(st.ids);
+    st.view = 'pick';
+    draw();
+  }
+  const pickLimit = () => { const p = products().find((x) => x.category === st.pickCat); return p?.kind === 'pack' ? packCount(p) : 60; };
+
+  // ---- Drawing ----
+  function draw() {
+    // Redrawing keeps both scrolling parts where they were (the options panel; on phones, the whole body).
+    const same = shopDlg.open && shopDlg.dataset.view === st.view;
+    const kept = same ? shopDlg.querySelector<HTMLElement>('.sh-scroll')?.scrollTop ?? null : null;
+    const keptBody = same ? shopDlg.querySelector<HTMLElement>('.dlg-body')?.scrollTop ?? 0 : 0;
+    shopDlg.dataset.view = st.view;
+    if (st.view === 'browse') drawBrowse();
+    else if (st.view === 'pick') drawPick();
+    else drawProduct();
+    requestAnimationFrame(() => {
+      const panel = shopDlg.querySelector<HTMLElement>('.sh-scroll');
+      if (panel && kept !== null) panel.scrollTop = kept;
+      const body = shopDlg.querySelector<HTMLElement>('.dlg-body');
+      if (body && keptBody) body.scrollTop = keptBody;
+      if (st.view === 'product') { stage(); drawFacts(); if (kept === null) centreSize(); }
+      if (st.view === 'browse') drawCards();
+    });
+  }
+  const trialNote = () => { const t = ctx.shop()?.trial; return t ? `<p class="sh-trial">Only you can see prints${t.live ? ' (and your clients: it’s switched on)' : ''}. Test orders don’t take a payment.</p>` : ''; };
+  // The couple's best photos for the cards: highlights first, then the gallery's first photos.
+  const samples = () => { const all = ctx.images(); const h = all.filter((i) => i.hero); return (h.length >= 3 ? h : [...h, ...all.filter((i) => !i.hero)]).slice(0, 12); };
+  const fromPrice = (cat: string) => Math.min(...products().filter((p) => p.category === cat).map((p) => p.tiers?.[0]?.base ?? p.price));
+
+  function drawBrowse() {
+    shopDlg.innerHTML = `<div class="dlg-body sh-browse sh-scroll">
+      <button type="button" class="dlg-x" data-sh-close aria-label="Close">✕</button>
+      <h2>Prints &amp; wall art</h2>
+      ${trialNote()}
+      <p class="sh-lead">${esc(ctx.shop()!.intro)}</p>
+      ${cats().map(([g, list]) => `<h3>${g}</h3><div class="sh-cards">${list.map((c) => `<button type="button" class="sh-card" data-card="${esc(c)}">
+          <span class="sh-card-mk" data-card-mk="${esc(c)}"></span>
+          <strong>${esc(NICE[c] ?? c)}</strong><span>${esc(firstSentence(ABOUT[c] ?? ''))}</span><em>from ${nzd(fromPrice(c))}</em></button>`).join('')}</div>`).join('')}
+      ${cart.length ? '<p class="sh-hint"><button type="button" class="ct-link" data-to-cart>See your cart</button></p>' : ''}
+    </div>`;
+  }
+  function drawCards() {
+    const pics = samples();
+    shopDlg.querySelectorAll<HTMLElement>('[data-card-mk]').forEach((el, k) => {
+      const cat = el.dataset.cardMk!;
+      const i = pics[k % Math.max(1, pics.length)];
+      const list = products().filter((p) => p.category === cat);
+      // A frame looks best in a warm wood or white; otherwise the first colour.
+      const p = list.find((x) => /Light Wood|White|Natural|Fine Art/.test(x.type)) ?? list[0];
+      if (!i || !p) return;
+      const land = landFor(p, i, defaultLandscape(i));
+      el.innerHTML = mockup(p, i.web, centredCrop(pr(i), ratioOf(p, land)), land, el.clientWidth || 260, el.clientHeight || 190);
+    });
+  }
+
+  function drawPick() {
+    const limit = pickLimit();
+    const favs = new Set(ctx.favourites());
+    const list = ctx.images().filter((i) => !st.favsOnly || favs.has(i.id));
+    const n = st.picked.size;
+    shopDlg.innerHTML = `<div class="dlg-body sh-pick">
+      <div class="sh-pick-head">
+        <button type="button" class="ct-link" data-back>‹ ${st.ids.length ? 'Back' : 'All products'}</button>
+        <h2>Choose ${limit < 60 ? `up to ${limit} photos` : 'photos'} for ${esc((NICE[st.pickCat] ?? st.pickCat).toLowerCase())}</h2>
+        <div class="sh-pills">${favs.size ? `<button type="button" class="${st.favsOnly ? '' : 'on'}" data-favs="0">All photos</button><button type="button" class="${st.favsOnly ? 'on' : ''}" data-favs="1">♥ Favourites</button>` : ''}</div>
+        <button type="button" class="dlg-x" data-sh-close aria-label="Close">✕</button>
+      </div>
+      <div class="sh-grid sh-scroll">${list.map((i) => `<button type="button" class="sh-pic${st.picked.has(i.id) ? ' on' : ''}" data-pic="${i.id}" style="aspect-ratio:${(i.w / i.h).toFixed(3)}"><img src="${esc(i.thumb)}" alt="" loading="lazy" /><span class="sh-tick">✓</span></button>`).join('') || '<p class="muted">No photos here.</p>'}</div>
+      <div class="sh-pick-foot"><span>${n ? `${plural(n, 'photo')} chosen${limit < 60 ? ` of up to ${limit}` : ''}` : 'Tap photos to choose them'}</span>
+        <button type="button" class="g-cta" data-pick-done${n ? '' : ' disabled'}>Continue</button></div>
+    </div>`;
   }
 
   function stage() {
-    const host = shopDlg.querySelector<HTMLElement>('.sh-stage')!;
-    const p = prod(), i = photo(), c = cropFor(i);
+    const host = shopDlg.querySelector<HTMLElement>('.sh-stage');
+    if (!host) return;
+    const p = prod(), i = photo(), land = curLand(i), c = cropFor(i);
     if (st.cropping) {
-      const ed = cropEditor(host, i.web, pr(i), ratioOf(p, st.landscape), c, (nc) => { setCrop(i, nc); drawFacts(); }, p.kind === 'circle');
+      const ed = cropEditor(host, i.web, pr(i), ratioOf(p, land), c, (nc) => { setCrop(i, nc); drawFacts(); }, p.kind === 'circle', minW(i, p, land));
       const z = shopDlg.querySelector<HTMLInputElement>('[data-zoom]')!;
       z.value = String(ed.zoomOf());
+      z.disabled = !ed.canZoom;
       z.oninput = () => ed.zoom(Number(z.value));
     } else {
-      host.innerHTML = mockup(p, i.web, c, st.landscape, host.clientWidth || 600, host.clientHeight || 420);
+      host.innerHTML = mockup(p, i.web, c, land, host.clientWidth || 600, host.clientHeight || 420);
     }
   }
 
   function drawFacts() {
-    const p = prod(), i = photo();
-    const c = cropFor(i);
-    const d = dpi(i.w, c, p, st.landscape);
-    const each = st.ids.length;
-    const all = each > 1 ? orderTotals(st.ids.map((id) => ({ product_id: choiceOf(id).pid, qty: choiceOf(id).qty })), byId(), { free_over: 0, freight_prints: 0, freight_wall: 0 }).subtotal : 0;
-    const total = productTotal(p, st.qty);
+    const el = shopDlg.querySelector('.sh-facts');
+    if (!el) return;
+    const p = prod(), i = photo(), land = curLand(i);
+    const d = dpi(i.w, cropFor(i), p, land);
+    const atFloor = st.cropping && cropFor(i).w <= minW(i, p, land) + 0.002;
     const tiers = (p.tiers ?? []).filter((t) => t.q > 1);
-    shopDlg.querySelector('.sh-facts')!.innerHTML = `
-      ${d && d < 150 ? `<p class="sh-warn">This crop is small for ${esc(p.name.split(' ')[0])}: it would print at about ${Math.round(d)} dpi and may look soft. Try a smaller size or zoom out.</p>` : ''}
+    const each = st.ids.length;
+    let totals = '';
+    if (isPack()) totals = `<p class="sh-total"><span>${plural(packCount(p), 'print')}</span><strong>${nzd(p.price)}</strong></p>`;
+    else {
+      const all = each > 1 ? orderTotals(st.ids.map((id) => ({ product_id: choiceOf(id).pid, qty: choiceOf(id).qty })), byId(), { free_over: 0, freight_prints: 0, freight_wall: 0 }).subtotal : 0;
+      totals = `<p class="sh-total"><span>${each > 1 ? `${st.linked ? 'Each photo' : 'This photo'}${st.qty > 1 ? ` × ${st.qty}` : ''}` : st.qty > 1 ? `${st.qty} prints` : '&nbsp;'}</span><strong>${nzd(productTotal(p, st.qty))}</strong></p>
+        ${each > 1 ? `<p class="sh-total sh-total--all"><span>All ${plural(each, 'photo')}</span><strong>${nzd(all)}</strong></p>` : ''}`;
+    }
+    el.innerHTML = `
+      ${atFloor ? `<p class="sh-warn">That’s as far as this photo can be zoomed for ${esc(sizeLabel(p, land))} and still print well.</p>`
+        : d && d < DPI_WARN ? `<p class="sh-caution">This crop prints at about ${Math.round(d)} dpi, so it may look a little soft up close. Zoom out or choose a smaller size for the sharpest print.</p>` : ''}
       ${tiers.length ? `<p class="sh-bulk">Order more and save: ${tiers.map((t) => `${t.q} or more, then ${nzd(t.add)} each`).join(' · ')}</p>` : ''}
-      <p class="sh-total"><span>${each > 1 ? `${st.linked ? 'Each photo' : 'This photo'}${st.qty > 1 ? ` × ${st.qty}` : ''}` : st.qty > 1 ? `${st.qty} prints` : '&nbsp;'}</span><strong>${nzd(total)}</strong></p>
-      ${each > 1 ? `<p class="sh-total sh-total--all"><span>All ${plural(each, 'photo')}</span><strong>${nzd(all)}</strong></p>` : ''}`;
+      ${totals}`;
   }
 
-  function drawShop() {
+  function centreSize() {
+    const on = shopDlg.querySelector<HTMLElement>('.sh-sizes label.on');
+    const panel = shopDlg.querySelector<HTMLElement>('.sh-right');
+    if (!on || !panel || panel.scrollHeight <= panel.clientHeight) return;
+    const r = on.getBoundingClientRect(), b = panel.getBoundingClientRect();
+    if (r.bottom > b.bottom - 120 || r.top < b.top) panel.scrollTop += r.top - b.top - panel.clientHeight / 2;
+  }
+
+  function drawProduct() {
     const shop = ctx.shop()!;
     const p = prod();
     const i = photo();
+    const land = curLand(i);
+    const pack = isPack();
     const square = p.w_cm === p.h_cm;
     const types = typesOf(st.cat);
     const sizes = sizesOf(st.cat, st.type);
     const multi = st.ids.length > 1;
+    const count = pack ? packCount(p) : 0;
+    const filled = pack ? fillPack(st.ids.map((id) => ({ image_id: id, n: st.counts.get(id) ?? 0 })), count) : [];
+    const chosen = pack ? st.ids.reduce((a, id) => a + (st.counts.get(id) ?? 0), 0) : 0;
+    const strip = (multi || pack) ? `<div class="sh-strip">${st.ids.map((id, k) => {
+      const x = img(id); if (!x) return '';
+      const c = k === st.at ? mine() : choiceOf(id), cp = pack ? p : byId().get(c.pid) ?? p, cl = pack ? landFor(p, x, defaultLandscape(x)) : landFor(cp, x, c.landscape);
+      const label = pack ? `×${filled[k]?.n ?? 0}` : `${shortSize(cp, cl)}${c.qty > 1 ? ` ×${c.qty}` : ''}`;
+      return `<div class="sh-sp${k === st.at ? ' on' : ''}"><button type="button" data-at="${k}" aria-label="Photo ${k + 1}"><span class="sh-th">${croppedPhoto(x.thumb, cropWith(x, cp, cl), cp.kind === 'circle')}</span><small>${esc(label)}</small></button>
+        ${pack ? `<span class="sh-pc"><button type="button" data-pn="${id}" data-d="-1" aria-label="Fewer of this photo">−</button><button type="button" data-pn="${id}" data-d="1" aria-label="More of this photo">+</button></span>` : ''}</div>`;
+    }).join('')}</div>` : '';
+    const stripHint = pack
+      ? `<p class="sh-hint">${chosen >= count ? `${count} prints chosen.` : `${chosen ? `${chosen} of ${count} prints set with + and −; ` : ''}the ${chosen ? 'other ' : ''}${count - chosen} are shared evenly between your photos.`} <button type="button" class="ct-link" data-change-photos>Change photos</button></p>`
+      : multi ? `<p class="sh-hint">${st.linked ? 'Your choice is used for every photo. To give a photo its own size, product or number of copies, tap it.' : 'Each photo has its own print: tap a photo to change it. <button type="button" class="ct-link" data-same>Use this print for all photos</button>'} <button type="button" class="ct-link" data-change-photos>Change photos</button></p>`
+      : `<p class="sh-hint"><button type="button" class="ct-link" data-change-photos>Choose more photos</button></p>`;
     shopDlg.innerHTML = `<div class="dlg-body sh">
       <button type="button" class="dlg-x" data-sh-close aria-label="Close">✕</button>
       <div class="sh-left">
+        <button type="button" class="ct-link sh-allp" data-browse>‹ All products</button>
         <div class="sh-stage${st.cropping ? ' sh-stage--crop' : ''}"></div>
         <div class="sh-under">
           ${st.cropping
             ? `<label class="sh-zoom">Zoom <input type="range" min="0" max="1" step="0.01" data-zoom /></label><button type="button" class="g-btn" data-crop-done>Done</button>`
-            : `<button type="button" class="g-btn" data-crop>Adjust crop</button>${square ? '' : `<button type="button" class="g-btn" data-turn>${st.landscape ? 'Make it portrait' : 'Make it landscape'}</button>`}`}
+            : `<button type="button" class="g-btn" data-crop>Adjust crop</button>${square || pack ? '' : `<button type="button" class="g-btn" data-turn>${st.landscape ? 'Make it portrait' : 'Make it landscape'}</button>`}`}
         </div>
-        ${multi ? `<div class="sh-strip">${st.ids.map((id, k) => {
-          const x = img(id); if (!x) return '';
-          const c = k === st.at ? mine() : choiceOf(id), cp = byId().get(c.pid) ?? p;
-          return `<button type="button" class="${k === st.at ? 'on' : ''}" data-at="${k}" aria-label="Photo ${k + 1}"><span class="sh-th">${croppedPhoto(x.thumb, cropWith(x, cp, c.landscape), cp.kind === 'circle')}</span><small>${esc(shortSize(cp, c.landscape))}${c.qty > 1 ? ` ×${c.qty}` : ''}</small></button>`;
-        }).join('')}</div>
-        <p class="sh-hint">${st.linked ? 'Your choice is used for every photo. To give a photo its own size, product or number of copies, tap it.' : 'Each photo has its own print: tap a photo to change it. <button type="button" class="ct-link" data-same>Use this print for all photos</button>'}</p>` : ''}
+        ${strip}${stripHint}
       </div>
-      <div class="sh-right">
-        <h2>${multi ? `Order prints of ${plural(st.ids.length, 'photo')}` : 'Order a print'}</h2>
-        ${shop.trial ? `<p class="sh-trial">Only you can see prints${shop.trial.live ? ' (and your clients: it’s switched on)' : ''}. Test orders don’t take a payment.</p>` : ''}
+      <div class="sh-right sh-scroll">
+        <h2>${pack ? `${esc(NICE[st.cat] ?? st.cat)} of ${count}` : multi ? `Order prints of ${plural(st.ids.length, 'photo')}` : 'Order a print'}</h2>
+        ${trialNote()}
         ${cats().map(([g, list]) => `<div class="sh-group"><span>${g}</span><div class="sh-pills">${list.map((c) => `<button type="button" class="${c === st.cat ? 'on' : ''}" data-cat="${esc(c)}">${esc(NICE[c] ?? c)}</button>`).join('')}</div></div>`).join('')}
         <p class="sh-about">${esc(ABOUT[st.cat] ?? '')}</p>
-        ${types.length > 1 ? `<div class="sh-group"><span>${PAPER.has(p.kind) ? 'Paper' : p.kind === 'canvas' ? 'Edge' : 'Frame'}</span><div class="sh-pills">${types.map((t) => `<button type="button" class="${t === st.type ? 'on' : ''}" data-type="${esc(t)}">${esc(t)}</button>`).join('')}</div></div>` : ''}
-        <div class="sh-group"><span>Size</span><div class="sh-sizes">${sizes.map((s) => {
-          const fits = Math.abs(ratioOf(s, st.landscape) / pr(i) - 1) < 0.02;
-          return `<label class="${s.id === st.pid ? 'on' : ''}"><input type="radio" name="sh-size" value="${s.id}"${s.id === st.pid ? ' checked' : ''} /><span>${esc(sizeLabel(s, st.landscape))}${fits ? ' <em>whole photo</em>' : ''}</span><strong>${nzd(s.tiers?.[0]?.base ?? s.price)}</strong></label>`;
-        }).join('')}</div></div>
+        ${types.length > 1 ? `<div class="sh-group"><span>${pack ? 'Size' : PAPER.has(p.kind) ? 'Paper' : p.kind === 'canvas' ? 'Edge' : 'Frame'}</span><div class="sh-pills">${types.map((t) => `<button type="button" class="${t === st.type ? 'on' : ''}" data-type="${esc(t)}">${esc(t.replace(/^(\d+(?:\.\d+)?)x(\d+(?:\.\d+)?)cm$/i, '$1 × $2 cm'))}</button>`).join('')}</div></div>` : ''}
+        ${pack && sizes.length < 2 ? '' : `<div class="sh-group"><span>Size</span><div class="sh-sizes">${sizes.map((s) => {
+          const sl = landFor(s, i, pack ? defaultLandscape(i) : st.landscape);
+          const fits = Math.abs(ratioOf(s, sl) / pr(i) - 1) < 0.02;
+          const q = fullDpi(i, s, sl);
+          const tooBig = q < DPI_MIN, soft = !tooBig && q < DPI_WARN;
+          const cls = [s.id === st.pid ? 'on' : '', fits ? 'fit' : '', tooBig ? 'off' : ''].filter(Boolean).join(' ');
+          return `<label class="${cls}"${tooBig ? ' title="This photo isn’t big enough to print well at this size."' : ''}><input type="radio" name="sh-size" value="${s.id}"${s.id === st.pid ? ' checked' : ''}${tooBig ? ' disabled' : ''} /><span>${esc(sizeLabel(s, sl))}${fits ? ' <em>whole photo</em>' : ''}${tooBig ? ' <em class="sh-no">too big for this photo</em>' : soft ? ' <em class="sh-soft">may look soft</em>' : ''}</span><strong>${nzd(s.tiers?.[0]?.base ?? s.price)}</strong></label>`;
+        }).join('')}</div></div>`}
         <div class="sh-buy">
-          <div class="sh-qty"><button type="button" data-qty="-1" aria-label="One fewer">−</button><span>${st.qty}</span><button type="button" data-qty="1" aria-label="One more">+</button></div>
-          <button type="button" class="g-cta" data-add>${st.editing ? 'Update cart' : multi ? `Add ${plural(st.ids.length, 'print')} to cart` : 'Add to cart'}</button>
+          ${pack ? '' : `<div class="sh-qty"><button type="button" data-qty="-1" aria-label="One fewer">−</button><span>${st.qty}</span><button type="button" data-qty="1" aria-label="One more">+</button></div>`}
+          <button type="button" class="g-cta" data-add>${st.editing ? 'Update cart' : pack ? 'Add the pack to cart' : multi ? `Add ${plural(st.ids.length, 'print')} to cart` : 'Add to cart'}</button>
         </div>
         <div class="sh-facts"></div>
         <p class="sh-intro">${esc(shop.intro)}</p>
       </div></div>`;
-    requestAnimationFrame(() => {
-      stage(); drawFacts();
-      const on = shopDlg.querySelector<HTMLElement>('.sh-sizes label.on');
-      const list = on?.parentElement;
-      if (on && list) list.scrollTop = on.offsetTop - list.offsetTop - list.clientHeight / 2 + on.clientHeight / 2;
-    });
   }
 
+  const fmt = (n: number) => String(Math.round(n * 10) / 10);
   const sizeLabel = (p: Product, landscape: boolean) => {
     const a = p.name.match(/^(A[2-4])\b/i)?.[1];
     const [w, h] = landscape ? [p.h_cm, p.w_cm] : [p.w_cm, p.h_cm];
     return `${a ? `${a} · ` : ''}${fmt(w)} × ${fmt(h)} cm`;
   };
-  const fmt = (n: number) => String(Math.round(n * 10) / 10);
   const shortSize = (p: Product, landscape: boolean) => { const [w, h] = landscape ? [p.h_cm, p.w_cm] : [p.w_cm, p.h_cm]; return `${fmt(w)}×${fmt(h)}`; };
 
+  // ---- Clicks ----
   shopDlg.addEventListener('click', (e) => {
     const t = e.target as HTMLElement;
     const b = <T extends HTMLElement = HTMLElement>(s: string) => t.closest<T>(s);
     let x: HTMLElement | null;
     if (b('[data-sh-close]')) return shopDlg.close();
-    if ((x = b('[data-cat]'))) { pick(x.dataset.cat!); st.cropping = false; return drawShop(); }
-    if ((x = b('[data-type]'))) { pick(st.cat, x.dataset.type, st.pid); return drawShop(); }
-    if ((x = b('[data-at]'))) { const k = Number(x.dataset.at); if (k !== st.at) { commit(); st.linked = false; show(k); st.cropping = false; } return drawShop(); }
-    if (b('[data-same]')) { st.linked = true; commit(); ctx.toast(`The same print for all ${st.ids.length} photos.`); return drawShop(); }
-    if (b('[data-crop]')) { st.cropping = true; return drawShop(); }
-    if (b('[data-crop-done]')) { st.cropping = false; return drawShop(); }
-    if (b('[data-turn]')) { st.landscape = !st.landscape; commit(); return drawShop(); }
-    if ((x = b('[data-qty]'))) { st.qty = Math.min(50, Math.max(1, st.qty + Number(x.dataset.qty))); commit(); return drawShop(); }
+    if (b('[data-to-cart]')) { shopDlg.close(); return openCart(); }
+    // Product cards: straight on when photos are already chosen, otherwise choose them first.
+    if ((x = b('[data-card]'))) { const c = x.dataset.card!; if (st.ids.length) { st.view = 'product'; pick(c); return draw(); } return openPick(c); }
+    if (b('[data-browse]')) { commit(); st.view = 'browse'; st.cropping = false; return draw(); }
+    if (b('[data-change-photos]')) return openPick(st.cat);
+    if (b('[data-back]')) { st.view = st.ids.length ? 'product' : 'browse'; return draw(); }
+    if ((x = b('[data-favs]'))) { st.favsOnly = x.dataset.favs === '1'; return draw(); }
+    if ((x = b('[data-pic]'))) {
+      const id = x.dataset.pic!;
+      if (st.picked.has(id)) st.picked.delete(id);
+      else if (st.picked.size >= pickLimit()) { ctx.toast(`Up to ${pickLimit()} photos for this.`); return; }
+      else st.picked.add(id);
+      x.classList.toggle('on', st.picked.has(id));
+      const n = st.picked.size, limit = pickLimit();
+      shopDlg.querySelector('.sh-pick-foot span')!.textContent = n ? `${plural(n, 'photo')} chosen${limit < 60 ? ` of up to ${limit}` : ''}` : 'Tap photos to choose them';
+      (shopDlg.querySelector('[data-pick-done]') as HTMLButtonElement).disabled = !n;
+      return;
+    }
+    if (b('[data-pick-done]')) {
+      const ids = ctx.images().map((i) => i.id).filter((id) => st.picked.has(id));
+      if (!ids.length) return;
+      const was = st.ids.length;
+      const keep = ids.includes(st.ids[st.at]) ? ids.indexOf(st.ids[st.at]) : 0;
+      st.ids = ids; st.at = keep; st.view = 'product';
+      for (const id of [...st.counts.keys()]) if (!ids.includes(id)) st.counts.delete(id);
+      if (!was) { st.landscape = defaultLandscape(img(ids[0])!); st.pid = 0; }
+      pick(st.pickCat, st.type, st.pid || undefined);
+      return draw();
+    }
+    if ((x = b('[data-cat]'))) { pick(x.dataset.cat!); st.cropping = false; return draw(); }
+    if ((x = b('[data-type]'))) { pick(st.cat, x.dataset.type, st.pid); return draw(); }
+    if ((x = b('[data-at]'))) { const k = Number(x.dataset.at); if (k !== st.at) { commit(); if (!isPack()) st.linked = false; showPhoto(k); st.cropping = false; } return draw(); }
+    if ((x = b('[data-pn]'))) {
+      const id = x.dataset.pn!, count = packCount(prod());
+      const total = st.ids.reduce((a, y) => a + (st.counts.get(y) ?? 0), 0);
+      const now = st.counts.get(id) ?? 0, d = Number(x.dataset.d);
+      if (d > 0 && total >= count) { ctx.toast(`The pack has ${count} prints: take one from another photo first.`); return; }
+      st.counts.set(id, Math.max(0, now + d));
+      return draw();
+    }
+    if (b('[data-same]')) { st.linked = true; commit(); ctx.toast(`The same print for all ${st.ids.length} photos.`); return draw(); }
+    if (b('[data-crop]')) { st.cropping = true; return draw(); }
+    if (b('[data-crop-done]')) { st.cropping = false; return draw(); }
+    if (b('[data-turn]')) { st.landscape = !st.landscape; const i = photo(); if (fullDpi(i, prod(), curLand(i)) < DPI_MIN) pick(st.cat, st.type); commit(); return draw(); }
+    if ((x = b('[data-qty]'))) { st.qty = Math.min(50, Math.max(1, st.qty + Number(x.dataset.qty))); commit(); return draw(); }
     if (b('[data-add]')) return addToCart();
   });
   shopDlg.addEventListener('change', (e) => {
     const t = e.target as HTMLInputElement;
-    if (t.name === 'sh-size') { st.pid = Number(t.value); commit(); drawShop(); }
+    if (t.name === 'sh-size') { st.pid = Number(t.value); commit(); draw(); }
   });
+  addEventListener('resize', () => { if (shopDlg.open && st.view !== 'pick') { stage(); if (st.view === 'browse') drawCards(); } });
 
   function addToCart() {
     commit();
-    const lines: Line[] = st.ids.map((id) => img(id)).filter(Boolean).map((i) => {
-      const c = choiceOf(i!.id), p = byId().get(c.pid)!;
-      return {
-        key: st.editing && st.ids.length === 1 ? st.editing : `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}`,
-        image_id: i!.id, product_id: p.id, qty: c.qty, crop: cropWith(i!, p, c.landscape), landscape: p.w_cm !== p.h_cm && c.landscape,
-      };
-    });
-    if (st.editing) cart = cart.map((l) => (l.key === st.editing ? lines[0] : l));
-    else {
+    const newKey = () => `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}`;
+    let lines: Line[];
+    if (isPack()) {
+      const p = prod(), count = packCount(p);
+      const filled = fillPack(st.ids.map((id) => ({ image_id: id, n: st.counts.get(id) ?? 0 })), count);
+      const pack = filled.filter((x) => x.n > 0).map((x) => { const i = img(x.image_id)!; const land = landFor(p, i, defaultLandscape(i)); return { image_id: i.id, n: x.n, crop: cropWith(i, p, land), landscape: land }; });
+      lines = [{ key: st.editing ?? newKey(), image_id: pack[0].image_id, product_id: p.id, qty: 1, crop: pack[0].crop, landscape: pack[0].landscape, pack }];
+    } else {
+      // Every photo must print well at its size (a linked choice may be too big for one of them).
+      const bad = st.ids.findIndex((id) => { const i = img(id), c = choiceOf(id), p = byId().get(c.pid); return i && p && fullDpi(i, p, landFor(p, i, c.landscape)) < DPI_MIN; });
+      if (bad >= 0) { ctx.toast(`Photo ${bad + 1} isn’t big enough to print well at that size. Tap it and choose a smaller size.`); return; }
+      lines = st.ids.map((id) => img(id)).filter(Boolean).map((i) => {
+        const c = choiceOf(i!.id), p = byId().get(c.pid)!, land = landFor(p, i!, c.landscape);
+        return { key: st.editing && st.ids.length === 1 ? st.editing : newKey(), image_id: i!.id, product_id: p.id, qty: c.qty, crop: cropWith(i!, p, land), landscape: land };
+      });
+    }
+    if (st.editing) {
+      const at = cart.findIndex((l) => l.key === st.editing);
+      cart.splice(at < 0 ? cart.length : at, at < 0 ? 0 : 1, ...lines);
+    } else {
       // The same photo, product, crop and shape already in the cart: just more of it.
       for (const l of lines) {
-        const same = cart.find((c) => c.image_id === l.image_id && c.product_id === l.product_id && c.landscape === l.landscape && JSON.stringify(c.crop) === JSON.stringify(l.crop));
+        const same = !l.pack && cart.find((c) => !c.pack && c.image_id === l.image_id && c.product_id === l.product_id && c.landscape === l.landscape && JSON.stringify(c.crop) === JSON.stringify(l.crop));
         if (same) same.qty = Math.min(50, same.qty + l.qty); else cart.push(l);
       }
     }
@@ -261,7 +454,7 @@ export function initShop(ctx: Ctx) {
     const wasEditing = !!st.editing;
     shopDlg.close();
     if (wasEditing) openCart();
-    else ctx.toast(`${plural(lines.reduce((a, l) => a + l.qty, 0), 'print')} added to your cart.`);
+    else ctx.toast(lines[0].pack ? 'Print pack added to your cart.' : `${plural(lines.reduce((a, l) => a + l.qty, 0), 'print')} added to your cart.`);
   }
 
   // ---- The cart ----
@@ -280,13 +473,15 @@ export function initShop(ctx: Ctx) {
       <button type="button" class="dlg-x" data-cart-close aria-label="Close">✕</button>
       <h2>Your cart</h2>
       ${cart.length ? `<ul class="ct-lines">${t.lines.map((l: any) => {
-        const p = m.get(l.product_id)!, i = img(l.image_id)!;
+        const p = m.get(l.product_id)!;
+        const what = l.pack ? `${esc(NICE[p.category] ?? p.category)} · ${plural(packCount(p), 'print')}` : `${esc(NICE[p.category] ?? p.category)}${p.type && (!PAPER.has(p.kind) || p.category === 'Prints') ? ` · ${esc(p.type)}` : ''}`;
+        const sub = l.pack ? `${esc(sizeLabel(p, false))} · ${plural(l.pack.length, 'photo')}` : esc(sizeLabel(p, l.landscape));
         return `<li>
           <div class="ct-mk" data-mk="${l.key}"></div>
-          <div class="ct-what"><strong>${esc(NICE[p.category] ?? p.category)}${p.type && !PAPER.has(p.kind) || p.category === 'Prints' ? ` · ${esc(p.type)}` : ''}</strong><span>${esc(sizeLabel(p, l.landscape))}</span>
+          <div class="ct-what"><strong>${what}</strong><span>${sub}</span>
             <div class="ct-row"><div class="sh-qty sh-qty--small"><button type="button" data-cq="${l.key}" data-d="-1" aria-label="One fewer">−</button><span>${l.qty}</span><button type="button" data-cq="${l.key}" data-d="1" aria-label="One more">+</button></div>
             <button type="button" class="ct-link" data-cedit="${l.key}">Change</button><button type="button" class="ct-link" data-cdel="${l.key}">Remove</button></div></div>
-          <strong class="ct-amt">${money(l.amount)}</strong>${i ? '' : ''}</li>`;
+          <strong class="ct-amt">${money(l.amount)}</strong></li>`;
       }).join('')}</ul>
       <dl class="ct-sum">
         ${t.saved ? `<div><dt>Bulk savings</dt><dd>−${money(t.saved)}</dd></div>` : ''}
@@ -298,8 +493,8 @@ export function initShop(ctx: Ctx) {
       <label class="ct-note">A note for Tony (optional) <textarea name="note" rows="2" maxlength="1000">${esc(note)}</textarea></label>
       <button type="button" class="g-cta ct-pay" data-pay>Checkout · ${money(t.total)}</button>
       ${shop.trial ? '<button type="button" class="g-cta g-cta--quiet ct-pay" data-pay-test>Place a test order (no payment)</button>' : ''}
-      <p class="sh-hint">You’ll pay securely by card with Stripe, and add your delivery address there (New Zealand only). Prices include GST.</p>`
-      : '<p class="muted">Your cart is empty. Open a photo and choose “Order a print”.</p>'}
+      <p class="sh-hint">You’ll pay securely by card with Stripe, and add your delivery address there (New Zealand only). Prices include GST. <button type="button" class="ct-link" data-more>Keep shopping</button></p>`
+      : '<p class="muted">Your cart is empty.</p><p><button type="button" class="g-cta" data-more>Prints &amp; wall art</button></p>'}
     </div>`;
     requestAnimationFrame(() => cartDlg.querySelectorAll<HTMLElement>('[data-mk]').forEach((el) => {
       const l = cart.find((x) => x.key === el.dataset.mk)!, p = m.get(l.product_id)!, i = img(l.image_id)!;
@@ -311,17 +506,18 @@ export function initShop(ctx: Ctx) {
     const b = (s: string) => t.closest<HTMLElement>(s);
     let x: HTMLElement | null;
     if (b('[data-cart-close]')) return cartDlg.close();
+    if (b('[data-more]')) { cartDlg.close(); return openBrowse(); }
     if ((x = b('[data-cq]'))) { const l = cart.find((y) => y.key === x!.dataset.cq); if (l) { l.qty = Math.min(50, Math.max(1, l.qty + Number(x.dataset.d))); save(cart); drawCart(); drawCartButton(); } return; }
     if ((x = b('[data-cdel]'))) { cart = cart.filter((y) => y.key !== x!.dataset.cdel); save(cart); drawCart(); drawCartButton(); return; }
-    if ((x = b('[data-cedit]'))) { const l = cart.find((y) => y.key === x!.dataset.cedit); if (l) { cartDlg.close(); openShop([l.image_id], l); } return; }
+    if ((x = b('[data-cedit]'))) { const l = cart.find((y) => y.key === x!.dataset.cedit); if (l) { cartDlg.close(); openShop(l.pack ? l.pack.map((y) => y.image_id) : [l.image_id], l); } return; }
     const pay = b('[data-pay]'), test = b('[data-pay-test]');
     if (pay || test) {
       const btn = (pay ?? test) as HTMLButtonElement;
       btn.disabled = true; const was = btn.textContent; btn.textContent = test ? 'Placing the test order…' : 'Taking you to the payment page…';
       const note = (cartDlg.querySelector('[name="note"]') as HTMLTextAreaElement)?.value ?? '';
       try {
-        const r = await fetch('/api/gallery/prints', { method: 'POST', headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ v: ctx.viewer(), items: cart.map((l) => ({ image_id: l.image_id, product_id: l.product_id, qty: l.qty, crop: l.crop, landscape: l.landscape })), note, back: location.href, test: !!test }) });
+        const items = cart.map((l) => (l.pack ? { product_id: l.product_id, qty: l.qty, pack: l.pack } : { image_id: l.image_id, product_id: l.product_id, qty: l.qty, crop: l.crop, landscape: l.landscape }));
+        const r = await fetch('/api/gallery/prints', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ v: ctx.viewer(), items, note, back: location.href, test: !!test }) });
         const d = await r.json().catch(() => ({ error: 'Something went wrong. Please try again.' }));
         if (!r.ok) throw new Error(d.error);
         if (d.url) { location.href = d.url; return; }
@@ -343,37 +539,44 @@ export function initShop(ctx: Ctx) {
     return n;
   }
 
-  return { openShop, openCart, drawCartButton, afterPayment, on: () => !!ctx.shop() };
+  return { openShop, openBrowse, openCart, drawCartButton, afterPayment, on: () => !!ctx.shop() };
 }
 
 const SHOP_CSS = `
 .g-btn--cart span{display:inline-block;min-width:1.4em;margin-left:4px;padding:0 5px;border-radius:9px;background:#5a5e3b;color:#fff;font-size:12px;line-height:1.5}
-.shop-dlg{width:min(1180px,96vw);max-width:none;height:min(820px,94vh);max-height:none;padding:0}
+.shop-dlg{width:min(1180px,96vw);max-width:none;height:min(820px,94vh);max-height:none;padding:0;overflow:hidden}
 .shop-dlg .dlg-body.sh{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(300px,1fr);height:100%;box-sizing:border-box;padding:0}
-.sh-left{display:flex;flex-direction:column;min-height:0;background:linear-gradient(180deg,#efece6,#e4e0d8);padding:18px}
+.sh-left{display:flex;flex-direction:column;min-height:0;background:linear-gradient(180deg,#efece6,#e4e0d8);padding:14px 18px 18px}
+.sh-allp{align-self:flex-start;margin-bottom:4px}
 .sh-stage{flex:1;min-height:240px;display:flex;align-items:center;justify-content:center;overflow:hidden}
 .sh-stage--crop{background:#2a2a28;border-radius:6px}
 .sh-under{display:flex;gap:10px;justify-content:center;align-items:center;flex-wrap:wrap;padding-top:12px}
 .sh-zoom{display:flex;gap:8px;align-items:center;font-size:14px}.sh-zoom input{width:180px}
 .sh-strip{display:flex;gap:6px;overflow-x:auto;padding:12px 0 2px}
-.sh-strip button{flex:none;width:66px;padding:3px;border:2px solid transparent;border-radius:6px;background:#fff;cursor:pointer;display:flex;flex-direction:column;gap:2px;align-items:center}
+.sh-sp{flex:none;display:flex;flex-direction:column;align-items:center;gap:3px}
+.sh-sp>button{width:66px;padding:3px;border:2px solid transparent;border-radius:6px;background:#fff;cursor:pointer;display:flex;flex-direction:column;gap:2px;align-items:center}
+.sh-sp.on>button{border-color:#5a5e3b}
 .sh-th{display:block;width:56px;height:56px}
-.sh-strip small{font-size:10.5px;color:#555;white-space:nowrap}
+.sh-sp small{font-size:10.5px;color:#555;white-space:nowrap}
+.sh-pc{display:flex;gap:2px}.sh-pc button{width:28px;height:22px;border:1px solid #d8d3c8;border-radius:6px;background:#fff;cursor:pointer;font-size:14px;line-height:1;color:#2b2a24}
 .sh-total--all{margin-top:0;border-top:1px solid #eee;padding-top:6px}
-.sh-strip button.on{border-color:#5a5e3b}
 .sh-right{overflow-y:auto;padding:26px 24px 20px}
-.sh-right h2{margin:0 0 12px;font-weight:300;font-size:26px}
+.sh-right h2,.sh-browse h2,.sh-pick h2{margin:0 0 12px;font-weight:300;font-size:26px}
 .sh-trial{margin:0 0 12px;padding:8px 12px;background:#fff4d6;border:1px solid #e0c46c;border-radius:8px 0;font-size:13px;color:#5c4400}
 .sh-group{margin:0 0 12px}.sh-group>span{display:block;margin:0 0 6px;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:#777}
 .sh-pills{display:flex;flex-wrap:wrap;gap:6px}
 .sh-pills button{padding:7px 12px;border:1px solid #d8d3c8;border-radius:16px;background:#fff;font:inherit;font-size:14px;cursor:pointer;color:#2b2a24}
 .sh-pills button.on{background:#5a5e3b;border-color:#5a5e3b;color:#fff}
 .sh-about{margin:-2px 0 14px;font-size:13.5px;line-height:1.5;color:#666}
-.sh-sizes{display:grid;gap:4px;max-height:260px;overflow-y:auto;padding-right:4px}
+.sh-sizes{display:grid;gap:4px}
 .sh-sizes label{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 12px;border:1px solid #e3ded4;border-radius:8px;cursor:pointer;font-size:14.5px;background:#fff}
 .sh-sizes label.on{border-color:#5a5e3b;box-shadow:inset 0 0 0 1px #5a5e3b;background:#f6f6ee}
 .sh-sizes input{position:absolute;opacity:0;pointer-events:none}
-.sh-sizes em{font-style:normal;font-size:11.5px;color:#5a5e3b;margin-left:6px;white-space:nowrap}
+.sh-sizes em{font-style:normal;font-size:11.5px;color:#7d6634;margin-left:6px;white-space:nowrap}
+.sh-sizes label.fit{background:#f6edd9;border-color:#dcc89c}
+.sh-sizes label.fit.on{background:#f1e4c6;border-color:#5a5e3b}
+.sh-sizes label.off{opacity:.45;cursor:not-allowed;background:#f4f4f2}
+.sh-sizes em.sh-no{color:#8a3a22}.sh-sizes em.sh-soft{color:#9a6a12}
 .sh-buy{display:flex;gap:12px;align-items:center;margin:16px 0 8px}
 .sh-buy .g-cta{flex:1;margin:0}
 .sh-qty{display:inline-flex;align-items:center;border:1px solid #d8d3c8;border-radius:20px;background:#fff}
@@ -383,7 +586,29 @@ const SHOP_CSS = `
 .sh-total{display:flex;justify-content:space-between;align-items:baseline;margin:6px 0;font-size:15px;color:#555}.sh-total strong{font-size:20px;color:#1a1a1a;font-weight:500}
 .sh-bulk{margin:4px 0;font-size:13px;color:#5a5e3b}
 .sh-warn{margin:6px 0;padding:8px 12px;background:#fdecea;border-radius:8px 0;font-size:13px;color:#7a2a20}
+.sh-caution{margin:6px 0;padding:8px 12px;background:#fff4d6;border-radius:8px 0;font-size:13px;color:#6b4c00}
 .sh-intro,.sh-hint{font-size:12.5px;line-height:1.5;color:#777;margin:10px 0 0}
+.sh-browse{height:100%;box-sizing:border-box;overflow-y:auto;padding:28px 32px 32px!important}
+.sh-browse h3{margin:22px 0 10px;font-size:12px;letter-spacing:.14em;text-transform:uppercase;font-weight:600;color:#777}
+.sh-lead{margin:0;max-width:640px;color:#666;font-size:14.5px;line-height:1.55}
+.sh-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:18px}
+.sh-card{display:flex;flex-direction:column;gap:4px;padding:0 0 12px;border:0;background:none;text-align:center;cursor:pointer;font:inherit;color:#2b2a24}
+.sh-card-mk{display:flex;align-items:center;justify-content:center;width:100%;aspect-ratio:4/3;background:#ebe8e2;margin-bottom:8px;overflow:hidden;transition:background .3s}
+.sh-card:hover .sh-card-mk{background:#e3dfd6}
+.sh-card strong{font-weight:500;letter-spacing:.1em;text-transform:uppercase;font-size:14px}
+.sh-card span{font-size:12.5px;color:#777;line-height:1.45;padding:0 8px}
+.sh-card em{font-style:normal;font-size:13px;color:#5a5e3b}
+.shop-dlg .dlg-body.sh-pick{display:flex;flex-direction:column;height:100%;box-sizing:border-box;padding:0}
+.sh-pick-head{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;padding:18px 60px 12px 24px;border-bottom:1px solid #eee}
+.sh-pick-head h2{margin:0;font-size:22px;flex:1 1 300px}
+.sh-grid{flex:1;overflow-y:auto;padding:14px 24px;display:flex;flex-wrap:wrap;gap:8px;align-content:flex-start}
+.sh-pic{position:relative;height:150px;flex-grow:1;padding:0;border:0;background:#eee;cursor:pointer;overflow:hidden}
+.sh-pic img{width:100%;height:100%;object-fit:cover;display:block}
+.sh-pic.on{outline:3px solid #5a5e3b;outline-offset:-3px}
+.sh-tick{position:absolute;top:6px;right:6px;width:24px;height:24px;border-radius:50%;border:2px solid #fff;background:rgb(0 0 0/.25);color:transparent;font-size:14px;line-height:20px}
+.sh-pic.on .sh-tick{background:#5a5e3b;color:#fff}
+.sh-pick-foot{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 24px;border-top:1px solid #eee;background:#fff}
+.sh-pick-foot .g-cta{margin:0}
 .cart-dlg .dlg-body{display:flex;flex-direction:column}
 .ct-lines{list-style:none;margin:0 0 10px;padding:0}
 .ct-lines li{display:grid;grid-template-columns:96px 1fr auto;gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid #eee}
@@ -401,6 +626,10 @@ const SHOP_CSS = `
   .shop-dlg .dlg-body.sh{grid-template-columns:1fr;grid-template-rows:auto auto;overflow-y:auto}
   .sh-left{padding:12px;min-height:auto}.sh-stage{height:44vh;flex:none}
   .sh-right{overflow:visible;padding:16px}
-  .sh-sizes{max-height:none}
+  .sh-browse{padding:20px 16px!important}
+  .sh-cards{grid-template-columns:1fr 1fr;gap:12px}
+  .sh-card>span:not(.sh-card-mk){display:none}
+  .sh-pic{height:100px}
+  .sh-grid{padding:10px 12px}
 }
 `;

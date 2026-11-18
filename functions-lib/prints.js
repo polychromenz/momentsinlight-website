@@ -12,7 +12,7 @@
 //   shopFor(env, a)       what the gallery page needs to show the shop (null = no shop here)
 //   placeOrder(env, a, d) check the cart, record the order, and return Stripe's payment page
 //   printsPaid(env, s)    Stripe says it's paid: the order is in (emails, invoice for the couple)
-import { orderTotals, cleanCrop, ratioOf, money, SOLD, PAPER } from './print-pricing.js';
+import { orderTotals, cleanCrop, centredCrop, ratioOf, money, minCropW, packCount, fillPack, SOLD, PAPER } from './print-pricing.js';
 import { GALLERY_ORIGIN } from './gallery-access.js';
 import { nextNumber, token, markPaid, stripeReady } from './invoices.js';
 import { loadJob } from './crm-send.js';
@@ -76,7 +76,10 @@ async function newNumber(db) {
   return `P-${y}-${String(n).padStart(4, '0')}`;
 }
 
-/** Check a cart against the gallery and today's prices. items: [{ image_id, product_id, qty, crop, landscape }]. */
+/** Check a cart against the gallery and today's prices.
+ *  items: [{ image_id, product_id, qty, crop, landscape }] or, for a print pack,
+ *  [{ product_id, qty (packs), pack: [{ image_id, n, crop, landscape }] }].
+ *  Returns the priced lines (one per cart line) and `rows`: one per photo, for the order. */
 export async function checkCart(env, a, items) {
   if (!Array.isArray(items) || !items.length) throw new Error('Your cart is empty.');
   if (items.length > 100) throw new Error('That’s a lot of prints: please split it into smaller orders, or get in touch with Tony.');
@@ -84,17 +87,45 @@ export async function checkCart(env, a, items) {
   const { galleryView } = await import('./gallery-access.js');
   const view = await galleryView(env, a.gallery, a.link, null);
   const images = new Map(view.images.map((i) => [i.id, i]));
+  // One photo on one product: the crop made safe, and big enough to print well (150 dpi).
+  const photoOn = (p, imageId, crop, wantLandscape) => {
+    const img = images.get(String(imageId));
+    if (!img) throw new Error('One of the photos in your cart isn’t in this gallery any more. Please remove it.');
+    const landscape = p.w_cm !== p.h_cm && !!wantLandscape;
+    const r = ratioOf(p, landscape), pr = img.w / img.h;
+    const minW = minCropW(img.w, p, landscape);
+    if (minW > centredCrop(pr, r).w + 0.001) throw new Error(`One of your photos is too small to print well at ${p.name.split(' ')[0]}. Please choose a smaller size for it.`);
+    return { img, crop: { ...cleanCrop(crop, pr, r, minW), landscape: landscape ? 1 : 0 } };
+  };
   const lines = items.map((it) => {
     const p = products.get(Number(it.product_id));
-    const img = images.get(String(it.image_id));
     if (!p) throw new Error('One of the products in your cart isn’t available any more. Please remove it and choose again.');
-    if (!img) throw new Error('One of the photos in your cart isn’t in this gallery any more. Please remove it.');
     const qty = Math.min(50, Math.max(1, Math.floor(Number(it.qty) || 1)));
-    const landscape = p.w_cm !== p.h_cm && !!it.landscape;
-    const crop = { ...cleanCrop(it.crop, img.w / img.h, ratioOf(p, landscape)), landscape: landscape ? 1 : 0 };
+    if (p.kind === 'pack') {
+      const count = packCount(p);
+      const picks = (Array.isArray(it.pack) ? it.pack : []).slice(0, count);
+      if (!picks.length) throw new Error('Please choose photos for your print pack.');
+      if (picks.reduce((x, y) => x + Math.max(0, Math.floor(Number(y.n) || 0)), 0) > count) throw new Error(`A print pack has ${count} prints: please choose fewer.`);
+      const pack = fillPack(picks, count).filter((x) => x.n > 0).map((x) => ({ ...photoOn(p, x.image_id, x.crop, x.landscape), n: x.n }));
+      return { product_id: p.id, qty, p, pack };
+    }
+    const { img, crop } = photoOn(p, it.image_id, it.crop, it.landscape);
     return { image_id: img.id, product_id: p.id, qty, crop, p, img };
   });
-  return { ...orderTotals(lines, products, await printSettings(env.DB)), products };
+  const t = orderTotals(lines, products, await printSettings(env.DB));
+  // Rows for the order: a pack's price is shared over its photos by how many prints of each.
+  const rows = [];
+  for (const l of t.lines) {
+    if (!l.pack) { rows.push({ image_id: l.image_id, product_id: l.product_id, p: l.p, qty: l.qty, amount: l.amount, crop: l.crop }); continue; }
+    const all = l.pack.reduce((x, y) => x + y.n, 0);
+    let left = l.amount;
+    l.pack.forEach((x, k) => {
+      const amount = k === l.pack.length - 1 ? left : Math.round((l.amount * x.n) / all);
+      left -= amount;
+      rows.push({ image_id: x.img.id, product_id: l.product_id, p: l.p, qty: x.n * l.qty, amount, crop: x.crop });
+    });
+  }
+  return { ...t, rows, products };
 }
 
 const productCopy = (p) => JSON.stringify({ category: p.category, type: p.type, name: p.name, lab: p.lab, kind: p.kind, w_cm: p.w_cm, h_cm: p.h_cm });
@@ -119,7 +150,7 @@ export async function placeOrder(env, a, d, back) {
           t.subtotal, t.freight, t.total, trial ? 1 : 0, now).first();
     } catch (e) { if (!String(e).includes('UNIQUE') || tries === 4) throw e; }
   }
-  await db.batch(t.lines.map((l) => db.prepare(`INSERT INTO print_order_items (order_id, image_id, product_id, product, qty, amount, crop, created_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)`)
+  await db.batch(t.rows.map((l) => db.prepare(`INSERT INTO print_order_items (order_id, image_id, product_id, product, qty, amount, crop, created_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)`)
     .bind(order.id, l.image_id, l.product_id, productCopy(l.p), l.qty, l.amount, JSON.stringify(l.crop), now)));
 
   if (trial) {
