@@ -421,7 +421,7 @@ import { TOUR_CSS } from '../gallery-tour-css';
       const SIZES = [[2], [3], [2, 2], [2, 3], [2, 2, 2]];
       // For the photos after it (any not needed go back into the rows). A tall highlight takes more columns
       // until the block fills the width.
-      const NEXT = [[2], [2, 2], [2, 2, 2], [2, 2, 2, 2]];
+      const NEXT = [[2], [2, 2], [2, 2, 2], [2, 2, 2, 2], [2, 2, 2, 2, 2], [2, 2, 2, 2, 2, 2]];
       // all: use every one of the items (photos waiting before it); left: columns already on its left.
       const fit = (items: Img[], { all = false, left = [] as Img[][] } = {}) => {
         const ok = (all ? SIZES : NEXT).filter((z) => { const t = z.reduce((a, b) => a + b, 0); return all ? t === items.length : t <= items.length; });
@@ -533,7 +533,7 @@ import { TOUR_CSS } from '../gallery-tour-css';
             out.push(`<div class="row row--block" style="gap:${GAP}px;margin-bottom:${GAP}px;align-items:center">${last}</div>`);
             return true;
           }
-          if (heroes >= 3 || !list[nx]?.hero) return false;
+          if (heroes >= 5 || !list[nx]?.hero) return false;
           parts.push(after, list[nx]);
           at = nx;
         }
@@ -547,7 +547,7 @@ import { TOUR_CSS } from '../gallery-tour-css';
             // Still too tall with them alone: the next photos go on its right, so it sits in the middle.
             if (b.H > capFit) {
               const after: Img[] = [], base = n;
-              while (after.length < 8 && n + 1 < list.length && !list[n + 1].hero) after.push(list[++n]);
+              while (after.length < 12 && n + 1 < list.length && !list[n + 1].hero) after.push(list[++n]);
               const both = after.length ? fit(after, { left: [...b.cols] }) : null;
               if (both && both.H < b.H) { n -= after.length - both.used; b = both; } else n -= after.length;
               if (b === both && b.H <= capFit) { put(b, false); row = []; prev = null; continue; }
@@ -560,12 +560,12 @@ import { TOUR_CSS } from '../gallery-tour-css';
           flush(true);
         } else if (row.length > 1) flush(true);
         if (row.length === 1) stack.push(row.pop()!);
-        while (stack.length < 8 && n + 1 < list.length && !list[n + 1].hero) stack.push(list[++n]);
+        while (stack.length < 12 && n + 1 < list.length && !list[n + 1].hero) stack.push(list[++n]);
       } else flush(true);
       const waiting = stack.length && !list.slice(n - stack.length + 1, n + 1).includes(stack[0]) ? 1 : 0;
       let b = stack.length ? fit(stack) : null;
       // All the photos up to the next highlight (or the end) are here: don't strand one on its own.
-      const allHere = stack.length < 8 && (n + 1 >= list.length || list[n + 1].hero);
+      const allHere = stack.length < 12 && (n + 1 >= list.length || list[n + 1].hero);
       if (b && allHere && stack.length - b.used === 1) b = fit(stack, { all: true }) ?? b;
       if (b) {
         prev = null;
