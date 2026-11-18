@@ -44,18 +44,13 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
       <form class="card pr-settings" data-settings>
         <label class="pr-switch"><input type="checkbox" name="live" /> <span><strong>Show prints to clients</strong><br />Off: only you see the shop, when you open a gallery with “Open as client” (and you can place test orders there without paying). On: everyone with a gallery link can buy, except galleries with prints switched off on their Details tab.</span></label>
         <div class="three">
-          <label>Atkins delivery, paper prints only (NZ$) <input name="freight_prints" type="number" min="0" step="0.5" /></label>
-          <label>Atkins delivery with wall art (NZ$) <input name="freight_wall" type="number" min="0" step="0.5" /></label>
-          <label>Free delivery over (NZ$, 0 = never) <input name="free_over" type="number" min="0" step="1" /></label>
-        </div>
-        <div class="three">
           <label>In house prints, tracked post (NZ$) <input name="freight_inhouse" type="number" min="0" step="0.5" /></label>
           <label>In house minimum order (NZ$) <input name="min_inhouse" type="number" min="0" step="1" /></label>
+          <label>Free delivery over (NZ$, 0 = never) <input name="free_over" type="number" min="0" step="1" /></label>
         </div>
         <label>Return address on labels <textarea name="return_address" rows="3" placeholder="Moments in Light&#10;Street address&#10;Town postcode"></textarea></label>
         <p class="hint">In house: prints you make on your PRO-10 (lab “In house”, up to A3+), posted by you within New Zealand. When an order’s in-house prints come to less than the minimum, the cart asks the couple to add more before checking out. The return address goes on the 100 × 100 mm address labels (each order’s “Print address label”).</p>
-        <p class="hint">Atkins items (New Zealand only for now): wall art is anything that isn’t a paper print, like canvas, frames and gallery boards.</p>
-        <p class="hint"><strong>Seldex items</strong> use Seldex’s own published rates at cost, converted at the NZ$ per A$ rate below (from <a href="https://seldex.com.au/shipping-international" target="_blank" rel="noopener">international</a> and <a href="https://seldex.com.au/shipping-australia" target="_blank" rel="noopener">Australian</a> shipping, 19 Nov 2026). New Zealand: A$25, or A$50 once Seldex’s cost for the order is A$500+, plus A$15 for a remote postcode. Australia: Standard A$15 / Express A$25, or A$25 / A$35 over A$100; remote postcodes aren’t charged, you’re told instead. Plus A$15 once per order with a frame or canvas bigger than 20×24″. An order with both labs pays both. The couple picks the country and postcode in the cart.</p>
+        <p class="hint"><strong>Seldex items</strong> use Seldex’s own published rates at cost, converted at the NZ$ per A$ rate below (from <a href="https://seldex.com.au/shipping-international" target="_blank" rel="noopener">international</a> and <a href="https://seldex.com.au/shipping-australia" target="_blank" rel="noopener">Australian</a> shipping, 19 Nov 2026). New Zealand: A$25, or A$50 once Seldex’s cost for the order is A$500+, plus A$15 for a remote postcode. Australia: Standard A$15 / Express A$25, or A$25 / A$35 over A$100; remote postcodes aren’t charged, you’re told instead. Plus A$15 once per order with a frame or canvas bigger than 20×24″. An order with in-house prints and Seldex items pays both (two parcels). The couple picks the country and postcode in the cart.</p>
         <div class="three">
           <label>Hold orders for (days) <input name="hold_days" type="number" min="0" max="60" /></label>
           <label>NZ$ per A$ (for costs and margins) <input name="rate" type="number" step="0.0001" min="0.6" max="2" /></label>
@@ -112,7 +107,7 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
     $('.pr-live').classList.toggle('on', !!settings.live);
     const f = $<HTMLFormElement>('[data-settings]');
     (f.elements.namedItem('live') as HTMLInputElement).checked = !!settings.live;
-    for (const k of ['freight_prints', 'freight_wall', 'free_over', 'freight_inhouse', 'min_inhouse']) (f.elements.namedItem(k) as HTMLInputElement).value = String((settings[k] ?? 0) / 100);
+    for (const k of ['free_over', 'freight_inhouse', 'min_inhouse']) (f.elements.namedItem(k) as HTMLInputElement).value = String((settings[k] ?? 0) / 100);
     (f.elements.namedItem('return_address') as HTMLTextAreaElement).value = settings.return_address ?? '';
     (f.elements.namedItem('hold_days') as HTMLInputElement).value = settings.hold_days;
     (f.elements.namedItem('rate') as HTMLInputElement).value = settings.rate;
@@ -225,7 +220,7 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
     const live = !!f.get('live');
     if (live && !settings.live && !await ask('Show prints to clients? Everyone with a gallery link will be able to order and pay from now on.')) return;
     const d = await api('/api/studio/galleries/prints', 'PUT', { settings: {
-      live, freight_prints: Math.round(Number(f.get('freight_prints')) * 100), freight_wall: Math.round(Number(f.get('freight_wall')) * 100), freight_inhouse: Math.round(Number(f.get('freight_inhouse')) * 100), min_inhouse: Math.round(Number(f.get('min_inhouse')) * 100), return_address: f.get('return_address'),
+      live, freight_inhouse: Math.round(Number(f.get('freight_inhouse')) * 100), min_inhouse: Math.round(Number(f.get('min_inhouse')) * 100), return_address: f.get('return_address'),
       free_over: Math.round(Number(f.get('free_over')) * 100), hold_days: f.get('hold_days'), rate: f.get('rate'), intro: f.get('intro'),
     } });
     if (d) { toast('Saved.'); loadSetup(); }
