@@ -455,10 +455,12 @@ import { TOUR_CSS } from '../gallery-tour-css';
       // when a highlight can't fill the width at its size limit with the photos beside it alone.
       // parts: in order, the highlights and the groups of photos between them. Of the ways to stack each
       // group, the one with the biggest highlights that still fill the width without passing the limit.
-      const multi = (parts: (Img | Img[])[]) => {
+      // loose: the end of the section, so a row that can't fill the width is still better than two short
+      // ones: the highlights at their size limit, the row starting at the left.
+      const multi = (parts: (Img | Img[])[], loose = false) => {
         const opts = parts.map((p) => !Array.isArray(p) ? [p] : p.length === 0 ? [null] : p.length === 1 ? ['one'] : SIZES.filter((z) => z.reduce((a, c) => a + c, 0) === p.length));
         if (opts.some((o) => !o.length)) return null;
-        let best: { H: number; pick: any[] } | null = null;
+        let best: { H: number; pick: any[] } | null = null, low: { H: number; pick: any[] } | null = null;
         const walk = (k: number, pick: any[]) => {
           if (k < parts.length) { for (const o of opts[k]) walk(k + 1, [...pick, o]); return; }
           let items = 0, A = 0, T = 0;
@@ -473,8 +475,10 @@ import { TOUR_CSS } from '../gallery-tour-css';
           });
           const H = (width - GAP * (items - 1) + GAP * T) / A;
           if (H <= capFit && H >= target * 1.4 && (!best || H > best.H)) best = { H, pick };
+          if (loose && H > capFit && (!low || H < low.H)) low = { H: capH, pick };
         };
         walk(0, []);
+        best ??= low;
         if (!best) return null;
         const { H, pick } = best as { H: number; pick: any[] };
         return parts.map((p, q) => {
@@ -507,6 +511,15 @@ import { TOUR_CSS } from '../gallery-tour-css';
             return true;
           }
           const nx = at + 1 + after.length;
+          // Nothing more in the section after these: all of them in one row, even if it can't fill the width.
+          if (nx >= list.length && after.length <= 6) {
+            const last = multi(after.length ? [...parts, after] : parts, true);
+            if (!last) return false;
+            n = list.length - 1;
+            prev = null;
+            out.push(`<div class="row row--block" style="gap:${GAP}px;margin-bottom:${GAP}px;align-items:center">${last}</div>`);
+            return true;
+          }
           if (heroes >= 3 || !list[nx]?.hero) return false;
           parts.push(after, list[nx]);
           at = nx;
