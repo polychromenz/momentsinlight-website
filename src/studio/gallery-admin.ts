@@ -384,7 +384,7 @@ function fillDetails() {
   $('.ext-custom').hidden = !(g.extension_price > 0);
   (f.elements.namedItem('prints_on') as HTMLInputElement).checked = !g.prints_off;
   $('.addr-base').textContent = 'galleries.momentsinlight.co.nz/';
-  $('.ga-form .state').innerHTML = g.status === 'online' ? `Online${g.expires_at ? ` until <strong>${day(g.expires_at)}</strong>` : ''}.` : g.status === 'draft' ? 'A draft: only you can see it (Preview). <strong>Put online</strong> when it’s ready; the expiry date is set then.' : 'Offline: nobody can see it.';
+  $('.ga-form .state').innerHTML = g.status === 'online' ? `Online${g.expires_at ? ` until <strong>${day(g.expires_at)}</strong>` : ''}.` : g.status === 'draft' ? 'A draft: only you can see it (Preview · set highlights). <strong>Put online</strong> when it’s ready; the expiry date is set then.' : 'Offline: nobody can see it.';
   $('[data-offline]').hidden = g.status !== 'online';
 }
 $('[data-details]').addEventListener('change', (e) => {
