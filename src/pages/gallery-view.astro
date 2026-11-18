@@ -315,6 +315,8 @@ import { TOUR_CSS } from '../gallery-tour-css';
     } catch { /* fine */ }
     const always = (() => { try { return !!localStorage.getItem('mil-tour-always'); } catch { return false; } })();
     if ((always || (live() && !tourSeen())) && !justKept && !wantKeep) setTimeout(() => { if (!document.querySelector('.lb:not([hidden])')) runTour(); }, 900);
+    // Tony once left the testing switch on and the tour kept coming back (2026-11-19): say so when it's the reason.
+    if (always && tourSeen() && params.get('tour') !== 'always') setTimeout(() => toast('Tour testing is on in this browser, so the tour shows on every visit. Add ?tour=off to the address to turn it off.'), 1400);
     if (location.hash === '#photos') $('.gallery').scrollIntoView();
   }
 
