@@ -50,8 +50,10 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
         </div>
         <div class="three">
           <label>In house prints, tracked post (NZ$) <input name="freight_inhouse" type="number" min="0" step="0.5" /></label>
+          <label>In house minimum order (NZ$) <input name="min_inhouse" type="number" min="0" step="1" /></label>
         </div>
-        <p class="hint">In house: prints you make on your PRO-10 (lab “In house”, up to A3+), posted by you within New Zealand.</p>
+        <label>Return address on labels <textarea name="return_address" rows="3" placeholder="Moments in Light&#10;Street address&#10;Town postcode"></textarea></label>
+        <p class="hint">In house: prints you make on your PRO-10 (lab “In house”, up to A3+), posted by you within New Zealand. When an order’s in-house prints come to less than the minimum, the cart asks the couple to add more before checking out. The return address goes on the 100 × 100 mm address labels (each order’s “Print address label”).</p>
         <p class="hint">Atkins items (New Zealand only for now): wall art is anything that isn’t a paper print, like canvas, frames and gallery boards.</p>
         <p class="hint"><strong>Seldex items</strong> use Seldex’s own published rates at cost, converted at the NZ$ per A$ rate below (from <a href="https://seldex.com.au/shipping-international" target="_blank" rel="noopener">international</a> and <a href="https://seldex.com.au/shipping-australia" target="_blank" rel="noopener">Australian</a> shipping, 19 Nov 2026). New Zealand: A$25, or A$50 once Seldex’s cost for the order is A$500+, plus A$15 for a remote postcode. Australia: Standard A$15 / Express A$25, or A$25 / A$35 over A$100; remote postcodes aren’t charged, you’re told instead. Plus A$15 once per order with a frame or canvas bigger than 20×24″. An order with both labs pays both. The couple picks the country and postcode in the cart.</p>
         <div class="three">
@@ -110,7 +112,8 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
     $('.pr-live').classList.toggle('on', !!settings.live);
     const f = $<HTMLFormElement>('[data-settings]');
     (f.elements.namedItem('live') as HTMLInputElement).checked = !!settings.live;
-    for (const k of ['freight_prints', 'freight_wall', 'free_over', 'freight_inhouse']) (f.elements.namedItem(k) as HTMLInputElement).value = String((settings[k] ?? 0) / 100);
+    for (const k of ['freight_prints', 'freight_wall', 'free_over', 'freight_inhouse', 'min_inhouse']) (f.elements.namedItem(k) as HTMLInputElement).value = String((settings[k] ?? 0) / 100);
+    (f.elements.namedItem('return_address') as HTMLTextAreaElement).value = settings.return_address ?? '';
     (f.elements.namedItem('hold_days') as HTMLInputElement).value = settings.hold_days;
     (f.elements.namedItem('rate') as HTMLInputElement).value = settings.rate;
     (f.elements.namedItem('intro') as HTMLTextAreaElement).value = settings.intro;
@@ -222,7 +225,7 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
     const live = !!f.get('live');
     if (live && !settings.live && !await ask('Show prints to clients? Everyone with a gallery link will be able to order and pay from now on.')) return;
     const d = await api('/api/studio/galleries/prints', 'PUT', { settings: {
-      live, freight_prints: Math.round(Number(f.get('freight_prints')) * 100), freight_wall: Math.round(Number(f.get('freight_wall')) * 100), freight_inhouse: Math.round(Number(f.get('freight_inhouse')) * 100),
+      live, freight_prints: Math.round(Number(f.get('freight_prints')) * 100), freight_wall: Math.round(Number(f.get('freight_wall')) * 100), freight_inhouse: Math.round(Number(f.get('freight_inhouse')) * 100), min_inhouse: Math.round(Number(f.get('min_inhouse')) * 100), return_address: f.get('return_address'),
       free_over: Math.round(Number(f.get('free_over')) * 100), hold_days: f.get('hold_days'), rate: f.get('rate'), intro: f.get('intro'),
     } });
     if (d) { toast('Saved.'); loadSetup(); }
@@ -285,6 +288,7 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
       <label class="po-tony">Your note (only you see it) <textarea rows="2" data-tony-note>${esc(o.tony_note ?? '')}</textarea></label>
       <div class="po-actions">
         <button type="button" class="s-btn" data-lab>Download lab files</button>
+        <button type="button" class="s-btn" data-label>Print address label</button>
         ${o.status === 'paid' ? '<button type="button" class="s-btn s-btn--solid" data-step="approved">Crops checked</button>' : ''}
         ${['paid', 'approved'].includes(o.status) ? '<button type="button" class="s-btn s-btn--solid" data-step="ordered">Ordered from the lab</button>' : ''}
         ${['paid', 'approved', 'ordered'].includes(o.status) ? '<button type="button" class="s-btn s-btn--solid" data-step="shipped">Shipped</button>' : ''}
@@ -295,6 +299,36 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
       const i = items.find((x: any) => String(x.id) === m.dataset.mk);
       if (i?.crop) m.innerHTML = mockup(i.product as Product, i.web, i.crop, !!i.crop.landscape, 150, 150);
     }));
+  }
+  /** The address label for the Zebra GC420t (100 × 100 mm roll): opens a page sized to the label
+   *  and the print dialog; choose the Zebra there. */
+  function printLabel() {
+    const { order: o } = current;
+    const a = o.address ?? {};
+    const lines = [a.line1, a.line2, [a.city, a.postal_code].filter(Boolean).join(' '), a.state, a.country && a.country !== 'NZ' ? (a.country === 'AU' ? 'AUSTRALIA' : a.country) : ''].filter(Boolean);
+    const from = String(settings.return_address ?? '').trim();
+    const w = window.open('', '_blank', 'width=480,height=520');
+    if (!w) { alert('Your browser blocked the label window. Allow pop-ups for this site and try again.'); return; }
+    w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${esc(o.number)} label</title><style>
+      @page { size: 100mm 100mm; margin: 0 }
+      html, body { margin: 0; padding: 0 }
+      body { width: 100mm; height: 100mm; box-sizing: border-box; padding: 6mm 6mm 5mm; font-family: Arial, Helvetica, sans-serif; color: #000; display: flex; flex-direction: column }
+      .top { display: flex; justify-content: space-between; align-items: baseline; border-bottom: .4mm solid #000; padding-bottom: 2mm; font-size: 9pt; letter-spacing: .08em }
+      .top b { font-size: 11pt; letter-spacing: .12em }
+      .to { flex: 1; padding-top: 4mm }
+      .to small { display: block; font-size: 8pt; letter-spacing: .1em; margin-bottom: 1.5mm }
+      .name { font-size: 15pt; font-weight: bold; line-height: 1.15 }
+      .addr { font-size: 13pt; line-height: 1.25; margin-top: 1mm }
+      .phone { font-size: 10pt; margin-top: 2mm }
+      .from { border-top: .3mm solid #000; padding-top: 2mm; font-size: 8pt; line-height: 1.3; white-space: pre-line }
+      .from b { letter-spacing: .1em }
+      @media screen { body { margin: 10px auto; outline: 1px dashed #999 } }
+    </style></head><body>
+      <div class="top"><b>MOMENTS IN LIGHT</b><span>${esc(o.number)}</span></div>
+      <div class="to"><small>DELIVER TO</small><div class="name">${esc(a.name || o.name || '')}</div><div class="addr">${lines.map(esc).join('<br>')}</div>${o.phone ? `<div class="phone">${esc(o.phone)}</div>` : ''}</div>
+      ${from ? `<div class="from"><b>IF UNDELIVERED, RETURN TO</b>\n${esc(from)}</div>` : ''}
+      <script>window.onload = () => { window.print(); };<\/script></body></html>`);
+    w.document.close();
   }
   function sheet() {
     const { order: o, items, gallery: g } = current;
@@ -346,6 +380,7 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
     if ((x = b('[data-tab]'))) { tab(x.dataset.tab!); return; }
     if ((x = b('[data-show]'))) { show = x.dataset.show!; document.querySelectorAll('[data-show]').forEach((y) => y.classList.toggle('on', y === x)); drawOrders(); return; }
     if ((x = b('[data-order]'))) { openOrder(Number(x.dataset.order)); return; }
+    if (b('[data-label]')) return printLabel();
     if (b('[data-close-order]')) { current = null; $('.pr-order').hidden = true; history.replaceState(null, '', location.pathname); drawOrders(); return; }
     if ((x = b('[data-step]'))) { step(x.dataset.step!); return; }
     if ((x = b('[data-recrop]'))) { recrop(Number(x.dataset.recrop)); return; }

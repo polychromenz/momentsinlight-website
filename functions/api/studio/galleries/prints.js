@@ -58,6 +58,8 @@ export async function onRequestPut({ request, env }) {
   if (x.freight_prints !== undefined) s.freight_prints = cents(x.freight_prints);
   if (x.freight_wall !== undefined) s.freight_wall = cents(x.freight_wall);
   if (x.freight_inhouse !== undefined) s.freight_inhouse = cents(x.freight_inhouse);
+  if (x.min_inhouse !== undefined) s.min_inhouse = cents(x.min_inhouse);
+  if (x.return_address !== undefined) s.return_address = String(x.return_address).trim().slice(0, 300);
   if (x.free_over !== undefined) s.free_over = cents(x.free_over);
   if (x.hold_days !== undefined) s.hold_days = Math.min(60, Math.max(0, Math.round(Number(x.hold_days) || 0)));
   if (x.rate !== undefined && Number(x.rate) > 0.5 && Number(x.rate) < 3) s.rate = Number(Number(x.rate).toFixed(4));

@@ -20,7 +20,7 @@ import { sendEmail } from './gmail.js';
 import { renderTemplate, studioLinks } from './email-render.js';
 import { alertTony } from './crm.js';
 import { webUrl } from './galleries.js';
-import { freightFor, cleanDest, postcodeCheck, COUNTRIES } from './print-freight.js';
+import { freightFor, cleanDest, postcodeCheck, COUNTRIES, isInHouse } from './print-freight.js';
 
 const SITE = 'https://www.momentsinlight.co.nz';
 const nzToday = () => new Date().toLocaleDateString('en-CA', { timeZone: 'Pacific/Auckland' });
@@ -32,6 +32,8 @@ export const DEFAULTS = {
   freight_prints: 1500,   // cents: an order with paper prints only
   freight_wall: 3500,     // cents: an order with wall art (canvas, frames, boards)
   freight_inhouse: 1000,  // cents: prints Tony makes himself (lab 'In house'), posted within NZ
+  min_inhouse: 4000,      // cents: the least an order's in-house prints can come to (small orders don't pay for themselves)
+  return_address: '',     // printed as "From" on the address labels (Zebra GC420t, 100 × 100 mm)
   free_over: 0,           // cents: free freight from this subtotal (0 = never)
   hold_days: 5,           // orders wait this long for Tony before they could go to a lab automatically
   rate: 1.12,             // NZ$ per A$, for the lab cost and margin shown in the studio
@@ -134,6 +136,12 @@ export async function checkCart(env, a, items, dest) {
   const qtys = new Map();
   for (const r of rows) qtys.set(r.product_id, (qtys.get(r.product_id) ?? 0) + r.qty);
   const f = freightFor([...qtys].map(([id, qty]) => ({ p: products.get(id), qty })), s, dest, t.subtotal);
+  // In-house prints have a minimum (Tony, 2026-11-19): below it, the cart asks for a little more.
+  const home = t.lines.filter((l) => isInHouse(l.p)).reduce((a, l) => a + l.amount, 0);
+  if (!f.error && home > 0 && home < (s.min_inhouse ?? 0)) {
+    const more = ((s.min_inhouse - home) / 100).toLocaleString('en-NZ', { style: 'currency', currency: 'NZD' }).replace('NZ', '');
+    f.error = `Photo prints have a ${((s.min_inhouse) / 100).toLocaleString('en-NZ', { style: 'currency', currency: 'NZD' }).replace('NZ', '').replace('.00', '')} minimum. Add ${more} more of photo prints (or choose a portrait envelope) to check out.`;
+  }
   return { ...t, freight: f.freight, total: t.subtotal + f.freight, free: f.free, delivery: f, rows, products };
 }
 
