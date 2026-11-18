@@ -246,8 +246,9 @@ export function initShop(ctx: Ctx) {
       if (!i || !p) return;
       const land = landFor(p, i, defaultLandscape(i));
       const c = centredCrop(pr(i), ratioOf(p, land)), w = el.clientWidth || 260, h = el.clientHeight || 190;
-      el.innerHTML = hasRoom(p) ? roomView(p, i.web, pr(i), c, land, w, h).html : mockup(p, i.web, c, land, w, h);
-      el.classList.toggle('sh-card-mk--room', hasRoom(p));
+      const v = roomView(p, i.web, pr(i), c, land, w, h);
+      el.innerHTML = v ? v.html : mockup(p, i.web, c, land, w, h);
+      el.classList.toggle('sh-card-mk--room', !!v);
     });
   }
 
@@ -279,11 +280,11 @@ export function initShop(ctx: Ctx) {
       z.value = String(ed.zoomOf());
       z.disabled = !ed.canZoom;
       z.oninput = () => ed.zoom(Number(z.value));
-    } else if (inRoom && hasRoom(p)) {
-      const v = roomView(p, i.web, pr(i), c, land, host.clientWidth || 600, host.clientHeight || 420);
+    } else if (inRoom && hasRoom(p, land)) {
+      const v = roomView(p, i.web, pr(i), c, land, host.clientWidth || 600, host.clientHeight || 420)!;
       host.innerHTML = v.html;
       const note = shopDlg.querySelector<HTMLElement>('.sh-room-note');
-      if (note) note.textContent = v.exact ? 'Shown in a room to give a feel for it. The size on the wall is a guide only.' : `Shown in a room with a similar frame. Yours will be ${p.type.toLowerCase()}.`;
+      if (note) note.textContent = v.exact ? 'Shown in a room to give a feel for it. The size on the wall is a guide only.' : `Shown in a room with a very similar frame. Yours will be ${p.type.toLowerCase()}.`;
     } else {
       host.innerHTML = mockup(p, i.web, c, land, host.clientWidth || 600, host.clientHeight || 420);
     }
@@ -351,9 +352,9 @@ export function initShop(ctx: Ctx) {
         <div class="sh-under">
           ${st.cropping
             ? `<label class="sh-zoom">Zoom <input type="range" min="0" max="1" step="0.01" data-zoom /></label><button type="button" class="g-btn" data-crop-done>Done</button>`
-            : `${hasRoom(p) ? `<button type="button" class="g-btn" data-room>${inRoom ? 'Close up' : 'In a room'}</button>` : ''}<button type="button" class="g-btn" data-crop>Adjust crop</button>${square || pack ? '' : `<button type="button" class="g-btn" data-turn>${st.landscape ? 'Make it portrait' : 'Make it landscape'}</button>`}`}
+            : `${hasRoom(p, land) ? `<button type="button" class="g-btn" data-room>${inRoom ? 'Close up' : 'In a room'}</button>` : ''}<button type="button" class="g-btn" data-crop>Adjust crop</button>${square || pack ? '' : `<button type="button" class="g-btn" data-turn>${st.landscape ? 'Make it portrait' : 'Make it landscape'}</button>`}`}
         </div>
-        ${hasRoom(p) && inRoom && !st.cropping ? '<p class="sh-hint sh-room-note"></p>' : ''}
+        ${hasRoom(p, land) && inRoom && !st.cropping ? '<p class="sh-hint sh-room-note"></p>' : ''}
         ${strip}${stripHint}
       </div>
       <div class="sh-right sh-scroll">

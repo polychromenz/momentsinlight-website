@@ -8,7 +8,7 @@
 import { croppedPhoto, type Product, type Crop } from './mockup';
 import { ratioOf } from '../../functions-lib/print-pricing.js';
 
-type Room = { src: string; colour: string; ar: number; hole: number[]; open: number[]; mat: string };
+type Room = { src: string; colour: string; ar: number; hole: number[]; open: number[]; mat: string; kind?: 'torn' | 'circle'; mask?: string };
 const ROOMS: Room[] = [
   { src: '/prints/rooms/10x10-greystone.webp?v=2', colour: 'greystone', ar: 1.3915, hole: [0.3665, 0.2925, 0.2597, 0.3608], open: [0.3263, 0.2311, 0.3403, 0.4835], mat: '#eaebed' },
   { src: '/prints/rooms/11x14-camel.webp?v=2', colour: 'camel', ar: 1.3915, hole: [0.3581, 0.2134, 0.272, 0.5077], open: [0.3119, 0.1539, 0.3644, 0.6268], mat: '#e4e5e7' },
@@ -26,32 +26,64 @@ const ROOMS: Room[] = [
   { src: '/prints/rooms/30x40-white.webp?v=2', colour: 'white', ar: 1.3915, hole: [0.3585, 0.1592, 0.2835, 0.2429], open: [0.3225, 0.112, 0.3555, 0.3373], mat: '#eaebed' },
   { src: '/prints/rooms/40x40-camel.webp?v=2', colour: 'camel', ar: 1.3915, hole: [0.3958, 0.1344, 0.2055, 0.2854], open: [0.3636, 0.0843, 0.2699, 0.3856], mat: '#e8e9eb' },
   { src: '/prints/rooms/8x10-white.webp?v=2', colour: 'white', ar: 1.3915, hole: [0.3864, 0.2412, 0.2169, 0.4057], open: [0.3453, 0.1904, 0.2992, 0.5071], mat: '#e4e5e7' },
+  // Seldex Hand Torn Frames stock scenes (2026-11-19): the torn print's outline is cut from `mask`.
+  { src: '/prints/rooms/torn-circle-black.webp?v=2', mask: '/prints/rooms/torn-circle-black-mask.png?v=2', kind: 'circle', colour: 'black', ar: 1.3915, hole: [0.3407, 0.2264, 0.3292, 0.4558], open: [0.3407, 0.2264, 0.3292, 0.4558], mat: '#ebecee' },
+  { src: '/prints/rooms/torn-horizontal-black.webp?v=2', mask: '/prints/rooms/torn-horizontal-black-mask.png?v=2', kind: 'torn', colour: 'black', ar: 1.3915, hole: [0.3983, 0.2075, 0.3767, 0.4039], open: [0.3983, 0.2075, 0.3767, 0.4039], mat: '#ebecee' },
+  { src: '/prints/rooms/torn-square-black.webp?v=2', mask: '/prints/rooms/torn-square-black-mask.png?v=2', kind: 'torn', colour: 'black', ar: 1.3915, hole: [0.3492, 0.2429, 0.3106, 0.4298], open: [0.3492, 0.2429, 0.3106, 0.4298], mat: '#ebecee' },
+  { src: '/prints/rooms/torn-circle-camel.webp?v=2', mask: '/prints/rooms/torn-circle-camel-mask.png?v=2', kind: 'circle', colour: 'camel', ar: 1.3915, hole: [0.3085, 0.2476, 0.3309, 0.4581], open: [0.3085, 0.2476, 0.3309, 0.4581], mat: '#ebecee' },
+  { src: '/prints/rooms/torn-square-camel.webp?v=2', mask: '/prints/rooms/torn-square-camel-mask.png?v=2', kind: 'torn', colour: 'camel', ar: 1.3915, hole: [0.3136, 0.2547, 0.3242, 0.4487], open: [0.3136, 0.2547, 0.3242, 0.4487], mat: '#ebecee' },
+  { src: '/prints/rooms/torn-vertical-camel.webp?v=2', mask: '/prints/rooms/torn-vertical-camel-mask.png?v=2', kind: 'torn', colour: 'camel', ar: 1.3915, hole: [0.3678, 0.2099, 0.2733, 0.5171], open: [0.3678, 0.2099, 0.2733, 0.5171], mat: '#ebecee' },
+  { src: '/prints/rooms/torn-circle-charcoal.webp?v=2', mask: '/prints/rooms/torn-circle-charcoal-mask.png?v=2', kind: 'circle', colour: 'charcoal', ar: 1.3915, hole: [0.4017, 0.2052, 0.2835, 0.3921], open: [0.4017, 0.2052, 0.2835, 0.3921], mat: '#ebecee' },
+  { src: '/prints/rooms/torn-horizontal-charcoal.webp?v=2', mask: '/prints/rooms/torn-horizontal-charcoal-mask.png?v=2', kind: 'torn', colour: 'charcoal', ar: 1.3915, hole: [0.3966, 0.2594, 0.3089, 0.3308], open: [0.3966, 0.2594, 0.3089, 0.3308], mat: '#ebecee' },
+  { src: '/prints/rooms/torn-square-charcoal.webp?v=2', mask: '/prints/rooms/torn-square-charcoal-mask.png?v=2', kind: 'torn', colour: 'charcoal', ar: 1.3915, hole: [0.4051, 0.2146, 0.275, 0.3803], open: [0.4051, 0.2146, 0.275, 0.3803], mat: '#ebecee' },
+  { src: '/prints/rooms/torn-circle-espresso.webp?v=2', mask: '/prints/rooms/torn-circle-espresso-mask.png?v=2', kind: 'circle', colour: 'espresso', ar: 1.3915, hole: [0.3712, 0.2146, 0.3089, 0.4275], open: [0.3712, 0.2146, 0.3089, 0.4275], mat: '#ebecee' },
+  { src: '/prints/rooms/torn-horizontal-espresso.webp?v=2', mask: '/prints/rooms/torn-horizontal-espresso-mask.png?v=2', kind: 'torn', colour: 'espresso', ar: 1.3915, hole: [0.3983, 0.2382, 0.3377, 0.3662], open: [0.3983, 0.2382, 0.3377, 0.3662], mat: '#ebecee' },
+  { src: '/prints/rooms/torn-square-espresso.webp?v=2', mask: '/prints/rooms/torn-square-espresso-mask.png?v=2', kind: 'torn', colour: 'espresso', ar: 1.3915, hole: [0.3797, 0.2264, 0.2919, 0.4062], open: [0.3797, 0.2264, 0.2919, 0.4062], mat: '#ebecee' },
+  { src: '/prints/rooms/torn-circle-greystone.webp?v=2', mask: '/prints/rooms/torn-circle-greystone-mask.png?v=2', kind: 'circle', colour: 'greystone', ar: 1.3915, hole: [0.378, 0.1981, 0.3225, 0.4463], open: [0.378, 0.1981, 0.3225, 0.4463], mat: '#ebecee' },
+  { src: '/prints/rooms/torn-horizontal-greystone.webp?v=2', mask: '/prints/rooms/torn-horizontal-greystone-mask.png?v=2', kind: 'torn', colour: 'greystone', ar: 1.3915, hole: [0.2203, 0.2429, 0.4309, 0.4629], open: [0.2203, 0.2429, 0.4309, 0.4629], mat: '#ebecee' },
+  { src: '/prints/rooms/torn-square-greystone.webp?v=2', mask: '/prints/rooms/torn-square-greystone-mask.png?v=2', kind: 'torn', colour: 'greystone', ar: 1.3915, hole: [0.3915, 0.2217, 0.2936, 0.4039], open: [0.3915, 0.2217, 0.2936, 0.4039], mat: '#ebecee' },
+  { src: '/prints/rooms/torn-circle-oyster.webp?v=2', mask: '/prints/rooms/torn-circle-oyster-mask.png?v=2', kind: 'circle', colour: 'oyster', ar: 1.3915, hole: [0.3153, 0.2382, 0.3564, 0.4935], open: [0.3153, 0.2382, 0.3564, 0.4935], mat: '#ebecee' },
+  { src: '/prints/rooms/torn-horizontal-oyster.webp?v=2', mask: '/prints/rooms/torn-horizontal-oyster-mask.png?v=2', kind: 'torn', colour: 'oyster', ar: 1.3915, hole: [0.239, 0.2453, 0.414, 0.444], open: [0.239, 0.2453, 0.414, 0.444], mat: '#ebecee' },
+  { src: '/prints/rooms/torn-square-oyster.webp?v=2', mask: '/prints/rooms/torn-square-oyster-mask.png?v=2', kind: 'torn', colour: 'oyster', ar: 1.3915, hole: [0.3271, 0.2524, 0.3343, 0.4629], open: [0.3271, 0.2524, 0.3343, 0.4629], mat: '#ebecee' },
+  { src: '/prints/rooms/torn-circle-walnut.webp?v=2', mask: '/prints/rooms/torn-circle-walnut-mask.png?v=2', kind: 'circle', colour: 'walnut', ar: 1.3915, hole: [0.3136, 0.2382, 0.3394, 0.4699], open: [0.3136, 0.2382, 0.3394, 0.4699], mat: '#ebecee' },
+  { src: '/prints/rooms/torn-horizontal-walnut.webp?v=2', mask: '/prints/rooms/torn-horizontal-walnut-mask.png?v=2', kind: 'torn', colour: 'walnut', ar: 1.3915, hole: [0.3746, 0.2335, 0.3445, 0.3709], open: [0.3746, 0.2335, 0.3445, 0.3709], mat: '#ebecee' },
+  { src: '/prints/rooms/torn-square-walnut.webp?v=2', mask: '/prints/rooms/torn-square-walnut-mask.png?v=2', kind: 'torn', colour: 'walnut', ar: 1.3915, hole: [0.3203, 0.25, 0.3242, 0.4511], open: [0.3203, 0.25, 0.3242, 0.4511], mat: '#ebecee' },
+  { src: '/prints/rooms/torn-circle-white.webp?v=2', mask: '/prints/rooms/torn-circle-white-mask.png?v=2', kind: 'circle', colour: 'white', ar: 1.3915, hole: [0.3559, 0.2382, 0.3225, 0.4463], open: [0.3559, 0.2382, 0.3225, 0.4463], mat: '#ebecee' },
+  { src: '/prints/rooms/torn-square-white.webp?v=2', mask: '/prints/rooms/torn-square-white-mask.png?v=2', kind: 'torn', colour: 'white', ar: 1.3915, hole: [0.3627, 0.25, 0.3089, 0.4275], open: [0.3627, 0.25, 0.3089, 0.4275], mat: '#ebecee' },
+  { src: '/prints/rooms/torn-vertical-white.webp?v=2', mask: '/prints/rooms/torn-vertical-white-mask.png?v=2', kind: 'torn', colour: 'white', ar: 1.3915, hole: [0.3763, 0.2099, 0.2733, 0.5006], open: [0.3763, 0.2099, 0.2733, 0.5006], mat: '#ebecee' },
 ];
 
-/** The shop's frame colours (Pic-Time's names) → Seldex scene colours, closest first. */
+/** The shop's frame colours (Pic-Time's names) → Seldex frame colours that look the same, closest
+ *  first. A room is only shown in one of these (Tony, 2026-11-19: no room in the wrong colour). */
 const COLOURS: Record<string, string[]> = {
-  'Black': ['black', 'espresso', 'greystone'], 'White': ['white', 'oyster'], 'Light Wood': ['camel', 'oyster'],
-  'Natural': ['camel', 'oyster'], 'Classic Wood': ['walnut', 'camel'], 'Dark Wood': ['espresso', 'walnut'], 'Graphite': ['greystone', 'black'],
+  'Black': ['black'], 'White': ['white'], 'Light Wood': ['camel', 'oyster'], 'Natural': ['camel', 'oyster'],
+  'Classic Wood': ['walnut'], 'Dark Wood': ['espresso'], 'Graphite': ['charcoal', 'greystone'],
 };
-
-export const hasRoom = (p: Product) => p.kind === 'frame' || p.kind === 'matted-frame';
+const sceneKind = (p: Product) => (p.kind === 'float' ? 'torn' : p.kind === 'circle' ? 'circle' : p.kind === 'frame' || p.kind === 'matted-frame' ? undefined : null);
 
 const esc = (s: unknown) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
 const shape = (r: number) => (r < 0.92 ? 0 : r > 1.08 ? 2 : 1); // portrait, square, landscape
 const pxRatio = (room: Room, box: number[]) => (box[2] * room.ar) / box[3];
 
-/** The best scene for a frame colour and a print shape (r = width / height). */
-function pick(type: string, r: number, matted: boolean) {
-  const want = COLOURS[type] ?? [];
-  let best: Room = ROOMS[0], score = Infinity;
+/** The scene for a product: same kind of frame, the frame's colour (or its close match) and the
+ *  print's shape (portrait, square, landscape); the nearest proportions win. null: none. */
+function pick(p: Product, r: number) {
+  const kind = sceneKind(p);
+  if (kind === null) return null;
+  const want = COLOURS[p.type] ?? [];
+  const box = (room: Room) => (p.kind === 'matted-frame' || room.kind ? room.hole : room.open);
+  let best: Room | null = null, score = Infinity;
   for (const room of ROOMS) {
-    const rr = pxRatio(room, matted ? room.hole : room.open);
-    const c = want.indexOf(room.colour);
-    const s = (shape(rr) === shape(r) ? 0 : 20) + (c < 0 ? 6 : c * 2) + Math.abs(Math.log(rr / r)) * 6;
+    if (room.kind !== kind) continue;
+    const c = want.indexOf(room.colour), rr = pxRatio(room, box(room));
+    if (c < 0 || (kind !== 'circle' && shape(rr) !== shape(r))) continue;
+    const s = c * 2 + Math.abs(Math.log(rr / r)) * 6;
     if (s < score) { score = s; best = room; }
   }
-  return { room: best, exact: want[0] === best.colour };
+  return best ? { room: best, exact: want[0] === best.colour, box: box(best) } : null;
 }
+/** Is there a room scene for this product, colour and shape? */
+export const hasRoom = (p: Product, landscape = false) => !!pick(p, ratioOf(p, landscape));
 
 /** A crop narrowed to a shape (photo ratio pr, target t = width / height), about its centre. */
 function toShape(c: Crop, pr: number, t: number): Crop {
@@ -68,8 +100,9 @@ function toShape(c: Crop, pr: number, t: number): Crop {
 export function roomView(p: Product, src: string, pr: number, crop: Crop, landscape: boolean, w: number, h: number, zoom = 1) {
   const r = ratioOf(p, landscape);
   const matted = p.kind === 'matted-frame';
-  const { room, exact } = pick(p.type, r, matted);
-  const box = matted ? room.hole : room.open;
+  const found = pick(p, r);
+  if (!found) return null;
+  const { room, exact, box } = found;
   // The scene, covering the box (zoomed in on the frame when asked) and centred on the frame.
   const fit = Math.max(w / room.ar, h) * zoom;
   const RW = fit * room.ar, RH = fit;
@@ -77,7 +110,11 @@ export function roomView(p: Product, src: string, pr: number, crop: Crop, landsc
   const left = Math.min(0, Math.max(w - RW, w / 2 - cx)), top = Math.min(0, Math.max(h - RH, h / 2 - cy));
   const pct = (v: number) => `${(v * 100).toFixed(3)}%`;
   let inner: string;
-  if (matted) {
+  if (room.mask) {
+    // Hand torn: the photo (narrowed to the torn print's shape) cut to the torn outline.
+    const m = `url('${room.mask}')`;
+    inner = `<div class="rm-ph rm-ph--torn" style="left:0;top:0;width:100%;height:100%;-webkit-mask-image:${m};mask-image:${m}">${croppedPhoto(src, toShape(crop, pr, pxRatio(room, box)))}</div>`;
+  } else if (matted) {
     // The print sits in the hole at its own shape; the rest of the hole is mat.
     const hr = pxRatio(room, box);
     const iw = r > hr ? 1 : r / hr, ih = r > hr ? hr / r : 1;
@@ -88,7 +125,7 @@ export function roomView(p: Product, src: string, pr: number, crop: Crop, landsc
   }
   const html = `<div class="rm-box" style="width:${w}px;height:${h}px"><div class="rm" style="width:${RW.toFixed(1)}px;height:${RH.toFixed(1)}px;left:${left.toFixed(1)}px;top:${top.toFixed(1)}px">
     <img class="rm-bg" src="${esc(room.src)}" alt="" draggable="false" />
-    <div class="rm-in${matted ? ' rm-in--mat' : ''}" style="left:${pct(box[0])};top:${pct(box[1])};width:${pct(box[2])};height:${pct(box[3])};background:${room.mat}">${inner}</div></div></div>`;
+    <div class="rm-in${matted || room.mask ? ' rm-in--mat' : ''}" style="left:${pct(box[0])};top:${pct(box[1])};width:${pct(box[2])};height:${pct(box[3])};background:${room.mask ? 'transparent' : room.mat}">${inner}</div></div></div>`;
   return { html, exact, colour: room.colour };
 }
 
@@ -100,4 +137,5 @@ export const ROOM_CSS = `
 .rm-in--mat{box-shadow:none}
 .rm-ph{position:absolute;overflow:hidden;box-shadow:inset 0 0 2px rgba(0,0,0,.25)}
 .rm-ph .mk-photo{position:absolute;inset:0}
+.rm-ph--torn{box-shadow:none;-webkit-mask-size:100% 100%;mask-size:100% 100%;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat}
 `;
