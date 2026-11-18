@@ -48,6 +48,10 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
           <label>Atkins delivery with wall art (NZ$) <input name="freight_wall" type="number" min="0" step="0.5" /></label>
           <label>Free delivery over (NZ$, 0 = never) <input name="free_over" type="number" min="0" step="1" /></label>
         </div>
+        <div class="three">
+          <label>In house prints, tracked post (NZ$) <input name="freight_inhouse" type="number" min="0" step="0.5" /></label>
+        </div>
+        <p class="hint">In house: prints you make on your PRO-10 (lab “In house”, up to A3+), posted by you within New Zealand.</p>
         <p class="hint">Atkins items (New Zealand only for now): wall art is anything that isn’t a paper print, like canvas, frames and gallery boards.</p>
         <p class="hint"><strong>Seldex items</strong> use Seldex’s own published rates at cost, converted at the NZ$ per A$ rate below (from <a href="https://seldex.com.au/shipping-international" target="_blank" rel="noopener">international</a> and <a href="https://seldex.com.au/shipping-australia" target="_blank" rel="noopener">Australian</a> shipping, 19 Nov 2026). New Zealand: A$25, or A$50 once Seldex’s cost for the order is A$500+, plus A$15 for a remote postcode. Australia: Standard A$15 / Express A$25, or A$25 / A$35 over A$100; remote postcodes aren’t charged, you’re told instead. Plus A$15 once per order with a frame or canvas bigger than 20×24″. An order with both labs pays both. The couple picks the country and postcode in the cart.</p>
         <div class="three">
@@ -106,7 +110,7 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
     $('.pr-live').classList.toggle('on', !!settings.live);
     const f = $<HTMLFormElement>('[data-settings]');
     (f.elements.namedItem('live') as HTMLInputElement).checked = !!settings.live;
-    for (const k of ['freight_prints', 'freight_wall', 'free_over']) (f.elements.namedItem(k) as HTMLInputElement).value = String(settings[k] / 100);
+    for (const k of ['freight_prints', 'freight_wall', 'free_over', 'freight_inhouse']) (f.elements.namedItem(k) as HTMLInputElement).value = String((settings[k] ?? 0) / 100);
     (f.elements.namedItem('hold_days') as HTMLInputElement).value = settings.hold_days;
     (f.elements.namedItem('rate') as HTMLInputElement).value = settings.rate;
     (f.elements.namedItem('intro') as HTMLTextAreaElement).value = settings.intro;
@@ -218,7 +222,7 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
     const live = !!f.get('live');
     if (live && !settings.live && !await ask('Show prints to clients? Everyone with a gallery link will be able to order and pay from now on.')) return;
     const d = await api('/api/studio/galleries/prints', 'PUT', { settings: {
-      live, freight_prints: Math.round(Number(f.get('freight_prints')) * 100), freight_wall: Math.round(Number(f.get('freight_wall')) * 100),
+      live, freight_prints: Math.round(Number(f.get('freight_prints')) * 100), freight_wall: Math.round(Number(f.get('freight_wall')) * 100), freight_inhouse: Math.round(Number(f.get('freight_inhouse')) * 100),
       free_over: Math.round(Number(f.get('free_over')) * 100), hold_days: f.get('hold_days'), rate: f.get('rate'), intro: f.get('intro'),
     } });
     if (d) { toast('Saved.'); loadSetup(); }
@@ -275,7 +279,7 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
         const land = !!i.crop?.landscape;
         const d = i.w && i.crop ? dpi(i.w, i.crop, i.product, land) : 0;
         return `<li data-item="${i.id}"><div class="po-mk" data-mk="${i.id}"></div><div class="po-what"><strong>${i.qty} × ${esc(i.product.category)} · ${esc(i.product.type)}</strong>
-          <span>${esc(sizeOf(i.product, land))} · ${esc(i.product.lab)} · ${money(i.amount)}</span><span class="po-file">${esc(i.filename ?? '')}${d ? ` · about ${Math.round(d)} dpi${d < 150 ? ' <b class="po-low">low</b>' : ''}` : ''}</span>
+          <span>${esc(sizeOf(i.product, land))} · ${esc(i.product.lab)} · ${money(i.amount)}</span>${i.product.lab_item ? `<span class="po-file">Order: ${esc(i.product.lab_item)}</span>` : ''}<span class="po-file">${esc(i.filename ?? '')}${d ? ` · about ${Math.round(d)} dpi${d < 150 ? ' <b class="po-low">low</b>' : ''}` : ''}</span>
           <button type="button" class="s-btn s-btn--quiet" data-recrop="${i.id}">Adjust crop</button></div></li>`;
       }).join('')}</ul>
       <label class="po-tony">Your note (only you see it) <textarea rows="2" data-tony-note>${esc(o.tony_note ?? '')}</textarea></label>
@@ -296,7 +300,7 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
     const { order: o, items, gallery: g } = current;
     const a = o.address ?? {};
     return [`Moments in Light print order ${o.number}`, `Gallery: ${g?.name ?? ''}`, '', 'Deliver to:', a.name || o.name, a.line1, a.line2, [a.city, a.postal_code].filter(Boolean).join(' '), a.country, o.phone ? `Phone: ${o.phone}` : '', o.email ? `Email: ${o.email}` : '', '',
-      'Prints:', ...items.map((i: any, k: number) => `${String(k + 1).padStart(2, '0')}. ${i.qty} x ${i.product.lab}: ${i.product.category} ${i.product.type} ${sizeOf(i.product, !!i.crop?.landscape)} (${i.product.name})`),
+      'Prints:', ...items.map((i: any, k: number) => `${String(k + 1).padStart(2, '0')}. ${i.qty} x ${i.product.lab}: ${i.product.category} ${i.product.type} ${sizeOf(i.product, !!i.crop?.landscape)} (${i.product.name})${i.product.lab_item ? `\n    Order: ${i.product.lab_item}` : ''}`),
       '', o.note ? `Their note: ${o.note}` : ''].filter((x) => x !== undefined && x !== null).join('\n');
   }
   async function step(next: string) {

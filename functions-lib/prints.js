@@ -31,6 +31,7 @@ export const DEFAULTS = {
   live: false,            // false: only Tony (studio visits) sees the shop
   freight_prints: 1500,   // cents: an order with paper prints only
   freight_wall: 3500,     // cents: an order with wall art (canvas, frames, boards)
+  freight_inhouse: 1000,  // cents: prints Tony makes himself (lab 'In house'), posted within NZ
   free_over: 0,           // cents: free freight from this subtotal (0 = never)
   hold_days: 5,           // orders wait this long for Tony before they could go to a lab automatically
   rate: 1.12,             // NZ$ per A$, for the lab cost and margin shown in the studio
@@ -45,7 +46,7 @@ export async function printSettings(db) {
 /** Products that can be bought for one photo, switched on, with a size. */
 export async function shopProducts(db, { cost = false } = {}) {
   // The lab's cost only for the server's freight sums: never sent to the gallery page.
-  const rows = (await db.prepare(`SELECT id, category, type, name, lab, kind, w_cm, h_cm, price, tiers${cost ? ', cost' : ''} FROM print_products WHERE active = 1 AND price > 0 AND w_cm > 0 ORDER BY sort, category, type, w_cm * h_cm, name`).all()).results;
+  const rows = (await db.prepare(`SELECT id, category, type, name, lab, kind, w_cm, h_cm, price, tiers${cost ? ', cost, lab_item' : ''} FROM print_products WHERE active = 1 AND price > 0 AND w_cm > 0 ORDER BY sort, category, type, w_cm * h_cm, name`).all()).results;
   return rows.filter((p) => SOLD.has(p.kind)).map((p) => ({ ...p, tiers: p.tiers ? JSON.parse(p.tiers) : null }));
 }
 
@@ -152,7 +153,7 @@ const deliveryText = (o) => {
   return [where, ...(x.parts ?? []).map((p) => `${p.lab}: ${p.label} ${money(p.amount)}`), ...(x.notes ?? [])].filter(Boolean).join('\n');
 };
 
-const productCopy = (p) => JSON.stringify({ category: p.category, type: p.type, name: p.name, lab: p.lab, kind: p.kind, w_cm: p.w_cm, h_cm: p.h_cm });
+const productCopy = (p) => JSON.stringify({ category: p.category, type: p.type, name: p.name, lab: p.lab, lab_item: p.lab_item || undefined, kind: p.kind, w_cm: p.w_cm, h_cm: p.h_cm });
 export const describe = (p) => [p.category, p.type && !p.name.toLowerCase().includes(p.type.toLowerCase()) ? p.type : '', p.name].filter(Boolean).join(' · ');
 
 /** Record the order and return { url } (Stripe's payment page), or { done } for Tony's test orders. */

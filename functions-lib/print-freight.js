@@ -11,6 +11,8 @@
 // "Order amount" is Seldex's cost to Tony (print_products.cost, A$), not what the couple pays.
 //
 // Atkins: Tony's own flat rates from the prints settings (paper / wall art), New Zealand only for now.
+// In house (lab 'In house', 2026-11-19): Tony prints on his Canon PRO-10 (up to A3+) and posts them
+// himself: one flat NZ rate (settings freight_inhouse), New Zealand only for now.
 //
 // Server only: it uses the labs' costs, which the gallery page never sees.
 import { PAPER } from './print-pricing.js';
@@ -50,6 +52,7 @@ export const nzRemote = (pc) => { const n = Number(pc); return !!pc && NZ_REMOTE
 export const auRemote = (pc) => AU_REMOTE[pc] ?? null;
 
 const isSeldex = (p) => /seldex/i.test(p?.lab ?? '');
+export const isInHouse = (p) => /in.?house/i.test(p?.lab ?? '');
 /** A frame or canvas bigger than 20x24" (Seldex's frame surcharge). */
 const bigFrame = (p) => !PAPER.has(p.kind) && ((p.w_cm ?? 0) > SELDEX.frameCm[0] || (p.h_cm ?? 0) > SELDEX.frameCm[1]);
 
@@ -66,13 +69,15 @@ export function cleanDest(d) {
 export function freightFor(qtys, s, dest, subtotal) {
   const d = cleanDest(dest);
   const lines = qtys.filter((x) => x.p && x.qty > 0);
-  const seldex = lines.filter((x) => isSeldex(x.p)), atkins = lines.filter((x) => !isSeldex(x.p));
+  const seldex = lines.filter((x) => isSeldex(x.p)), home = lines.filter((x) => isInHouse(x.p));
+  const atkins = lines.filter((x) => !isSeldex(x.p) && !isInHouse(x.p));
   const cents = (aud) => Math.round(aud * (Number(s.rate) || 1) * 100);
   const notes = [];
   let error = '';
-  if (d.country !== 'NZ' && atkins.length) error = `Some of these prints can only be delivered within New Zealand for now. To send to ${COUNTRIES[d.country]}, please remove them or get in touch with Tony.`;
+  if (d.country !== 'NZ' && (atkins.length || home.length)) error = `Some of these prints can only be delivered within New Zealand for now. To send to ${COUNTRIES[d.country]}, please remove them or get in touch with Tony.`;
 
   const parts = [];
+  if (home.length) parts.push({ lab: 'In house', label: 'Tracked post', amount: s.freight_inhouse ?? 1000 });
   if (atkins.length) {
     const wall = atkins.some((x) => !PAPER.has(x.p.kind));
     parts.push({ lab: 'Atkins', label: wall ? 'Wall art' : 'Prints', amount: wall ? s.freight_wall : s.freight_prints });

@@ -26,7 +26,7 @@ const GROUPS: [string, string[]][] = [
   ['Prints', ['Prints', 'Print Pack', 'Deckled Prints', 'Panoramic Prints', 'Matted Prints']],
   ['Wall art', ['Frames', 'Matted Frames', 'Float Frames', 'Circular Frames', 'Canvas', 'Gallery Boards']],
 ];
-const NICE: Record<string, string> = { 'Prints': 'Photo prints', 'Print Pack': 'Print pack', 'Deckled Prints': 'Deckled edge', 'Panoramic Prints': 'Panoramic', 'Matted Prints': 'Matted print', 'Canvas': 'Canvas', 'Frames': 'Framed print', 'Matted Frames': 'Framed with mat', 'Float Frames': 'Float frame', 'Circular Frames': 'Circle frame', 'Gallery Boards': 'Gallery board' };
+const NICE: Record<string, string> = { 'Prints': 'Photo prints', 'Print Pack': 'Print pack', 'Deckled Prints': 'Deckled edge', 'Panoramic Prints': 'Panoramic', 'Matted Prints': 'Matted print', 'Canvas': 'Canvas', 'Frames': 'Framed print', 'Matted Frames': 'Framed with mat', 'Float Frames': 'Hand torn frame', 'Circular Frames': 'Circle frame', 'Gallery Boards': 'Gallery board' };
 const ABOUT: Record<string, string> = {
   'Prints': 'Professional photo prints on semi gloss paper, with a gentle sheen and deep, rich colour.',
   'Print Pack': 'A set of 24 prints, one size, from up to 24 of your photos. Choose fewer and your favourites are repeated to fill the pack.',
@@ -36,7 +36,7 @@ const ABOUT: Record<string, string> = {
   'Canvas': 'Gallery-wrapped canvas on a wooden frame, ready to hang. The edge is the photo itself (Natural) or a colour.',
   'Frames': 'A modern box-style frame with the print behind glass, ready to hang.',
   'Matted Frames': 'A box-style frame with a thick white mat, ready to hang and display anywhere.',
-  'Float Frames': 'A box-style frame with a floating deckled print, ready to hang.',
+  'Float Frames': 'A fine art print with a soft hand-torn edge, floating on a white mat in a frame, ready to hang.',
   'Circular Frames': 'A round, deckled-edge print in a square frame with a mat.',
   'Gallery Boards': 'The print mounted on a rigid board with a dark edge, to lean or hang.',
 };
@@ -121,8 +121,9 @@ export function initShop(ctx: Ctx) {
   // Frames can be seen "in a room" (Seldex's room scenes) or close up; the choice is kept while shopping.
   let inRoom = true;
   // Tony's test visits only: which lab makes each product (couples never see it).
-  const labName = (p: Product) => (/seldex/i.test(p.lab ?? '') ? 'Seldex' : /atkins/i.test(p.lab ?? '') ? 'Atkins' : p.lab || '');
-  const labTag = (p: Product) => (ctx.shop()?.trial && labName(p) ? ` <em class="sh-lab sh-lab--${labName(p).toLowerCase()}">${esc(labName(p))}</em>` : '');
+  const labName = (p: Product) => (/seldex/i.test(p.lab ?? '') ? 'Seldex' : /atkins/i.test(p.lab ?? '') ? 'Atkins' : /in.?house/i.test(p.lab ?? '') ? 'In house' : p.lab || '');
+  const labCls = (l: string) => l.toLowerCase().replace(/\s+/g, '');
+  const labTag = (p: Product) => (ctx.shop()?.trial && labName(p) ? ` <em class="sh-lab sh-lab--${labCls(labName(p))}">${esc(labName(p))}</em>` : '');
   // Quality: the dpi of the whole photo on this product (the most it can be), and the smallest crop allowed.
   const fullDpi = (i: Img, p: Product, land: boolean) => dpi(i.w, centredCrop(pr(i), ratioOf(p, land)), p, land);
   const minW = (i: Img, p: Product, land: boolean) => minCropW(i.w, p, land);
@@ -230,7 +231,7 @@ export function initShop(ctx: Ctx) {
       <p class="sh-lead">${esc(ctx.shop()!.intro)}</p>
       ${cats().map(([g, list]) => `<h3>${g}</h3><div class="sh-cards">${list.map((c) => `<button type="button" class="sh-card" data-card="${esc(c)}">
           <span class="sh-card-mk" data-card-mk="${esc(c)}"></span>
-          <strong>${esc(NICE[c] ?? c)}</strong><span>${esc(firstSentence(ABOUT[c] ?? ''))}</span><em>from ${nzd(fromPrice(c))}</em>${ctx.shop()?.trial ? `<span class="sh-card-labs">${[...new Set(products().filter((p) => p.category === c).map(labName))].map((l) => `<em class="sh-lab sh-lab--${l.toLowerCase()}">${esc(l)}</em>`).join(' ')}</span>` : ''}</button>`).join('')}</div>`).join('')}
+          <strong>${esc(NICE[c] ?? c)}</strong><span>${esc(firstSentence(ABOUT[c] ?? ''))}</span><em>from ${nzd(fromPrice(c))}</em>${ctx.shop()?.trial ? `<span class="sh-card-labs">${[...new Set(products().filter((p) => p.category === c).map(labName))].map((l) => `<em class="sh-lab sh-lab--${labCls(l)}">${esc(l)}</em>`).join(' ')}</span>` : ''}</button>`).join('')}</div>`).join('')}
       ${cart.length ? '<p class="sh-hint"><button type="button" class="ct-link" data-to-cart>See your cart</button></p>' : ''}
     </div>`;
   }
@@ -521,11 +522,11 @@ export function initShop(ctx: Ctx) {
     box.innerHTML = `<dl class="ct-sum">
         ${t.saved ? `<div><dt>Bulk savings</dt><dd>−${money(t.saved)}</dd></div>` : ''}
         <div><dt>Prints</dt><dd>${money(t.subtotal)}</dd></div>
-        <div><dt>Delivery${ok && q!.parts.length > 1 ? ' (two parcels)' : ''}</dt><dd>${delivery}</dd></div>
+        <div><dt>Delivery${ok && q!.parts.length > 1 ? ` (${q!.parts.length} parcels)` : ''}</dt><dd>${delivery}</dd></div>
         <div class="ct-total"><dt>Total</dt><dd>${ok ? money(t.subtotal + q!.freight) : '—'}</dd></div>
       </dl>
       ${q?.error && postcodeOk() && !quote.busy ? `<p class="sh-warn">${esc(q.error)}</p>` : ''}
-      ${ok && q!.parts.length > 1 ? '<p class="sh-hint">Your prints come from two labs, so they arrive in two parcels.</p>' : ''}
+      ${ok && q!.parts.length > 1 ? `<p class="sh-hint">Your order arrives in ${q!.parts.length === 2 ? 'two' : 'three'} parcels.</p>` : ''}
       ${shop.free_over && !(ok && q!.free) ? `<p class="sh-hint">Free delivery on orders over ${nzd(shop.free_over)}.</p>` : ''}`;
     cartDlg.querySelectorAll<HTMLButtonElement>('[data-pay],[data-pay-test]').forEach((b) => {
       b.disabled = !ok;
@@ -679,7 +680,7 @@ const SHOP_CSS = `
 .sh-card-mk--room{display:block;transition:filter .3s}.sh-card:hover .sh-card-mk--room{filter:brightness(.97)}
 .sh-room-note{text-align:center;margin:4px 0 0}
 em.sh-lab.sh-lab{display:inline-block;margin-left:6px;padding:0 6px;border-radius:4px;font-style:normal;font-size:11px;font-weight:600;letter-spacing:.04em;line-height:1.6;vertical-align:1px;color:#fff;background:#6b6b6b}
-em.sh-lab.sh-lab--seldex{background:#2f6f8f}em.sh-lab.sh-lab--atkins{background:#a0522d}
+em.sh-lab.sh-lab--seldex{background:#2f6f8f}em.sh-lab.sh-lab--atkins{background:#a0522d}em.sh-lab.sh-lab--inhouse{background:#5a5e3b}
 .sh-card>span.sh-card-labs.sh-card-labs{display:block}.sh-card-labs .sh-lab{margin:2px 2px 0}
 .sh-card:hover .sh-card-mk{background:#e3dfd6}
 .sh-card strong{font-weight:500;letter-spacing:.1em;text-transform:uppercase;font-size:14px}

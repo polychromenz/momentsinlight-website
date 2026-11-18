@@ -49,7 +49,7 @@ export function mockup(p: Product, src: string, crop: Crop, landscape: boolean, 
   // Borders around the photo, as fractions of the photo's shorter side.
   const short = 1;
   const frame = ['frame', 'float', 'matted-frame', 'circle'].includes(k) ? 0.075 : 0;
-  const mat = k === 'matted' ? 0.2 : k === 'matted-frame' || k === 'circle' ? 0.16 : k === 'float' ? 0.07 : k === 'deckled' ? 0.07 : 0;
+  const mat = k === 'matted' ? 0.2 : k === 'matted-frame' || k === 'circle' ? 0.16 : k === 'float' ? 0.16 : k === 'deckled' ? 0.07 : 0;
   // Outer size in "photo short side" units.
   const pw = r >= 1 ? r * short : short, ph = r >= 1 ? short : short / r;
   const ow = pw + 2 * (frame + mat), oh = ph + 2 * (frame + mat);
