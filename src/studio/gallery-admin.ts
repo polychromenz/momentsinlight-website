@@ -382,6 +382,7 @@ function fillDetails() {
   set('ext_mode', g.extension_price === null ? 'default' : g.extension_price === 0 ? 'free' : 'custom');
   set('ext_price', g.extension_price ? g.extension_price / 100 : '');
   $('.ext-custom').hidden = !(g.extension_price > 0);
+  (f.elements.namedItem('prints_on') as HTMLInputElement).checked = !g.prints_off;
   $('.addr-base').textContent = 'galleries.momentsinlight.co.nz/';
   $('.ga-form .state').innerHTML = g.status === 'online' ? `Online${g.expires_at ? ` until <strong>${day(g.expires_at)}</strong>` : ''}.` : g.status === 'draft' ? 'A draft: only you can see it (Preview). <strong>Put online</strong> when it’s ready; the expiry date is set then.' : 'Offline: nobody can see it.';
   $('[data-offline]').hidden = g.status !== 'online';
@@ -399,6 +400,7 @@ $('[data-details]').addEventListener('submit', async (e) => {
   body.client_id = job ? job.client_id : null;
   const mode = f.get('ext_mode');
   body.extension_price = mode === 'default' ? null : mode === 'free' ? 0 : Math.round(Number(f.get('ext_price')) * 100);
+  body.prints_off = f.get('prints_on') ? 0 : 1;
   if (await tryApi('/api/studio/galleries/gallery', 'PUT', body)) { toast('Saved.'); load(); }
 });
 

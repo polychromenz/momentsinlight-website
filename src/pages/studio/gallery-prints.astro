@@ -1,0 +1,429 @@
+---
+// Moments Studio > Galleries > Prints (MIL Galleries 3a; functions/api/studio/galleries/prints.js,
+// functions-lib/prints.js): print orders from the client galleries (check the crops, download the lab
+// files, mark ordered and shipped), the product list from Pic-Time with NZ$ prices, and the settings
+// (freight, hold days, and the switch that shows the shop to clients).
+import StudioLayout from '../../layouts/StudioLayout.astro';
+---
+<StudioLayout title="Prints" section="galleries">
+  <a slot="bar" class="s-btn s-btn--quiet" href="/studio/galleries">All galleries</a>
+  <main class="pr">
+    <div class="pr-head">
+      <h1>Prints</h1>
+      <div class="pr-tabs" role="tablist">
+        <button type="button" data-tab="orders" class="on">Orders</button>
+        <button type="button" data-tab="products">Products</button>
+        <button type="button" data-tab="settings">Settings</button>
+      </div>
+    </div>
+    <p class="pr-live"></p>
+    <section data-pane="orders">
+      <div class="pr-filter" role="group" aria-label="Show">
+        <button type="button" data-show="todo" class="on">To do</button>
+        <button type="button" data-show="shipped">Shipped</button>
+        <button type="button" data-show="all">All</button>
+      </div>
+      <div class="pr-orders card"><p class="muted">Loading…</p></div>
+      <div class="pr-order card" hidden></div>
+    </section>
+    <section data-pane="products" hidden>
+      <div class="card pr-import">
+        <h2>Import from Pic-Time</h2>
+        <p class="hint">In Pic-Time: Shop &amp; Automation › Pricing › your price list › Download. Its prices are in A$ (Pic-Time’s “Lab Currency”), already your markup on the lab’s cost. They become tidy NZ$ prices at the rate below; you can change any price afterwards.</p>
+        <div class="pr-import-row">
+          <label>Price list (CSV) <input type="file" accept=".csv,text/csv" data-csv /></label>
+          <label>NZ$ per A$ <input type="number" step="0.0001" min="0.6" max="2" data-rate /></label>
+          <label class="check" data-replace-wrap hidden><input type="checkbox" data-replace /> Replace my NZ$ prices too</label>
+          <button type="button" class="s-btn s-btn--solid" data-import>Import</button>
+        </div>
+        <p class="hint rate-note"></p>
+      </div>
+      <div class="pr-products"></div>
+    </section>
+    <section data-pane="settings" hidden>
+      <form class="card pr-settings" data-settings>
+        <label class="pr-switch"><input type="checkbox" name="live" /> <span><strong>Show prints to clients</strong><br />Off: only you see the shop, when you open a gallery with “Open as client” (and you can place test orders there without paying). On: everyone with a gallery link can buy, except galleries with prints switched off on their Details tab.</span></label>
+        <div class="three">
+          <label>Delivery, paper prints only (NZ$) <input name="freight_prints" type="number" min="0" step="0.5" /></label>
+          <label>Delivery with wall art (NZ$) <input name="freight_wall" type="number" min="0" step="0.5" /></label>
+          <label>Free delivery over (NZ$, 0 = never) <input name="free_over" type="number" min="0" step="1" /></label>
+        </div>
+        <p class="hint">Wall art is anything that isn’t a paper print: canvas, frames and gallery boards. Atkins and Seldex set their own freight to you, so set these to cover it.</p>
+        <div class="three">
+          <label>Hold orders for (days) <input name="hold_days" type="number" min="0" max="60" /></label>
+          <label>NZ$ per A$ (for costs and margins) <input name="rate" type="number" step="0.0001" min="0.6" max="2" /></label>
+        </div>
+        <p class="hint">Every order waits for you to check it. The hold date is kept so that, once a lab can take orders directly, held orders can go to it automatically when the hold ends.</p>
+        <label>Words under the shop <textarea name="intro" rows="3"></textarea></label>
+        <p class="hint">The confirmation and “on its way” emails are in Settings › Templates (“Prints order confirmation”, “Prints order on its way”).</p>
+        <div class="actions"><button type="submit" class="s-btn s-btn--solid">Save</button></div>
+      </form>
+    </section>
+  </main>
+  <dialog class="pr-dlg" data-crop-dlg><div class="pr-crop-body"></div></dialog>
+  <div class="s-toast" role="status"></div>
+</StudioLayout>
+
+<script>
+  import { ask, askFields } from '../../studio/dialogs';
+  import { mockup, cropEditor, styleMockups, type Product } from '../../prints/mockup';
+  import { labFiles } from '../../prints/lab-files';
+  import { ratioOf, dpi, money } from '../../../functions-lib/print-pricing.js';
+  styleMockups();
+  const $ = <T extends HTMLElement = HTMLElement>(s: string, el: ParentNode = document) => el.querySelector<T>(s)!;
+  const esc = (s: unknown) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
+  const day = (d: string) => new Date(d.length > 10 ? d : `${d}T12:00:00Z`).toLocaleDateString('en-NZ', { day: 'numeric', month: 'short', year: 'numeric', timeZone: d.length > 10 ? 'Pacific/Auckland' : 'UTC' });
+  function toast(msg: string, error = false) {
+    const t = $('.s-toast'); t.textContent = msg; t.classList.toggle('error', error); t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 4500);
+  }
+  async function api(url: string, method = 'GET', body?: unknown) {
+    const r = await fetch(url, { method, cache: 'no-store', headers: body ? { 'content-type': 'application/json' } : {}, body: body ? JSON.stringify(body) : undefined });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) { toast(d.error || 'Something went wrong.', true); return null; }
+    return d;
+  }
+  const params = new URLSearchParams(location.search);
+  let settings: any = {};
+  let products: any[] = [];
+  let rate: number | null = null;
+
+  // ---- Tabs ----
+  function tab(name: string) {
+    document.querySelectorAll<HTMLElement>('[data-tab]').forEach((b) => b.classList.toggle('on', b.dataset.tab === name));
+    document.querySelectorAll<HTMLElement>('[data-pane]').forEach((p) => (p.hidden = p.dataset.pane !== name));
+  }
+
+  // ---- Settings and products ----
+  async function loadSetup() {
+    const d = await api('/api/studio/galleries/prints?what=setup');
+    if (!d) return;
+    settings = d.settings; products = d.products; rate = d.rate;
+    $('.pr-live').innerHTML = settings.live
+      ? '<strong>Prints are on</strong>: clients can buy from their galleries.'
+      : '<strong>Only you can see prints for now.</strong> Open a gallery with “Open as client” to try the shop (Settings to switch it on for clients).';
+    $('.pr-live').classList.toggle('on', !!settings.live);
+    const f = $<HTMLFormElement>('[data-settings]');
+    (f.elements.namedItem('live') as HTMLInputElement).checked = !!settings.live;
+    for (const k of ['freight_prints', 'freight_wall', 'free_over']) (f.elements.namedItem(k) as HTMLInputElement).value = String(settings[k] / 100);
+    (f.elements.namedItem('hold_days') as HTMLInputElement).value = settings.hold_days;
+    (f.elements.namedItem('rate') as HTMLInputElement).value = settings.rate;
+    (f.elements.namedItem('intro') as HTMLTextAreaElement).value = settings.intro;
+    $<HTMLInputElement>('[data-rate]').value = String(rate ?? settings.rate);
+    $('.rate-note').textContent = rate ? `Today’s rate is ${rate.toFixed(4)} (European Central Bank).` : 'Couldn’t get today’s rate: check it before importing.';
+    $('[data-replace-wrap]').hidden = !products.length;
+    drawProducts();
+  }
+
+  const GST = 1.15;
+  const margin = (p: any) => {
+    if (!p.cost || !p.price) return '';
+    const ex = p.price / 100 / GST, cost = p.cost * (p.cost_currency === 'NZD' ? 1 : settings.rate);
+    return `${Math.round(((ex - cost) / ex) * 100)}%`;
+  };
+  const tierText = (p: any) => {
+    const t = p.tiers ? JSON.parse(p.tiers) : null;
+    return t && t.length > 1 ? t.filter((x: any) => x.q > 1).map((x: any) => `${x.q}+: ${money(x.base)} then ${money(x.add)}`).join(' · ') : '';
+  };
+  let openCats = new Set<string>(['Prints']);
+  function drawProducts() {
+    const cats = [...new Set(products.map((p) => p.category))];
+    if (!products.length) { $('.pr-products').innerHTML = '<p class="muted card">No products yet. Import your Pic-Time price list above.</p>'; return; }
+    $('.pr-products').innerHTML = cats.map((c) => {
+      const list = products.filter((p) => p.category === c);
+      const on = list.filter((p) => p.active).length;
+      const sold = list[0].kind !== 'other';
+      return `<details class="card pr-cat" data-cat="${esc(c)}"${openCats.has(c) ? ' open' : ''}>
+        <summary><strong>${esc(c)}</strong> <span>${on} of ${list.length} on${sold ? '' : ' · not sold online yet (albums, boxes and sets need more than one photo)'}</span>
+          ${sold ? `<span class="pr-cat-btns"><button type="button" class="s-btn s-btn--quiet" data-all="${esc(c)}" data-on="1">All on</button><button type="button" class="s-btn s-btn--quiet" data-all="${esc(c)}" data-on="0">All off</button></span>` : ''}</summary>
+        <table class="pr-table"><thead><tr><th>On</th><th>${c === 'Prints' ? 'Paper' : 'Type'}</th><th>Product</th><th>Lab</th><th>Lab cost</th><th>Price NZ$</th><th>Margin</th><th>Bulk prices</th></tr></thead><tbody>
+        ${list.map((p) => `<tr data-id="${p.id}">
+          <td><input type="checkbox" data-active${p.active ? ' checked' : ''}${sold && p.w_cm ? '' : ' disabled'} aria-label="On" /></td>
+          <td>${esc(p.type)}</td><td>${esc(p.name)}</td><td>${esc(p.lab)}</td>
+          <td>${p.cost ? `${p.cost_currency === 'AUD' ? 'A$' : p.cost_currency + ' '}${Number(p.cost).toFixed(2)}` : ''}</td>
+          <td><input type="number" min="0" step="0.5" value="${(p.price / 100).toFixed(2).replace(/\.00$/, '')}" data-price aria-label="Price" /></td>
+          <td>${margin(p)}</td><td class="pr-tiers">${esc(tierText(p))}</td></tr>`).join('')}
+        </tbody></table></details>`;
+    }).join('');
+  }
+  $('.pr-products').addEventListener('toggle', (e) => {
+    const d = e.target as HTMLDetailsElement;
+    if (d.dataset?.cat) d.open ? openCats.add(d.dataset.cat) : openCats.delete(d.dataset.cat);
+  }, true);
+  $('.pr-products').addEventListener('change', async (e) => {
+    const t = e.target as HTMLInputElement;
+    const id = Number(t.closest<HTMLElement>('tr')?.dataset.id);
+    const p = products.find((x) => x.id === id);
+    if (!p) return;
+    if (t.matches('[data-active]')) {
+      if (await api('/api/studio/galleries/prints', 'PATCH', { products: [id], set: { active: t.checked } })) { p.active = t.checked ? 1 : 0; drawProducts(); }
+    }
+    if (t.matches('[data-price]')) {
+      const price = Math.round(Number(t.value) * 100);
+      // The bulk prices keep their later steps; the first step is the new single price.
+      const tiers = p.tiers ? JSON.parse(p.tiers) : null;
+      if (tiers?.length) { tiers[0].base = price; tiers[0].add = price; }
+      if (await api('/api/studio/galleries/prints', 'PATCH', { products: [id], set: { price, keep_tiers: true, ...(tiers ? { tiers } : {}) } })) {
+        p.price = price; if (tiers) p.tiers = JSON.stringify(tiers); drawProducts(); toast('Price saved.');
+      }
+    }
+  });
+  $('.pr-products').addEventListener('click', async (e) => {
+    const b = (e.target as HTMLElement).closest<HTMLElement>('[data-all]');
+    if (!b) return;
+    e.preventDefault();
+    const ids = products.filter((p) => p.category === b.dataset.all && p.w_cm).map((p) => p.id);
+    const on = b.dataset.on === '1';
+    if (await api('/api/studio/galleries/prints', 'PATCH', { products: ids, set: { active: on } })) {
+      products.forEach((p) => { if (ids.includes(p.id)) p.active = on ? 1 : 0; });
+      drawProducts();
+    }
+  });
+
+  // A CSV line → fields (quotes, commas inside quotes, "" for a quote).
+  function csv(text: string): Record<string, string>[] {
+    const rows: string[][] = [];
+    let row: string[] = [], f = '', q = false;
+    for (let i = 0; i < text.length; i++) {
+      const c = text[i];
+      if (q) { if (c === '"' && text[i + 1] === '"') { f += '"'; i++; } else if (c === '"') q = false; else f += c; }
+      else if (c === '"') q = true;
+      else if (c === ',') { row.push(f); f = ''; }
+      else if (c === '\n' || c === '\r') { if (c === '\r' && text[i + 1] === '\n') i++; row.push(f); rows.push(row); row = []; f = ''; }
+      else f += c;
+    }
+    if (f || row.length) { row.push(f); rows.push(row); }
+    const head = rows.shift()?.map((h) => h.replace(/^﻿/, '').trim()) ?? [];
+    return rows.filter((r) => r.length > 2).map((r) => Object.fromEntries(head.map((h, k) => [h, r[k] ?? ''])));
+  }
+  $('[data-import]').addEventListener('click', async () => {
+    const file = $<HTMLInputElement>('[data-csv]').files?.[0];
+    if (!file) return toast('Choose the price list file first.', true);
+    const rows = csv(await file.text());
+    if (!rows.length || !('Product' in rows[0]) || !('Option' in rows[0])) return toast('That doesn’t look like a Pic-Time price list.', true);
+    const r = Number($<HTMLInputElement>('[data-rate]').value);
+    const replace = $<HTMLInputElement>('[data-replace]').checked;
+    if (replace && !await ask('Replace your NZ$ prices with ones worked out from this file? Prices you changed by hand will be overwritten.')) return;
+    const btn = $<HTMLButtonElement>('[data-import]');
+    btn.disabled = true; btn.textContent = 'Importing…';
+    const d = await api('/api/studio/galleries/prints', 'POST', { action: 'import', rows, rate: r, replace_prices: replace });
+    btn.disabled = false; btn.textContent = 'Import';
+    if (d) { toast(`Imported: ${d.added} new, ${d.updated} updated.`); loadSetup(); }
+  });
+
+  $('[data-settings]').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const f = new FormData(e.target as HTMLFormElement);
+    const live = !!f.get('live');
+    if (live && !settings.live && !await ask('Show prints to clients? Everyone with a gallery link will be able to order and pay from now on.')) return;
+    const d = await api('/api/studio/galleries/prints', 'PUT', { settings: {
+      live, freight_prints: Math.round(Number(f.get('freight_prints')) * 100), freight_wall: Math.round(Number(f.get('freight_wall')) * 100),
+      free_over: Math.round(Number(f.get('free_over')) * 100), hold_days: f.get('hold_days'), rate: f.get('rate'), intro: f.get('intro'),
+    } });
+    if (d) { toast('Saved.'); loadSetup(); }
+  });
+
+  // ---- Orders ----
+  const STATUS: Record<string, string> = { pending: 'Not paid', paid: 'To check', approved: 'Checked', ordered: 'At the lab', shipped: 'Shipped', cancelled: 'Cancelled' };
+  let orders: any[] = [];
+  let show = 'todo';
+  let current: any = null;
+  async function loadOrders() {
+    const d = await api('/api/studio/galleries/prints?what=orders');
+    if (!d) return;
+    orders = d.orders;
+    drawOrders();
+  }
+  function drawOrders() {
+    const list = orders.filter((o) => show === 'all' || (show === 'shipped' ? ['shipped', 'cancelled'].includes(o.status) : ['paid', 'approved', 'ordered'].includes(o.status)));
+    $('.pr-orders').innerHTML = list.length ? `<table class="pr-table pr-olist"><thead><tr><th>Order</th><th>Date</th><th>Gallery</th><th>From</th><th>Prints</th><th>Total</th><th>Status</th></tr></thead><tbody>
+      ${list.map((o) => `<tr data-order="${o.id}" class="${current?.order.id === o.id ? 'on' : ''}"><td><strong>${esc(o.number)}</strong>${o.test ? ' <span class="pill pill--test">Test</span>' : ''}</td><td>${day(o.paid_at || o.created_at)}</td>
+        <td>${esc(o.gallery)}</td><td>${esc(o.name || o.email || '')}<small>${o.buyer_kind === 'main_client' ? 'the couple' : o.buyer_kind === 'studio' ? 'you' : o.buyer_kind ?? ''}</small></td>
+        <td>${o.prints}</td><td>${money(o.total)}</td><td><span class="pill pill--${o.status}">${STATUS[o.status] ?? o.status}</span>${o.status === 'paid' && o.hold_until ? `<small>hold until ${day(o.hold_until)}</small>` : ''}</td></tr>`).join('')}
+      </tbody></table>` : `<p class="muted">${show === 'todo' ? 'No orders waiting.' : 'No orders here yet.'}</p>`;
+  }
+  async function openOrder(id: number) {
+    const d = await api(`/api/studio/galleries/prints?order=${id}`);
+    if (!d) return;
+    current = d;
+    history.replaceState(null, '', `?order=${id}`);
+    drawOrder();
+    drawOrders();
+    $('.pr-order').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+  const sizeOf = (p: any, land: boolean) => (land ? `${p.h_cm} × ${p.w_cm} cm` : `${p.w_cm} × ${p.h_cm} cm`);
+  function drawOrder() {
+    const { order: o, items, gallery: g } = current;
+    const a = o.address ?? {};
+    const el = $('.pr-order');
+    el.hidden = false;
+    const labs = [...new Set(items.map((i: any) => i.product.lab))];
+    el.innerHTML = `<div class="po-head"><h2>${esc(o.number)} ${o.test ? '<span class="pill pill--test">Test order</span>' : ''}<span class="pill pill--${o.status}">${STATUS[o.status]}</span></h2>
+        <button type="button" class="s-btn s-btn--quiet" data-close-order>Close</button></div>
+      <div class="po-grid">
+        <div><h3>Deliver to</h3><p>${esc(a.name || o.name)}<br />${[a.line1, a.line2, a.city, a.state, a.postal_code].filter(Boolean).map(esc).join('<br />')}${a.country && a.country !== 'NZ' ? `<br />${esc(a.country)}` : ''}</p>
+          <p>${o.email ? `<a href="mailto:${esc(o.email)}">${esc(o.email)}</a>` : ''}${o.phone ? `<br />${esc(o.phone)}` : ''}</p></div>
+        <div><h3>Order</h3><p>From <a href="/studio/gallery?id=${esc(g?.id)}">${esc(g?.name)}</a> (${o.buyer_kind === 'main_client' ? 'the couple' : o.buyer_kind === 'studio' ? 'you, testing' : esc(o.buyer_kind)})<br />
+          Paid ${o.paid_at ? day(o.paid_at) : '—'} · ${money(o.total)}${o.freight ? ` incl. ${money(o.freight)} delivery` : ''}<br />
+          ${o.hold_until && o.status === 'paid' ? `On hold until ${day(o.hold_until)}<br />` : ''}${o.invoice_id ? 'Invoice made (receipt and Xero).' : o.test ? 'Test: no payment or invoice.' : 'No invoice (not the couple’s own link): record it in Xero yourself.'}</p>
+          ${o.note ? `<p class="po-note"><strong>Their note:</strong> ${esc(o.note)}</p>` : ''}</div>
+        <div><h3>Lab</h3><p>${labs.map(esc).join(', ')}${o.lab_ref ? `<br />Lab order: ${esc(o.lab_ref)}` : ''}${o.tracking ? `<br />Tracking: ${esc(o.tracking)}` : ''}</p></div>
+      </div>
+      <ul class="po-items">${items.map((i: any) => {
+        const land = !!i.crop?.landscape;
+        const d = i.w && i.crop ? dpi(i.w, i.crop, i.product, land) : 0;
+        return `<li data-item="${i.id}"><div class="po-mk" data-mk="${i.id}"></div><div class="po-what"><strong>${i.qty} × ${esc(i.product.category)} · ${esc(i.product.type)}</strong>
+          <span>${esc(sizeOf(i.product, land))} · ${esc(i.product.lab)} · ${money(i.amount)}</span><span class="po-file">${esc(i.filename ?? '')}${d ? ` · about ${Math.round(d)} dpi${d < 150 ? ' <b class="po-low">low</b>' : ''}` : ''}</span>
+          <button type="button" class="s-btn s-btn--quiet" data-recrop="${i.id}">Adjust crop</button></div></li>`;
+      }).join('')}</ul>
+      <label class="po-tony">Your note (only you see it) <textarea rows="2" data-tony-note>${esc(o.tony_note ?? '')}</textarea></label>
+      <div class="po-actions">
+        <button type="button" class="s-btn" data-lab>Download lab files</button>
+        ${o.status === 'paid' ? '<button type="button" class="s-btn s-btn--solid" data-step="approved">Crops checked</button>' : ''}
+        ${['paid', 'approved'].includes(o.status) ? '<button type="button" class="s-btn s-btn--solid" data-step="ordered">Ordered from the lab</button>' : ''}
+        ${['paid', 'approved', 'ordered'].includes(o.status) ? '<button type="button" class="s-btn s-btn--solid" data-step="shipped">Shipped</button>' : ''}
+        ${!['cancelled', 'shipped'].includes(o.status) ? '<button type="button" class="s-btn s-btn--quiet" data-step="cancelled">Cancel order</button>' : ''}
+        <span class="po-progress"></span>
+      </div>`;
+    requestAnimationFrame(() => el.querySelectorAll<HTMLElement>('[data-mk]').forEach((m) => {
+      const i = items.find((x: any) => String(x.id) === m.dataset.mk);
+      if (i?.crop) m.innerHTML = mockup(i.product as Product, i.web, i.crop, !!i.crop.landscape, 150, 150);
+    }));
+  }
+  function sheet() {
+    const { order: o, items, gallery: g } = current;
+    const a = o.address ?? {};
+    return [`Moments in Light print order ${o.number}`, `Gallery: ${g?.name ?? ''}`, '', 'Deliver to:', a.name || o.name, a.line1, a.line2, [a.city, a.postal_code].filter(Boolean).join(' '), a.country, o.phone ? `Phone: ${o.phone}` : '', o.email ? `Email: ${o.email}` : '', '',
+      'Prints:', ...items.map((i: any, k: number) => `${String(k + 1).padStart(2, '0')}. ${i.qty} x ${i.product.lab}: ${i.product.category} ${i.product.type} ${sizeOf(i.product, !!i.crop?.landscape)} (${i.product.name})`),
+      '', o.note ? `Their note: ${o.note}` : ''].filter((x) => x !== undefined && x !== null).join('\n');
+  }
+  async function step(next: string) {
+    const o = current.order;
+    let extra: any = {};
+    if (next === 'ordered') {
+      const r = await askFields('Ordered from the lab', [{ name: 'lab_ref', label: 'Lab order number (optional)', value: o.lab_ref ?? '' }]);
+      if (!r) return; extra = r;
+    }
+    if (next === 'shipped') {
+      const r = await askFields('Mark as shipped: an email tells them it’s on its way.', [{ name: 'tracking', label: 'Tracking number or link (optional)', value: o.tracking ?? '' }, { name: 'email', label: 'Send the “on its way” email? (yes or no)', value: 'yes' }]);
+      if (!r) return; extra = { tracking: r.tracking, email: !/^n/i.test(r.email || '') };
+    }
+    if (next === 'cancelled' && !await ask(`Cancel ${o.number}? This doesn’t refund the payment: refund it in Stripe (Payments › the payment › Refund)${o.invoice_id ? ', and credit the invoice in Xero' : ''}.`)) return;
+    const d = await api('/api/studio/galleries/prints', 'POST', { action: 'order', id: o.id, status: next, tony_note: $<HTMLTextAreaElement>('[data-tony-note]').value, ...extra });
+    if (!d) return;
+    current.order = d.order;
+    toast(next === 'shipped' ? (d.emailed ? 'Marked shipped, and the email has gone.' : 'Marked shipped.') : 'Saved.');
+    drawOrder(); loadOrders();
+  }
+  async function recrop(itemId: number) {
+    const i = current.items.find((x: any) => x.id === itemId);
+    const land = !!i.crop?.landscape;
+    const dlg = $<HTMLDialogElement>('[data-crop-dlg]');
+    let c = i.crop;
+    $('.pr-crop-body', dlg).innerHTML = `<h2>Adjust the crop</h2><p class="hint">${esc(i.product.category)} · ${esc(sizeOf(i.product, land))}. Drag the box; zoom with the slider.</p>
+      <div class="pr-crop-stage"></div><label class="pr-zoom">Zoom <input type="range" min="0" max="1" step="0.01" data-z /></label>
+      <div class="actions"><button type="button" class="s-btn s-btn--quiet" data-crop-cancel>Cancel</button><button type="button" class="s-btn s-btn--solid" data-crop-save>Save crop</button></div>`;
+    dlg.showModal();
+    const ed = cropEditor($('.pr-crop-stage', dlg), i.web, i.w / i.h, ratioOf(i.product, land), i.crop, (nc) => (c = nc), i.product.kind === 'circle');
+    const z = $<HTMLInputElement>('[data-z]', dlg); z.value = String(ed.zoomOf()); z.oninput = () => ed.zoom(Number(z.value));
+    $('[data-crop-cancel]', dlg).onclick = () => dlg.close();
+    $('[data-crop-save]', dlg).onclick = async () => {
+      const d = await api('/api/studio/galleries/prints', 'POST', { action: 'crop', item_id: i.id, crop: c, landscape: land });
+      if (d) { i.crop = d.item.crop; dlg.close(); drawOrder(); toast('Crop saved.'); }
+    };
+  }
+
+  document.addEventListener('click', async (e) => {
+    const t = e.target as HTMLElement;
+    const b = (s: string) => t.closest<HTMLElement>(s);
+    let x: HTMLElement | null;
+    if ((x = b('[data-tab]'))) { tab(x.dataset.tab!); return; }
+    if ((x = b('[data-show]'))) { show = x.dataset.show!; document.querySelectorAll('[data-show]').forEach((y) => y.classList.toggle('on', y === x)); drawOrders(); return; }
+    if ((x = b('[data-order]'))) { openOrder(Number(x.dataset.order)); return; }
+    if (b('[data-close-order]')) { current = null; $('.pr-order').hidden = true; history.replaceState(null, '', location.pathname); drawOrders(); return; }
+    if ((x = b('[data-step]'))) { step(x.dataset.step!); return; }
+    if ((x = b('[data-recrop]'))) { recrop(Number(x.dataset.recrop)); return; }
+    if (b('[data-lab]')) {
+      const btn = b('[data-lab]') as HTMLButtonElement;
+      btn.disabled = true;
+      try {
+        await labFiles(current.order, current.items, sheet(), (n, of) => ($('.po-progress').textContent = n < of ? `Making the lab files: ${n} of ${of}…` : 'Done: the ZIP is downloading.'));
+      } catch (err) { toast((err as Error).message, true); $('.po-progress').textContent = ''; }
+      btn.disabled = false;
+    }
+  });
+  addEventListener('focusout', async (e) => {
+    const t = e.target as HTMLElement;
+    if (t.matches?.('[data-tony-note]') && current && (t as HTMLTextAreaElement).value !== (current.order.tony_note ?? '')) {
+      const d = await api('/api/studio/galleries/prints', 'POST', { action: 'order', id: current.order.id, tony_note: (t as HTMLTextAreaElement).value });
+      if (d) { current.order = d.order; toast('Note saved.'); }
+    }
+  });
+
+  loadSetup();
+  loadOrders().then(() => { if (params.get('order')) openOrder(Number(params.get('order'))); });
+  if (params.get('tab')) tab(params.get('tab')!);
+</script>
+
+<style is:global>
+  .pr { max-width: 1400px; margin: 0 auto; padding: 24px clamp(14px, 3vw, 32px) 80px; }
+  .pr-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; flex-wrap: wrap; margin-bottom: 10px; }
+  .pr h1 { margin: 0; font-weight: 300; font-size: 32px; color: var(--ink); }
+  .pr h2 { margin: 0 0 8px; font-weight: 300; font-size: 22px; }
+  .pr h3 { margin: 0 0 4px; font-size: 11px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--green); }
+  .pr-tabs, .pr-filter { display: flex; gap: 6px; flex-wrap: wrap; }
+  .pr-tabs button, .pr-filter button { padding: 7px 14px; border: 1px solid #ddd3c4; border-radius: 999px; background: var(--white); font: inherit; font-size: 14px; cursor: pointer; }
+  .pr-tabs button.on, .pr-filter button.on { background: var(--green); border-color: var(--green); color: var(--white); }
+  .pr-filter { margin-bottom: 12px; }
+  .pr-live { margin: 0 0 16px; padding: 10px 14px; border-radius: 12px 0; background: #fff4d6; color: #5c4400; font-size: 14px; }
+  .pr-live.on { background: #e6ecd9; color: #3e4229; }
+  .pr .card { background: var(--white); border-radius: 22px 0; padding: 18px 20px; margin-bottom: 14px; }
+  .pr .hint { font-size: 13px; color: #888; margin: 4px 0 8px; }
+  .pr .muted { color: #888; }
+  .pr-import-row { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; }
+  .pr label { display: grid; gap: 4px; font-size: 13px; font-weight: 600; color: #555; }
+  .pr label.check, .pr .pr-switch { display: flex; gap: 8px; align-items: flex-start; font-weight: 400; }
+  .pr input[type=number], .pr input[type=file], .pr textarea { font: inherit; font-size: 14px; font-weight: 400; padding: 7px 10px; border: 1px solid #ddd3c4; border-radius: 10px 0; background: var(--white); }
+  .pr-settings { display: grid; gap: 12px; }
+  .pr-settings .three { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+  .pr-switch { padding: 12px 14px; border: 1px solid #ece4d7; border-radius: 12px 0; font-size: 14px; color: #444; line-height: 1.5; }
+  .pr-switch input { margin-top: 4px; width: 18px; height: 18px; }
+  .pr .actions { display: flex; justify-content: flex-end; gap: 8px; }
+  .pr-cat summary { cursor: pointer; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+  .pr-cat summary span { color: #888; font-size: 13px; }
+  .pr-cat-btns { margin-left: auto; display: flex; gap: 6px; }
+  .pr-table { width: 100%; border-collapse: collapse; font-size: 14px; margin-top: 10px; }
+  .pr-table th { text-align: left; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: #888; font-weight: 600; padding: 6px 8px; border-bottom: 1px solid #ece4d7; }
+  .pr-table td { padding: 6px 8px; border-bottom: 1px solid #f2ede4; vertical-align: middle; }
+  .pr-table td small { display: block; color: #999; font-size: 12px; }
+  .pr-table input[type=number] { width: 90px; }
+  .pr-tiers { font-size: 12px; color: #777; }
+  .pr-olist tbody tr { cursor: pointer; }
+  .pr-olist tbody tr:hover, .pr-olist tbody tr.on { background: #f6f3ec; }
+  .pill { display: inline-block; font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: 999px; background: #eee; color: #555; white-space: nowrap; vertical-align: middle; }
+  .pill--paid { background: #fff0cf; color: #6b4c00; } .pill--approved { background: #e3ecf6; color: #2c4a6b; } .pill--ordered { background: #ece3f4; color: #523a6b; }
+  .pill--shipped { background: #e6ecd9; color: #3e4229; } .pill--cancelled { background: #f6e3dc; color: #8a3a22; } .pill--test { background: #fff4d6; color: #5c4400; }
+  .po-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+  .po-head h2 { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .po-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin: 8px 0 12px; font-size: 14px; line-height: 1.5; }
+  .po-grid p { margin: 0 0 6px; }
+  .po-note { background: #f6f3ec; padding: 8px 10px; border-radius: 8px 0; }
+  .po-items { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 12px; }
+  .po-items li { display: flex; gap: 12px; align-items: center; padding: 10px; border: 1px solid #f0ebe1; border-radius: 12px 0; }
+  .po-mk { width: 150px; height: 150px; flex: none; display: flex; align-items: center; justify-content: center; background: #efece6; border-radius: 8px; overflow: hidden; }
+  .po-what { display: grid; gap: 3px; font-size: 14px; justify-items: start; }
+  .po-what span { color: #666; font-size: 13px; }
+  .po-file { font-size: 12px !important; color: #999 !important; }
+  .po-low { color: #a8432a; }
+  .po-tony { margin: 14px 0 6px; }
+  .po-tony textarea { width: 100%; box-sizing: border-box; }
+  .po-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 8px; }
+  .po-progress { font-size: 13px; color: #666; }
+  .pr-dlg { border: 0; border-radius: 24px 0; padding: 0; width: min(920px, calc(100vw - 24px)); }
+  .pr-dlg::backdrop { background: rgb(0 0 0 / 0.45); }
+  .pr-crop-body { padding: 20px 22px; display: grid; gap: 10px; }
+  .pr-crop-body h2 { margin: 0; font-weight: 300; }
+  .pr-crop-stage { height: min(60vh, 560px); display: flex; align-items: center; justify-content: center; background: #2a2a28; border-radius: 8px; }
+  .pr-zoom { display: flex !important; gap: 8px; align-items: center; } .pr-zoom input { width: 220px; }
+  .pr-crop-body .actions { display: flex; justify-content: flex-end; gap: 8px; }
+</style>

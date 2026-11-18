@@ -9,6 +9,7 @@ import { recordFee, recordPayout } from '../../functions-lib/stripe-sync.js';
 import { confirmBooking } from '../../functions-lib/booking.js';
 import { saveCard } from '../../functions-lib/autopay.js';
 import { keptPaid } from '../../functions-lib/gallery-keep.js';
+import { printsPaid } from '../../functions-lib/prints.js';
 
 export async function onRequestPost({ request, env }) {
   const payload = await request.text();
@@ -25,6 +26,17 @@ export async function onRequestPost({ request, env }) {
         if (inv) await recordFee(env, inv, s.payment_intent, event.livemode).catch((e) => console.error('stripe webhook: fee', inv, e.message));
       } catch (e) {
         console.error('stripe webhook: gallery keep', e.message);
+        return new Response('Not recorded', { status: 500 }); // Stripe tries again later
+      }
+      return new Response('ok');
+    }
+    // A prints order from a client gallery (functions-lib/prints.js).
+    if (s.metadata?.print_order && s.payment_status === 'paid' && s.currency === 'nzd') {
+      try {
+        const inv = await printsPaid(env, s);
+        if (inv) await recordFee(env, inv, s.payment_intent, event.livemode).catch((e) => console.error('stripe webhook: fee', inv, e.message));
+      } catch (e) {
+        console.error('stripe webhook: prints', e.message);
         return new Response('Not recorded', { status: 500 }); // Stripe tries again later
       }
       return new Response('ok');

@@ -5,6 +5,7 @@ import { json } from '../../../functions-lib/studio.js';
 import { viewerAccess, galleryView } from '../../../functions-lib/gallery-access.js';
 import { myLists, PURPOSES } from '../../../functions-lib/gallery-lists.js';
 import { keepOffer } from '../../../functions-lib/gallery-keep.js';
+import { shopFor } from '../../../functions-lib/prints.js';
 
 export async function onRequestGet({ request, env }) {
   const a = await viewerAccess(env, new URL(request.url).searchParams.get('v'));
@@ -17,5 +18,7 @@ export async function onRequestGet({ request, env }) {
     dropbox: env.DROPBOX_APP_KEY || null,
     // The couple's offer to keep it online, from 30 days before it expires (functions-lib/gallery-keep.js).
     keep: await keepOffer(env.DB, a.gallery, a.link.kind).catch(() => null),
+    // Prints (functions-lib/prints.js): only Tony until he switches the shop on.
+    shop: await shopFor(env, a).catch((e) => { console.error('shop', e.message); return null; }),
   });
 }

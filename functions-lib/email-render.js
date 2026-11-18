@@ -36,7 +36,7 @@ export function fields(job, extra = {}) {
 }
 
 /** Fields whose values are already HTML (e.g. the quote's payment plan table). */
-export const HTML_FIELDS = ['payment_plan', 'booking_where']; // booking_where: escaped in booking.js, with its Meet link clickable
+export const HTML_FIELDS = ['payment_plan', 'booking_where', 'order_items', 'tracking']; // booking_where: escaped in booking.js, with its Meet link clickable; order_items/tracking: built (escaped) in prints.js
 
 /** Fill in {{fields}}. With html: true the values are escaped for HTML (except HTML_FIELDS).
  *  Returns the text and any fields that had no value. */

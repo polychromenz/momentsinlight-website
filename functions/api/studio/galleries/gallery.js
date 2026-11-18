@@ -35,6 +35,7 @@ export async function onRequestPut({ request, env }) {
   if (d.event_date !== undefined) put('event_date', /^\d{4}-\d{2}-\d{2}$/.test(d.event_date) ? d.event_date : null);
   if (d.expires_at !== undefined) put('expires_at', /^\d{4}-\d{2}-\d{2}$/.test(d.expires_at) ? d.expires_at : null);
   if (d.extension_price !== undefined) put('extension_price', d.extension_price === null || d.extension_price === '' ? null : Math.max(0, Math.round(Number(d.extension_price))));
+  if (d.prints_off !== undefined) put('prints_off', d.prints_off ? 1 : 0);
   if (d.cover_image_id !== undefined) put('cover_image_id', d.cover_image_id || null);
   for (const k of ['client_id', 'job_id']) if (d[k] !== undefined) put(k, d[k] ? Number(d[k]) : null);
   if (d.slug !== undefined) {

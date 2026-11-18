@@ -56,6 +56,7 @@ import { TOUR_CSS } from '../gallery-tour-css';
       <main class="g-main"></main>
       <div class="selbar" hidden>
         <strong class="sel-n"></strong>
+        <button type="button" class="btn sb-btn" data-sel-print hidden>Order prints</button>
         <button type="button" class="btn sb-btn" data-sel-list>Save to list</button>
         <button type="button" class="btn sb-btn" data-sel-dl hidden>Download</button>
         <button type="button" class="btn sb-btn" data-sel-hide hidden>Hide</button>
@@ -76,6 +77,7 @@ import { TOUR_CSS } from '../gallery-tour-css';
         <span class="lb-tools">
           <button type="button" class="lb-tool lb-fav" data-lb-fav hidden aria-label="Favourite">♡</button>
           <button type="button" class="lb-tool" data-lb-list hidden>Add to list</button>
+          <button type="button" class="lb-tool" data-lb-print hidden>Order a print</button>
           <button type="button" class="lb-tool" data-lb-hide hidden>Hide</button>
           <button type="button" class="lb-tool" data-lb-play>Slideshow</button>
           <span class="lb-dl"></span>
@@ -96,6 +98,7 @@ import { TOUR_CSS } from '../gallery-tour-css';
   import { ask, askText, tell } from '../studio/dialogs';
   import { startTour, tourSeen } from '../gallery-tour';
   import { showNoticeBar, store as nbStore } from '../lib/notice-bar';
+  import { initShop, type Shop } from '../gallery-shop';
   type Img = { id: string; s: number; w: number; h: number; hero: number; ch?: number; thumb: string; web: string };
   type List = { id: number; name: string; kind: 'favourites' | 'custom' | 'selection_request'; purpose: string | null; status: string; min: number | null; max: number | null; deadline: string | null; instructions: string; note: string; submitted_at: string | null; ids: string[] };
   type View = {
@@ -103,6 +106,7 @@ import { TOUR_CSS } from '../gallery-tour-css';
     rights: { downloads: 'none' | 'web' | 'highres'; watermark: boolean; kind: string; lists: boolean; hide: boolean; zip: boolean };
     lists?: List[]; purposes?: Record<string, string>; me?: { name: string; kind: string }; dropbox?: string | null;
     preview?: { status: string; link: string; gallery_id: string };
+    shop?: Shop | null;
   };
   const $ = <T extends HTMLElement = HTMLElement>(s: string, el: ParentNode = document) => el.querySelector<T>(s)!;
   const esc = (s: unknown) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
@@ -144,6 +148,9 @@ import { TOUR_CSS } from '../gallery-tour-css';
   let selecting = false;
   const selected = new Set<string>();
   const live = () => !!view && !view.preview;
+  // Prints (src/gallery-shop.ts): only when the gallery sends a shop (Tony, until he switches it on).
+  let shop: ReturnType<typeof initShop> | null = null;
+  const shopOn = () => live() && !!view.shop;
   const lists = () => view.lists ?? [];
   const favList = () => lists().find((l) => l.kind === 'favourites');
   const isFav = (id: string) => !!favList()?.ids.includes(id);
@@ -270,10 +277,13 @@ import { TOUR_CSS } from '../gallery-tour-css';
     showCover(view.gallery, view.cover);
     nudge();
     $('[data-lists]').hidden = !(live() && view.rights.lists);
-    $('[data-select]').hidden = !(live() && (view.rights.lists || view.rights.zip || view.rights.hide));
+    $('[data-select]').hidden = !(live() && (view.rights.lists || view.rights.zip || view.rights.hide || !!view.shop));
     $('[data-dl]').hidden = !(live() && view.rights.zip);
     $('.g-vendor').hidden = view.rights.kind !== 'vendor';
     $('[data-share-family]').hidden = !(live() && view.rights.kind === 'main_client');
+    if (shopOn() && !shop) shop = initShop({ slug, viewer: () => viewer, images: () => view.images, shop: () => (shopOn() ? view.shop ?? null : null), toast });
+    shop?.drawCartButton();
+    const printed = shop?.afterPayment();
     gate(`<a class="g-cta" href="#photos">View the gallery</a>`);
     if (view.preview) {
       const p = $('.gv-preview');
@@ -282,7 +292,10 @@ import { TOUR_CSS } from '../gallery-tour-css';
     }
     const exp = view.gallery.expires_at;
     const keep = (view as any).keep as Keep;
-    if (justKept && !preview) {
+    if (printed) {
+      const n = $('.g-note'); n.hidden = false;
+      n.textContent = `Thank you for your order (${printed})! A confirmation is on its way by email. Tony checks every order before it goes to the lab.`;
+    } else if (justKept && !preview) {
       const n = $('.g-note'); n.hidden = false;
       n.textContent = `Thank you! Your gallery will stay online for another ${keep?.months ?? 12} months. A receipt is on its way by email.`;
     } else if (exp && !preview) {
@@ -665,6 +678,7 @@ import { TOUR_CSS } from '../gallery-tour-css';
     fav.textContent = isFav(i.id) ? '♥' : '♡';
     fav.classList.toggle('on', isFav(i.id));
     $('[data-lb-list]').hidden = !(live() && view.rights.lists);
+    $('[data-lb-print]').hidden = !shopOn();
     const hide = $('[data-lb-hide]');
     hide.hidden = !(live() && view.rights.hide);
     hide.textContent = i.ch ? 'Show again' : 'Hide';
@@ -766,6 +780,7 @@ import { TOUR_CSS } from '../gallery-tour-css';
     $('[data-sel-hide]').hidden = !view.rights.hide || !picked.some((i) => !i.ch);
     $('[data-sel-unhide]').hidden = !view.rights.hide || !picked.some((i) => i.ch);
     ($('[data-sel-list]') as HTMLButtonElement).disabled = !n;
+    $('[data-sel-print]').hidden = !shopOn() || !n;
     ($('[data-select]')).textContent = selecting ? 'Done' : 'Select';
   }
   function drawFilter(fl: List | null | undefined) {
@@ -887,6 +902,8 @@ import { TOUR_CSS } from '../gallery-tour-css';
     if (id('[data-select]')) { selecting = !selecting; if (!selecting) selected.clear(); draw(); return true; }
     if (id('[data-sel-done]')) { selecting = false; selected.clear(); draw(); return true; }
     if (id('[data-sel-list]')) { if (selected.size) pickList([...selected]); return true; }
+    if (id('[data-sel-print]')) { if (selected.size) shop?.openShop(current.filter((i) => selected.has(i.id)).map((i) => i.id).slice(0, 60)); return true; }
+    if (id('[data-lb-print]')) { shop?.openShop([current[at].id]); return true; }
     if (id('[data-sel-dl]')) {
       if (selected.size > 300) toast('That’s a lot of photos: save them to a list, then download the list.');
       else downloadDlg(`ids:${[...selected].join(',')}`, plural(selected.size));
