@@ -68,7 +68,10 @@ export function initShop(ctx: Ctx) {
   }
 
   // ---- Choosing a print ----
-  type State = { ids: string[]; at: number; cat: string; type: string; pid: number; qty: number; landscape: boolean; crops: Map<string, Crop>; cropping: boolean; editing: string | null };
+  // Several photos: each has its own choice (product, size, quantity, way round). Until someone taps
+  // another photo in the strip, a choice applies to them all (linked); after that, to the photo shown.
+  type Choice = { cat: string; type: string; pid: number; qty: number; landscape: boolean };
+  type State = Choice & { ids: string[]; at: number; crops: Map<string, Crop>; cropping: boolean; editing: string | null; choices: Map<string, Choice>; linked: boolean };
   let st: State;
   const cats = () => {
     const have = new Set(products().map((p) => p.category));
@@ -80,7 +83,26 @@ export function initShop(ctx: Ctx) {
   const photo = () => img(st.ids[st.at])!;
   const pr = (i: Img) => i.w / i.h;
   const defaultLandscape = (i: Img) => i.w > i.h;
-  const cropFor = (i: Img) => cleanCrop(st.crops.get(i.id) ?? centredCrop(pr(i), ratioOf(prod(), st.landscape)), pr(i), ratioOf(prod(), st.landscape));
+  // Crops are kept per photo and print shape, so changing size and back keeps a crop that was set.
+  const cropKey = (i: Img, p: Product, land: boolean) => `${i.id}|${ratioOf(p, land).toFixed(4)}`;
+  const cropWith = (i: Img, p: Product, land: boolean) => cleanCrop(st.crops.get(cropKey(i, p, land)) ?? centredCrop(pr(i), ratioOf(p, land)), pr(i), ratioOf(p, land));
+  const cropFor = (i: Img) => cropWith(i, prod(), st.landscape);
+  const setCrop = (i: Img, c: Crop) => st.crops.set(cropKey(i, prod(), st.landscape), c);
+  const mine = (): Choice => ({ cat: st.cat, type: st.type, pid: st.pid, qty: st.qty, landscape: st.landscape });
+  // The choice for another photo: the same print, the way round that suits that photo.
+  const adapt = (c: Choice, i: Img): Choice => { const p = byId().get(c.pid); return { ...c, landscape: p && p.w_cm !== p.h_cm ? defaultLandscape(i) : false }; };
+  /** Save what's shown: for this photo, or for every photo while they're linked. */
+  function commit() {
+    const c = mine();
+    st.choices.set(st.ids[st.at], c);
+    if (st.linked) for (const id of st.ids) if (id !== st.ids[st.at]) { const i = img(id); if (i) st.choices.set(id, adapt(c, i)); }
+  }
+  const choiceOf = (id: string) => st.choices.get(id) ?? mine();
+  function show(k: number) {
+    commit();
+    st.at = k;
+    Object.assign(st, choiceOf(st.ids[k]));
+  }
 
   function pick(cat: string, type?: string, pid?: number) {
     st.cat = cat;
@@ -94,10 +116,8 @@ export function initShop(ctx: Ctx) {
     const near = (p: Product) => Math.abs(Math.log((p.w_cm * p.h_cm) / 600));
     const top = Math.min(...sizes.map(fit));
     const best = sizes.filter((p) => fit(p) <= top + 0.03).sort((a, b) => near(a) - near(b))[0];
-    const before = st.pid;
     st.pid = (same ?? best ?? sizes[0]).id;
-    // A different shape: the crops start again (centred).
-    if (before !== st.pid && byId().get(before) && ratioOf(byId().get(before)!, st.landscape) !== ratioOf(prod(), st.landscape)) st.crops.clear();
+    commit();
   }
 
   /** Open the shop for these photos (one or several). edit: a cart line to change instead of adding. */
@@ -107,7 +127,8 @@ export function initShop(ctx: Ctx) {
     const first = img(ids[0]);
     if (!first) return;
     const p0 = edit ? byId().get(edit.product_id) : null;
-    st = { ids, at: 0, cat: '', type: '', pid: 0, qty: edit?.qty ?? 1, landscape: edit ? edit.landscape : defaultLandscape(first), crops: new Map(edit ? [[edit.image_id, edit.crop]] : []), cropping: false, editing: edit?.key ?? null };
+    st = { ids, at: 0, cat: '', type: '', pid: 0, qty: edit?.qty ?? 1, landscape: edit ? edit.landscape : defaultLandscape(first), crops: new Map(), cropping: false, editing: edit?.key ?? null, choices: new Map(), linked: true };
+    if (p0 && edit) st.crops.set(cropKey(first, p0, edit.landscape), edit.crop);
     if (p0) { st.pid = p0.id; pick(p0.category, p0.type, p0.id); } else pick(cats()[0][1][0]);
     drawShop();
     if (!shopDlg.open) shopDlg.showModal();
@@ -117,7 +138,7 @@ export function initShop(ctx: Ctx) {
     const host = shopDlg.querySelector<HTMLElement>('.sh-stage')!;
     const p = prod(), i = photo(), c = cropFor(i);
     if (st.cropping) {
-      const ed = cropEditor(host, i.web, pr(i), ratioOf(p, st.landscape), c, (nc) => { st.crops.set(i.id, nc); drawFacts(); }, p.kind === 'circle');
+      const ed = cropEditor(host, i.web, pr(i), ratioOf(p, st.landscape), c, (nc) => { setCrop(i, nc); drawFacts(); }, p.kind === 'circle');
       const z = shopDlg.querySelector<HTMLInputElement>('[data-zoom]')!;
       z.value = String(ed.zoomOf());
       z.oninput = () => ed.zoom(Number(z.value));
@@ -131,12 +152,14 @@ export function initShop(ctx: Ctx) {
     const c = cropFor(i);
     const d = dpi(i.w, c, p, st.landscape);
     const each = st.ids.length;
-    const total = productTotal(p, st.qty * each);
+    const all = each > 1 ? orderTotals(st.ids.map((id) => ({ product_id: choiceOf(id).pid, qty: choiceOf(id).qty })), byId(), { free_over: 0, freight_prints: 0, freight_wall: 0 }).subtotal : 0;
+    const total = productTotal(p, st.qty);
     const tiers = (p.tiers ?? []).filter((t) => t.q > 1);
     shopDlg.querySelector('.sh-facts')!.innerHTML = `
       ${d && d < 150 ? `<p class="sh-warn">This crop is small for ${esc(p.name.split(' ')[0])}: it would print at about ${Math.round(d)} dpi and may look soft. Try a smaller size or zoom out.</p>` : ''}
       ${tiers.length ? `<p class="sh-bulk">Order more and save: ${tiers.map((t) => `${t.q} or more, then ${nzd(t.add)} each`).join(' · ')}</p>` : ''}
-      <p class="sh-total"><span>${each > 1 ? `${plural(each, 'photo')} × ${st.qty}` : st.qty > 1 ? `${st.qty} prints` : '&nbsp;'}</span><strong>${nzd(total)}</strong></p>`;
+      <p class="sh-total"><span>${each > 1 ? `${st.linked ? 'Each photo' : 'This photo'}${st.qty > 1 ? ` × ${st.qty}` : ''}` : st.qty > 1 ? `${st.qty} prints` : '&nbsp;'}</span><strong>${nzd(total)}</strong></p>
+      ${each > 1 ? `<p class="sh-total sh-total--all"><span>All ${plural(each, 'photo')}</span><strong>${nzd(all)}</strong></p>` : ''}`;
   }
 
   function drawShop() {
@@ -156,7 +179,12 @@ export function initShop(ctx: Ctx) {
             ? `<label class="sh-zoom">Zoom <input type="range" min="0" max="1" step="0.01" data-zoom /></label><button type="button" class="g-btn" data-crop-done>Done</button>`
             : `<button type="button" class="g-btn" data-crop>Adjust crop</button>${square ? '' : `<button type="button" class="g-btn" data-turn>${st.landscape ? 'Make it portrait' : 'Make it landscape'}</button>`}`}
         </div>
-        ${multi ? `<div class="sh-strip">${st.ids.map((id, k) => { const x = img(id); return x ? `<button type="button" class="${k === st.at ? 'on' : ''}" data-at="${k}" aria-label="Photo ${k + 1}">${croppedPhoto(x.thumb, cropFor(x), p.kind === 'circle')}</button>` : ''; }).join('')}</div><p class="sh-hint">The same print for each photo. Tap a photo to check or adjust its crop.</p>` : ''}
+        ${multi ? `<div class="sh-strip">${st.ids.map((id, k) => {
+          const x = img(id); if (!x) return '';
+          const c = k === st.at ? mine() : choiceOf(id), cp = byId().get(c.pid) ?? p;
+          return `<button type="button" class="${k === st.at ? 'on' : ''}" data-at="${k}" aria-label="Photo ${k + 1}"><span class="sh-th">${croppedPhoto(x.thumb, cropWith(x, cp, c.landscape), cp.kind === 'circle')}</span><small>${esc(shortSize(cp, c.landscape))}${c.qty > 1 ? ` ×${c.qty}` : ''}</small></button>`;
+        }).join('')}</div>
+        <p class="sh-hint">${st.linked ? 'Your choice is used for every photo. To give a photo its own size, product or number of copies, tap it.' : 'Each photo has its own print: tap a photo to change it. <button type="button" class="ct-link" data-same>Use this print for all photos</button>'}</p>` : ''}
       </div>
       <div class="sh-right">
         <h2>${multi ? `Order prints of ${plural(st.ids.length, 'photo')}` : 'Order a print'}</h2>
@@ -189,6 +217,7 @@ export function initShop(ctx: Ctx) {
     return `${a ? `${a} · ` : ''}${fmt(w)} × ${fmt(h)} cm`;
   };
   const fmt = (n: number) => String(Math.round(n * 10) / 10);
+  const shortSize = (p: Product, landscape: boolean) => { const [w, h] = landscape ? [p.h_cm, p.w_cm] : [p.w_cm, p.h_cm]; return `${fmt(w)}×${fmt(h)}`; };
 
   shopDlg.addEventListener('click', (e) => {
     const t = e.target as HTMLElement;
@@ -197,24 +226,28 @@ export function initShop(ctx: Ctx) {
     if (b('[data-sh-close]')) return shopDlg.close();
     if ((x = b('[data-cat]'))) { pick(x.dataset.cat!); st.cropping = false; return drawShop(); }
     if ((x = b('[data-type]'))) { pick(st.cat, x.dataset.type, st.pid); return drawShop(); }
-    if ((x = b('[data-at]'))) { st.at = Number(x.dataset.at); return drawShop(); }
+    if ((x = b('[data-at]'))) { const k = Number(x.dataset.at); if (k !== st.at) { commit(); st.linked = false; show(k); st.cropping = false; } return drawShop(); }
+    if (b('[data-same]')) { st.linked = true; commit(); ctx.toast(`The same print for all ${st.ids.length} photos.`); return drawShop(); }
     if (b('[data-crop]')) { st.cropping = true; return drawShop(); }
     if (b('[data-crop-done]')) { st.cropping = false; return drawShop(); }
-    if (b('[data-turn]')) { st.landscape = !st.landscape; st.crops.clear(); return drawShop(); }
-    if ((x = b('[data-qty]'))) { st.qty = Math.min(50, Math.max(1, st.qty + Number(x.dataset.qty))); shopDlg.querySelector('.sh-qty span')!.textContent = String(st.qty); return drawFacts(); }
+    if (b('[data-turn]')) { st.landscape = !st.landscape; commit(); return drawShop(); }
+    if ((x = b('[data-qty]'))) { st.qty = Math.min(50, Math.max(1, st.qty + Number(x.dataset.qty))); commit(); return drawShop(); }
     if (b('[data-add]')) return addToCart();
   });
   shopDlg.addEventListener('change', (e) => {
     const t = e.target as HTMLInputElement;
-    if (t.name === 'sh-size') { const before = prod(); st.pid = Number(t.value); if (ratioOf(before, st.landscape) !== ratioOf(prod(), st.landscape)) st.crops.clear(); drawShop(); }
+    if (t.name === 'sh-size') { st.pid = Number(t.value); commit(); drawShop(); }
   });
 
   function addToCart() {
-    const p = prod();
-    const lines: Line[] = st.ids.map((id) => img(id)).filter(Boolean).map((i) => ({
-      key: st.editing && st.ids.length === 1 ? st.editing : `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}`,
-      image_id: i!.id, product_id: p.id, qty: st.qty, crop: cropFor(i!), landscape: p.w_cm !== p.h_cm && st.landscape,
-    }));
+    commit();
+    const lines: Line[] = st.ids.map((id) => img(id)).filter(Boolean).map((i) => {
+      const c = choiceOf(i!.id), p = byId().get(c.pid)!;
+      return {
+        key: st.editing && st.ids.length === 1 ? st.editing : `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}`,
+        image_id: i!.id, product_id: p.id, qty: c.qty, crop: cropWith(i!, p, c.landscape), landscape: p.w_cm !== p.h_cm && c.landscape,
+      };
+    });
     if (st.editing) cart = cart.map((l) => (l.key === st.editing ? lines[0] : l));
     else {
       // The same photo, product, crop and shape already in the cart: just more of it.
@@ -228,7 +261,7 @@ export function initShop(ctx: Ctx) {
     const wasEditing = !!st.editing;
     shopDlg.close();
     if (wasEditing) openCart();
-    else ctx.toast(`${plural(lines.length * st.qty, 'print')} added to your cart.`);
+    else ctx.toast(`${plural(lines.reduce((a, l) => a + l.qty, 0), 'print')} added to your cart.`);
   }
 
   // ---- The cart ----
@@ -323,7 +356,10 @@ const SHOP_CSS = `
 .sh-under{display:flex;gap:10px;justify-content:center;align-items:center;flex-wrap:wrap;padding-top:12px}
 .sh-zoom{display:flex;gap:8px;align-items:center;font-size:14px}.sh-zoom input{width:180px}
 .sh-strip{display:flex;gap:6px;overflow-x:auto;padding:12px 0 2px}
-.sh-strip button{flex:none;width:58px;height:58px;padding:3px;border:2px solid transparent;border-radius:6px;background:#fff;cursor:pointer}
+.sh-strip button{flex:none;width:66px;padding:3px;border:2px solid transparent;border-radius:6px;background:#fff;cursor:pointer;display:flex;flex-direction:column;gap:2px;align-items:center}
+.sh-th{display:block;width:56px;height:56px}
+.sh-strip small{font-size:10.5px;color:#555;white-space:nowrap}
+.sh-total--all{margin-top:0;border-top:1px solid #eee;padding-top:6px}
 .sh-strip button.on{border-color:#5a5e3b}
 .sh-right{overflow-y:auto;padding:26px 24px 20px}
 .sh-right h2{margin:0 0 12px;font-weight:300;font-size:26px}
