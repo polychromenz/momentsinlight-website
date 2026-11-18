@@ -3,13 +3,17 @@
 // then choose photos), "Order a print" on a photo, or "Order prints" for a selection. Then choose
 // the product, paper or frame colour and size, see the photo in it, set the crop (never below
 // 150 dpi; a warning under 200), and add to the cart. Print packs take up to 24 photos, repeated to
-// fill the pack. The cart goes to Stripe Checkout, which takes the delivery address. Only Tony sees
+// fill the pack. The cart asks where to deliver (New Zealand or Australia, and the postcode) and the
+// server works out delivery by lab (functions-lib/print-freight.js: it needs the labs' costs, which
+// never come to this page). Then Stripe Checkout takes the payment and address. Only Tony sees
 // it until he switches it on; his studio visits can also place test orders without paying.
 import { mockup, cropEditor, styleMockups, croppedPhoto, type Product, type Crop } from './prints/mockup';
 import { orderTotals, productTotal, ratioOf, centredCrop, cleanCrop, dpi, money, minCropW, packCount, fillPack, DPI_WARN, DPI_MIN, PAPER } from '../functions-lib/print-pricing.js';
 
 type Img = { id: string; w: number; h: number; thumb: string; web: string; hero?: number; s?: number };
-export type Shop = { products: Product[]; freight_prints: number; freight_wall: number; free_over: number; intro: string; trial: { live: boolean } | null };
+export type Shop = { products: Product[]; freight_prints: number; freight_wall: number; free_over: number; intro: string; countries?: Record<string, string>; trial: { live: boolean } | null };
+type Dest = { country: string; postcode: string; speed: 'standard' | 'express' };
+type Quote = { subtotal: number; freight: number; total: number; free: boolean; parts: { lab: string; label: string; amount: number }[]; express: { standard: number; express: number } | null; error: string };
 type PackPhoto = { image_id: string; n: number; crop: Crop; landscape: boolean };
 type Line = { key: string; image_id: string; product_id: number; qty: number; crop: Crop; landscape: boolean; pack?: PackPhoto[] };
 type Ctx = { slug: string; viewer: () => string; images: () => Img[]; favourites: () => string[]; shop: () => Shop | null; toast: (m: string) => void };
@@ -42,6 +46,12 @@ export function initShop(ctx: Ctx) {
   const load = (): Line[] => { try { return JSON.parse(localStorage.getItem(store) || '[]'); } catch { return []; } };
   const save = (l: Line[]) => { try { localStorage.setItem(store, JSON.stringify(l)); } catch { /* fine */ } };
   let cart: Line[] = load();
+  // Where to deliver: kept for every gallery (it's the same couple's address).
+  const loadDest = (): Dest => { try { return { country: 'NZ', postcode: '', speed: 'standard', ...JSON.parse(localStorage.getItem('mil-deliver') || '{}') }; } catch { return { country: 'NZ', postcode: '', speed: 'standard' }; } };
+  const dest: Dest = loadDest();
+  const saveDest = () => { try { localStorage.setItem('mil-deliver', JSON.stringify(dest)); } catch { /* fine */ } };
+  let quote: { key: string; q: Quote | null; busy: boolean } = { key: '', q: null, busy: false };
+  let quoteTimer = 0;
   const products = () => ctx.shop()?.products ?? [];
   const byId = () => new Map(products().map((p) => [p.id, p]));
   const img = (id: string) => ctx.images().find((i) => i.id === id);
@@ -463,11 +473,58 @@ export function initShop(ctx: Ctx) {
     drawCart();
     if (!cartDlg.open) cartDlg.showModal();
   }
+  const cartItems = () => cart.map((l) => (l.pack ? { product_id: l.product_id, qty: l.qty, pack: l.pack } : { image_id: l.image_id, product_id: l.product_id, qty: l.qty, crop: l.crop, landscape: l.landscape }));
+  const postcodeOk = () => /^\d{4}$/.test(dest.postcode);
+  /** Ask the server for delivery (soon after the last change), then redraw the sums. */
+  function askQuote() {
+    const key = JSON.stringify([cartItems(), dest]);
+    if (key === quote.key) return drawSum();
+    quote = { key, q: null, busy: true };
+    clearTimeout(quoteTimer);
+    if (!cart.length || !postcodeOk()) { quote.busy = false; return drawSum(); }
+    drawSum();
+    quoteTimer = window.setTimeout(async () => {
+      let q: Quote;
+      try {
+        const r = await fetch('/api/gallery/prints', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ v: ctx.viewer(), quote: true, items: cartItems(), dest }) });
+        const d = await r.json().catch(() => ({}));
+        q = r.ok ? d : ({ error: d.error || 'Couldn’t work out delivery. Please try again.' } as Quote);
+      } catch { q = { error: 'Couldn’t work out delivery: check your connection.' } as Quote; }
+      if (quote.key !== key) return; // the cart changed meanwhile
+      quote = { key, q, busy: false };
+      if (q.express && dest.country === 'AU') drawCart(); else drawSum();
+    }, 250);
+  }
+  /** The sums and the checkout button (redrawn without touching the postcode box). */
+  function drawSum() {
+    const box = cartDlg.querySelector<HTMLElement>('[data-sum]');
+    const shop = ctx.shop();
+    if (!box || !shop) return;
+    const t = orderTotals(cart.map((l) => ({ ...l })), byId(), { free_over: 0, freight_prints: 0, freight_wall: 0 });
+    const q = quote.q, ok = !!q && !q.error && !quote.busy && postcodeOk();
+    const delivery = !postcodeOk() ? '<em>Add your postcode</em>' : quote.busy || !q ? '<em>Working it out…</em>' : q.error ? '—' : q.free ? 'Free' : money(q.freight);
+    box.innerHTML = `<dl class="ct-sum">
+        ${t.saved ? `<div><dt>Bulk savings</dt><dd>−${money(t.saved)}</dd></div>` : ''}
+        <div><dt>Prints</dt><dd>${money(t.subtotal)}</dd></div>
+        <div><dt>Delivery${ok && q!.parts.length > 1 ? ' (two parcels)' : ''}</dt><dd>${delivery}</dd></div>
+        <div class="ct-total"><dt>Total</dt><dd>${ok ? money(t.subtotal + q!.freight) : '—'}</dd></div>
+      </dl>
+      ${q?.error && postcodeOk() && !quote.busy ? `<p class="sh-warn">${esc(q.error)}</p>` : ''}
+      ${ok && q!.parts.length > 1 ? '<p class="sh-hint">Your prints come from two labs, so they arrive in two parcels.</p>' : ''}
+      ${shop.free_over && !(ok && q!.free) ? `<p class="sh-hint">Free delivery on orders over ${nzd(shop.free_over)}.</p>` : ''}`;
+    cartDlg.querySelectorAll<HTMLButtonElement>('[data-pay],[data-pay-test]').forEach((b) => {
+      b.disabled = !ok;
+      if (b.dataset.pay !== undefined) b.textContent = ok ? `Checkout · ${money(t.subtotal + q!.freight)}` : 'Checkout';
+    });
+  }
   function drawCart() {
     const shop = ctx.shop();
     if (!shop) return;
     const m = byId();
-    const t = orderTotals(cart.map((l) => ({ ...l })), m, shop);
+    const t = orderTotals(cart.map((l) => ({ ...l })), m, { free_over: 0, freight_prints: 0, freight_wall: 0 });
+    const countries = shop.countries ?? { NZ: 'New Zealand' };
+    if (!countries[dest.country]) dest.country = 'NZ';
+    const ex = quote.key === JSON.stringify([cartItems(), dest]) ? quote.q?.express : null;
     const note = (cartDlg.querySelector('[name="note"]') as HTMLTextAreaElement | null)?.value ?? '';
     cartDlg.innerHTML = `<div class="dlg-body cart">
       <button type="button" class="dlg-x" data-cart-close aria-label="Close">✕</button>
@@ -483,24 +540,34 @@ export function initShop(ctx: Ctx) {
             <button type="button" class="ct-link" data-cedit="${l.key}">Change</button><button type="button" class="ct-link" data-cdel="${l.key}">Remove</button></div></div>
           <strong class="ct-amt">${money(l.amount)}</strong></li>`;
       }).join('')}</ul>
-      <dl class="ct-sum">
-        ${t.saved ? `<div><dt>Bulk savings</dt><dd>−${money(t.saved)}</dd></div>` : ''}
-        <div><dt>Prints</dt><dd>${money(t.subtotal)}</dd></div>
-        <div><dt>Delivery ${t.wall ? '(wall art)' : ''}</dt><dd>${t.free ? 'Free' : money(t.freight)}</dd></div>
-        <div class="ct-total"><dt>Total</dt><dd>${money(t.total)}</dd></div>
-      </dl>
-      ${shop.free_over && !t.free ? `<p class="sh-hint">Free delivery on orders over ${nzd(shop.free_over)}.</p>` : ''}
+      <fieldset class="ct-dest"><legend>Delivery to</legend>
+        <div class="ct-dest-row"><select name="country" aria-label="Country">${Object.entries(countries).map(([k, v]) => `<option value="${k}"${k === dest.country ? ' selected' : ''}>${esc(v)}</option>`).join('')}</select>
+        <input name="postcode" inputmode="numeric" autocomplete="postal-code" maxlength="4" placeholder="Postcode" aria-label="Postcode" value="${esc(dest.postcode)}" /></div>
+        ${dest.country === 'AU' ? `<div class="ct-speed">${(['standard', 'express'] as const).map((k) => `<label><input type="radio" name="speed" value="${k}"${dest.speed === k ? ' checked' : ''} /> ${k === 'standard' ? 'Standard (3–10 days)' : 'Express (1–3 days)'}${ex ? ` · ${ex[k] ? money(ex[k]) : 'free'}` : ''}</label>`).join('')}</div>` : ''}
+      </fieldset>
+      <div data-sum></div>
       <label class="ct-note">A note for Tony (optional) <textarea name="note" rows="2" maxlength="1000">${esc(note)}</textarea></label>
-      <button type="button" class="g-cta ct-pay" data-pay>Checkout · ${money(t.total)}</button>
+      <button type="button" class="g-cta ct-pay" data-pay>Checkout</button>
       ${shop.trial ? '<button type="button" class="g-cta g-cta--quiet ct-pay" data-pay-test>Place a test order (no payment)</button>' : ''}
-      <p class="sh-hint">You’ll pay securely by card with Stripe, and add your delivery address there (New Zealand only). Prices include GST. <button type="button" class="ct-link" data-more>Keep shopping</button></p>`
+      <p class="sh-hint">You’ll pay securely by card with Stripe, and add your delivery address there. Prices are in NZ$ and include GST. <button type="button" class="ct-link" data-more>Keep shopping</button></p>`
       : '<p class="muted">Your cart is empty.</p><p><button type="button" class="g-cta" data-more>Prints &amp; wall art</button></p>'}
     </div>`;
+    if (cart.length) askQuote();
     requestAnimationFrame(() => cartDlg.querySelectorAll<HTMLElement>('[data-mk]').forEach((el) => {
       const l = cart.find((x) => x.key === el.dataset.mk)!, p = m.get(l.product_id)!, i = img(l.image_id)!;
       el.innerHTML = mockup(p, i.thumb, l.crop, l.landscape, 88, 88);
     }));
   }
+  // Delivery: country and speed redraw the cart; the postcode only the sums (keeps the cursor).
+  cartDlg.addEventListener('input', (e) => {
+    const t = e.target as HTMLInputElement;
+    if (t.name === 'postcode') { t.value = t.value.replace(/\D/g, '').slice(0, 4); dest.postcode = t.value; saveDest(); askQuote(); }
+  });
+  cartDlg.addEventListener('change', (e) => {
+    const t = e.target as HTMLInputElement;
+    if (t.name === 'country') { dest.country = t.value; dest.speed = 'standard'; saveDest(); drawCart(); }
+    if (t.name === 'speed') { dest.speed = t.value as Dest['speed']; saveDest(); drawCart(); }
+  });
   cartDlg.addEventListener('click', async (e) => {
     const t = e.target as HTMLElement;
     const b = (s: string) => t.closest<HTMLElement>(s);
@@ -516,8 +583,7 @@ export function initShop(ctx: Ctx) {
       btn.disabled = true; const was = btn.textContent; btn.textContent = test ? 'Placing the test order…' : 'Taking you to the payment page…';
       const note = (cartDlg.querySelector('[name="note"]') as HTMLTextAreaElement)?.value ?? '';
       try {
-        const items = cart.map((l) => (l.pack ? { product_id: l.product_id, qty: l.qty, pack: l.pack } : { image_id: l.image_id, product_id: l.product_id, qty: l.qty, crop: l.crop, landscape: l.landscape }));
-        const r = await fetch('/api/gallery/prints', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ v: ctx.viewer(), items, note, back: location.href, test: !!test }) });
+        const r = await fetch('/api/gallery/prints', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ v: ctx.viewer(), items: cartItems(), dest, note, back: location.href, test: !!test }) });
         const d = await r.json().catch(() => ({ error: 'Something went wrong. Please try again.' }));
         if (!r.ok) throw new Error(d.error);
         if (d.url) { location.href = d.url; return; }
@@ -525,6 +591,7 @@ export function initShop(ctx: Ctx) {
         ctx.toast(`Test order ${d.done} placed. It’s in Studio › Galleries › Prints.`);
       } catch (err) { ctx.toast((err as Error).message || 'Something went wrong.'); }
       btn.disabled = false; btn.textContent = was;
+      drawSum();
     }
   });
 
@@ -619,6 +686,11 @@ const SHOP_CSS = `
 .ct-amt{font-weight:500;white-space:nowrap}
 .ct-sum{margin:4px 0 6px;font-size:15px}.ct-sum div{display:flex;justify-content:space-between;padding:3px 0}.ct-sum dt,.ct-sum dd{margin:0}
 .ct-total{border-top:1px solid #ddd;margin-top:4px;padding-top:8px!important;font-size:18px;font-weight:500}
+.ct-dest{margin:10px 0 6px;padding:0;border:0;font-size:14px}.ct-dest legend{padding:0;margin-bottom:6px;font-weight:600}
+.ct-dest-row{display:flex;gap:8px}.ct-dest select,.ct-dest input[name=postcode]{font:inherit;padding:8px 10px;border:1px solid #d8d3c8;border-radius:8px;background:#fff}.ct-dest select{flex:1;min-width:0}.ct-dest input[name=postcode]{width:7.5em}
+.ct-speed{display:flex;flex-direction:column;gap:4px;margin-top:8px}.ct-speed label{display:flex;gap:6px;align-items:center;cursor:pointer}
+.ct-sum em{font-style:normal;color:#8a857a}
+.ct-pay:disabled{opacity:.45;cursor:not-allowed}
 .ct-note{display:block;margin:12px 0;font-size:14px}.ct-note textarea{display:block;width:100%;margin-top:4px;box-sizing:border-box;font:inherit;padding:8px;border:1px solid #d8d3c8;border-radius:8px}
 .ct-pay{display:block;width:100%;margin:6px 0 0;text-align:center}
 @media (max-width:820px){

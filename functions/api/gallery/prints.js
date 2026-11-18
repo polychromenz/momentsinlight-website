@@ -1,10 +1,12 @@
 // Buying prints from a client gallery (functions-lib/prints.js). The shop's products come with the
 // gallery (/api/gallery/view → shop); this takes the cart to payment.
 //   POST /api/gallery/prints { v, items: [{ image_id, product_id, qty, crop, landscape }], note?, back, test? }
+//       dest: { country: 'NZ' | 'AU', postcode, speed: 'standard' | 'express' }
 //     -> { url } Stripe's payment page, or { done: 'P-2026-0001' } for Tony's test orders
+//   POST /api/gallery/prints { v, quote: true, items, dest } -> { subtotal, freight, total, parts, express, error }
 import { json } from '../../../functions-lib/studio.js';
 import { viewerAccess } from '../../../functions-lib/gallery-access.js';
-import { placeOrder } from '../../../functions-lib/prints.js';
+import { placeOrder, quoteCart } from '../../../functions-lib/prints.js';
 
 const OK_HOSTS = ['www.momentsinlight.co.nz', 'galleries.momentsinlight.co.nz', 'localhost'];
 
@@ -12,6 +14,9 @@ export async function onRequestPost({ request, env }) {
   const d = await request.json().catch(() => ({}));
   const a = await viewerAccess(env, d.v);
   if (!a) return json({ error: 'This gallery link no longer works. Please reload the page.' }, 401);
+  if (d.quote) {
+    try { return json(await quoteCart(env, a, d)); } catch (e) { return json({ error: e.message }, 400); }
+  }
   let back;
   try { back = new URL(String(d.back)); } catch { back = null; }
   if (!back || !OK_HOSTS.includes(back.hostname)) back = new URL(`https://galleries.momentsinlight.co.nz/${a.gallery.slug}`);

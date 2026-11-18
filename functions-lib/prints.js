@@ -20,6 +20,7 @@ import { sendEmail } from './gmail.js';
 import { renderTemplate, studioLinks } from './email-render.js';
 import { alertTony } from './crm.js';
 import { webUrl } from './galleries.js';
+import { freightFor, cleanDest, postcodeCheck, COUNTRIES } from './print-freight.js';
 
 const SITE = 'https://www.momentsinlight.co.nz';
 const nzToday = () => new Date().toLocaleDateString('en-CA', { timeZone: 'Pacific/Auckland' });
@@ -42,8 +43,9 @@ export async function printSettings(db) {
 }
 
 /** Products that can be bought for one photo, switched on, with a size. */
-export async function shopProducts(db) {
-  const rows = (await db.prepare(`SELECT id, category, type, name, lab, kind, w_cm, h_cm, price, tiers FROM print_products WHERE active = 1 AND price > 0 AND w_cm > 0 ORDER BY sort, category, type, w_cm * h_cm, name`).all()).results;
+export async function shopProducts(db, { cost = false } = {}) {
+  // The lab's cost only for the server's freight sums: never sent to the gallery page.
+  const rows = (await db.prepare(`SELECT id, category, type, name, lab, kind, w_cm, h_cm, price, tiers${cost ? ', cost' : ''} FROM print_products WHERE active = 1 AND price > 0 AND w_cm > 0 ORDER BY sort, category, type, w_cm * h_cm, name`).all()).results;
   return rows.filter((p) => SOLD.has(p.kind)).map((p) => ({ ...p, tiers: p.tiers ? JSON.parse(p.tiers) : null }));
 }
 
@@ -65,6 +67,7 @@ export async function shopFor(env, a) {
   return {
     products,
     freight_prints: s.freight_prints, freight_wall: s.freight_wall, free_over: s.free_over, intro: s.intro,
+    countries: COUNTRIES, // delivery: the cart asks where to, and the server works out the freight (quoteCart)
     trial: a.viewer.role === 'studio' ? { live: !!s.live } : null, // Tony: test orders without paying
   };
 }
@@ -80,10 +83,10 @@ async function newNumber(db) {
  *  items: [{ image_id, product_id, qty, crop, landscape }] or, for a print pack,
  *  [{ product_id, qty (packs), pack: [{ image_id, n, crop, landscape }] }].
  *  Returns the priced lines (one per cart line) and `rows`: one per photo, for the order. */
-export async function checkCart(env, a, items) {
+export async function checkCart(env, a, items, dest) {
   if (!Array.isArray(items) || !items.length) throw new Error('Your cart is empty.');
   if (items.length > 100) throw new Error('That’s a lot of prints: please split it into smaller orders, or get in touch with Tony.');
-  const products = new Map((await shopProducts(env.DB)).map((p) => [p.id, p]));
+  const products = new Map((await shopProducts(env.DB, { cost: true })).map((p) => [p.id, p]));
   const { galleryView } = await import('./gallery-access.js');
   const view = await galleryView(env, a.gallery, a.link, null);
   const images = new Map(view.images.map((i) => [i.id, i]));
@@ -112,7 +115,8 @@ export async function checkCart(env, a, items) {
     const { img, crop } = photoOn(p, it.image_id, it.crop, it.landscape);
     return { image_id: img.id, product_id: p.id, qty, crop, p, img };
   });
-  const t = orderTotals(lines, products, await printSettings(env.DB));
+  const s = await printSettings(env.DB);
+  const t = orderTotals(lines, products, s);
   // Rows for the order: a pack's price is shared over its photos by how many prints of each.
   const rows = [];
   for (const l of t.lines) {
@@ -125,8 +129,28 @@ export async function checkCart(env, a, items) {
       rows.push({ image_id: x.img.id, product_id: l.product_id, p: l.p, qty: x.n * l.qty, amount, crop: x.crop });
     });
   }
-  return { ...t, rows, products };
+  // Delivery: by lab and destination (functions-lib/print-freight.js).
+  const qtys = new Map();
+  for (const r of rows) qtys.set(r.product_id, (qtys.get(r.product_id) ?? 0) + r.qty);
+  const f = freightFor([...qtys].map(([id, qty]) => ({ p: products.get(id), qty })), s, dest, t.subtotal);
+  return { ...t, freight: f.freight, total: t.subtotal + f.freight, free: f.free, delivery: f, rows, products };
 }
+
+/** The cart's delivery and total for the gallery page (it can't work out freight itself: that needs
+ *  the labs' costs). */
+export async function quoteCart(env, a, d) {
+  if (!(await shopOpen(env, a))) throw new Error('Prints aren’t available from this gallery.');
+  const t = await checkCart(env, a, d.items, d.dest);
+  const f = t.delivery;
+  return { subtotal: t.subtotal, freight: t.freight, total: t.total, free: f.free, parts: f.parts, express: f.express, error: f.error, dest: f.dest };
+}
+
+const deliveryText = (o) => {
+  const x = o.delivery ? JSON.parse(o.delivery) : null;
+  if (!x) return '';
+  const where = `${COUNTRIES[x.dest?.country] ?? x.dest?.country ?? ''}${x.dest?.postcode ? ` ${x.dest.postcode}` : ''}`;
+  return [where, ...(x.parts ?? []).map((p) => `${p.lab}: ${p.label} ${money(p.amount)}`), ...(x.notes ?? [])].filter(Boolean).join('\n');
+};
 
 const productCopy = (p) => JSON.stringify({ category: p.category, type: p.type, name: p.name, lab: p.lab, kind: p.kind, w_cm: p.w_cm, h_cm: p.h_cm });
 export const describe = (p) => [p.category, p.type && !p.name.toLowerCase().includes(p.type.toLowerCase()) ? p.type : '', p.name].filter(Boolean).join(' · ');
@@ -135,7 +159,10 @@ export const describe = (p) => [p.category, p.type && !p.name.toLowerCase().incl
 export async function placeOrder(env, a, d, back) {
   const db = env.DB;
   if (!(await shopOpen(env, a))) throw new Error('Prints aren’t available from this gallery.');
-  const t = await checkCart(env, a, d.items);
+  const t = await checkCart(env, a, d.items, d.dest);
+  if (t.delivery.error) throw new Error(t.delivery.error);
+  const dest = t.delivery.dest;
+  const delivery = JSON.stringify({ dest, parts: t.delivery.parts, notes: t.delivery.notes });
   const trial = a.viewer.role === 'studio' && !!d.test;
   if (!trial && !stripeReady(env).ok) throw new Error('Paying online isn’t available right now. Please get in touch with Tony.');
   const couple = a.link.kind === 'main_client';
@@ -143,11 +170,11 @@ export async function placeOrder(env, a, d, back) {
   let order = null;
   for (let tries = 0; !order && tries < 5; tries++) {
     try {
-      order = await db.prepare(`INSERT INTO print_orders (number, gallery_id, link_id, viewer_id, job_id, buyer_kind, status, name, email, note, subtotal, freight, total, test, created_at, updated_at)
-        VALUES (?1, ?2, ?3, ?4, ?5, ?6, 'pending', ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?14) RETURNING *`)
+      order = await db.prepare(`INSERT INTO print_orders (number, gallery_id, link_id, viewer_id, job_id, buyer_kind, status, name, email, note, subtotal, freight, total, test, created_at, updated_at, delivery)
+        VALUES (?1, ?2, ?3, ?4, ?5, ?6, 'pending', ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?14, ?15) RETURNING *`)
         .bind(await newNumber(db), a.gallery.id, a.link.id, a.viewer.id, couple ? a.gallery.job_id ?? null : null, a.viewer.role === 'studio' ? 'studio' : a.link.kind,
           String(d.name || a.viewer.name || '').slice(0, 80), String(d.email || a.viewer.email || '').trim().toLowerCase().slice(0, 120), String(d.note || '').slice(0, 1000),
-          t.subtotal, t.freight, t.total, trial ? 1 : 0, now).first();
+          t.subtotal, t.freight, t.total, trial ? 1 : 0, now, delivery).first();
     } catch (e) { if (!String(e).includes('UNIQUE') || tries === 4) throw e; }
   }
   await db.batch(t.rows.map((l) => db.prepare(`INSERT INTO print_order_items (order_id, image_id, product_id, product, qty, amount, crop, created_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)`)
@@ -156,7 +183,7 @@ export async function placeOrder(env, a, d, back) {
   if (trial) {
     // Tony trying it out: straight to paid, with a pretend address; emails come to him.
     await db.prepare(`UPDATE print_orders SET email = ?2, name = COALESCE(NULLIF(name, ''), 'Tony (test)'), address = ?3 WHERE id = ?1`)
-      .bind(order.id, 'tony@momentsinlight.co.nz', JSON.stringify({ name: 'Tony (test order)', line1: '1 Test Street', city: 'Hamilton', postal_code: '3200', country: 'NZ' })).run();
+      .bind(order.id, 'tony@momentsinlight.co.nz', JSON.stringify({ name: 'Tony (test order)', line1: '1 Test Street', city: dest.country === 'AU' ? 'Melbourne' : 'Hamilton', postal_code: dest.postcode || (dest.country === 'AU' ? '3000' : '3200'), country: dest.country })).run();
     await orderIn(env, order.id, { session: null, payment: null });
     return { done: order.number };
   }
@@ -165,12 +192,12 @@ export async function placeOrder(env, a, d, back) {
   // freight as the shipping option, and the delivery address and phone collected by Stripe.
   const body = new URLSearchParams({
     mode: 'payment',
-    'shipping_address_collection[allowed_countries][0]': 'NZ',
+    'shipping_address_collection[allowed_countries][0]': dest.country,
     'phone_number_collection[enabled]': 'true',
     'shipping_options[0][shipping_rate_data][type]': 'fixed_amount',
     'shipping_options[0][shipping_rate_data][fixed_amount][amount]': String(t.freight),
     'shipping_options[0][shipping_rate_data][fixed_amount][currency]': 'nzd',
-    'shipping_options[0][shipping_rate_data][display_name]': t.freight ? (t.wall ? 'Tracked courier (wall art)' : 'Tracked courier') : 'Free delivery',
+    'shipping_options[0][shipping_rate_data][display_name]': (t.freight ? `${dest.country === 'AU' ? (dest.speed === 'express' ? 'Express' : 'Standard') : 'Tracked'} courier to ${COUNTRIES[dest.country]}${dest.postcode ? ` ${dest.postcode}` : ''}` : 'Free delivery').slice(0, 100),
     ...(order.email ? { customer_email: order.email } : {}),
     'metadata[print_order]': String(order.id),
     'payment_intent_data[description]': `Prints order ${order.number} (${a.gallery.name})`,
@@ -206,6 +233,10 @@ export async function printsPaid(env, s) {
   if (s.amount_total !== o.total) console.error('prints: amount differs', o.number, s.amount_total, o.total); // still recorded: Tony sees the paid amount
   const ship = s.collected_information?.shipping_details ?? s.shipping_details ?? null;
   const cust = s.customer_details ?? {};
+  // The freight was worked out on the postcode given in the cart: tell Tony if the address differs.
+  const del = o.delivery ? JSON.parse(o.delivery) : null;
+  const odd = del && (del.parts ?? []).some((p) => p.lab === 'Seldex') ? postcodeCheck(del.dest, ship?.address ?? cust.address) : null;
+  if (odd) await db.prepare('UPDATE print_orders SET delivery = ?2 WHERE id = ?1').bind(o.id, JSON.stringify({ ...del, notes: [...(del.notes ?? []), odd] })).run();
   await db.prepare(`UPDATE print_orders SET name = ?2, email = ?3, phone = ?4, address = ?5, total = ?6 WHERE id = ?1`)
     .bind(o.id, ship?.name || cust.name || o.name, (cust.email || o.email || '').toLowerCase(), cust.phone || null,
       JSON.stringify({ name: ship?.name || cust.name || '', ...(ship?.address ?? cust.address ?? {}) }), s.amount_total).run();
@@ -243,7 +274,7 @@ async function orderIn(env, id, { session, payment }) {
   await confirmEmail(env, o, g, items).catch((e) => console.error('prints: confirmation', o.number, e.message));
   await alertTony(env, `${o.test ? 'Test prints order' : 'Prints order'}: ${o.number}`, [
     ['Gallery', g.name], ['From', `${o.name || ''} ${o.email ? `<${o.email}>` : ''}`.trim()], ['Total', `${money(o.total)}${o.freight ? ` (incl. ${money(o.freight)} freight)` : ''}`],
-    ['Prints', itemsText(items, o)], ['Note', o.note],
+    ['Prints', itemsText(items, o)], ['Delivery', deliveryText(o)], ['Note', o.note],
     ['Next', `Check the crops, then order from the lab. It’s on hold until ${o.hold_until}.`],
     ...(o.job_id || o.test ? [] : [['Xero', 'Not bought from the couple’s own link, so no invoice was made: record it in Xero yourself.']]),
   ], `${SITE}/studio/gallery-prints?order=${o.id}`);

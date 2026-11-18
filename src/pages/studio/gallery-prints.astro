@@ -44,11 +44,12 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
       <form class="card pr-settings" data-settings>
         <label class="pr-switch"><input type="checkbox" name="live" /> <span><strong>Show prints to clients</strong><br />Off: only you see the shop, when you open a gallery with “Open as client” (and you can place test orders there without paying). On: everyone with a gallery link can buy, except galleries with prints switched off on their Details tab.</span></label>
         <div class="three">
-          <label>Delivery, paper prints only (NZ$) <input name="freight_prints" type="number" min="0" step="0.5" /></label>
-          <label>Delivery with wall art (NZ$) <input name="freight_wall" type="number" min="0" step="0.5" /></label>
+          <label>Atkins delivery, paper prints only (NZ$) <input name="freight_prints" type="number" min="0" step="0.5" /></label>
+          <label>Atkins delivery with wall art (NZ$) <input name="freight_wall" type="number" min="0" step="0.5" /></label>
           <label>Free delivery over (NZ$, 0 = never) <input name="free_over" type="number" min="0" step="1" /></label>
         </div>
-        <p class="hint">Wall art is anything that isn’t a paper print: canvas, frames and gallery boards. Atkins and Seldex set their own freight to you, so set these to cover it.</p>
+        <p class="hint">Atkins items (New Zealand only for now): wall art is anything that isn’t a paper print, like canvas, frames and gallery boards.</p>
+        <p class="hint"><strong>Seldex items</strong> use Seldex’s own published rates at cost, converted at the NZ$ per A$ rate below (from <a href="https://seldex.com.au/shipping-international" target="_blank" rel="noopener">international</a> and <a href="https://seldex.com.au/shipping-australia" target="_blank" rel="noopener">Australian</a> shipping, 19 Nov 2026). New Zealand: A$25, or A$50 once Seldex’s cost for the order is A$500+, plus A$15 for a remote postcode. Australia: Standard A$15 / Express A$25, or A$25 / A$35 over A$100; remote postcodes aren’t charged, you’re told instead. Plus A$15 once per order with a frame or canvas bigger than 20×24″. An order with both labs pays both. The couple picks the country and postcode in the cart.</p>
         <div class="three">
           <label>Hold orders for (days) <input name="hold_days" type="number" min="0" max="60" /></label>
           <label>NZ$ per A$ (for costs and margins) <input name="rate" type="number" step="0.0001" min="0.6" max="2" /></label>
@@ -267,7 +268,8 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
           Paid ${o.paid_at ? day(o.paid_at) : '—'} · ${money(o.total)}${o.freight ? ` incl. ${money(o.freight)} delivery` : ''}<br />
           ${o.hold_until && o.status === 'paid' ? `On hold until ${day(o.hold_until)}<br />` : ''}${o.invoice_id ? 'Invoice made (receipt and Xero).' : o.test ? 'Test: no payment or invoice.' : 'No invoice (not the couple’s own link): record it in Xero yourself.'}</p>
           ${o.note ? `<p class="po-note"><strong>Their note:</strong> ${esc(o.note)}</p>` : ''}</div>
-        <div><h3>Lab</h3><p>${labs.map(esc).join(', ')}${o.lab_ref ? `<br />Lab order: ${esc(o.lab_ref)}` : ''}${o.tracking ? `<br />Tracking: ${esc(o.tracking)}` : ''}</p></div>
+        <div><h3>Lab</h3><p>${labs.map(esc).join(', ')}${o.lab_ref ? `<br />Lab order: ${esc(o.lab_ref)}` : ''}${o.tracking ? `<br />Tracking: ${esc(o.tracking)}` : ''}</p>
+          ${o.delivery ? `<p>${(o.delivery.parts ?? []).map((x: any) => `${esc(x.lab)} delivery: ${esc(x.label)} ${money(x.amount)}`).join('<br />')}${o.delivery.dest ? `<br /><span class="muted">Worked out for ${o.delivery.dest.country === 'AU' ? 'Australia' : 'New Zealand'} ${esc(o.delivery.dest.postcode)}</span>` : ''}</p>${(o.delivery.notes ?? []).map((n: string) => `<p class="po-note"><strong>Check:</strong> ${esc(n)}</p>`).join('')}` : ''}</div>
       </div>
       <ul class="po-items">${items.map((i: any) => {
         const land = !!i.crop?.landscape;

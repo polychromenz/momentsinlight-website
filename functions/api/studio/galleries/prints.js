@@ -44,7 +44,7 @@ export async function onRequestGet({ request, env }) {
     const g = await db.prepare('SELECT id, name, slug, job_id FROM photo_galleries WHERE id = ?1').bind(order.gallery_id).first();
     const items = (await db.prepare(`SELECT i.*, m.width AS w, m.height AS h, m.filename, m.web_crc FROM print_order_items i LEFT JOIN gallery_images m ON m.id = i.image_id WHERE i.order_id = ?1 ORDER BY i.id`).bind(id).all()).results
       .map((i) => ({ ...i, product: JSON.parse(i.product), crop: i.crop ? JSON.parse(i.crop) : null, web: webUrl(order.gallery_id, i.image_id, 'web', i.web_crc), thumb: webUrl(order.gallery_id, i.image_id, 'thumb', i.web_crc) }));
-    return json({ order: { ...order, address: order.address ? JSON.parse(order.address) : null }, items, gallery: g });
+    return json({ order: { ...order, address: order.address ? JSON.parse(order.address) : null, delivery: order.delivery ? JSON.parse(order.delivery) : null }, items, gallery: g });
   }
   return json({ error: 'What should be shown?' }, 400);
 }
@@ -98,7 +98,7 @@ export async function onRequestPost({ request, env }) {
     const after = await db.prepare('SELECT * FROM print_orders WHERE id = ?1').bind(o.id).first();
     let emailed = false;
     if (next === 'shipped' && d.email) emailed = await shippedEmail(env, after).catch((e) => { console.error('prints shipped email', e.message); return false; });
-    return json({ order: { ...after, address: after.address ? JSON.parse(after.address) : null }, emailed });
+    return json({ order: { ...after, address: after.address ? JSON.parse(after.address) : null, delivery: after.delivery ? JSON.parse(after.delivery) : null }, emailed });
   }
   if (d.action === 'crop') {
     const i = await db.prepare(`SELECT i.*, m.width AS w, m.height AS h FROM print_order_items i LEFT JOIN gallery_images m ON m.id = i.image_id WHERE i.id = ?1`).bind(Number(d.item_id)).first();
