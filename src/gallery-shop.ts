@@ -8,6 +8,7 @@
 // never come to this page). Then Stripe Checkout takes the payment and address. Only Tony sees
 // it until he switches it on; his studio visits can also place test orders without paying.
 import { mockup, cropEditor, styleMockups, croppedPhoto, type Product, type Crop } from './prints/mockup';
+import { roomView, hasRoom, ROOM_CSS } from './prints/rooms';
 import { orderTotals, productTotal, ratioOf, centredCrop, cleanCrop, dpi, money, minCropW, packCount, fillPack, DPI_WARN, DPI_MIN, PAPER } from '../functions-lib/print-pricing.js';
 
 type Img = { id: string; w: number; h: number; thumb: string; web: string; hero?: number; s?: number };
@@ -64,7 +65,7 @@ export function initShop(ctx: Ctx) {
 
   // ---- The page parts: Shop and Cart buttons in the top bar, and the two dialogs ----
   const css = document.createElement('style');
-  css.textContent = SHOP_CSS;
+  css.textContent = SHOP_CSS + ROOM_CSS;
   document.head.append(css);
   styleMockups();
   const shopDlg = document.createElement('dialog');
@@ -117,6 +118,8 @@ export function initShop(ctx: Ctx) {
   const pr = (i: Img) => i.w / i.h;
   const defaultLandscape = (i: Img) => i.w > i.h;
   const landFor = (p: Product, i: Img, want: boolean) => p.w_cm !== p.h_cm && want;
+  // Frames can be seen "in a room" (Seldex's room scenes) or close up; the choice is kept while shopping.
+  let inRoom = true;
   // Quality: the dpi of the whole photo on this product (the most it can be), and the smallest crop allowed.
   const fullDpi = (i: Img, p: Product, land: boolean) => dpi(i.w, centredCrop(pr(i), ratioOf(p, land)), p, land);
   const minW = (i: Img, p: Product, land: boolean) => minCropW(i.w, p, land);
@@ -238,7 +241,9 @@ export function initShop(ctx: Ctx) {
       const p = list.find((x) => /Light Wood|White|Natural|Fine Art/.test(x.type)) ?? list[0];
       if (!i || !p) return;
       const land = landFor(p, i, defaultLandscape(i));
-      el.innerHTML = mockup(p, i.web, centredCrop(pr(i), ratioOf(p, land)), land, el.clientWidth || 260, el.clientHeight || 190);
+      const c = centredCrop(pr(i), ratioOf(p, land)), w = el.clientWidth || 260, h = el.clientHeight || 190;
+      el.innerHTML = hasRoom(p) ? roomView(p, i.web, pr(i), c, land, w, h).html : mockup(p, i.web, c, land, w, h);
+      el.classList.toggle('sh-card-mk--room', hasRoom(p));
     });
   }
 
@@ -270,6 +275,11 @@ export function initShop(ctx: Ctx) {
       z.value = String(ed.zoomOf());
       z.disabled = !ed.canZoom;
       z.oninput = () => ed.zoom(Number(z.value));
+    } else if (inRoom && hasRoom(p)) {
+      const v = roomView(p, i.web, pr(i), c, land, host.clientWidth || 600, host.clientHeight || 420);
+      host.innerHTML = v.html;
+      const note = shopDlg.querySelector<HTMLElement>('.sh-room-note');
+      if (note) note.textContent = v.exact ? 'Shown in a room to give a feel for it. The size on the wall is a guide only.' : `Shown in a room with a similar frame. Yours will be ${p.type.toLowerCase()}.`;
     } else {
       host.innerHTML = mockup(p, i.web, c, land, host.clientWidth || 600, host.clientHeight || 420);
     }
@@ -337,8 +347,9 @@ export function initShop(ctx: Ctx) {
         <div class="sh-under">
           ${st.cropping
             ? `<label class="sh-zoom">Zoom <input type="range" min="0" max="1" step="0.01" data-zoom /></label><button type="button" class="g-btn" data-crop-done>Done</button>`
-            : `<button type="button" class="g-btn" data-crop>Adjust crop</button>${square || pack ? '' : `<button type="button" class="g-btn" data-turn>${st.landscape ? 'Make it portrait' : 'Make it landscape'}</button>`}`}
+            : `${hasRoom(p) ? `<button type="button" class="g-btn" data-room>${inRoom ? 'Close up' : 'In a room'}</button>` : ''}<button type="button" class="g-btn" data-crop>Adjust crop</button>${square || pack ? '' : `<button type="button" class="g-btn" data-turn>${st.landscape ? 'Make it portrait' : 'Make it landscape'}</button>`}`}
         </div>
+        ${hasRoom(p) && inRoom && !st.cropping ? '<p class="sh-hint sh-room-note"></p>' : ''}
         ${strip}${stripHint}
       </div>
       <div class="sh-right sh-scroll">
@@ -420,6 +431,7 @@ export function initShop(ctx: Ctx) {
     }
     if (b('[data-same]')) { st.linked = true; commit(); ctx.toast(`The same print for all ${st.ids.length} photos.`); return draw(); }
     if (b('[data-crop]')) { st.cropping = true; return draw(); }
+    if (b('[data-room]')) { inRoom = !inRoom; return draw(); }
     if (b('[data-crop-done]')) { st.cropping = false; return draw(); }
     if (b('[data-turn]')) { st.landscape = !st.landscape; const i = photo(); if (fullDpi(i, prod(), curLand(i)) < DPI_MIN) pick(st.cat, st.type); commit(); return draw(); }
     if ((x = b('[data-qty]'))) { st.qty = Math.min(50, Math.max(1, st.qty + Number(x.dataset.qty))); commit(); return draw(); }
@@ -661,6 +673,8 @@ const SHOP_CSS = `
 .sh-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:18px}
 .sh-card{display:flex;flex-direction:column;gap:4px;padding:0 0 12px;border:0;background:none;text-align:center;cursor:pointer;font:inherit;color:#2b2a24}
 .sh-card-mk{display:flex;align-items:center;justify-content:center;width:100%;aspect-ratio:4/3;background:#ebe8e2;margin-bottom:8px;overflow:hidden;transition:background .3s}
+.sh-card-mk--room{display:block;transition:filter .3s}.sh-card:hover .sh-card-mk--room{filter:brightness(.97)}
+.sh-room-note{text-align:center;margin:4px 0 0}
 .sh-card:hover .sh-card-mk{background:#e3dfd6}
 .sh-card strong{font-weight:500;letter-spacing:.1em;text-transform:uppercase;font-size:14px}
 .sh-card span{font-size:12.5px;color:#777;line-height:1.45;padding:0 8px}
