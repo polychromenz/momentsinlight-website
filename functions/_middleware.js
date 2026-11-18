@@ -7,7 +7,7 @@ import { accessFor } from '../functions-lib/people.js';
 import { areaOfPage, levelFor } from '../functions-lib/areas.js';
 
 const GALLERY_HOST = /^galleries\./;
-const SHARED = /^\/(_astro|brand|fonts|api\/gallery)\/|^\/favicon\.ico$/;
+const SHARED = /^\/(_astro|brand|fonts|prints|api\/gallery)\/|^\/favicon\.ico$/; // prints/: the shop's room scenes
 
 export async function onRequest({ request, next, env }) {
   const url = new URL(request.url);
