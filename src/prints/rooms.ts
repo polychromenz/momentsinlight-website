@@ -51,6 +51,18 @@ const ROOMS: Room[] = [
   { src: '/prints/rooms/torn-circle-white.webp?v=2', mask: '/prints/rooms/torn-circle-white-mask.png?v=2', kind: 'circle', colour: 'white', ar: 1.3915, hole: [0.3559, 0.2382, 0.3225, 0.4463], open: [0.3559, 0.2382, 0.3225, 0.4463], mat: '#ebecee' },
   { src: '/prints/rooms/torn-square-white.webp?v=2', mask: '/prints/rooms/torn-square-white-mask.png?v=2', kind: 'torn', colour: 'white', ar: 1.3915, hole: [0.3627, 0.25, 0.3089, 0.4275], open: [0.3627, 0.25, 0.3089, 0.4275], mat: '#ebecee' },
   { src: '/prints/rooms/torn-vertical-white.webp?v=2', mask: '/prints/rooms/torn-vertical-white-mask.png?v=2', kind: 'torn', colour: 'white', ar: 1.3915, hole: [0.3763, 0.2099, 0.2733, 0.5006], open: [0.3763, 0.2099, 0.2733, 0.5006], mat: '#ebecee' },
+  // Made here (2026-11-19) from a scene of the right shape, its frame repainted with real moulding cut
+  // from a Seldex photo of that colour (white drawn), for colours and shapes Seldex has no photo of.
+  { src: '/prints/rooms/11x14-black-made.webp?v=2', colour: 'black', ar: 1.3915, hole: [0.3581, 0.2134, 0.272, 0.5077], open: [0.3119, 0.1539, 0.3644, 0.6268], mat: '#e4e5e7' },
+  { src: '/prints/rooms/torn-vertical-black-made.webp?v=2', mask: '/prints/rooms/torn-vertical-camel-mask.png?v=2', kind: 'torn', colour: 'black', ar: 1.3915, hole: [0.3678, 0.2099, 0.2733, 0.5171], open: [0.3678, 0.2099, 0.2733, 0.5171], mat: '#ebecee' },
+  { src: '/prints/rooms/11x14-walnut-made.webp?v=2', colour: 'walnut', ar: 1.3915, hole: [0.3581, 0.2134, 0.272, 0.5077], open: [0.3119, 0.1539, 0.3644, 0.6268], mat: '#e4e5e7' },
+  { src: '/prints/rooms/torn-vertical-walnut-made.webp?v=2', mask: '/prints/rooms/torn-vertical-camel-mask.png?v=2', kind: 'torn', colour: 'walnut', ar: 1.3915, hole: [0.3678, 0.2099, 0.2733, 0.5171], open: [0.3678, 0.2099, 0.2733, 0.5171], mat: '#ebecee' },
+  { src: '/prints/rooms/11x14-espresso-made.webp?v=2', colour: 'espresso', ar: 1.3915, hole: [0.3581, 0.2134, 0.272, 0.5077], open: [0.3119, 0.1539, 0.3644, 0.6268], mat: '#e4e5e7' },
+  { src: '/prints/rooms/torn-vertical-espresso-made.webp?v=2', mask: '/prints/rooms/torn-vertical-camel-mask.png?v=2', kind: 'torn', colour: 'espresso', ar: 1.3915, hole: [0.3678, 0.2099, 0.2733, 0.5171], open: [0.3678, 0.2099, 0.2733, 0.5171], mat: '#ebecee' },
+  { src: '/prints/rooms/11x14-charcoal-made.webp?v=2', colour: 'charcoal', ar: 1.3915, hole: [0.3581, 0.2134, 0.272, 0.5077], open: [0.3119, 0.1539, 0.3644, 0.6268], mat: '#e4e5e7' },
+  { src: '/prints/rooms/torn-vertical-charcoal-made.webp?v=2', mask: '/prints/rooms/torn-vertical-camel-mask.png?v=2', kind: 'torn', colour: 'charcoal', ar: 1.3915, hole: [0.3678, 0.2099, 0.2733, 0.5171], open: [0.3678, 0.2099, 0.2733, 0.5171], mat: '#ebecee' },
+  { src: '/prints/rooms/40x40-walnut-made.webp?v=2', colour: 'walnut', ar: 1.3915, hole: [0.3958, 0.1344, 0.2055, 0.2854], open: [0.3636, 0.0843, 0.2699, 0.3856], mat: '#e8e9eb' },
+  { src: '/prints/rooms/torn-horizontal-white-made.webp?v=2', mask: '/prints/rooms/torn-horizontal-black-mask.png?v=2', kind: 'torn', colour: 'white', ar: 1.3915, hole: [0.3983, 0.2075, 0.3767, 0.4039], open: [0.3983, 0.2075, 0.3767, 0.4039], mat: '#ebecee' },
 ];
 
 /** The shop's frame colours (Pic-Time's names) → Seldex frame colours that look the same, closest
