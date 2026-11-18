@@ -383,12 +383,19 @@ import { TOUR_CSS } from '../gallery-tour-css';
       // width when a·H + Σ column widths + (number of columns)·gap = width. The fewest photos that fill it
       // without the highlight being taller than the screen (a portrait one on a wide screen needs more),
       // so blocks line up with the rows above and below.
-      const capH = innerHeight * 0.9;
-      const height = (cols: Img[][]) => {
+      // A highlight is at most about 2¼ times a normal row (900px on a wide screen) and never taller than
+      // the screen: on a big window more photos go beside it rather than it growing.
+      const capH = Math.min(innerHeight * 0.9, target * 2.25);
+      // A row may grow up to 10% past that so its sides line up with the rows around it (the whole row
+      // scales evenly, nothing is cropped); any more and it stays at capH, centred.
+      const capFit = capH * 1.1;
+      const fitH = (H: number) => (H <= capFit ? H : Math.min(H, capH));
+      // j: a second highlight in the same row (one more gap, its width beside this one's).
+      const height = (cols: Img[][], j?: Img) => {
         const u = cols.map((c) => 1 / c.reduce((a, x) => a + 1 / ar(x), 0));
         const S = u.reduce((a, b) => a + b, 0);
-        const T = cols.reduce((a, c, j) => a + (c.length - 1) * u[j], 0);
-        return (width - GAP * cols.length + GAP * T) / (ar(i) + S);
+        const T = cols.reduce((a, c, k) => a + (c.length - 1) * u[k], 0);
+        return (width - GAP * (cols.length + (j ? 1 : 0)) + GAP * T) / (ar(i) + (j ? ar(j) : 0) + S);
       };
       const block = (items: Img[], sizes: number[], left: Img[][] = []) => {
         const cols: Img[][] = [];
@@ -399,19 +406,21 @@ import { TOUR_CSS } from '../gallery-tour-css';
       // Every column holds two or three photos, so only the highlight itself is shown big (a photo on
       // its own at the block's full height would look like a second highlight).
       const SIZES = [[2], [3], [2, 2], [2, 3], [2, 2, 2]];
-      const NEXT = [[2], [2, 2], [2, 2, 2]]; // for the photos after it: any not needed go back into the rows
+      // For the photos after it (any not needed go back into the rows). A tall highlight takes more columns
+      // until the block fills the width.
+      const NEXT = [[2], [2, 2], [2, 2, 2], [2, 2, 2, 2]];
       // all: use every one of the items (photos waiting before it); left: columns already on its left.
       const fit = (items: Img[], { all = false, left = [] as Img[][] } = {}) => {
         const ok = (all ? SIZES : NEXT).filter((z) => { const t = z.reduce((a, b) => a + b, 0); return all ? t === items.length : t <= items.length; });
         if (!ok.length) return null;
-        return ok.map((z) => block(items, z, left)).find((b) => b.H <= capH) ?? block(items, ok[ok.length - 1], left);
+        return ok.map((z) => block(items, z, left)).find((b) => b.H <= capFit) ?? block(items, ok[ok.length - 1], left);
       };
       const html = (cols: Img[][], H: number) => cols.map((c) => {
         const w = (H - GAP * (c.length - 1)) / c.reduce((a, x) => a + 1 / ar(x), 0);
         return c.length === 1 ? tile(c[0], w, H) : `<div class="stack" style="gap:${GAP}px">${c.map((x) => tile(x, w, w / ar(x))).join('')}</div>`;
       }).join('');
       const put = (b: { left: Img[][]; cols: Img[][]; H: number }, colsFirst: boolean) => {
-        const H = Math.min(b.H, capH);
+        const H = fitH(b.H);
         const big = tile(i, ar(i) * H, H);
         const cols = html(b.cols, H);
         const body = b.left.length ? html(b.left, H) + big + cols : colsFirst ? cols + big : big + cols;
@@ -432,7 +441,7 @@ import { TOUR_CSS } from '../gallery-tour-css';
           let at = 0;
           for (const z of COLS[k + e]) { left.push(take.slice(at, at + z)); at += z; }
           const b = right.length >= 2 ? fit(right, { left }) : { left, cols: [] as Img[][], used: 0, H: height(left) };
-          if (b && b.H <= capH) return { b, keep, at: plain.at };
+          if (b && b.H <= capFit) return { b, keep, at: plain.at };
         }
         return null;
       };
@@ -441,6 +450,68 @@ import { TOUR_CSS } from '../gallery-tour-css';
         plain = null;
         put(x.b, false);
       };
+      // Several highlights in one row (up to three), with the photos between them (and after the last)
+      // stacked in columns between them; a photo on its own sits there at 60% of their height, centred. For
+      // when a highlight can't fill the width at its size limit with the photos beside it alone.
+      // parts: in order, the highlights and the groups of photos between them. Of the ways to stack each
+      // group, the one with the biggest highlights that still fill the width without passing the limit.
+      const multi = (parts: (Img | Img[])[]) => {
+        const opts = parts.map((p) => !Array.isArray(p) ? [p] : p.length === 0 ? [null] : p.length === 1 ? ['one'] : SIZES.filter((z) => z.reduce((a, c) => a + c, 0) === p.length));
+        if (opts.some((o) => !o.length)) return null;
+        let best: { H: number; pick: any[] } | null = null;
+        const walk = (k: number, pick: any[]) => {
+          if (k < parts.length) { for (const o of opts[k]) walk(k + 1, [...pick, o]); return; }
+          let items = 0, A = 0, T = 0;
+          parts.forEach((p, q) => {
+            const o = pick[q];
+            if (!Array.isArray(p)) { items++; A += ar(p); }
+            else if (o === 'one') { items++; A += 0.6 * ar(p[0]); }
+            else if (o) {
+              let at = 0;
+              for (const z of o as number[]) { const c = p.slice(at, at + z); at += z; const u = 1 / c.reduce((a, x) => a + 1 / ar(x), 0); items++; A += u; T += u * (z - 1); }
+            }
+          });
+          const H = (width - GAP * (items - 1) + GAP * T) / A;
+          if (H <= capFit && H >= target * 1.4 && (!best || H > best.H)) best = { H, pick };
+        };
+        walk(0, []);
+        if (!best) return null;
+        const { H, pick } = best as { H: number; pick: any[] };
+        return parts.map((p, q) => {
+          const o = pick[q];
+          if (!Array.isArray(p)) return tile(p, ar(p) * H, H);
+          if (o === 'one') return tile(p[0], 0.6 * H * ar(p[0]), 0.6 * H);
+          if (!o) return '';
+          const cols: Img[][] = [];
+          let at = 0;
+          for (const z of o as number[]) { cols.push(p.slice(at, at + z)); at += z; }
+          return html(cols, H);
+        }).join('');
+      };
+      // Starting with this highlight, the photos (photos) and the next highlight (at its place in the list,
+      // at): adds the photos after that one and the highlight after them, until a row fills the width.
+      // before: photos that came before this highlight, on the left.
+      const duo = (photos: Img[], at: number, before: Img[] = []) => {
+        if (phone || !list[at]?.hero) return false;
+        const parts: (Img | Img[])[] = [...(before.length ? [before] : []), i, photos, list[at]];
+        for (let heroes = 2; ; heroes++) {
+          let body = multi(parts), end = at;
+          // The next few photos after the last highlight, beside it (any not needed go back to the rows).
+          const after: Img[] = [];
+          while (after.length < 6 && at + 1 + after.length < list.length && !list[at + 1 + after.length].hero) after.push(list[at + 1 + after.length]);
+          for (let k = 2; !body && k <= after.length; k++) { body = multi([...parts, after.slice(0, k)]); end = at + k; }
+          if (body) {
+            n = end;
+            prev = null;
+            out.push(`<div class="row row--block" style="gap:${GAP}px;margin-bottom:${GAP}px;justify-content:center;align-items:center">${body}</div>`);
+            return true;
+          }
+          const nx = at + 1 + after.length;
+          if (heroes >= 3 || !list[nx]?.hero) return false;
+          parts.push(after, list[nx]);
+          at = nx;
+        }
+      };
       const stack: Img[] = [];
       if (!phone) {
         // Photos waiting before it that can't make a full row of their own go beside it, on its left.
@@ -448,11 +519,14 @@ import { TOUR_CSS } from '../gallery-tour-css';
           let b = fit(row, { all: true });
           if (b) {
             // Still too tall with them alone: the next photos go on its right, so it sits in the middle.
-            if (b.H > capH) {
-              const after: Img[] = [];
-              while (after.length < 6 && n + 1 < list.length && !list[n + 1].hero) after.push(list[++n]);
+            if (b.H > capFit) {
+              const after: Img[] = [], base = n;
+              while (after.length < 8 && n + 1 < list.length && !list[n + 1].hero) after.push(list[++n]);
               const both = after.length ? fit(after, { left: [...b.cols] }) : null;
               if (both && both.H < b.H) { n -= after.length - both.used; b = both; } else n -= after.length;
+              if (b === both && b.H <= capFit) { put(b, false); row = []; prev = null; continue; }
+              // Still too tall: the next highlight joins the row too, if it comes right after those photos.
+              if (duo(after, base + 1 + after.length, row)) { row = []; continue; }
               if (b === both) { put(b, false); row = []; prev = null; continue; }
             }
             put(b, true); row = []; prev = null; continue;
@@ -460,17 +534,18 @@ import { TOUR_CSS } from '../gallery-tour-css';
           flush(true);
         } else if (row.length > 1) flush(true);
         if (row.length === 1) stack.push(row.pop()!);
-        while (stack.length < 6 && n + 1 < list.length && !list[n + 1].hero) stack.push(list[++n]);
+        while (stack.length < 8 && n + 1 < list.length && !list[n + 1].hero) stack.push(list[++n]);
       } else flush(true);
       const waiting = stack.length && !list.slice(n - stack.length + 1, n + 1).includes(stack[0]) ? 1 : 0;
       let b = stack.length ? fit(stack) : null;
       // All the photos up to the next highlight (or the end) are here: don't strand one on its own.
-      const allHere = stack.length < 6 && (n + 1 >= list.length || list[n + 1].hero);
+      const allHere = stack.length < 8 && (n + 1 >= list.length || list[n + 1].hero);
       if (b && allHere && stack.length - b.used === 1) b = fit(stack, { all: true }) ?? b;
       if (b) {
         prev = null;
-        const more = b.H > capH && !waiting ? borrow(stack) : null;
+        const more = b.H > capFit && !waiting ? borrow(stack) : null;
         if (more) { n -= stack.length - more.b.used; borrowed(more); continue; }
+        if (b.H > capFit && duo(stack, n + 1)) continue;
         n -= stack.length - b.used; // photos not needed beside it go back into the rows
         put(b, !!(side++ % 2));
       } else {
@@ -482,7 +557,8 @@ import { TOUR_CSS } from '../gallery-tour-css';
         // most 60% of the highlight's height) and centred beside it, rather than left on a row of its own.
         if (!phone && stack.length === 1) {
           const o = stack[0];
-          let H = Math.min((width - GAP) / (ar(i) + 0.6 * ar(o)), capH);
+          if (!waiting && duo(stack, n + 2)) continue;
+          let H = fitH((width - GAP) / (ar(i) + 0.6 * ar(o)));
           const h = Math.min(0.6 * H, (width - GAP - ar(i) * H) / ar(o));
           if (!waiting) n++; // it was put back for the rows; it goes here instead
           prev = null;
@@ -495,11 +571,14 @@ import { TOUR_CSS } from '../gallery-tour-css';
         prev = null;
         // Two highlights one after the other: side by side, both big, filling the width together.
         if (!phone && list[n + 1]?.hero) {
+          // Bigger than a highlight may be: the next photos (or highlight) go beside them.
+          if (duo([], n + 1)) continue;
           const j = list[++n];
-          out.push(line([i, j], Math.min((width - GAP) / (ar(i) + ar(j)), capH), ' row--block'));
+          out.push(line([i, j], fitH((width - GAP) / (ar(i) + ar(j))), ' row--block'));
           continue;
         }
-        const h = Math.min(width / ar(i), innerHeight * 0.85, i.h);
+        const lim = Math.min(capH, i.h);
+        const h = width / ar(i) <= lim * 1.1 ? width / ar(i) : lim;
         out.push(line([i], h, ' row--hero'));
       }
     }
