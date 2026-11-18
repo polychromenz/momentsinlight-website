@@ -30,7 +30,7 @@ const NICE: Record<string, string> = { 'Prints': 'Photo prints', 'Print Pack': '
 const ABOUT: Record<string, string> = {
   'Prints': 'Professional photo prints on semi gloss paper, with a gentle sheen and deep, rich colour.',
   'Print Pack': 'A set of 24 prints, one size, from up to 24 of your photos. Choose fewer and your favourites are repeated to fill the pack.',
-  'Portrait Envelope': 'Ten 8×10″ prints, printed and trimmed by hand by Tony, in a sky blue linen portrait envelope with a white insert, a white ribbon and the Moments in Light logo foiled in black. Choose up to 10 photos; choose fewer and your favourites are repeated.',
+  'Portrait Envelope': '8×10″ prints, printed and trimmed by hand by Tony, in a sky blue linen portrait envelope with a white insert, a white satin ribbon and the ML monogram foiled in black. Choose 10 or 20 prints and up to that many photos; choose fewer and your favourites are repeated.',
   'Deckled Prints': 'Fine art paper with a hand-torn edge, for a soft, timeless look.',
   'Panoramic Prints': 'A long, wide print for panoramic photos.',
   'Matted Prints': 'A thick archival print set in a white mat, to display on its own or in a frame.',
@@ -365,7 +365,7 @@ export function initShop(ctx: Ctx) {
         ${trialNote()}
         ${cats().map(([g, list]) => `<div class="sh-group"><span>${g}</span><div class="sh-pills">${list.map((c) => `<button type="button" class="${c === st.cat ? 'on' : ''}" data-cat="${esc(c)}">${esc(NICE[c] ?? c)}</button>`).join('')}</div></div>`).join('')}
         <p class="sh-about">${esc(ABOUT[st.cat] ?? '')}</p>
-        ${types.length > 1 ? `<div class="sh-group"><span>${pack ? 'Size' : PAPER.has(p.kind) ? 'Paper' : p.kind === 'canvas' ? 'Edge' : 'Frame'}</span><div class="sh-pills">${types.map((t) => `<button type="button" class="${t === st.type ? 'on' : ''}" data-type="${esc(t)}">${esc(t.replace(/^(\d+(?:\.\d+)?)x(\d+(?:\.\d+)?)cm$/i, '$1 × $2 cm'))}</button>`).join('')}</div></div>` : ''}
+        ${types.length > 1 ? `<div class="sh-group"><span>${p.category === 'Portrait Envelope' ? 'Number of prints' : pack ? 'Size' : PAPER.has(p.kind) ? 'Paper' : p.kind === 'canvas' ? 'Edge' : 'Frame'}</span><div class="sh-pills">${types.map((t) => `<button type="button" class="${t === st.type ? 'on' : ''}" data-type="${esc(t)}">${esc(t.replace(/^(\d+(?:\.\d+)?)x(\d+(?:\.\d+)?)cm$/i, '$1 × $2 cm'))}</button>`).join('')}</div></div>` : ''}
         ${pack && sizes.length < 2 ? '' : `<div class="sh-group"><span>Size</span><div class="sh-sizes">${sizes.map((s) => {
           const sl = landFor(s, i, pack ? defaultLandscape(i) : st.landscape);
           const fits = Math.abs(ratioOf(s, sl) / pr(i) - 1) < 0.02;
