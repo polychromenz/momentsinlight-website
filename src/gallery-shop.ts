@@ -23,13 +23,14 @@ const esc = (s: unknown) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&
 const nzd = (c: number) => money(c).replace(/\.00$/, '');
 const plural = (n: number, w: string) => `${n} ${w}${n === 1 ? '' : 's'}`;
 const GROUPS: [string, string[]][] = [
-  ['Prints', ['Prints', 'Print Pack', 'Deckled Prints', 'Panoramic Prints', 'Matted Prints']],
+  ['Prints', ['Prints', 'Portrait Envelope', 'Print Pack', 'Deckled Prints', 'Panoramic Prints', 'Matted Prints']],
   ['Wall art', ['Frames', 'Matted Frames', 'Float Frames', 'Circular Frames', 'Canvas', 'Gallery Boards']],
 ];
-const NICE: Record<string, string> = { 'Prints': 'Photo prints', 'Print Pack': 'Print pack', 'Deckled Prints': 'Deckled edge', 'Panoramic Prints': 'Panoramic', 'Matted Prints': 'Matted print', 'Canvas': 'Canvas', 'Frames': 'Framed print', 'Matted Frames': 'Framed with mat', 'Float Frames': 'Hand torn frame', 'Circular Frames': 'Circle frame', 'Gallery Boards': 'Gallery board' };
+const NICE: Record<string, string> = { 'Prints': 'Photo prints', 'Print Pack': 'Print pack', 'Portrait Envelope': 'Portrait envelope', 'Deckled Prints': 'Deckled edge', 'Panoramic Prints': 'Panoramic', 'Matted Prints': 'Matted print', 'Canvas': 'Canvas', 'Frames': 'Framed print', 'Matted Frames': 'Framed with mat', 'Float Frames': 'Hand torn frame', 'Circular Frames': 'Circle frame', 'Gallery Boards': 'Gallery board' };
 const ABOUT: Record<string, string> = {
   'Prints': 'Professional photo prints on semi gloss paper, with a gentle sheen and deep, rich colour.',
   'Print Pack': 'A set of 24 prints, one size, from up to 24 of your photos. Choose fewer and your favourites are repeated to fill the pack.',
+  'Portrait Envelope': 'Ten 8×10″ prints, printed and trimmed by hand by Tony and presented in a portrait envelope. Choose up to 10 photos; choose fewer and your favourites are repeated.',
   'Deckled Prints': 'Fine art paper with a hand-torn edge, for a soft, timeless look.',
   'Panoramic Prints': 'A long, wide print for panoramic photos.',
   'Matted Prints': 'A thick archival print set in a white mat, to display on its own or in a frame.',

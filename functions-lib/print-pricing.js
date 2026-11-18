@@ -10,6 +10,7 @@ export const KINDS = {
   'Prints': 'print', 'Panoramic Prints': 'print', 'Deckled Prints': 'deckled', 'Matted Prints': 'matted',
   'Canvas': 'canvas', 'Frames': 'frame', 'Float Frames': 'float', 'Matted Frames': 'matted-frame',
   'Circular Frames': 'circle', 'Gallery Boards': 'board', 'Print Pack': 'pack',
+  'Portrait Envelope': 'pack', // Tony's own: 10 × 8x10" printed in house in a portrait envelope (2026-11-19)
 };
 export const kindOf = (category) => KINDS[category] ?? 'other';
 export const SOLD = new Set(Object.values(KINDS));
