@@ -8,7 +8,7 @@
 // never come to this page). Then Stripe Checkout takes the payment and address. Only Tony sees
 // it until he switches it on; his studio visits can also place test orders without paying.
 import { mockup, cropEditor, styleMockups, croppedPhoto, type Product, type Crop } from './prints/mockup';
-import { roomView, hasRoom, ROOM_CSS } from './prints/rooms';
+import { roomView, hasRoom, isEnvelope, envelopeCover, ROOM_CSS } from './prints/rooms';
 import { orderTotals, productTotal, ratioOf, centredCrop, cleanCrop, dpi, money, minCropW, packCount, fillPack, DPI_WARN, DPI_MIN, PAPER } from '../functions-lib/print-pricing.js';
 
 type Img = { id: string; w: number; h: number; thumb: string; web: string; hero?: number; s?: number };
@@ -287,7 +287,9 @@ export function initShop(ctx: Ctx) {
       const v = roomView(p, i.web, pr(i), c, land, host.clientWidth || 600, host.clientHeight || 420)!;
       host.innerHTML = v.html;
       const note = shopDlg.querySelector<HTMLElement>('.sh-room-note');
-      if (note) note.textContent = 'Shown at its real size, above a 2 m sofa.';
+      if (note) note.textContent = isEnvelope(p) ? 'Your photos in the envelope’s insert, as they’ll arrive.' : 'Shown at its real size, above a 2 m sofa.';
+    } else if (isEnvelope(p)) {
+      host.innerHTML = envelopeCover(host.clientWidth || 600, host.clientHeight || 420);
     } else {
       host.innerHTML = mockup(p, i.web, c, land, host.clientWidth || 600, host.clientHeight || 420);
     }
@@ -355,7 +357,7 @@ export function initShop(ctx: Ctx) {
         <div class="sh-under">
           ${st.cropping
             ? `<label class="sh-zoom">Zoom <input type="range" min="0" max="1" step="0.01" data-zoom /></label><button type="button" class="g-btn" data-crop-done>Done</button>`
-            : `${hasRoom(p, land) ? `<button type="button" class="g-btn" data-room>${inRoom ? 'Close up' : 'In a room'}</button>` : ''}<button type="button" class="g-btn" data-crop>Adjust crop</button>${square || pack ? '' : `<button type="button" class="g-btn" data-turn>${st.landscape ? 'Make it portrait' : 'Make it landscape'}</button>`}`}
+            : `${hasRoom(p, land) ? `<button type="button" class="g-btn" data-room>${isEnvelope(p) ? (inRoom ? 'See the cover' : 'See inside') : inRoom ? 'Close up' : 'In a room'}</button>` : ''}<button type="button" class="g-btn" data-crop>Adjust crop</button>${square || pack ? '' : `<button type="button" class="g-btn" data-turn>${st.landscape ? 'Make it portrait' : 'Make it landscape'}</button>`}`}
         </div>
         ${hasRoom(p, land) && inRoom && !st.cropping ? '<p class="sh-hint sh-room-note"></p>' : ''}
         ${strip}${stripHint}

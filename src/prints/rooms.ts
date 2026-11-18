@@ -29,7 +29,29 @@ const COLOURS: Record<string, string> = {
 const MOULDING = 4;   // cm, the moulding's face
 const MAT = 6;        // cm, the mat around a matted or hand torn print
 
-export const hasRoom = (p: Product, _landscape = false) => ['frame', 'matted-frame', 'float', 'circle'].includes(p.kind) && !!COLOURS[p.type];
+export const isEnvelope = (p: Product) => p.category === 'Portrait Envelope';
+export const hasRoom = (p: Product, _landscape = false) => isEnvelope(p) || (['frame', 'matted-frame', 'float', 'circle'].includes(p.kind) && !!COLOURS[p.type]);
+
+// Tony's own portrait envelope photos (F:\DotNet\momentsinlightwebsite\envelope, 1080 px square): open
+// with a print in the insert (the print's place measured: x 234, y 338, 578 × 462 px), and the cover.
+const ENV = { open: `/prints/rooms/envelope-open.webp${V}`, cover: `/prints/rooms/envelope-cover.webp${V}`, size: 1080, print: [234, 338, 578, 462] };
+const square = (w: number, h: number, inner: string, bg: string) => {
+  const side = Math.min(w, h);
+  return `<div class="rm-box" style="width:${w}px;height:${h}px;background:${bg};display:flex;align-items:center;justify-content:center"><div style="position:relative;width:${side}px;height:${side}px">${inner}</div></div>`;
+};
+/** The envelope opened, with the couple's photo as the print in the insert. */
+function envelopeView(src: string, pr: number, crop: Crop, landscape: boolean, w: number, h: number) {
+  const [x, y, pw, ph] = ENV.print.map((v) => (v / ENV.size) * 100);
+  // The insert holds the print landscape; a portrait print sits upright in the middle of it.
+  const photo = landscape ? croppedPhoto(src, toShape(crop, pr, 1.25))
+    : `<div style="position:absolute;top:0;bottom:0;left:50%;width:64%;transform:translateX(-50%)">${croppedPhoto(src, crop)}</div>`;
+  return square(w, h, `<img class="rm-bg" src="${ENV.open}" alt="" draggable="false" />
+    <div class="rf-env" style="left:${x}%;top:${y}%;width:${pw}%;height:${ph}%">${photo}</div>`, '#a3a7a7');
+}
+/** The closed envelope (its cover), as Tony's photo shows it. */
+export function envelopeCover(w: number, h: number) {
+  return square(w, h, `<img class="rm-bg" src="${ENV.cover}" alt="" draggable="false" />`, '#bfc0bb');
+}
 
 const esc = (s: unknown) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
 
@@ -47,6 +69,7 @@ function toShape(c: Crop, pr: number, t: number): Crop {
  */
 export function roomView(p: Product, src: string, pr: number, crop: Crop, landscape: boolean, w: number, h: number) {
   if (!hasRoom(p)) return null;
+  if (isEnvelope(p)) return { html: envelopeView(src, pr, crop, landscape, w, h), exact: true, colour: '' };
   const colour = COLOURS[p.type];
   const r = ratioOf(p, landscape);
   // The print's size in cm, then the frame around it.
@@ -98,5 +121,8 @@ export const ROOM_CSS = `
 .rf-print{position:absolute;overflow:hidden}
 .rf-print .mk-photo{position:absolute;inset:0}
 .rf-print--mat{box-shadow:0 0 0 1px #f7f7f7,0 0 0 2px rgba(0,0,0,.12),inset 0 1px 2px rgba(0,0,0,.25)}
+.rf-env{position:absolute;background:#fbfbf9;overflow:hidden;box-shadow:0 0 1px rgba(0,0,0,.25)}
+.rf-env .mk-photo{position:absolute;inset:0}
+.rf-env>div>.mk-photo{position:absolute;inset:0}
 .rf-print--torn{-webkit-mask-size:100% 100%;mask-size:100% 100%;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;filter:drop-shadow(0 1px 1px rgba(0,0,0,.25))}
 `;
