@@ -10,22 +10,22 @@ import { ratioOf } from '../../functions-lib/print-pricing.js';
 
 type Room = { src: string; colour: string; ar: number; hole: number[]; open: number[]; mat: string };
 const ROOMS: Room[] = [
-  { src: '/prints/rooms/10x10-greystone.webp', colour: 'greystone', ar: 1.3915, hole: [0.3665, 0.2925, 0.2597, 0.3608], open: [0.3263, 0.2311, 0.3403, 0.4835], mat: '#eaebed' },
-  { src: '/prints/rooms/11x14-camel.webp', colour: 'camel', ar: 1.3915, hole: [0.3581, 0.2134, 0.272, 0.5077], open: [0.3119, 0.1539, 0.3644, 0.6268], mat: '#e4e5e7' },
-  { src: '/prints/rooms/12x12-black.webp', colour: 'black', ar: 1.3915, hole: [0.3496, 0.2695, 0.3021, 0.4198], open: [0.2992, 0.194, 0.403, 0.5708], mat: '#eaebed' },
-  { src: '/prints/rooms/12x16-walnut.webp', colour: 'walnut', ar: 1.3915, hole: [0.2915, 0.2824, 0.3792, 0.3945], open: [0.2475, 0.2152, 0.4674, 0.5289], mat: '#e8e9eb' },
-  { src: '/prints/rooms/14x14-white.webp', colour: 'white', ar: 1.3915, hole: [0.3242, 0.2488, 0.3424, 0.4758], open: [0.2661, 0.1598, 0.4585, 0.6539], mat: '#eaebed' },
-  { src: '/prints/rooms/16x20-espresso.webp', colour: 'espresso', ar: 1.3915, hole: [0.3263, 0.2553, 0.3949, 0.4086], open: [0.2784, 0.184, 0.4907, 0.5513], mat: '#eaebed' },
-  { src: '/prints/rooms/16x24-oyster.webp', colour: 'oyster', ar: 1.3915, hole: [0.3568, 0.2588, 0.4517, 0.408], open: [0.3059, 0.1887, 0.5534, 0.5483], mat: '#e9eaec' },
-  { src: '/prints/rooms/20x20-white.webp', colour: 'white', ar: 1.3915, hole: [0.4843, 0.2529, 0.228, 0.3166], open: [0.4428, 0.1851, 0.311, 0.4522], mat: '#ebecee' },
-  { src: '/prints/rooms/20x24-walnut.webp', colour: 'walnut', ar: 1.3915, hole: [0.4331, 0.2541, 0.3072, 0.319], open: [0.397, 0.1993, 0.3792, 0.4287], mat: '#e8e9eb' },
-  { src: '/prints/rooms/20x30-black.webp', colour: 'black', ar: 1.3915, hole: [0.4013, 0.2376, 0.4398, 0.3449], open: [0.3589, 0.1745, 0.5246, 0.4711], mat: '#ebecee' },
-  { src: '/prints/rooms/24x24-camel.webp', colour: 'camel', ar: 1.3915, hole: [0.4305, 0.1999, 0.1381, 0.1922], open: [0.4089, 0.1651, 0.1814, 0.2618], mat: '#eaebed' },
-  { src: '/prints/rooms/24x34-greystone.webp', colour: 'greystone', ar: 1.3915, hole: [0.3881, 0.1916, 0.2237, 0.2064], open: [0.3614, 0.1539, 0.2771, 0.2818], mat: '#eaebed' },
-  { src: '/prints/rooms/30x30-espresso.webp', colour: 'espresso', ar: 1.3915, hole: [0.4195, 0.1686, 0.1653, 0.2305], open: [0.3919, 0.1274, 0.2203, 0.3131], mat: '#ecedef' },
-  { src: '/prints/rooms/30x40-white.webp', colour: 'white', ar: 1.3915, hole: [0.3585, 0.1592, 0.2835, 0.2429], open: [0.3225, 0.112, 0.3555, 0.3373], mat: '#eaebed' },
-  { src: '/prints/rooms/40x40-camel.webp', colour: 'camel', ar: 1.3915, hole: [0.3958, 0.1344, 0.2055, 0.2854], open: [0.3636, 0.0843, 0.2699, 0.3856], mat: '#e8e9eb' },
-  { src: '/prints/rooms/8x10-white.webp', colour: 'white', ar: 1.3915, hole: [0.3864, 0.2412, 0.2169, 0.4057], open: [0.3453, 0.1904, 0.2992, 0.5071], mat: '#e4e5e7' },
+  { src: '/prints/rooms/10x10-greystone.webp?v=2', colour: 'greystone', ar: 1.3915, hole: [0.3665, 0.2925, 0.2597, 0.3608], open: [0.3263, 0.2311, 0.3403, 0.4835], mat: '#eaebed' },
+  { src: '/prints/rooms/11x14-camel.webp?v=2', colour: 'camel', ar: 1.3915, hole: [0.3581, 0.2134, 0.272, 0.5077], open: [0.3119, 0.1539, 0.3644, 0.6268], mat: '#e4e5e7' },
+  { src: '/prints/rooms/12x12-black.webp?v=2', colour: 'black', ar: 1.3915, hole: [0.3496, 0.2695, 0.3021, 0.4198], open: [0.2992, 0.194, 0.403, 0.5708], mat: '#eaebed' },
+  { src: '/prints/rooms/12x16-walnut.webp?v=2', colour: 'walnut', ar: 1.3915, hole: [0.2915, 0.2824, 0.3792, 0.3945], open: [0.2475, 0.2152, 0.4674, 0.5289], mat: '#e8e9eb' },
+  { src: '/prints/rooms/14x14-white.webp?v=2', colour: 'white', ar: 1.3915, hole: [0.3242, 0.2488, 0.3424, 0.4758], open: [0.2661, 0.1598, 0.4585, 0.6539], mat: '#eaebed' },
+  { src: '/prints/rooms/16x20-espresso.webp?v=2', colour: 'espresso', ar: 1.3915, hole: [0.3263, 0.2553, 0.3949, 0.4086], open: [0.2784, 0.184, 0.4907, 0.5513], mat: '#eaebed' },
+  { src: '/prints/rooms/16x24-oyster.webp?v=2', colour: 'oyster', ar: 1.3915, hole: [0.3568, 0.2588, 0.4517, 0.408], open: [0.3059, 0.1887, 0.5534, 0.5483], mat: '#e9eaec' },
+  { src: '/prints/rooms/20x20-white.webp?v=2', colour: 'white', ar: 1.3915, hole: [0.4843, 0.2529, 0.228, 0.3166], open: [0.4428, 0.1851, 0.311, 0.4522], mat: '#ebecee' },
+  { src: '/prints/rooms/20x24-walnut.webp?v=2', colour: 'walnut', ar: 1.3915, hole: [0.4331, 0.2541, 0.3072, 0.319], open: [0.397, 0.1993, 0.3792, 0.4287], mat: '#e8e9eb' },
+  { src: '/prints/rooms/20x30-black.webp?v=2', colour: 'black', ar: 1.3915, hole: [0.4013, 0.2376, 0.4398, 0.3449], open: [0.3589, 0.1745, 0.5246, 0.4711], mat: '#ebecee' },
+  { src: '/prints/rooms/24x24-camel.webp?v=2', colour: 'camel', ar: 1.3915, hole: [0.4305, 0.1999, 0.1381, 0.1922], open: [0.4089, 0.1651, 0.1814, 0.2618], mat: '#eaebed' },
+  { src: '/prints/rooms/24x34-greystone.webp?v=2', colour: 'greystone', ar: 1.3915, hole: [0.3881, 0.1916, 0.2237, 0.2064], open: [0.3614, 0.1539, 0.2771, 0.2818], mat: '#eaebed' },
+  { src: '/prints/rooms/30x30-espresso.webp?v=2', colour: 'espresso', ar: 1.3915, hole: [0.4195, 0.1686, 0.1653, 0.2305], open: [0.3919, 0.1274, 0.2203, 0.3131], mat: '#ecedef' },
+  { src: '/prints/rooms/30x40-white.webp?v=2', colour: 'white', ar: 1.3915, hole: [0.3585, 0.1592, 0.2835, 0.2429], open: [0.3225, 0.112, 0.3555, 0.3373], mat: '#eaebed' },
+  { src: '/prints/rooms/40x40-camel.webp?v=2', colour: 'camel', ar: 1.3915, hole: [0.3958, 0.1344, 0.2055, 0.2854], open: [0.3636, 0.0843, 0.2699, 0.3856], mat: '#e8e9eb' },
+  { src: '/prints/rooms/8x10-white.webp?v=2', colour: 'white', ar: 1.3915, hole: [0.3864, 0.2412, 0.2169, 0.4057], open: [0.3453, 0.1904, 0.2992, 0.5071], mat: '#e4e5e7' },
 ];
 
 /** The shop's frame colours (Pic-Time's names) → Seldex scene colours, closest first. */
