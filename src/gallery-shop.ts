@@ -242,7 +242,9 @@ export function initShop(ctx: Ctx) {
       const i = pics[k % Math.max(1, pics.length)];
       const list = products().filter((p) => p.category === cat);
       // A frame looks best in a warm wood or white; otherwise the first colour.
-      const p = list.find((x) => /Light Wood|White|Natural|Fine Art/.test(x.type)) ?? list[0];
+      const first = list.find((x) => /Light Wood|White|Natural|Fine Art/.test(x.type)) ?? list[0];
+      // On the wall, show a generous size (up to about 50 cm) so the frame reads on a small card.
+      const p = hasRoom(first) ? list.filter((x) => x.type === first.type && Math.max(x.w_cm, x.h_cm) <= 52).sort((a, b) => b.w_cm * b.h_cm - a.w_cm * a.h_cm)[0] ?? first : first;
       if (!i || !p) return;
       const land = landFor(p, i, defaultLandscape(i));
       const c = centredCrop(pr(i), ratioOf(p, land)), w = el.clientWidth || 260, h = el.clientHeight || 190;
@@ -284,7 +286,7 @@ export function initShop(ctx: Ctx) {
       const v = roomView(p, i.web, pr(i), c, land, host.clientWidth || 600, host.clientHeight || 420)!;
       host.innerHTML = v.html;
       const note = shopDlg.querySelector<HTMLElement>('.sh-room-note');
-      if (note) note.textContent = v.exact ? 'Shown in a room to give a feel for it. The size on the wall is a guide only.' : `Shown in a room with a very similar frame. Yours will be ${p.type.toLowerCase()}.`;
+      if (note) note.textContent = 'Shown at its real size, above a 2 m sofa.';
     } else {
       host.innerHTML = mockup(p, i.web, c, land, host.clientWidth || 600, host.clientHeight || 420);
     }
