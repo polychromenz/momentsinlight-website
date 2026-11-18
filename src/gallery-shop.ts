@@ -120,6 +120,9 @@ export function initShop(ctx: Ctx) {
   const landFor = (p: Product, i: Img, want: boolean) => p.w_cm !== p.h_cm && want;
   // Frames can be seen "in a room" (Seldex's room scenes) or close up; the choice is kept while shopping.
   let inRoom = true;
+  // Tony's test visits only: which lab makes each product (couples never see it).
+  const labName = (p: Product) => (/seldex/i.test(p.lab ?? '') ? 'Seldex' : /atkins/i.test(p.lab ?? '') ? 'Atkins' : p.lab || '');
+  const labTag = (p: Product) => (ctx.shop()?.trial && labName(p) ? ` <em class="sh-lab sh-lab--${labName(p).toLowerCase()}">${esc(labName(p))}</em>` : '');
   // Quality: the dpi of the whole photo on this product (the most it can be), and the smallest crop allowed.
   const fullDpi = (i: Img, p: Product, land: boolean) => dpi(i.w, centredCrop(pr(i), ratioOf(p, land)), p, land);
   const minW = (i: Img, p: Product, land: boolean) => minCropW(i.w, p, land);
@@ -227,7 +230,7 @@ export function initShop(ctx: Ctx) {
       <p class="sh-lead">${esc(ctx.shop()!.intro)}</p>
       ${cats().map(([g, list]) => `<h3>${g}</h3><div class="sh-cards">${list.map((c) => `<button type="button" class="sh-card" data-card="${esc(c)}">
           <span class="sh-card-mk" data-card-mk="${esc(c)}"></span>
-          <strong>${esc(NICE[c] ?? c)}</strong><span>${esc(firstSentence(ABOUT[c] ?? ''))}</span><em>from ${nzd(fromPrice(c))}</em></button>`).join('')}</div>`).join('')}
+          <strong>${esc(NICE[c] ?? c)}</strong><span>${esc(firstSentence(ABOUT[c] ?? ''))}</span><em>from ${nzd(fromPrice(c))}</em>${ctx.shop()?.trial ? `<span class="sh-card-labs">${[...new Set(products().filter((p) => p.category === c).map(labName))].map((l) => `<em class="sh-lab sh-lab--${l.toLowerCase()}">${esc(l)}</em>`).join(' ')}</span>` : ''}</button>`).join('')}</div>`).join('')}
       ${cart.length ? '<p class="sh-hint"><button type="button" class="ct-link" data-to-cart>See your cart</button></p>' : ''}
     </div>`;
   }
@@ -364,7 +367,7 @@ export function initShop(ctx: Ctx) {
           const q = fullDpi(i, s, sl);
           const tooBig = q < DPI_MIN, soft = !tooBig && q < DPI_WARN;
           const cls = [s.id === st.pid ? 'on' : '', fits ? 'fit' : '', tooBig ? 'off' : ''].filter(Boolean).join(' ');
-          return `<label class="${cls}"${tooBig ? ' title="This photo isn’t big enough to print well at this size."' : ''}><input type="radio" name="sh-size" value="${s.id}"${s.id === st.pid ? ' checked' : ''}${tooBig ? ' disabled' : ''} /><span>${esc(sizeLabel(s, sl))}${fits ? ' <em>whole photo</em>' : ''}${tooBig ? ' <em class="sh-no">too big for this photo</em>' : soft ? ' <em class="sh-soft">may look soft</em>' : ''}</span><strong>${nzd(s.tiers?.[0]?.base ?? s.price)}</strong></label>`;
+          return `<label class="${cls}"${tooBig ? ' title="This photo isn’t big enough to print well at this size."' : ''}><input type="radio" name="sh-size" value="${s.id}"${s.id === st.pid ? ' checked' : ''}${tooBig ? ' disabled' : ''} /><span>${esc(sizeLabel(s, sl))}${labTag(s)}${fits ? ' <em>whole photo</em>' : ''}${tooBig ? ' <em class="sh-no">too big for this photo</em>' : soft ? ' <em class="sh-soft">may look soft</em>' : ''}</span><strong>${nzd(s.tiers?.[0]?.base ?? s.price)}</strong></label>`;
         }).join('')}</div></div>`}
         <div class="sh-buy">
           ${pack ? '' : `<div class="sh-qty"><button type="button" data-qty="-1" aria-label="One fewer">−</button><span>${st.qty}</span><button type="button" data-qty="1" aria-label="One more">+</button></div>`}
@@ -544,7 +547,7 @@ export function initShop(ctx: Ctx) {
       ${cart.length ? `<ul class="ct-lines">${t.lines.map((l: any) => {
         const p = m.get(l.product_id)!;
         const what = l.pack ? `${esc(NICE[p.category] ?? p.category)} · ${plural(packCount(p), 'print')}` : `${esc(NICE[p.category] ?? p.category)}${p.type && (!PAPER.has(p.kind) || p.category === 'Prints') ? ` · ${esc(p.type)}` : ''}`;
-        const sub = l.pack ? `${esc(sizeLabel(p, false))} · ${plural(l.pack.length, 'photo')}` : esc(sizeLabel(p, l.landscape));
+        const sub = (l.pack ? `${esc(sizeLabel(p, false))} · ${plural(l.pack.length, 'photo')}` : esc(sizeLabel(p, l.landscape))) + labTag(p);
         return `<li>
           <div class="ct-mk" data-mk="${l.key}"></div>
           <div class="ct-what"><strong>${what}</strong><span>${sub}</span>
@@ -675,6 +678,9 @@ const SHOP_CSS = `
 .sh-card-mk{display:flex;align-items:center;justify-content:center;width:100%;aspect-ratio:4/3;background:#ebe8e2;margin-bottom:8px;overflow:hidden;transition:background .3s}
 .sh-card-mk--room{display:block;transition:filter .3s}.sh-card:hover .sh-card-mk--room{filter:brightness(.97)}
 .sh-room-note{text-align:center;margin:4px 0 0}
+em.sh-lab.sh-lab{display:inline-block;margin-left:6px;padding:0 6px;border-radius:4px;font-style:normal;font-size:11px;font-weight:600;letter-spacing:.04em;line-height:1.6;vertical-align:1px;color:#fff;background:#6b6b6b}
+em.sh-lab.sh-lab--seldex{background:#2f6f8f}em.sh-lab.sh-lab--atkins{background:#a0522d}
+.sh-card>span.sh-card-labs.sh-card-labs{display:block}.sh-card-labs .sh-lab{margin:2px 2px 0}
 .sh-card:hover .sh-card-mk{background:#e3dfd6}
 .sh-card strong{font-weight:500;letter-spacing:.1em;text-transform:uppercase;font-size:14px}
 .sh-card span{font-size:12.5px;color:#777;line-height:1.45;padding:0 8px}
@@ -707,6 +713,9 @@ const SHOP_CSS = `
 .ct-pay:disabled{opacity:.45;cursor:not-allowed}
 .ct-note{display:block;margin:12px 0;font-size:14px}.ct-note textarea{display:block;width:100%;margin-top:4px;box-sizing:border-box;font:inherit;padding:8px;border:1px solid #d8d3c8;border-radius:8px}
 .ct-pay{display:block;width:100%;margin:6px 0 0;text-align:center}
+/* Wide screens: the product view never scrolls as a whole (only its options panel). Hidden overflow
+   can still be scrolled by focus, which slid the photo out of view (Tony, 2026-11-19), so clip it. */
+@media (min-width:821px){.shop-dlg,.shop-dlg .dlg-body.sh{overflow:clip}}
 @media (max-width:820px){
   .shop-dlg{height:100dvh;width:100vw;border-radius:0}
   .shop-dlg .dlg-body.sh{grid-template-columns:1fr;grid-template-rows:auto auto;overflow-y:auto}
