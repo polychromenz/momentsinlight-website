@@ -10,7 +10,7 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
 ---
 <StudioLayout title="Gallery" section="galleries">
   <a slot="bar" class="s-btn s-btn--quiet" href="/studio/galleries">All galleries</a>
-  <a slot="bar" class="s-btn s-btn--quiet" data-preview target="_blank" rel="noopener">Preview · set highlights</a>
+  <a slot="bar" class="s-btn s-btn--gold" data-preview target="_blank" rel="noopener">Preview · set highlights</a>
   <button slot="bar" type="button" class="s-btn s-btn--solid" data-online hidden>Put online</button>
   <main class="ga">
     <div class="ga-head">
@@ -153,6 +153,9 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
 </script>
 
 <style is:global>
+  /* Preview · set highlights: gold so it stands out (Tony uses it often). */
+  .studio-body .s-btn--gold { background: var(--gold, #b39a6b); border-color: var(--gold, #b39a6b); color: #fff; }
+  .studio-body .s-btn--gold:hover { background: #a08756; border-color: #a08756; color: #fff; opacity: 1; }
   .ga { max-width: 1600px; margin: 0 auto; padding: 22px clamp(14px, 3vw, 32px) 90px; }
   .ga-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; flex-wrap: wrap; margin-bottom: 16px; }
   .ga h1 { margin: 0; font-weight: 300; font-size: 32px; color: var(--ink); }

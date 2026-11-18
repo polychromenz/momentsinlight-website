@@ -329,11 +329,21 @@ import { TOUR_CSS } from '../gallery-tour-css';
   const arrows = (a: string, b: string) => `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path class="ar ar--a" d="${a}"/><path class="ar ar--b" d="${b}"/></svg>`;
   const GROW = `<span class="sz sz--grow">${arrows('M14 4h6v6M20 4l-6.5 6.5', 'M10 20H4v-6M4 20l6.5-6.5')}</span>`;
   const SHRINK = `<span class="sz sz--shrink">${arrows('M14 4.5V10h5.5M20 4l-6 6', 'M10 19.5V14H4.5M4 20l6-6')}</span>`;
-  function tile(i: Img, w: number, h: number) {
+  // Preview's size button and tag: a highlight says so and can go back to normal; a plain photo the
+  // layout made as tall as the highlights beside it shows the same "make it smaller" button, which
+  // explains why it can't be (Tony 2026-11-18); other photos can be made a highlight.
+  function sizeButton(i: Img, stretched: boolean) {
+    if (!view.preview) return '';
+    if (i.hero) return `<span class="ph-hl">Highlight</span><span class="ph-star" data-star="${i.id}" role="button" tabindex="0" title="Make it normal size">${SHRINK}</span>`;
+    if (stretched) return `<span class="ph-star" data-star="${i.id}" data-stretched="1" role="button" tabindex="0" title="Not a highlight: shown big to fill the row">${SHRINK}</span>`;
+    return `<span class="ph-star" data-star="${i.id}" role="button" tabindex="0" title="Show it big (a highlight)">${GROW}</span>`;
+  }
+  // stretched: a plain photo shown on its own beside highlights, as tall as them (from rows()).
+  function tile(i: Img, w: number, h: number, stretched = false) {
     const n = current.indexOf(i);
     const tools = live() ? `<span class="ph-tools">${view.rights.lists ? `<span class="pt pt-fav${isFav(i.id) ? ' on' : ''}" data-fav="${i.id}" role="button" tabindex="0" aria-label="Favourite">${isFav(i.id) ? '♥' : '♡'}</span>` : ''}${view.rights.hide ? `<span class="pt" data-hide="${i.id}" role="button" tabindex="0" title="${i.ch ? 'Show it again' : 'Hide it from anyone you share with'}">${i.ch ? '◉' : '⊘'}</span>` : ''}</span>` : '';
     return `<div role="button" tabindex="0" class="ph${i.ch ? ' ph--hidden' : ''}${selected.has(i.id) ? ' sel' : ''}" data-n="${n}" data-id="${i.id}" style="width:${w}px;height:${h}px" aria-label="Open photo ${n + 1}">${selecting ? '<span class="ph-tick" aria-hidden="true">✓</span>' : ''}${i.ch ? '<span class="ph-hid">Hidden</span>' : ''}${tools}
-      <img src="${esc(i.thumb)}" srcset="${esc(i.thumb)} ${thumbW(i)}w, ${esc(i.web)} ${webW(i)}w" sizes="${Math.ceil(w)}px" width="${Math.round(w)}" height="${Math.round(h)}" alt="" loading="lazy" decoding="async" />${view.preview ? `<span class="ph-star" data-star="${i.id}" role="button" tabindex="0" title="${i.hero ? 'Make it normal size' : 'Show it big (a highlight)'}">${i.hero ? SHRINK : GROW}</span>` : ''}</div>`;
+      <img src="${esc(i.thumb)}" srcset="${esc(i.thumb)} ${thumbW(i)}w, ${esc(i.web)} ${webW(i)}w" sizes="${Math.ceil(w)}px" width="${Math.round(w)}" height="${Math.round(h)}" alt="" loading="lazy" decoding="async" />${sizeButton(i, stretched)}</div>`;
   }
   function rows(list: Img[], width: number) {
     const phone = width < 600;
@@ -430,7 +440,7 @@ import { TOUR_CSS } from '../gallery-tour-css';
       };
       const html = (cols: Img[][], H: number) => cols.map((c) => {
         const w = (H - GAP * (c.length - 1)) / c.reduce((a, x) => a + 1 / ar(x), 0);
-        return c.length === 1 ? tile(c[0], w, H) : `<div class="stack" style="gap:${GAP}px">${c.map((x) => tile(x, w, w / ar(x))).join('')}</div>`;
+        return c.length === 1 ? tile(c[0], w, H, !c[0].hero) : `<div class="stack" style="gap:${GAP}px">${c.map((x) => tile(x, w, w / ar(x))).join('')}</div>`;
       }).join('');
       const put = (b: { left: Img[][]; cols: Img[][]; H: number }, colsFirst: boolean) => {
         const H = fitH(b.H);
@@ -497,7 +507,7 @@ import { TOUR_CSS } from '../gallery-tour-css';
         return parts.map((p, q) => {
           const o = pick[q];
           if (!Array.isArray(p)) return tile(p, ar(p) * H, H);
-          if (o === 'one') return tile(p[0], ar(p[0]) * H, H);
+          if (o === 'one') return tile(p[0], ar(p[0]) * H, H, !p[0].hero);
           if (!o) return '';
           const cols: Img[][] = [];
           let at = 0;
@@ -702,6 +712,10 @@ import { TOUR_CSS } from '../gallery-tour-css';
     const star = t.closest<HTMLElement>('[data-star]');
     if (star && view.preview) {
       e.stopPropagation();
+      if (star.dataset.stretched) {
+        tell('This photo isn’t a highlight. It’s shown as big as the highlights beside it so the row fills the width with no gaps. To make it smaller, make one of the highlights next to it normal size (or move it in the studio), and the row will be laid out again.', 'Not a highlight');
+        return;
+      }
       const img = view.images.find((x) => x.id === star.dataset.star)!;
       const before = star.closest('.ph')!.getBoundingClientRect().top;
       fetch('/api/studio/galleries/photos', { method: 'PATCH', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ gallery_id: view.preview.gallery_id, ids: [img.id], set: { is_hero: img.hero ? 0 : 1 } }) })
@@ -1059,6 +1073,8 @@ import { TOUR_CSS } from '../gallery-tour-css';
   .ph { position: relative; }
   .ph-star { position: absolute; z-index: 2; top: 8px; right: 8px; width: 34px; height: 34px; display: grid; place-items: center; border-radius: 50%; background: rgb(255 255 255 / 0.9); color: var(--ink); font-size: 18px; cursor: pointer; opacity: 0; transition: opacity 0.25s; box-shadow: 0 4px 12px -6px rgb(0 0 0 / 0.5); }
   .ph:hover .ph-star, .ph-star:focus { opacity: 1; }
+  .ph-hl { position: absolute; z-index: 2; top: 10px; left: 10px; padding: 3px 9px; border-radius: 999px; background: rgb(90 94 59 / 0.88); color: #fff; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; pointer-events: none; }
+  .selecting .ph-hl { display: none; }
   .ph-star .sz { display: grid; place-items: center; transition: transform 0.35s var(--ease); }
   .ph-star:hover .sz { transform: scale(1.08); }
   .ph-star .ar { transition: transform 0.35s var(--ease); }
