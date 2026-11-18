@@ -1,0 +1,22 @@
+---
+// Moments Studio > Galleries > Activity: this year's gallery totals and the last 7 days by gallery
+// (views, people, downloads, new guests). Moved off the Galleries page onto its own (Tony, 2026-11-19).
+// Drawn by src/studio/gallery-insights.ts from functions/api/studio/galleries/insights.js.
+import StudioLayout from '../../layouts/StudioLayout.astro';
+---
+<StudioLayout title="Gallery activity" section="galleries">
+  <a slot="bar" class="s-btn s-btn--quiet" href="/studio/galleries">All galleries</a>
+  <a slot="bar" class="s-btn s-btn--quiet" href="/studio/gallery-prints">Prints</a>
+  <main class="ga">
+    <section class="card gi-galleries"><p class="muted">Loading…</p></section>
+  </main>
+</StudioLayout>
+
+<script>
+  import { drawGalleryInsights } from '../../studio/gallery-insights';
+  drawGalleryInsights(document.querySelector<HTMLElement>('.gi-galleries')!);
+</script>
+
+<style>
+  .ga { max-width: 1600px; margin: 0 auto; padding: 24px clamp(14px, 3vw, 32px) 80px; }
+</style>
