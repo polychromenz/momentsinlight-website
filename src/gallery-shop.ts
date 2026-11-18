@@ -28,7 +28,7 @@ const GROUPS: [string, string[]][] = [
 ];
 const NICE: Record<string, string> = { 'Prints': 'Photo prints', 'Print Pack': 'Print pack', 'Deckled Prints': 'Deckled edge', 'Panoramic Prints': 'Panoramic', 'Matted Prints': 'Matted print', 'Canvas': 'Canvas', 'Frames': 'Framed print', 'Matted Frames': 'Framed with mat', 'Float Frames': 'Float frame', 'Circular Frames': 'Circle frame', 'Gallery Boards': 'Gallery board' };
 const ABOUT: Record<string, string> = {
-  'Prints': 'Professional photo prints. Fine Art is a heavy cotton rag paper with a soft texture; Matte has no shine; Semi Gloss has a gentle sheen and deep colour.',
+  'Prints': 'Professional photo prints on semi gloss paper, with a gentle sheen and deep, rich colour.',
   'Print Pack': 'A set of 24 prints, one size, from up to 24 of your photos. Choose fewer and your favourites are repeated to fill the pack.',
   'Deckled Prints': 'Fine art paper with a hand-torn edge, for a soft, timeless look.',
   'Panoramic Prints': 'A long, wide print for panoramic photos.',
