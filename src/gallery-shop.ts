@@ -30,7 +30,7 @@ const NICE: Record<string, string> = { 'Prints': 'Photo prints', 'Print Pack': '
 const ABOUT: Record<string, string> = {
   'Prints': 'Professional photo prints on semi gloss paper, with a gentle sheen and deep, rich colour.',
   'Print Pack': 'A set of 24 prints, one size, from up to 24 of your photos. Choose fewer and your favourites are repeated to fill the pack.',
-  'Portrait Envelope': 'Ten 8×10″ prints, printed and trimmed by hand by Tony and presented in a portrait envelope. Choose up to 10 photos; choose fewer and your favourites are repeated.',
+  'Portrait Envelope': 'Ten 8×10″ prints, printed and trimmed by hand by Tony, in a sky blue linen portrait envelope with a white insert, a white ribbon and the Moments in Light logo foiled in black. Choose up to 10 photos; choose fewer and your favourites are repeated.',
   'Deckled Prints': 'Fine art paper with a hand-torn edge, for a soft, timeless look.',
   'Panoramic Prints': 'A long, wide print for panoramic photos.',
   'Matted Prints': 'A thick archival print set in a white mat, to display on its own or in a frame.',

@@ -67,6 +67,17 @@ export function mockup(p: Product, src: string, crop: Crop, landscape: boolean, 
   }
   if (k === 'board') return `<div class="mk mk--board" style="${box};--d:${px(depth)}">${photo}</div>`;
   if (k === 'print') return `<div class="mk mk--print" style="${box}">${photo}</div>`;
+  if (k === 'pack' && p.category === 'Portrait Envelope') {
+    // Tony's own envelopes (Seldex Portrait Envelopes 8x10"): sky blue linen, white insert, Bridal White
+    // ribbon, his logo foiled in black at the optical centre. Shown open: the cover beside the print.
+    const pr = Math.min(1, r), ph2 = 1 / pr; // the print in the insert (portrait-shaped envelope)
+    const cw = 1.18, ch = ph2 + 0.36;          // each panel, in photo-width units
+    const s2 = Math.min((w * 0.9) / (cw * 2), (h * 0.88) / ch);
+    const q = (u: number) => `${(u * s2).toFixed(1)}px`;
+    return `<div class="mk mk--env" style="width:${q(cw * 2)};height:${q(ch)}">
+      <div class="mk-env-cover" style="width:${q(cw)}"><div class="mk-env-logo" style="font-size:${q(0.068)}"><b style="font-size:${q(0.28)}">M.</b>MOMENTS IN LIGHT</div><i class="mk-env-ribbon"></i></div>
+      <div class="mk-env-insert" style="width:${q(cw)}"><div class="mk-env-print" style="width:${q(r >= 1 ? 0.92 : 0.92 * r)};height:${q(r >= 1 ? 0.92 / r : 0.92)}">${photo}</div></div></div>`;
+  }
   if (k === 'pack') return `<div class="mk mk--print mk--pack" style="${box}">${photo}</div>`;
   if (k === 'deckled') return `<div class="mk mk--deckled" style="${box};padding:${px(mat)};clip-path:${deckle}">${photo}</div>`;
   if (k === 'matted') return `<div class="mk mk--matted" style="${box};padding:${px(mat)}"><div class="mk-open">${photo}</div></div>`;
@@ -84,6 +95,13 @@ export const MOCKUP_CSS = `
 .mk--pack::before,.mk--pack::after{content:"";position:absolute;inset:0;background:#fff;box-shadow:0 1px 3px rgb(0 0 0/.2);z-index:-1}
 .mk--pack::before{transform:rotate(-5deg) translate(-6%,3%)}.mk--pack::after{transform:rotate(4deg) translate(5%,2%)}
 .mk--pack{isolation:isolate}
+.mk--env{display:flex;filter:drop-shadow(0 12px 18px rgb(0 0 0/.3))}
+.mk-env-cover{position:relative;height:100%;border-radius:2px 0 0 2px;background:repeating-linear-gradient(0deg,rgb(255 255 255/.07) 0 1px,transparent 1px 3px),repeating-linear-gradient(90deg,rgb(0 0 0/.05) 0 1px,transparent 1px 3px),#9fc3dc;display:flex;align-items:center;justify-content:center;box-shadow:inset -6px 0 10px -6px rgb(0 0 0/.35)}
+.mk-env-logo{display:flex;flex-direction:column;align-items:center;gap:.35em;color:#111;white-space:nowrap;line-height:1;letter-spacing:.22em;font-family:Raleway,system-ui,sans-serif;font-weight:500;margin-top:-12%;text-shadow:0 1px 0 rgb(255 255 255/.25)}
+.mk-env-logo b{font-family:Georgia,serif;font-weight:700;letter-spacing:0;line-height:1}
+.mk-env-ribbon{position:absolute;left:0;right:0;top:58%;height:5%;background:linear-gradient(#fbfaf5,#ece9df);box-shadow:0 1px 2px rgb(0 0 0/.2)}
+.mk-env-insert{height:100%;background:#fbfaf6;display:flex;align-items:center;justify-content:center;border-radius:0 2px 2px 0;box-shadow:inset 8px 0 10px -8px rgb(0 0 0/.3)}
+.mk-env-print{box-shadow:0 1px 3px rgb(0 0 0/.3)}
 .mk--deckled{background:#fbfaf6;filter:drop-shadow(0 6px 10px rgb(0 0 0/.22))}
 .mk--matted{background:#fbfaf6;box-shadow:0 1px 2px rgb(0 0 0/.15),0 14px 30px -14px rgb(0 0 0/.45)}
 .mk-open{width:100%;height:100%;box-shadow:inset 0 0 0 1px rgb(0 0 0/.08),0 0 0 3px #fff,0 0 0 4px rgb(0 0 0/.06);position:relative}
