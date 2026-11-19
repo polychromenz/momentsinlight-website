@@ -387,6 +387,7 @@ export function initShop(ctx: Ctx) {
           const cls = [s.id === st.pid ? 'on' : '', fits ? 'fit' : '', tooBig ? 'off' : ''].filter(Boolean).join(' ');
           return `<label class="${cls}"${tooBig ? ' title="This photo isn’t big enough to print well at this size."' : ''}><input type="radio" name="sh-size" value="${s.id}"${s.id === st.pid ? ' checked' : ''}${tooBig ? ' disabled' : ''} /><span>${esc(sizeLabel(s, sl))}${labTag(s)}${fits ? ' <em>whole photo</em>' : ''}${tooBig ? ' <em class="sh-no">too big for this photo</em>' : soft ? ' <em class="sh-soft">may look soft</em>' : ''}</span><strong>${nzd(s.tiers?.[0]?.base ?? s.price)}${firstThen(s) ? `<small class="sh-then">then ${nzd(firstThen(s)!)} each</small>` : ''}</strong></label>`;
         }).join('')}</div></div>`}
+        ${pack && st.ids.length < count ? `<div class="sh-few"><p><strong>${st.ids.length} of ${count} photos chosen.</strong> The other ${count - st.ids.length} prints repeat ${st.ids.length === 1 ? 'this photo' : 'these photos'}. You can choose up to ${count} different photos.</p><button type="button" class="g-btn" data-change-photos>Choose more photos</button></div>` : ''}
         <div class="sh-buy">
           ${pack ? '' : `<div class="sh-qty"><button type="button" data-qty="-1" aria-label="One fewer">−</button><span>${st.qty}</span><button type="button" data-qty="1" aria-label="One more">+</button></div>`}
           <button type="button" class="g-cta" data-add>${st.editing ? 'Update cart' : pack ? 'Add the pack to cart' : multi ? `Add ${plural(st.ids.length, 'print')} to cart` : 'Add to cart'}</button>
@@ -698,6 +699,8 @@ const SHOP_CSS = `
 .sh-card-mk{display:flex;align-items:center;justify-content:center;width:100%;aspect-ratio:4/3;background:#ebe8e2;margin-bottom:8px;overflow:hidden;transition:background .3s}
 .sh-card-mk--room{display:block;transition:filter .3s}.sh-card:hover .sh-card-mk--room{filter:brightness(.97)}
 .sh-room-note{text-align:center;margin:4px 0 0}
+.sh-few{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin:4px 0 14px;padding:12px 14px;border-radius:10px;background:#f6edd2;border:1px solid #e3cf95}
+.sh-few p{margin:0;flex:1 1 220px;font-size:14px;line-height:1.4;color:#4a3d16}
 .sh-then{display:block;font-size:11.5px;font-weight:400;color:#777;text-align:right}
 em.sh-lab.sh-lab{display:inline-block;margin-left:6px;padding:0 6px;border-radius:4px;font-style:normal;font-size:11px;font-weight:600;letter-spacing:.04em;line-height:1.6;vertical-align:1px;color:#fff;background:#6b6b6b}
 em.sh-lab.sh-lab--seldex{background:#2f6f8f}em.sh-lab.sh-lab--atkins{background:#a0522d}em.sh-lab.sh-lab--inhouse{background:#5a5e3b}
