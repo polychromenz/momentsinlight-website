@@ -1,6 +1,9 @@
 ---
-// Moments Studio CRM: one lead or job (/studio/crm/job?id=12). Their details (editable), Tony's
-// notes, the planned steps (to-dos and emails) and the email history.
+// Moments Studio CRM: one lead or job (/studio/crm/job?id=12). Job-only since 2026-11-20 (Tony:
+// clients and jobs as separate pages, docs/client-job-split-plan.md): the client's own details are
+// on their page (client.astro), shown here as a short card. One page of cards like the client
+// portal (at a glance, workflow, appointments, quotes, contracts, invoices, questionnaire, portal,
+// emails, activity) with a section menu; the job's details (date, venue, partner, notes) on the side.
 // Data from functions/api/studio/crm/job.js and step.js.
 import StudioLayout from '../../../layouts/StudioLayout.astro';
 import { FORM_CSS } from '../../../../functions-lib/questionnaire-form.js';
@@ -23,15 +26,12 @@ import { WEATHER_CSS } from '../../../studio/weather-card-css';
       </header>
 
       <div class="cols">
-        <nav class="job-tabs" role="tablist" aria-label="Sections">
-            <button type="button" role="tab" data-show="overview">Overview</button>
-            <button type="button" role="tab" data-show="steps">Steps</button>
-            <button type="button" role="tab" data-show="emails">Emails</button>
-            <button type="button" role="tab" data-show="money">Quotes &amp; money</button>
-            <button type="button" role="tab" data-show="portal">Portal</button>
-            <button type="button" role="tab" data-show="activity">Activity</button>
-          </nav>
+        <nav class="job-tabs" aria-label="Sections"></nav>
         <div class="main-col">
+          <section class="card glance-card" id="glance" data-tab="overview">
+            <h2>At a glance</h2>
+            <ul class="glance"></ul>
+          </section>
           <section class="card wx-card wx-off" data-tab="overview" aria-live="polite"></section>
           <section class="card ai-card" data-tab="overview">
             <div class="card-head"><h2>Where things are</h2><button type="button" class="s-btn s-btn--quiet" data-summary>Summarise</button></div>
@@ -47,11 +47,11 @@ import { WEATHER_CSS } from '../../../studio/weather-card-css';
             <table class="path-table"><thead><tr><th>Time</th><th>Page</th><th>On screen</th><th>Scrolled</th></tr></thead><tbody></tbody></table>
             <p class="hint path-note"></p>
           </section>
-          <section class="card" data-tab="steps">
-            <h2>Steps</h2>
+          <section class="card" id="workflow" data-tab="steps">
+            <h2>Workflow</h2>
             <ul class="steps"></ul>
           </section>
-          <section class="card appts-card" data-tab="overview">
+          <section class="card appts-card" id="appointments" data-tab="overview">
             <div class="card-head"><h2>Appointments</h2><button type="button" class="s-btn s-btn--quiet" data-appt-new>+ Add</button></div>
             <ul class="quotes appts"></ul>
             <form class="appt-form" autocomplete="off" hidden>
@@ -65,19 +65,19 @@ import { WEATHER_CSS } from '../../../studio/weather-card-css';
             </form>
             <p class="hint gcal-note" hidden></p>
           </section>
-          <section class="card" data-tab="money">
+          <section class="card" id="quotes" data-tab="money">
             <div class="card-head"><h2>Quotes</h2><button type="button" class="s-btn" data-act="new-quote">+ New quote</button></div>
             <ul class="quotes quote-list"></ul>
           </section>
-          <section class="card" data-tab="money">
+          <section class="card" id="contracts" data-tab="money">
             <h2>Contracts</h2>
             <ul class="quotes contracts"></ul>
           </section>
-          <section class="card" data-tab="money">
+          <section class="card" id="invoices" data-tab="money">
             <div class="card-head"><h2>Invoices</h2><button type="button" class="s-btn s-btn--quiet" data-add-invoice>+ Add invoice</button></div>
             <ul class="quotes invoices"></ul>
           </section>
-          <section class="card portal-card" data-tab="portal">
+          <section class="card portal-card" id="portal" data-tab="portal">
             <div class="card-head"><h2>Client portal</h2><span class="portal-actions"><a class="s-btn portal-open" href="#" target="_blank" rel="noopener">Open their portal ↗</a><button type="button" class="s-btn s-btn--quiet" data-portal-copy>Copy link</button></span></div>
             <p class="hint">What they see: their booking, quote, contract, questionnaire, payments, plus the files and galleries below.</p>
             <h3 class="sub">Galleries</h3>
@@ -92,21 +92,28 @@ import { WEATHER_CSS } from '../../../studio/weather-card-css';
             <div class="sub-head"><h3 class="sub">Shared files <small>(theirs and yours; they see all of these)</small></h3><label class="s-btn s-btn--quiet up-btn">+ Add files<input type="file" multiple hidden /></label></div>
             <ul class="quotes portal-uploads"></ul>
           </section>
-          <section class="card" data-tab="portal">
+          <section class="card" id="questionnaire" data-tab="portal">
             <h2>Questionnaire</h2>
             <ul class="quotes questionnaires"></ul>
           </section>
-          <section class="card" data-tab="emails">
+          <section class="card" id="emails" data-tab="emails">
             <div class="card-head"><h2>Emails</h2><button type="button" class="s-btn" data-compose>✉ Write email</button></div>
             <ul class="messages"></ul>
           </section>
-          <section class="card activity-card" data-tab="activity">
+          <section class="card activity-card" id="activity" data-tab="activity">
             <h2>Activity</h2>
             <ul class="activity"></ul>
           </section>
         </div>
 
         <div class="side">
+        <section class="card client-card">
+          <div class="card-head"><h2>Client</h2><a class="s-btn s-btn--quiet client-link" href="#">Their page</a></div>
+          <p class="client-name"></p>
+          <p class="client-contact muted"></p>
+          <p class="client-flags"></p>
+          <p class="other-jobs"></p>
+        </section>
         <section class="card details day-card">
           <h2 class="day-title">Wedding day</h2>
           <div class="two">
@@ -124,34 +131,19 @@ import { WEATHER_CSS } from '../../../studio/weather-card-css';
           </div>
         </section>
         <form class="card details" id="job-details" autocomplete="off">
-          <h2>Details</h2>
+          <h2>Job details</h2>
           <label class="status-field">Status
             <select class="stage-select" aria-label="Where they're at">
               <option value="lead">Lead</option><option value="booked">Booked</option><option value="completed">Completed</option><option value="lost">Not going ahead</option>
             </select>
           </label>
           <fieldset class="person">
-            <legend>Them</legend>
-            <div class="two">
-              <label>First name<input name="first_name" /></label>
-              <label>Last name<input name="last_name" /></label>
-            </div>
-            <label>Email<input name="email" type="email" /></label>
-            <label>Phone<input name="phone" type="tel" /></label>
-          </fieldset>
-          <fieldset class="person">
             <legend>Partner</legend>
             <label>Name<input name="partner_name" /></label>
             <label>Email<input name="partner_email" type="email" /></label>
             <label>Phone<input name="partner_phone" type="tel" /></label>
           </fieldset>
-          <h3 class="sub both-sub">Both of them</h3>
-          <label>Address<textarea name="address" rows="3" placeholder="Added when they accept a quote"></textarea></label>
-          <label class="tick"><input type="checkbox" name="ads_ok" value="1" /> Their photos can be used in ads and marketing <small>(untick if their contract says no)</small></label>
           <label class="tick autopay-tick" hidden><input type="checkbox" name="autopay" value="1" /> <span class="autopay-text">Pay their instalments automatically</span></label>
-          <label class="tick"><input type="checkbox" name="keep" value="1" /> Keep their details <small>(old enquiries that never book are deleted after two years, as your privacy page says; tick to keep this one)</small></label>
-          <label class="tick"><input type="checkbox" name="test" value="1" /> Test client <small>(one of your own tests: their invoices and payments are never sent to Xero)</small></label>
-          <p class="export"><a data-export href="#" download>Download everything held about them</a> <small>(a ZIP, for a privacy request)</small></p>
           <p class="export"><button type="button" class="link-danger" data-delete-job>Delete permanently</button> <small>(e.g. a test lead: gone completely, so it isn’t counted as a lost lead)</small></p>
           <div class="two">
             <label>Type
@@ -161,8 +153,7 @@ import { WEATHER_CSS } from '../../../studio/weather-card-css';
             </label>
           </div>
           <label>Heard about you via<input name="lead_source" list="lead-sources" /><datalist id="lead-sources"></datalist></label>
-          <label>Your notes<textarea name="notes" rows="6" placeholder="Anything to remember about them or their day"></textarea></label>
-          <p class="other-jobs" hidden></p>
+          <label>Notes about this job<textarea name="notes" rows="6" placeholder="Anything to remember about this job or their day (notes about them go on their page)"></textarea></label>
         </form>
         </div>
       </div>
@@ -295,19 +286,12 @@ import { WEATHER_CSS } from '../../../studio/weather-card-css';
   const markDirty = () => { dirty = true; saveBtn.disabled = false; $('.save-state').textContent = 'Unsaved changes'; };
 
   let listsLoaded = false;
-  // Tabs: one group of cards at a time (the Wedding day and Details column always shows); the last
-  // tab used is remembered for the next client.
-  function showTab(name: string, remember = true) {
-    if (!document.querySelector(`.job-tabs [data-show="${name}"]`)) name = 'overview';
-    document.querySelectorAll<HTMLElement>('.main-col [data-tab]').forEach((c) => { c.hidden = c.dataset.tab !== name; });
-    document.querySelectorAll<HTMLElement>('.job-tabs [data-show]').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.show === name)));
-    if (remember) try { localStorage.setItem('job-tab', name); } catch {}
-  }
-  document.querySelector('.job-tabs')!.addEventListener('click', (e) => {
-    const b = (e.target as HTMLElement).closest<HTMLElement>('[data-show]');
-    if (b) showTab(b.dataset.show!);
-  });
-  showTab((() => { try { return localStorage.getItem('job-tab') || 'overview'; } catch { return 'overview'; } })(), false);
+  // One page of cards (like the client portal) with a menu to jump to each. (showTab stays for the
+  // code that used to switch tabs: every card shows now.)
+  function showTab(_name: string, _remember = true) {}
+  const MENU: [string, string][] = [['glance', 'At a glance'], ['workflow', 'Workflow'], ['appointments', 'Appointments'], ['quotes', 'Quotes'], ['contracts', 'Contracts'],
+    ['invoices', 'Invoices'], ['questionnaire', 'Questionnaire'], ['portal', 'Portal & files'], ['emails', 'Emails'], ['activity', 'Activity']];
+  $('.job-tabs').innerHTML = MENU.map(([sec, label]) => `<a href="#${sec}">${label}</a>`).join('');
 
   async function loadLists() {
     if (listsLoaded) return;
@@ -407,7 +391,6 @@ import { WEATHER_CSS } from '../../../studio/weather-card-css';
     const api = { endpoint: '/api/studio/address' };
     const f = $<HTMLFormElement>('form.card.details');
     const venueAddr = f.elements.namedItem('venue_address') as HTMLInputElement;
-    attachAddressLookup(f.elements.namedItem('address') as HTMLTextAreaElement, api);
     const venue = f.elements.namedItem('venue') as HTMLInputElement;
     attachAddressLookup(venue, { ...api, onPick: (p, el) => { el.value = p.business && p.name ? p.name : p.address; venueAddr.value = p.address; } });
     venue.addEventListener('input', (e) => { if ((e as InputEvent).inputType) venueAddr.value = ''; });
@@ -510,8 +493,17 @@ import { WEATHER_CSS } from '../../../studio/weather-card-css';
     jobEventDate = j.event_date ?? null;
     lastJob = j;
     loadWeather(j);
-    document.title = `${j.title} · Moments Studio`;
-    $('.title').textContent = j.title;
+    // The job: its type, for the client (their page). The breadcrumb reads Clients › client › job.
+    const who = `${j.first_name} ${j.last_name}`.trim();
+    const jobName = j.title && j.title.toLowerCase() !== who.toLowerCase() ? j.title : j.job_type;
+    document.title = `${jobName} · ${who} · Moments Studio`;
+    $('.title').innerHTML = `${esc(jobName)} <span class="title-for">for <a href="/studio/crm/client?id=${j.client_id}">${esc(who)}</a></span>`;
+    setTimeout(() => {
+      const here = document.querySelector('.crumb-here')?.closest('li');
+      if (!here) return;
+      here.querySelector('.crumb-here')!.textContent = jobName;
+      if (!document.querySelector('.crumb-client')) here.insertAdjacentHTML('beforebegin', `<li class="crumb-client"><a href="/studio/crm/client?id=${j.client_id}">${esc(who)}</a></li>`);
+    }, 50);
     $('.hold-note').hidden = !j.hold;
     $('.eyebrow-line').textContent = [j.job_type, j.event_date && new Date(`${j.event_date}T12:00:00Z`).toLocaleDateString('en-NZ', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }), j.venue].filter(Boolean).join(' · ');
     stage = j.stage;
@@ -522,14 +514,15 @@ import { WEATHER_CSS } from '../../../studio/weather-card-css';
     const typeSel = form.elements.namedItem('job_type') as HTMLSelectElement;
     if (j.job_type && ![...typeSel.options].some((o) => o.value === j.job_type)) typeSel.add(new Option(j.job_type, j.job_type));
     for (const el of Array.from(form.elements) as HTMLInputElement[]) if (el.name && el.type !== 'checkbox') el.value = j[el.name] ?? '';
-    (form.elements.namedItem('ads_ok') as HTMLInputElement).checked = j.ads_ok !== 0;
-    (form.elements.namedItem('keep') as HTMLInputElement).checked = j.keep === 1;
-    (form.elements.namedItem('test') as HTMLInputElement).checked = j.test === 1;
+    // The client: their own details are edited on their page.
+    $<HTMLAnchorElement>('.client-link').href = `/studio/crm/client?id=${j.client_id}`;
+    $('.client-name').innerHTML = `<a href="/studio/crm/client?id=${j.client_id}">${esc(`${j.first_name} ${j.last_name}`.trim())}</a>`;
+    $('.client-contact').innerHTML = [j.email && !String(j.email).endsWith('.invalid') ? `<a href="mailto:${esc(j.email)}">${esc(j.email)}</a>` : '', j.phone ? `<a href="tel:${esc(j.phone)}">${esc(j.phone)}</a>` : '', j.address ? esc(j.address) : ''].filter(Boolean).join('<br>');
+    $('.client-flags').innerHTML = [j.ads_ok === 0 ? '<span class="flag flag--no">No ads (their contract)</span>' : '', j.test === 1 ? '<span class="flag">Test client</span>' : '', j.keep === 1 ? '<span class="flag">Kept</span>' : ''].filter(Boolean).join(' ');
     // Automatic payments (functions-lib/autopay.js): shown once they've saved a card.
     $('.autopay-tick').hidden = !j.stripe_payment_method;
     (form.elements.namedItem('autopay') as HTMLInputElement).checked = j.autopay === 1;
     $('.autopay-text').textContent = `Pay their instalments automatically from their ${j.autopay_card || 'saved card'} on each due date`;
-    $<HTMLAnchorElement>('[data-export]').href = `/api/studio/crm/export?job=${id}`;
     $('.message').textContent = j.message || 'No message.';
     const adFrom = $('.ad-from');
     adFrom.hidden = !j.ad_click;
@@ -650,9 +643,31 @@ import { WEATHER_CSS } from '../../../studio/weather-card-css';
       : '<li class="empty">No invoices yet. They’re made when the contract is signed, and the deposit invoice goes straight away.</li>';
     const other = $('.other-jobs');
     // Their other jobs, and a new one for them (e.g. a family shoot after the wedding): Clients › Add a job.
-    other.hidden = false;
-    other.innerHTML = (d.otherJobs.length ? `Also: ${d.otherJobs.map((o: { id: number; title: string; job_type: string }) => `<a href="/studio/crm/job?id=${o.id}">${esc(o.job_type)}</a>`).join(', ')} · ` : '')
+    other.innerHTML = (d.otherJobs.length ? `Their other jobs: ${d.otherJobs.map((o: { id: number; title: string; job_type: string }) => `<a href="/studio/crm/job?id=${o.id}">${esc(o.job_type)}</a>`).join(', ')}<br>` : '')
       + `<a href="/studio/crm/?addjob=${d.job.client_id}">+ New job for ${esc(d.job.first_name)}</a>`;
+    if (d.job.client_notes) $('.client-flags').insertAdjacentHTML('afterend', `<p class="client-notes">${esc(d.job.client_notes.slice(0, 300))}${d.job.client_notes.length > 300 ? '…' : ''}</p>`);
+
+    // Where things are at (like the client portal's checklist): done, to do, and what's next.
+    const dmy = (x: string) => new Date(x.length === 10 ? `${x}T12:00:00Z` : x).toLocaleDateString('en-NZ', { day: 'numeric', month: 'short', year: 'numeric' });
+    const glance: [boolean, string][] = [];
+    const qAcc = d.quotes.find((q: any) => q.status === 'accepted');
+    const qSent = d.quotes.find((q: any) => q.status === 'sent');
+    if (qAcc) glance.push([true, `Quote accepted ${dmy(qAcc.accepted_at)}`]);
+    else if (qSent) glance.push([false, `Quote sent ${dmy(qSent.sent_at)}${qSent.viewed_at ? ' (opened)' : ' (not opened yet)'}`]);
+    else if (d.job.stage === 'lead') glance.push([false, 'No quote sent yet']);
+    for (const c of d.contracts.filter((c: any) => c.status === 'sent' || c.status === 'signed')) glance.push([c.status === 'signed', c.status === 'signed' ? `${esc(c.name)} signed ${dmy(c.signed_at)}` : `${esc(c.name)} sent, not signed yet`]);
+    for (const q of d.questionnaires) glance.push([q.status === 'submitted', q.status === 'submitted' ? `${esc(q.name)} sent in` : `${esc(q.name)} not sent in yet`]);
+    const parts = d.invoices.filter((i: any) => i.status !== 'group' && i.status !== 'void' && i.status !== 'draft');
+    if (parts.length) {
+      const paidN = parts.filter((i: any) => i.status === 'paid').length;
+      const nextInv = parts.find((i: any) => i.status !== 'paid');
+      glance.push([!nextInv, nextInv ? `Payments: ${paidN} of ${parts.length} paid · next $${(nextInv.amount / 100).toLocaleString('en-NZ')} due ${dmy(nextInv.due_date)}` : 'All paid']);
+    }
+    const nextStep = d.steps.find((st: any) => st.status === 'scheduled' || st.status === 'due');
+    if (nextStep) glance.push([false, `Next in the workflow: <a href="#step-${nextStep.id}">${esc(nextStep.title)}</a>, ${dmy(nextStep.due_at)}`]);
+    else if (d.job.workflow) glance.push([true, 'Nothing waiting in the workflow']);
+    else glance.push([false, 'No workflow on this job']);
+    $('.glance').innerHTML = glance.map(([done, text]) => `<li class="${done ? 'done' : ''}"><span class="tick" aria-hidden="true">${done ? '✓' : ''}</span><span>${text}</span></li>`).join('');
 
     dirty = false; saveBtn.disabled = true; $('.save-state').textContent = '';
     $('.content').hidden = false; $('.status').hidden = true;
@@ -661,7 +676,7 @@ import { WEATHER_CSS } from '../../../studio/weather-card-css';
   }
 
   async function save(extra: Record<string, unknown> = {}) {
-    const body: Record<string, unknown> = { id, stage, ...Object.fromEntries(new FormData(form)), ads_ok: (form.elements.namedItem('ads_ok') as HTMLInputElement).checked, keep: (form.elements.namedItem('keep') as HTMLInputElement).checked, test: (form.elements.namedItem('test') as HTMLInputElement).checked, ...($('.autopay-tick').hidden ? {} : { autopay: (form.elements.namedItem('autopay') as HTMLInputElement).checked }), ...extra };
+    const body: Record<string, unknown> = { id, stage, ...Object.fromEntries(new FormData(form)), ...($('.autopay-tick').hidden ? {} : { autopay: (form.elements.namedItem('autopay') as HTMLInputElement).checked }), ...extra };
     saveBtn.disabled = true;
     $('.save-state').textContent = 'Saving…';
     const r = await fetch('/api/studio/crm/job', { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
@@ -1048,9 +1063,25 @@ import { WEATHER_CSS } from '../../../studio/weather-card-css';
   .job-page .stage button.undo { border-color: transparent; background: transparent; text-decoration: underline; color: #666; }
   .job-page .cols { display: grid; gap: 16px; }
   .job-page .job-tabs { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 14px; }
-  .job-page .job-tabs button { padding: 8px 16px; border: 1px solid #ddd3c4; border-radius: 999px; background: var(--white); color: var(--ink); font: inherit; font-size: 14px; cursor: pointer; }
-  .job-page .job-tabs button:hover { border-color: var(--green); }
-  .job-page .job-tabs button[aria-selected="true"] { background: var(--green); border-color: var(--green); color: var(--white); }
+  .job-page .job-tabs a { padding: 6px 14px; border: 1px solid #ddd3c4; border-radius: 999px; background: var(--white); color: #555; font-size: 14px; text-decoration: none; }
+  .job-page .job-tabs a:hover { border-color: var(--green); background: var(--green); color: var(--white); }
+  .job-page .main-col > section { scroll-margin-top: 90px; }
+  .job-page .title-for { font-size: 0.6em; color: #888; }
+  .job-page .title-for a { color: var(--green); }
+  .job-page .glance { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; font-size: 15px; color: #444; }
+  .job-page .glance li { display: flex; gap: 10px; align-items: baseline; }
+  .job-page .glance .tick { flex: 0 0 20px; height: 20px; border: 1.5px solid #cfc5b4; border-radius: 50%; display: inline-grid; place-items: center; font-size: 12px; color: var(--white); transform: translateY(4px); }
+  .job-page .glance li.done .tick { background: var(--green); border-color: var(--green); }
+  .job-page .glance a { color: var(--green); }
+  .job-page .client-card p { margin: 0 0 8px; font-size: 14px; }
+  .job-page .client-card .client-name { font-size: 17px; }
+  .job-page .client-card .client-name a { color: var(--ink); }
+  .job-page .client-card .client-contact a { color: inherit; }
+  .job-page .client-card .client-flags:empty { display: none; }
+  .job-page .client-card .flag { display: inline-block; font-size: 12px; padding: 2px 9px; border-radius: 999px; background: #f1ece2; color: #555; }
+  .job-page .client-card .flag--no { background: #fbeee8; color: #8a3b1e; }
+  .job-page .client-card .client-notes { color: #666; white-space: pre-line; border-left: 3px solid #eee5d8; padding-left: 10px; }
+  .job-page .client-card .other-jobs a { color: var(--green); }
   .job-page .main-col > [data-tab][hidden] { display: none; }
   .job-page .card { background: var(--white); border-radius: 24px 0; padding: 20px 24px; margin-bottom: 16px; }
   .job-page .path-card.path-off { display: none; }

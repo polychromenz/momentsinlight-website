@@ -1,0 +1,205 @@
+---
+// Moments Studio CRM: one client (/studio/crm/client?id=7). The person (their details, editable),
+// all their jobs with where each is at, their portal and galleries (both per client), and every
+// email with them. Each job has its own page (job.astro). Clients and jobs as separate pages:
+// Tony, 2026-11-20 (docs/client-job-split-plan.md). Data from functions/api/studio/crm/client.js.
+import StudioLayout from '../../../layouts/StudioLayout.astro';
+---
+<StudioLayout title="Client" section="clients">
+  <span slot="bar" class="save-state" aria-live="polite"></span>
+  <button slot="bar" type="button" class="s-btn s-btn--solid" data-save disabled>Save</button>
+
+  <main class="client-page">
+    <p class="status" aria-live="polite">Loading…</p>
+    <div class="content" hidden>
+      <header class="head">
+        <h1 class="title"></h1>
+        <p class="contact muted"></p>
+      </header>
+
+      <div class="cols">
+        <div class="main-col">
+          <section class="card" id="jobs">
+            <div class="card-head"><h2>Jobs</h2><a class="s-btn" data-new-job href="#">+ New job</a></div>
+            <ul class="job-cards"></ul>
+          </section>
+          <section class="card" id="emails">
+            <h2>Emails</h2>
+            <p class="hint">Everything sent to or from them, from all their jobs. Open a job to write or reply.</p>
+            <ul class="messages"></ul>
+          </section>
+        </div>
+
+        <div class="side">
+          <section class="card" id="portal">
+            <div class="card-head"><h2>Portal and galleries</h2></div>
+            <p class="hint">One portal for all their jobs (any of their links opens it). Their galleries share one “online until” date, and one payment keeps them all online.</p>
+            <p class="portal-actions"><a class="s-btn portal-open" href="#" target="_blank" rel="noopener">Open their portal ↗</a> <button type="button" class="s-btn s-btn--quiet" data-copy>Copy link</button></p>
+            <ul class="galleries"></ul>
+            <p class="keep muted"></p>
+          </section>
+          <form class="card details" autocomplete="off">
+            <h2>Their details</h2>
+            <div class="two">
+              <label>First name<input name="first_name" /></label>
+              <label>Last name<input name="last_name" /></label>
+            </div>
+            <label>Email<input name="email" type="email" /></label>
+            <label>Phone<input name="phone" type="tel" /></label>
+            <label>Address<textarea name="address" rows="3" placeholder="Added when they accept a quote"></textarea></label>
+            <label>Notes about them<textarea name="notes" rows="4" placeholder="Anything to remember about them (job notes go on each job)"></textarea></label>
+            <label class="tick"><input type="checkbox" name="ads_ok" /> Their photos can be used in ads and marketing <small>(untick if their contract says no)</small></label>
+            <label class="tick"><input type="checkbox" name="keep" /> Keep their details <small>(old enquiries that never book are deleted after two years; tick to keep them)</small></label>
+            <label class="tick"><input type="checkbox" name="test" /> Test client <small>(one of your own tests: never sent to Xero)</small></label>
+            <p class="export"><a data-export href="#" download>Download everything held about them</a> <small>(a ZIP, for a privacy request)</small></p>
+          </form>
+        </div>
+      </div>
+    </div>
+  </main>
+  <div class="s-toast" role="status"></div>
+</StudioLayout>
+
+<script>
+  import { guardLeaving } from '../../../studio/dialogs';
+  const $ = <T extends HTMLElement = HTMLElement>(s: string) => document.querySelector<T>(s)!;
+  const esc = (s: unknown) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
+  const id = Number(new URLSearchParams(location.search).get('id'));
+  const form = $<HTMLFormElement>('form.details');
+  const saveBtn = $<HTMLButtonElement>('[data-save]');
+  const money = (c: number) => `$${(c / 100).toLocaleString('en-NZ', { maximumFractionDigits: 2 })}`;
+  const nzDate = (d: string | null) => (d ? new Date(`${d}T12:00:00Z`).toLocaleDateString('en-NZ', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }) : 'No date yet');
+  const when = (iso: string) => new Date(iso).toLocaleString('en-NZ', { day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit' });
+  const STAGE: Record<string, string> = { lead: 'Lead', booked: 'Booked', completed: 'Completed', lost: 'Not going ahead' };
+  const KIND: Record<string, string> = { auto_email: 'Automatic email', ready_email: 'Email to send', todo: 'To-do' };
+  const toast = (text: string, error = false) => {
+    const t = $('.s-toast'); t.textContent = text; t.classList.toggle('error', error); t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 4000);
+  };
+  let dirty = false;
+  guardLeaving(() => dirty);
+  const markDirty = () => { dirty = true; saveBtn.disabled = false; $('.save-state').textContent = 'Unsaved changes'; };
+  form.addEventListener('input', markDirty);
+  form.addEventListener('change', markDirty);
+  let portal = '';
+
+  async function load() {
+    const r = await fetch(`/api/studio/crm/client?id=${id}`);
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) { $('.status').textContent = d.error || `Something went wrong (${r.status}).`; return; }
+    const c = d.client;
+    const name = `${c.first_name} ${c.last_name}`.trim();
+    document.title = `${name} · Moments Studio`;
+    $('.title').innerHTML = `${esc(name)}${c.test ? ' <span class="test-tag">Test</span>' : ''}`;
+    $('.contact').innerHTML = [c.email && !c.email.endsWith('.invalid') ? `<a href="mailto:${esc(c.email)}">${esc(c.email)}</a>` : '', c.phone ? `<a href="tel:${esc(c.phone)}">${esc(c.phone)}</a>` : ''].filter(Boolean).join(' · ');
+    for (const k of ['first_name', 'last_name', 'email', 'phone', 'address', 'notes']) (form.elements.namedItem(k) as HTMLInputElement).value = c[k] ?? '';
+    (form.elements.namedItem('ads_ok') as HTMLInputElement).checked = c.ads_ok !== 0;
+    (form.elements.namedItem('keep') as HTMLInputElement).checked = c.keep === 1;
+    (form.elements.namedItem('test') as HTMLInputElement).checked = c.test === 1;
+    $<HTMLAnchorElement>('[data-new-job]').href = `/studio/crm/?addjob=${c.id}`;
+
+    // Their jobs: each a card with where it's at; the card opens the job.
+    $('.job-cards').innerHTML = d.jobs.length ? d.jobs.map((j: any) => {
+      const facts = [
+        j.quote && (j.quote === 'accepted' ? `Quote accepted${j.total != null ? ` (${money(j.total)})` : ''}` : 'Quote sent'),
+        j.contract && (j.contract === 'signed' ? 'Contract signed' : 'Contract sent'),
+        j.invoiced ? (j.paid >= j.invoiced ? `Paid in full (${money(j.paid)})` : `Paid ${money(j.paid)} of ${money(j.invoiced)}`) : '',
+      ].filter(Boolean);
+      return `<li><a class="job-card job-card--${j.stage}" href="/studio/crm/job?id=${j.id}">
+        <span class="jc-top"><strong>${esc(j.job_type)}</strong><span class="chip chip--${j.stage}">${STAGE[j.stage] ?? esc(j.stage)}</span></span>
+        <span class="jc-when">${nzDate(j.event_date)}${j.venue ? ` · ${esc(j.venue)}` : ''}${j.partner_name ? ` · with ${esc(j.partner_name)}` : ''}</span>
+        ${j.title !== name ? `<span class="jc-title">${esc(j.title)}</span>` : ''}
+        ${facts.length ? `<span class="jc-facts">${facts.map(esc).join(' · ')}</span>` : ''}
+        ${j.next ? `<span class="jc-next">Next: ${esc(KIND[j.next.kind] ?? '')} · ${esc(j.next.title)} · ${new Date(j.next.due_at).toLocaleDateString('en-NZ', { day: 'numeric', month: 'short' })}</span>` : ''}
+      </a></li>`;
+    }).join('') : '<li class="empty">No jobs yet.</li>';
+
+    const jobName = Object.fromEntries(d.jobs.map((j: any) => [j.id, j.job_type]));
+    $('.messages').innerHTML = d.messages.length ? d.messages.map((m: any) => `<li><a href="/studio/crm/job?id=${m.job_id}#emails"><span class="dir">${m.direction === 'in' ? 'From them' : 'To them'}</span> <strong>${esc(m.subject || '(no subject)')}</strong></a>
+      <small>${when(m.sent_at)}${d.jobs.length > 1 && jobName[m.job_id] ? ` · ${esc(jobName[m.job_id])}` : ''}</small></li>`).join('') : '<li class="empty">No emails yet.</li>';
+
+    portal = d.portal ?? '';
+    $<HTMLAnchorElement>('.portal-open').href = portal || '#';
+    $('.portal-actions').hidden = !portal;
+    $('.galleries').innerHTML = d.galleries.length ? d.galleries.map((g: any) => `<li><a href="/studio/gallery?id=${encodeURIComponent(g.id)}">${esc(g.name)}</a>
+      <small>${g.online ? 'Online' : g.status === 'online' ? 'Expired' : esc(g.status)} · ${g.photos} photos${jobName[g.job_id] && d.jobs.length > 1 ? ` · ${esc(jobName[g.job_id])}` : ''}</small></li>`).join('') : '<li class="empty">No galleries yet. Link one from a job’s Portal card or the gallery’s settings.</li>';
+    $('.keep').textContent = d.keep.until ? `Online until ${nzDate(d.keep.until)}. Then ${money(d.keep.price)} keeps them all online for ${d.keep.months} more months.` : '';
+    $<HTMLAnchorElement>('[data-export]').href = `/api/studio/crm/export?client=${c.id}`;
+
+    dirty = false; saveBtn.disabled = true; $('.save-state').textContent = '';
+    $('.content').hidden = false; $('.status').hidden = true;
+  }
+
+  async function save() {
+    const f = (k: string) => form.elements.namedItem(k) as HTMLInputElement;
+    const body = { id, ...Object.fromEntries(['first_name', 'last_name', 'email', 'phone', 'address', 'notes'].map((k) => [k, f(k).value])), ads_ok: f('ads_ok').checked, keep: f('keep').checked, test: f('test').checked };
+    saveBtn.disabled = true;
+    const r = await fetch('/api/studio/crm/client', { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) { toast(d.error || 'Couldn’t save.', true); saveBtn.disabled = false; return; }
+    toast('Saved.');
+    await load();
+  }
+  saveBtn.addEventListener('click', save);
+  document.addEventListener('click', async (e) => {
+    if ((e.target as HTMLElement).closest('[data-copy]') && portal) {
+      await navigator.clipboard.writeText(portal).catch(() => {});
+      toast('Portal link copied.');
+    }
+  });
+
+  if (!id) $('.status').textContent = 'Which client? Open one from the Clients page.';
+  else load();
+</script>
+
+<style>
+  .client-page { max-width: 1240px; margin: 0 auto; padding: 18px clamp(14px, 3vw, 32px) 80px; }
+  .status { color: #666; }
+  .head { margin: 0 0 18px; }
+  .eyebrow-line { margin: 0 0 4px; font-size: 14px; }
+  .eyebrow-line a { color: var(--green); }
+  .title { margin: 0; font-size: clamp(26px, 2vw + 16px, 36px); font-weight: 400; color: var(--ink); }
+  .contact { margin: 6px 0 0; font-size: 15px; }
+  .contact a { color: inherit; }
+  .muted { color: #777; }
+  .cols { display: grid; gap: 16px; }
+  @media (min-width: 900px) { .cols { grid-template-columns: minmax(0, 1fr) 380px; align-items: start; } }
+  .card { background: var(--white); border-radius: 24px 0; padding: 20px 24px; margin-bottom: 16px; }
+  .card h2 { margin: 0 0 10px; font-weight: 400; font-size: 21px; color: var(--ink); }
+  .card-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .card-head h2 { margin: 0; }
+  .hint { margin: 0 0 12px; font-size: 13px; color: #888; }
+  .job-cards, .messages, .galleries { list-style: none; margin: 0; padding: 0; }
+  .job-cards { display: grid; gap: 10px; }
+  .job-cards :global(.job-card) { display: flex; flex-direction: column; gap: 4px; padding: 14px 18px; border: 1px solid #ece4d7; border-radius: 18px 0; color: var(--ink); text-decoration: none; transition: border-radius 0.3s, border-color 0.3s; }
+  .job-cards :global(.job-card:hover) { border-color: var(--green); border-radius: 0 18px; }
+  .job-cards :global(.job-card--lost) { opacity: 0.65; }
+  .job-cards :global(.jc-top) { display: flex; justify-content: space-between; align-items: center; gap: 10px; font-size: 17px; }
+  .job-cards :global(.jc-when), .job-cards :global(.jc-title) { font-size: 14px; color: #555; }
+  .job-cards :global(.jc-facts) { font-size: 13px; color: var(--green); }
+  .job-cards :global(.jc-next) { font-size: 13px; color: #888; }
+  .job-cards :global(.chip) { font-size: 11px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; padding: 3px 10px; border-radius: 999px; background: #f1ece2; color: #555; }
+  .job-cards :global(.chip--booked) { background: var(--green); color: var(--white); }
+  .job-cards :global(.chip--lead) { background: #f6ecd6; color: #7a5a14; }
+  .messages :global(li), .galleries :global(li) { padding: 8px 0; border-bottom: 1px solid #f1ebe1; display: flex; flex-direction: column; gap: 2px; }
+  .messages :global(li:last-child), .galleries :global(li:last-child) { border-bottom: 0; }
+  .messages :global(a), .galleries :global(a) { color: var(--ink); }
+  .messages :global(.dir) { font-size: 12px; color: #888; }
+  .messages :global(small), .galleries :global(small) { color: #888; font-size: 13px; }
+  .messages :global(.empty), .galleries :global(.empty), .job-cards :global(.empty) { color: #888; }
+  .portal-actions { display: flex; gap: 8px; flex-wrap: wrap; margin: 0 0 10px; }
+  .portal-actions[hidden] { display: none; }
+  .keep { margin: 10px 0 0; font-size: 13px; }
+  .keep:empty { display: none; }
+  .details { display: flex; flex-direction: column; gap: 10px; }
+  .details label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; font-weight: 600; color: #555; min-width: 0; }
+  .details input:not([type=checkbox]), .details textarea { font: inherit; font-weight: 400; font-size: 15px; padding: 8px 10px; border: 1px solid #ddd3c4; border-radius: 10px 0; background: var(--white); color: var(--ink); min-width: 0; }
+  .details .two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .details label.tick { flex-direction: row; align-items: baseline; gap: 8px; font-weight: 400; color: #444; }
+  .details label.tick small { color: #999; }
+  .export { margin: 4px 0 0; font-size: 13px; }
+  .export[hidden] { display: none; }
+  .export a { color: var(--green); }
+  .export small { color: #999; }
+  .title :global(.test-tag) { font-size: 12px; vertical-align: middle; padding: 2px 8px; border-radius: 999px; background: #fff4d6; color: #5c4400; }
+</style>

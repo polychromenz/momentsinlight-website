@@ -26,14 +26,18 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
         <ul class="steps upcoming"></ul>
       </section>
       <section class="card">
+        <!-- Jobs and Clients (Tony, 2026-11-20): a job opens the job page; a client opens their page, with all their jobs. -->
+        <nav class="view-tabs" role="tablist" aria-label="Jobs or clients">
+          <button type="button" role="tab" data-view="jobs" aria-selected="true">Jobs</button>
+          <button type="button" role="tab" data-view="clients" aria-selected="false">Clients</button>
+        </nav>
         <div class="list-head">
-          <h2>Leads and jobs</h2>
+          <h2 class="list-title">Leads and jobs</h2>
           <div class="tabs" role="group" aria-label="Show">
             <button type="button" data-stage="lead">Leads</button>
             <button type="button" data-stage="booked" class="on">Booked</button>
             <button type="button" data-stage="past">Past</button>
             <button type="button" data-stage="lost">Not going ahead</button>
-            <button type="button" data-stage="all">Everyone</button>
             <a class="spam-link" href="/studio/crm/spam" hidden>Spam</a>
           </div>
           <input class="people-search" type="search" placeholder="Search names, emails, venues…" aria-label="Search" />
@@ -230,11 +234,11 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
       other[stage] = d.rows;
     }
     if (stage === 'all') {
-      head(['Name', 'Email', 'Phone', 'Jobs', 'Added']);
+      head(['Client', 'Email', 'Phone', 'Jobs', 'Added']);
       const list = other.all.filter((c) => matches(q, c.first_name, c.last_name, c.email, c.phone, c.notes, ...c.jobs.map((j: any) => j.title)));
-      body.innerHTML = list.length ? list.map((c) => `<tr><td><strong>${esc(`${c.first_name} ${c.last_name}`.trim())}</strong>${testTag(c)}${c.notes ? `<br><small class="note" title="${esc(c.notes)}">${esc(c.notes.slice(0, 90))}${c.notes.length > 90 ? '…' : ''}</small>` : ''}</td>
+      body.innerHTML = list.length ? list.map((c) => `<tr><td><a href="/studio/crm/client?id=${c.id}"><strong>${esc(`${c.first_name} ${c.last_name}`.trim())}</strong></a>${testTag(c)}${c.notes ? `<br><small class="note" title="${esc(c.notes)}">${esc(c.notes.slice(0, 90))}${c.notes.length > 90 ? '…' : ''}</small>` : ''}</td>
         <td>${c.email.endsWith('.invalid') ? '<small class="muted">no email</small>' : `<a href="mailto:${esc(c.email)}">${esc(c.email)}</a>`}</td><td>${esc(c.phone)}</td>
-        <td>${c.jobs.length ? c.jobs.map((j: any) => `<a href="/studio/crm/job?id=${j.id}">${esc(j.title)}</a> <small class="muted">${STAGE[j.stage] ?? j.stage}${j.event_date ? ` · ${nzDate(j.event_date)}` : ''}</small>`).join('<br>') : '<small class="muted">No jobs</small>'}</td>
+        <td>${c.jobs.length ? c.jobs.map((j: any) => `<a href="/studio/crm/job?id=${j.id}">${esc(j.job_type)}</a> <small class="muted">${STAGE[j.stage] ?? j.stage}${j.event_date ? ` · ${nzDate(j.event_date)}` : ''}</small>`).join('<br>') : '<small class="muted">No jobs</small>'}</td>
         <td>${when(c.created_at)}</td></tr>`).join('') : `<tr><td colspan="5" class="empty">${q ? 'Nobody matches.' : 'Nobody yet.'}</td></tr>`;
       $('.list-count').textContent = `${list.length} ${list.length === 1 ? 'person' : 'people'}`;
       return;
@@ -296,6 +300,8 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
       toast('Done.');
       load();
     }
+    const view = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-view]');
+    if (view) { showView(view.dataset.view as 'jobs' | 'clients'); return; }
     const tab = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-stage]');
     if (tab) {
       stage = tab.dataset.stage!;
@@ -304,6 +310,20 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
       renderJobs();
     }
   });
+  // Jobs (Leads, Booked, Past, Not going ahead) or Clients (everyone, each linking to their page).
+  let jobStage = stage;
+  function showView(v: 'jobs' | 'clients', remember = true) {
+    document.querySelectorAll<HTMLElement>('.view-tabs [data-view]').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.view === v)));
+    if (v === 'clients' && stage !== 'all') jobStage = stage;
+    stage = v === 'clients' ? 'all' : jobStage;
+    $('.tabs').hidden = v === 'clients';
+    $('.list-title').textContent = v === 'clients' ? 'Clients' : 'Leads and jobs';
+    $<HTMLInputElement>('.people-search').placeholder = v === 'clients' ? 'Search names, emails, phones…' : 'Search names, emails, venues…';
+    $('.list-count').textContent = '';
+    if (remember) try { localStorage.setItem('crm-view', v); } catch {}
+    if (jobs.length || v === 'clients') renderJobs();
+  }
+  try { if (localStorage.getItem('crm-view') === 'clients') showView('clients', false); } catch {}
   load();
   // Enquiries the spam check caught in the last 30 days (the link shows once there are any).
   fetch('/api/studio/crm/spam').then((r) => r.json()).then((d) => {
@@ -361,6 +381,10 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
   .crm .list-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 8px; }
   .crm .list-head h2 { margin: 0; }
   .crm .tabs { display: flex; gap: 6px; align-items: center; }
+  .crm .tabs[hidden] { display: none; }
+  .crm .view-tabs { display: flex; gap: 0; margin: -4px 0 16px; border-bottom: 1px solid #eee5d8; }
+  .crm .view-tabs button { padding: 8px 18px 10px; border: 0; border-bottom: 3px solid transparent; background: none; font: inherit; font-size: 16px; color: #777; cursor: pointer; margin-bottom: -1px; }
+  .crm .view-tabs button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--green); font-weight: 600; }
   .crm .people-search { font: inherit; font-size: 14px; padding: 7px 12px; border: 1px solid #ddd3c4; border-radius: 10px 0; background: var(--white); min-width: 220px; }
   .crm .list-count { margin: 0 0 4px; font-size: 13px; color: #888; min-height: 1em; }
   .crm .jobs small.muted, .crm .jobs .note { color: #888; font-weight: 400; }
