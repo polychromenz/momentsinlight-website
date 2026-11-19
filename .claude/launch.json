@@ -4,13 +4,33 @@
     {
       "name": "astro-dev",
       "runtimeExecutable": "C:\\Program Files\\nodejs\\npm.cmd",
-      "runtimeArgs": ["run", "dev"],
+      "runtimeArgs": [
+        "run",
+        "dev"
+      ],
       "port": 4321
     },
     {
       "name": "wrangler-local",
       "url": "http://127.0.0.1:8789",
       "port": 8789
+    },
+    {
+      "name": "prints-local",
+      "runtimeExecutable": "C:\\Program Files\\nodejs\\npx.cmd",
+      "runtimeArgs": [
+        "wrangler",
+        "pages",
+        "dev",
+        "dist",
+        "--port",
+        "8790",
+        "--binding",
+        "STUDIO_DEV=1",
+        "--persist-to",
+        ".wrangler/state"
+      ],
+      "port": 8790
     }
   ]
 }

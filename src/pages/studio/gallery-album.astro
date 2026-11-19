@@ -1,0 +1,185 @@
+---
+// Moments Studio > Galleries > a gallery > an album (docs/album-designer-plan.md, phase 1, 2026-11-19).
+// Tony designs a Seldex Boutique Book from the gallery's photos and exports the spread files for Seldex.
+// Studio only: clients don't see albums yet.
+// Script: src/studio/album-designer.ts (layouts: album-layouts.ts, files: album-export.ts).
+// Data: functions/api/studio/galleries/albums.js.
+import StudioLayout from '../../layouts/StudioLayout.astro';
+import { ALBUM_MARGINS } from '../../../functions-lib/album-sizes.js';
+const m = ALBUM_MARGINS;
+---
+<StudioLayout title="Album" section="galleries">
+  <a slot="bar" class="s-btn s-btn--quiet" data-back href="/studio/galleries">Back to the gallery</a>
+  <button slot="bar" type="button" class="s-btn s-btn--quiet" data-undo title="Undo (Ctrl+Z)" disabled>Undo</button>
+  <button slot="bar" type="button" class="s-btn s-btn--solid" data-export>Make the Seldex files</button>
+  <main class="ad">
+    <div class="ad-head">
+      <div><h1>Album</h1><p class="ad-sub"></p></div>
+      <span class="ad-saved" aria-live="polite"></span>
+    </div>
+
+    <div class="ad-settings">
+      <label>Name <input name="name" maxlength="80" /></label>
+      <label>Boutique Book size <select name="size"></select></label>
+      <label>Shape <select name="orientation"></select></label>
+      <label>Background <input name="bg" type="color" /></label>
+      <label class="check"><input type="checkbox" name="guides" checked /> Guides</label>
+      <button type="button" class="s-btn" data-auto>Auto layout…</button>
+    </div>
+    <p class="ad-note">Guides: <span class="k k-safe"></span> safe area ({m.safe}″ in from the edge) · <span class="k k-gut"></span> fold ({m.gutter}″ clear each side){m.bleed ? ` · bleed ${m.bleed}″` : ''}.
+      {!m.confirmed && <strong>Seldex hasn’t confirmed its bleed and safe margins yet, so these are my estimates (one setting, easy to change).</strong>}</p>
+
+    <div class="ad-strip-wrap">
+      <div class="ad-strip" role="list"></div>
+      <div class="ad-strip-btns">
+        <button type="button" class="s-btn s-btn--quiet" data-add title="Add a blank spread after this one">+ Spread</button>
+        <button type="button" class="s-btn s-btn--quiet" data-remove title="Remove this spread (its photos go back to the tray)">− Spread</button>
+      </div>
+    </div>
+
+    <div class="ad-work">
+      <div class="ad-stage"><div class="ad-spread" data-main></div><p class="ad-pos"></p></div>
+      <aside class="ad-side">
+        <h2>Spread <span data-n></span></h2>
+        <label class="check"><input type="checkbox" name="span" /> One photo across both pages</label>
+        <p class="hint span-hint" hidden>The fold runs through the middle: drag the photo so no face is on it.</p>
+        <div class="pages">
+          <label>Left page <select name="left"></select></label>
+          <label>Right page <select name="right"></select></label>
+        </div>
+        <button type="button" class="s-btn s-btn--quiet" data-respread title="Lay out this spread's photos again">Tidy this spread</button>
+        <div class="frame-panel" hidden>
+          <h2>Photo</h2>
+          <p class="fname"></p>
+          <label>Zoom <input type="range" name="zoom" min="1" max="3" step="0.01" value="1" /></label>
+          <p class="dpi"></p>
+          <p class="hint">Drag the photo to move it in its frame; scroll to zoom. Drag ⇄ to swap it with another frame, onto a spread above, or back to the tray.</p>
+          <div class="btns"><button type="button" class="s-btn s-btn--quiet" data-reset>Centre</button><button type="button" class="s-btn s-btn--quiet" data-clear>Take out</button></div>
+        </div>
+        <p class="hint">Click a frame, then a photo in the tray to put it there (or drag it in). ← → change spread.</p>
+      </aside>
+    </div>
+
+    <section class="ad-tray">
+      <div class="tray-head">
+        <h2>Photos</h2>
+        <select name="source"></select>
+        <label class="check"><input type="checkbox" name="unused" /> Only ones not in the album</label>
+        <span class="sp"></span>
+        <button type="button" class="s-btn s-btn--quiet" data-pickmode aria-pressed="false">Choose photos for the album</button>
+        <span class="pick-n"></span>
+      </div>
+      <div class="tray" data-tray></div>
+    </section>
+  </main>
+
+  <dialog class="ga-dlg" data-auto-dlg>
+    <form method="dialog" class="ad-form">
+      <h2>Auto layout</h2>
+      <p>Flows the photos into the spreads in gallery order, 1 to 4 a spread, never across the fold. It replaces the current layout (Undo brings it back).</p>
+      <label>Photos <select name="from"></select></label>
+      <label>Spreads <input name="count" type="number" min="10" max="45" /></label>
+      <p class="hint auto-hint"></p>
+      <div class="actions"><button type="button" class="s-btn s-btn--quiet" data-close>Cancel</button><button type="submit" class="s-btn s-btn--solid" value="go">Lay it out</button></div>
+    </form>
+  </dialog>
+  <dialog class="ga-dlg" data-export-dlg>
+    <h2>Seldex files</h2>
+    <p class="ex-text"></p>
+    <div class="bar"><span></span></div>
+    <div class="actions"><button type="button" class="s-btn s-btn--quiet" data-close>Close</button></div>
+  </dialog>
+  <div class="s-toast" role="status"></div>
+</StudioLayout>
+
+<script>
+  import '../../studio/album-designer';
+</script>
+
+<style is:global>
+  .ad { max-width: 1700px; margin: 0 auto; padding: 18px clamp(12px, 2.5vw, 28px) 60px; }
+  .ad-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; flex-wrap: wrap; }
+  .ad h1 { margin: 0; font-weight: 300; font-size: 30px; }
+  .ad h2 { margin: 0 0 8px; font-weight: 300; font-size: 20px; }
+  .ad-sub { margin: 2px 0 0; color: #888; font-size: 14px; }
+  .ad-saved { font-size: 13px; color: #888; }
+  .ad-saved.err { color: #a8432a; font-weight: 600; }
+  .ad select, .ad input:not([type="checkbox"]):not([type="range"]):not([type="color"]), .ad-form select, .ad-form input { font: inherit; font-size: 15px; padding: 7px 10px; border: 1px solid #ddd3c4; border-radius: 10px 0; background: var(--white); }
+  .ad input[type="color"] { width: 46px; height: 36px; padding: 2px; border: 1px solid #ddd3c4; border-radius: 8px 0; background: #fff; }
+  .ad-settings { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: flex-end; margin: 14px 0 6px; }
+  .ad-settings label { display: grid; gap: 3px; font-size: 12px; font-weight: 600; color: #555; }
+  .ad .check { display: flex !important; gap: 6px; align-items: center; font-weight: 400 !important; font-size: 14px !important; color: #333 !important; }
+  .ad-note { font-size: 13px; color: #777; margin: 4px 0 12px; line-height: 1.6; }
+  .ad-note strong { font-weight: 600; color: #7a4b2a; }
+  .ad-note .k { display: inline-block; width: 14px; height: 10px; vertical-align: middle; }
+  .k-safe { border: 1px dashed #1a73e8; } .k-gut { background: rgb(192 57 43 / 0.25); }
+
+  .ad-strip-wrap { display: flex; gap: 8px; align-items: center; margin-bottom: 12px; }
+  .ad-strip { flex: 1; display: flex; gap: 8px; overflow-x: auto; padding: 6px 4px 8px; background: var(--white); border-radius: 14px 0; }
+  .ad-strip-btns { display: grid; gap: 4px; }
+  .st-item { flex: none; display: grid; gap: 2px; justify-items: center; font-size: 11px; color: #777; cursor: pointer; }
+  .st-item .ad-spread { box-shadow: 0 0 0 1px #ddd; }
+  .st-item.on .ad-spread { box-shadow: 0 0 0 3px var(--green); }
+  .st-item.over .ad-spread { box-shadow: 0 0 0 3px #c0392b; }
+  .st-item .warn { color: #a8432a; font-weight: 700; }
+
+  .ad-work { display: grid; grid-template-columns: minmax(0, 1fr) 280px; gap: 16px; align-items: start; }
+  @media (max-width: 1000px) { .ad-work { grid-template-columns: 1fr; } }
+  .ad-stage { background: #e9e5dd; border-radius: 18px 0; padding: 22px; display: grid; justify-items: center; }
+  .ad-pos { margin: 8px 0 0; font-size: 13px; color: #777; }
+  .ad-side { background: var(--white); border-radius: 18px 0; padding: 14px 16px; display: grid; gap: 10px; }
+  .ad-side .pages { display: grid; gap: 8px; }
+  .ad-side label { display: grid; gap: 3px; font-size: 12px; font-weight: 600; color: #555; }
+  .ad-side .hint, .ad .hint { font-size: 12.5px; color: #888; margin: 0; line-height: 1.5; }
+  .ad-side .fname { margin: 0; font-size: 13px; word-break: break-all; }
+  .ad-side .dpi { margin: 0; font-size: 14px; }
+  .ad-side .dpi.warn { color: #a8432a; font-weight: 600; }
+  .ad-side .btns { display: flex; gap: 6px; flex-wrap: wrap; }
+  .frame-panel { display: grid; gap: 8px; border-top: 1px solid #eee; padding-top: 10px; }
+
+  /* A spread: drawn at any scale; positions in % of the spread. */
+  .ad-spread { position: relative; overflow: hidden; user-select: none; }
+  .ad-spread .fr { position: absolute; overflow: hidden; background: rgb(0 0 0 / 0.06); }
+  .ad-spread .fr.empty { background: repeating-linear-gradient(45deg, rgb(0 0 0 / 0.05) 0 8px, rgb(0 0 0 / 0.09) 8px 16px); }
+  .ad-spread .fr img { position: absolute; max-width: none; pointer-events: none; }
+  [data-main] { box-shadow: 0 12px 30px -18px rgb(0 0 0 / 0.6); }
+  [data-main] .fr { cursor: grab; touch-action: none; }
+  [data-main] .fr.empty { cursor: pointer; display: grid; place-items: center; color: #999; font-size: 13px; }
+  [data-main] .fr.sel { outline: 3px solid var(--green); outline-offset: -3px; z-index: 2; }
+  [data-main] .fr.over { outline: 3px solid #c0392b; outline-offset: -3px; z-index: 3; }
+  [data-main] .fr .q { position: absolute; left: 6px; bottom: 6px; font-size: 11px; font-weight: 700; padding: 2px 7px; border-radius: 999px; background: #a8432a; color: #fff; }
+  [data-main] .fr .q.soft { background: #c58b2a; }
+  [data-main] .fr .h { position: absolute; right: 6px; top: 6px; width: 28px; height: 28px; border-radius: 50%; background: rgb(255 255 255 / 0.92); display: grid; place-items: center; font-size: 15px; cursor: move; opacity: 0; transition: opacity .15s; }
+  [data-main] .fr:hover .h, [data-main] .fr.sel .h { opacity: 1; }
+  .ad-spread .g { position: absolute; pointer-events: none; z-index: 4; }
+  .ad-spread .g-safe { border: 1px dashed #1a73e8; }
+  .ad-spread .g-gut { background: rgb(192 57 43 / 0.18); border-left: 1px solid rgb(192 57 43 / 0.6); border-right: 1px solid rgb(192 57 43 / 0.6); }
+  .ad-spread .g-fold { width: 0; border-left: 1px solid rgb(0 0 0 / 0.35); top: 0; bottom: 0; }
+  .ad-spread.noguides .g:not(.g-fold) { display: none; }
+
+  .ad-tray { margin-top: 16px; background: var(--white); border-radius: 18px 0; padding: 12px 14px; }
+  .tray-head { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 8px; }
+  .tray-head h2 { margin: 0; }
+  .tray-head .sp { flex: 1; }
+  .tray-head [aria-pressed="true"] { background: var(--green); color: #fff; border-color: var(--green); }
+  .pick-n { font-size: 13px; color: #555; }
+  .tray { display: flex; flex-wrap: wrap; gap: 5px; max-height: 300px; overflow-y: auto; }
+  .tp { position: relative; height: 92px; flex: none; cursor: pointer; border-radius: 3px; overflow: hidden; background: var(--griseo); }
+  .tp img { height: 100%; width: auto; display: block; pointer-events: none; }
+  .tp .n { position: absolute; left: 3px; top: 3px; font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 999px; background: var(--green); color: #fff; }
+  .tp.used img { opacity: 0.55; }
+  .tp.picked { outline: 3px solid var(--gold, #b39a6b); outline-offset: -3px; }
+  .tp.picked::after { content: '✓'; position: absolute; right: 4px; top: 3px; color: #fff; background: var(--gold, #b39a6b); border-radius: 50%; width: 18px; height: 18px; font-size: 12px; text-align: center; line-height: 18px; }
+  .tp.hid { filter: grayscale(1); }
+  .tray.over { outline: 2px dashed #c0392b; }
+
+  .ad-form { display: grid; gap: 12px; }
+  .ad-form label { display: grid; gap: 4px; font-size: 13px; font-weight: 600; color: #555; }
+  .ad-form .actions, [data-export-dlg] .actions { display: flex; gap: 8px; justify-content: flex-end; }
+  .ga-dlg { border: 0; border-radius: 24px 0; padding: 22px 24px; width: min(560px, calc(100vw - 24px)); }
+  .ga-dlg::backdrop { background: rgb(0 0 0 / 0.35); }
+  .ga-dlg h2 { margin: 0 0 6px; font-weight: 300; font-size: 24px; }
+  .ga-dlg p { line-height: 1.6; }
+  .bar { height: 10px; background: var(--griseo); border-radius: 99px; overflow: hidden; margin: 10px 0; }
+  .bar span { display: block; height: 100%; background: var(--green); width: 0; transition: width 0.4s; }
+</style>

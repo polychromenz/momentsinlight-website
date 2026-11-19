@@ -21,6 +21,7 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
         <button type="button" role="tab" data-tab="details">Details</button>
         <button type="button" role="tab" data-tab="sharing">Sharing</button>
         <button type="button" role="tab" data-tab="lists">Lists</button>
+        <button type="button" role="tab" data-tab="albums">Albums</button>
         <button type="button" role="tab" data-tab="activity">Activity</button>
       </div>
     </div>
@@ -122,6 +123,22 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
         </form>
       </div>
       <div class="ga-lists"></div>
+    </section>
+
+    <section class="pane" data-pane="albums" hidden>
+      <div class="card">
+        <h2>New album</h2>
+        <p>A Seldex Boutique Book designed here from this gallery’s photos, then exported as the spread files for Seldex. Only you see albums: the couple can’t yet.</p>
+        <form class="ga-form" data-album-form>
+          <div class="three"><label>Name <input name="name" placeholder="e.g. Wedding album" /></label>
+            <label>Size <select name="size"><option value="12x12">12 × 12″ square</option><option value="10x10" selected>10 × 10″ square</option><option value="11x14">11 × 14″</option><option value="10x14">10 × 14″</option></select></label>
+            <label>Shape <select name="orientation"><option value="square">Square</option></select></label></div>
+          <div class="three"><label>Spreads (10 to 45) <input name="spreads" type="number" min="10" max="45" value="15" /></label>
+            <label>Background <input name="bg" type="color" value="#ffffff" style="height:40px;padding:2px 4px" /></label><span></span></div>
+          <div class="actions"><button type="submit" class="s-btn s-btn--solid">Create and design it</button></div>
+        </form>
+      </div>
+      <div class="ga-albums"></div>
     </section>
   </main>
 

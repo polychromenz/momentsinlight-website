@@ -32,6 +32,7 @@ function tab(name: string) {
   const u = new URL(location.href); u.searchParams.set('tab', name); history.replaceState(null, '', u);
   if (name === 'sharing') loadLinks();
   if (name === 'lists') loadLists();
+  if (name === 'albums') loadAlbums();
   if (name === 'activity') loadActivity();
 }
 
@@ -47,6 +48,34 @@ async function loadActivity() {
       <td class="r">${p.views}</td><td class="r">${p.photos || '–'}</td><td>${when(p.first_seen)}</td><td>${when(p.last_seen)}</td></tr>`).join('')}</tbody></table></div>`
     : '<p class="muted">Nobody yet. Once the gallery is online and shared, visitors show here.</p>';
   $('.ga-act-recent').innerHTML = a.recent.length ? a.recent.map((e: any) => `<li><small>${when(e.at)}</small> ${esc(e.who)} ${e.type === 'view' ? 'opened the gallery' : `downloaded ${e.photos} photo${e.photos === 1 ? '' : 's'}${e.size ? ` (${e.size === 'original' ? 'full size' : 'web size'})` : ''}`}</li>`).join('') : '<li class="muted">Nothing yet.</li>';
+}
+
+// ---- Albums (Seldex Boutique Books designed in the studio: src/pages/studio/gallery-album.astro) ----
+async function loadAlbums() {
+  const r = await tryApi(`/api/studio/galleries/albums?gallery=${encodeURIComponent(id)}`, 'GET');
+  if (!r) return;
+  const shape = (a: any) => (a.orientation === 'square' ? 'square' : a.orientation);
+  $('.ga-albums').innerHTML = r.albums.map((a: any) => `<div class="card ga-list"><div class="top"><span><strong>${esc(a.name)}</strong> <small>Boutique Book ${esc(a.size.replace('x', ' × '))}″ ${esc(shape(a))} · ${a.spreads} spreads</small></span>
+      <span><small>Changed ${day(a.updated_at)}${a.exported_at ? ` · files made ${day(a.exported_at)}` : ''}</small></span></div>
+      <div class="btns"><a class="s-btn s-btn--solid" href="/studio/gallery-album?id=${a.id}">Design</a><button type="button" class="s-btn s-btn--quiet" data-del-album="${a.id}">Delete</button></div></div>`).join('')
+    || '<div class="card"><p>No albums yet.</p></div>';
+}
+{
+  const f = $<HTMLFormElement>('[data-album-form]');
+  const orient = () => {
+    const sq = ['12x12', '10x10'].includes($<HTMLSelectElement>('[name="size"]', f).value);
+    $<HTMLSelectElement>('[name="orientation"]', f).innerHTML = sq ? '<option value="square">Square</option>' : '<option value="portrait">Portrait (upright)</option><option value="landscape">Landscape (wide)</option>';
+  };
+  $('[name="size"]', f).addEventListener('change', orient);
+  f.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const r = await tryApi('/api/studio/galleries/albums', 'POST', { gallery_id: id, ...Object.fromEntries(new FormData(f)) });
+    if (r) location.href = `/studio/gallery-album?id=${r.album.id}`;
+  });
+  document.addEventListener('click', async (e) => {
+    const b = (e.target as HTMLElement).closest<HTMLElement>('[data-del-album]');
+    if (b && (await ask('Delete this album design? The photos stay in the gallery.')) && (await tryApi('/api/studio/galleries/albums', 'DELETE', { id: Number(b.dataset.delAlbum) }))) loadAlbums();
+  });
 }
 
 // ---- Lists (favourites, lists and selections the couple and guests make) ----
