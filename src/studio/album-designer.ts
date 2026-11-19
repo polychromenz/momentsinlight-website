@@ -484,7 +484,7 @@ function sheet() {
     `Spreads: ${design.spreads.length} (${design.spreads.length * 2} pages; 10 spreads included)`,
     `Spread files: ${px.w} × ${px.h} px = ${pg.w * 2 + 2 * m.bleed} × ${pg.h + 2 * m.bleed} in at 300 dpi, JPEG, sRGB, 001.jpg to ${String(design.spreads.length).padStart(3, '0')}.jpg`,
     `Background: ${album.bg}`,
-    `Margins used: bleed ${m.bleed} in, safe area ${m.safe} in, fold kept clear ${m.gutter} in each side${m.confirmed ? '' : ' (NOT confirmed by Seldex yet)'}`, ``,
+    `Margins used: bleed ${m.bleed} in, safe area ${m.safe} in, faces kept ${m.gutter} in off the centre crease${m.confirmed ? '' : ` (${m.source})`}`, ``,
     `To choose on the Seldex order: cover material and colour, lining, paper (Matte Ivory / White), packaging, logo position, vellum, companion albums.`, ``,
     `Spreads:`,
     ...design.spreads.map((s, k) => `${String(k + 1).padStart(3, '0')}.jpg  ${s.layout === 'span' ? 'across both pages' : `${PAGE_LAYOUTS[s.layout[0]]?.label} | ${PAGE_LAYOUTS[s.layout[1]]?.label}`}: ${s.slots.filter(Boolean).map((id) => photos.get(id!)?.filename).join(', ') || '(no photos)'}`),
@@ -507,7 +507,7 @@ async function exportFiles() {
     }
   });
   if (missing.size) return toast(`The full-size file isn’t stored for ${[...missing].slice(0, 3).join(', ')}${missing.size > 3 ? '…' : ''}. Add the originals first.`, true);
-  const warn = [empty.length ? `Empty frames on spread${empty.length === 1 ? '' : 's'} ${empty.join(', ')} (they print as the background).` : '', soft.length ? `Under ${DPI_MIN} dpi: ${soft.join(', ')}.` : '', ALBUM_MARGINS.confirmed ? '' : 'Seldex hasn’t confirmed the bleed and safe margins yet.'].filter(Boolean);
+  const warn = [empty.length ? `Empty frames on spread${empty.length === 1 ? '' : 's'} ${empty.join(', ')} (they print as the background).` : '', soft.length ? `Under ${DPI_MIN} dpi: ${soft.join(', ')}.` : '', ALBUM_MARGINS.confirmed ? '' : `Margins ${ALBUM_MARGINS.source}.`].filter(Boolean);
   if (warn.length && !(await ask(`${warn.join(' ')} Make the files anyway?`))) return;
   const dlg = $<HTMLDialogElement>('[data-export-dlg]');
   const px = spreadPx(album.size, album.orientation);

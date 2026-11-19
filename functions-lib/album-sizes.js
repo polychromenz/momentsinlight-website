@@ -15,13 +15,14 @@ export const SPREADS_MIN = 10;
 export const SPREADS_MAX = 45;
 export const ALBUM_DPI = 300;
 
-/** Print margins in inches. NOT CONFIRMED by Seldex yet (their site doesn't say): change them here once
- *  Seldex replies, and every guide, layout and export follows.
- *  bleed:  extra image past the trim on the outside edges (0 = files are exactly the trim size, as Seldex's
- *          stated sizes suggest).
- *  safe:   keep faces and text this far inside the trim.
- *  gutter: keep this much clear each side of the centre fold (layflat pages still lose a little there). */
-export const ALBUM_MARGINS = { bleed: 0, safe: 0.25, gutter: 0.375, confirmed: false };
+/** Print margins in inches, per a Seldex guidance summary Tony found (2026-11-19, a Google AI summary, not
+ *  Seldex's own page), so still to confirm with Seldex: change them here and every guide, layout and
+ *  export follows.
+ *  bleed:  0: no added bleed, the spread file is exactly 2W × H at 300 dpi.
+ *  safe:   about 6 mm (0.25") inside the outer trim edges for faces, text and thin borders.
+ *  gutter: layflat spreads are printed and creased whole (no inner trim), so this is only a guide for
+ *          keeping faces off the centre crease. */
+export const ALBUM_MARGINS = { bleed: 0, safe: 0.25, gutter: 0.375, confirmed: false, source: 'per Seldex guidance summary, confirm with Seldex' };
 
 /** Page size in inches for a size and orientation: { w, h } of ONE page. */
 export function pageSize(size, orientation) {

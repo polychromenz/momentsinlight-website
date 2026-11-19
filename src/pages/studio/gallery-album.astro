@@ -26,8 +26,8 @@ const m = ALBUM_MARGINS;
       <label class="check"><input type="checkbox" name="guides" checked /> Guides</label>
       <button type="button" class="s-btn" data-auto>Auto layout…</button>
     </div>
-    <p class="ad-note">Guides: <span class="k k-safe"></span> safe area ({m.safe}″ in from the edge) · <span class="k k-gut"></span> fold ({m.gutter}″ clear each side){m.bleed ? ` · bleed ${m.bleed}″` : ''}.
-      {!m.confirmed && <strong>Seldex hasn’t confirmed its bleed and safe margins yet, so these are my estimates (one setting, easy to change).</strong>}</p>
+    <p class="ad-note">Guides: <span class="k k-safe"></span> safe area (6 mm / {m.safe}″ in from the outer edges, for faces, text and thin borders) · <span class="k k-gut"></span> centre crease (keep faces off it; layflat pages aren’t trimmed there) · {m.bleed ? `bleed ${m.bleed}″` : 'no added bleed'}.
+      {!m.confirmed && <strong>Margins {m.source}.</strong>}</p>
 
     <div class="ad-strip-wrap">
       <div class="ad-strip" role="list"></div>
