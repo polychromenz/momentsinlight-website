@@ -16,6 +16,7 @@ import { listDocuments, loadNamed, storeNamed } from '../../../../functions-lib/
 import { MAX_UPLOAD } from '../../../../functions-lib/questionnaire-form.js';
 import { toBase64 } from '../../../../functions-lib/pdf.js';
 import { jobGalleries } from '../../../../functions-lib/gallery-access.js';
+import { lineUpExpiry } from '../../../../functions-lib/galleries.js';
 
 export async function onRequestGet({ request, env }) {
   const url = new URL(request.url);
@@ -89,6 +90,7 @@ export async function onRequestPost({ request, env }) {
       ? await env.DB.prepare('UPDATE photo_galleries SET job_id = ?2, client_id = ?3, updated_at = ?4 WHERE id = ?1 AND job_id IS NULL').bind(String(d.gallery_id), jobId, job.client_id, new Date().toISOString()).run()
       : await env.DB.prepare('UPDATE photo_galleries SET job_id = NULL, client_id = NULL, updated_at = ?3 WHERE id = ?1 AND job_id = ?2').bind(String(d.gallery_id), jobId, new Date().toISOString()).run();
     if (!r.meta.changes) return json({ error: d.action === 'link-gallery' ? 'That gallery is already linked to someone.' : 'That gallery isn’t linked to them.' }, 400);
+    if (d.action === 'link-gallery') await lineUpExpiry(env.DB, job.client_id); // one expiry for all their galleries
     return json({ ok: true });
   }
   if (d.action === 'gallery-remove') {

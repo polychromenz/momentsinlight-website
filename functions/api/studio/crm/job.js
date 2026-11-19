@@ -4,7 +4,10 @@
 //   POST /api/studio/crm/job            add a client by hand (a phone, Facebook or walk-in enquiry):
 //        { first_name, last_name, email, phone, partner_name, partner_email, partner_phone, job_type, event_date, event_time, venue,
 //          lead_source, notes, stage: 'lead'|'booked', workflow: true|false } → { id, clashes }
-//        The same email as an existing client adds the job to them. workflow: start the job
+//        The same email as an existing client adds the job to them. { client_id, job_type, … } instead
+//        of the name and email: a new job for that client (Clients › + Add a job); with move_quote: 7,
+//        that client's draft or sent (not accepted) quote and its unsigned contract move to the new job
+//        (the quote's "Move to a new job", e.g. a family shoot quote made on their wedding job). workflow: start the job
 //        type's workflow (a lead: its enquiry emails; booked: its planning steps); without it,
 //        nothing is planned and nothing is sent.
 // Marking a lead booked or lost stops any steps waiting on that ('booked' in stop_on).
@@ -122,19 +125,24 @@ export async function onRequestPost(context) {
   const { request, env } = context;
   const d = await request.json().catch(() => null);
   const text = (v, max) => (v ?? '').toString().trim().slice(0, max);
+  const existing = Number(d?.client_id) ? await env.DB.prepare('SELECT id, first_name, last_name FROM clients WHERE id = ?1').bind(Number(d.client_id)).first() : null;
+  if (d?.client_id && !existing) return json({ error: 'Choose one of your clients from the list.' }, 400);
   const first = text(d?.first_name, 100);
   const email = text(d?.email, 254).toLowerCase();
-  if (!first) return json({ error: 'Add their first name.' }, 400);
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return json({ error: 'Add their email address (it’s how the studio sends them anything).' }, 400);
+  if (!existing && !first) return json({ error: 'Add their first name.' }, 400);
+  if (!existing && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return json({ error: 'Add their email address (it’s how the studio sends them anything).' }, 400);
   const type = await env.DB.prepare(`SELECT value, workflow FROM lists WHERE kind = 'job_type' AND value = ?1`).bind(text(d.job_type, 60)).first();
   if (!type) return json({ error: 'Choose a job type.' }, 400);
+  const moving = Number(d.move_quote) ? await env.DB.prepare(`SELECT q.id, q.status, j.client_id FROM quotes q JOIN jobs j ON j.id = q.job_id WHERE q.id = ?1`).bind(Number(d.move_quote)).first() : null;
+  if (d.move_quote && (!moving || !existing || moving.client_id !== existing.id)) return json({ error: 'That quote isn’t one of this client’s.' }, 400);
+  if (moving && !['draft', 'sent'].includes(moving.status)) return json({ error: `That quote is ${moving.status}, so it stays where it is. Make a new quote on the new job instead.` }, 409);
   const date = /^\d{4}-\d{2}-\d{2}$/.test(d.event_date || '') ? d.event_date : null;
   const time = /^([01]\d|2[0-3]):[0-5]\d$/.test(d.event_time || '') ? d.event_time : null;
   const stage = d.stage === 'booked' ? 'booked' : 'lead';
   const now = new Date();
   const at = now.toISOString();
   const last = text(d.last_name, 100);
-  const client = await env.DB.prepare(
+  const client = existing ?? await env.DB.prepare(
     `INSERT INTO clients (first_name, last_name, email, phone, created_at, updated_at) VALUES (?1, ?2, ?3, ?4, ?5, ?5)
      ON CONFLICT (lower(email)) DO UPDATE SET phone = CASE WHEN excluded.phone <> '' THEN excluded.phone ELSE clients.phone END, updated_at = excluded.updated_at
      RETURNING id, first_name, last_name`,
@@ -144,6 +152,13 @@ export async function onRequestPost(context) {
     `INSERT INTO jobs (client_id, title, job_type, stage, partner_name, event_date, event_time, venue, lead_source, notes, workflow, booked_at, created_at, updated_at)
      VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?13) RETURNING *`,
   ).bind(client.id, `${client.first_name} ${client.last_name}`.trim(), type.value, stage, text(d.partner_name, 200), date, time, text(d.venue, 200), text(d.lead_source, 60), text(d.notes, 20000), workflow, stage === 'booked' ? at : null, at).first();
+  if (moving) {
+    const at2 = new Date().toISOString();
+    await env.DB.batch([
+      env.DB.prepare('UPDATE quotes SET job_id = ?2, updated_at = ?3 WHERE id = ?1').bind(moving.id, job.id, at2),
+      env.DB.prepare(`UPDATE contracts SET job_id = ?2 WHERE quote_id = ?1 AND status <> 'signed'`).bind(moving.id, job.id),
+    ]);
+  }
   if (d.workflow && workflow) {
     if (stage === 'booked') await planBooking(env.DB, job);
     else await planSteps(env.DB, job, ['enquiry'], { base: now });

@@ -1,7 +1,11 @@
 // The client portal: each job's private link, the portal's settings (Settings > Portal), and
 // everything a couple sees, gathered for /portal (functions/api/portal.js).
+// It's per client (Tony, 2026-11-20): any of a client's job links opens their whole portal. The job
+// whose link it is shows first; their other jobs (e.g. the wedding, then a family shoot) are tabs
+// (?job=), each with its own quote, contract, questionnaires, payments and files. Galleries are
+// the client's, from every job. Emails keep using each job's own link, so nothing else changes.
 import { loadJob } from './crm-send.js';
-import { jobGalleries, GALLERY_ORIGIN } from './gallery-access.js';
+import { clientGalleries, GALLERY_ORIGIN } from './gallery-access.js';
 import { parseQuote, longDate, payments, quoteNumber } from './quotes.js';
 
 export const SITE = 'https://www.momentsinlight.co.nz';
@@ -40,7 +44,7 @@ export async function portalData(db, job) {
     db.prepare('SELECT id, name, status, token, submitted_at, updated_at, created_at FROM questionnaires WHERE job_id = ?1 ORDER BY id').bind(job.id).all(),
     db.prepare(`SELECT i.id, COALESCE(p.number, i.number) number, i.label, i.amount, i.due_date, i.status, i.token, i.paid_at, i.paid_method, i.send_at FROM invoices i LEFT JOIN invoices p ON p.id = i.parent_id
       WHERE i.job_id = ?1 AND i.status IN ('scheduled', 'sent', 'paid') ORDER BY i.due_date, i.id`).bind(job.id).all(),
-    db.prepare('SELECT id, title, url, note FROM galleries WHERE job_id = ?1 ORDER BY id').bind(job.id).all(),
+    db.prepare('SELECT id, title, url, note FROM galleries WHERE job_id IN (SELECT id FROM jobs WHERE client_id = ?1) ORDER BY id').bind(job.client_id).all(),
     db.prepare('SELECT d.id, d.name, d.size, d.type FROM job_documents jd JOIN documents d ON d.id = jd.document_id WHERE jd.job_id = ?1 ORDER BY d.name').bind(job.id).all(),
     db.prepare('SELECT id, name, size, type, questionnaire_id, from_studio, created_at FROM uploads WHERE job_id = ?1 ORDER BY id').bind(job.id).all(),
     portalSettings(db),
@@ -71,10 +75,28 @@ export async function portalData(db, job) {
     quote, contracts: contracts.results.map(({ id, ...c }) => c),
     questionnaires: questionnaires.results.map(({ id, ...q }) => ({ ...q, started: q.updated_at > q.created_at })),
     invoices: inv.map(({ id, ...i }) => ({ ...i, due_long: longDate(i.due_date), payable: i.status !== 'paid' })), owing, paid,
-    galleries: [...(await jobGalleries(db, job.id)).filter((g) => g.online && g.url).map((g) => ({ title: g.name, url: g.url, note: '' })),
+    job_id: job.id, jobs: await portalJobs(db, job),
+    galleries: [...(await clientGalleries(db, job.client_id)).filter((g) => g.online && g.url).map((g) => ({ title: g.name, url: g.url, note: '' })),
       ...galleries.results.filter((g) => !g.url.startsWith(GALLERY_ORIGIN)).map(({ id, ...g }) => g)],
     documents: docs.results, uploads: uploads.results,
   };
+}
+
+const jobLabel = (j) => [j.job_type, j.event_date ? longDate(j.event_date) : ''].filter(Boolean).join(' · ');
+
+/** The client's jobs for the portal's tabs: all but lost ones (the one being looked at always). */
+export async function portalJobs(db, job) {
+  const rows = (await db.prepare(`SELECT id, job_type, event_date, stage FROM jobs WHERE client_id = ?1 AND (stage <> 'lost' OR id = ?2)
+    ORDER BY COALESCE(event_date, substr(created_at, 1, 10)) DESC, id DESC`).bind(job.client_id, job.id).all()).results;
+  return rows.map((j) => ({ id: j.id, label: jobLabel(j) }));
+}
+
+/** The job a portal request is about: the link's own job, or (?job=) another of the same client's. */
+export async function portalJob(db, t, jobId) {
+  const job = await findByPortal(db, t);
+  if (!job || !jobId || Number(jobId) === job.id) return job;
+  const other = await db.prepare(`SELECT id FROM jobs WHERE id = ?1 AND client_id = ?2 AND stage <> 'lost'`).bind(Number(jobId), job.client_id).first();
+  return other ? loadJob(db, other.id) : null;
 }
 
 export const findByPortal = async (db, t) => {

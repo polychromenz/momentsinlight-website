@@ -649,8 +649,10 @@ import { WEATHER_CSS } from '../../../studio/weather-card-css';
       : signed.length ? `<li class="empty">No invoices. <button type="button" class="s-btn s-btn--quiet" data-make-invoices="${signed[0].id}">Make the invoices</button></li>`
       : '<li class="empty">No invoices yet. They’re made when the contract is signed, and the deposit invoice goes straight away.</li>';
     const other = $('.other-jobs');
-    other.hidden = !d.otherJobs.length;
-    other.innerHTML = d.otherJobs.length ? `Also: ${d.otherJobs.map((o: { id: number; title: string; job_type: string }) => `<a href="/studio/crm/job?id=${o.id}">${esc(o.job_type)}</a>`).join(', ')}` : '';
+    // Their other jobs, and a new one for them (e.g. a family shoot after the wedding): Clients › Add a job.
+    other.hidden = false;
+    other.innerHTML = (d.otherJobs.length ? `Also: ${d.otherJobs.map((o: { id: number; title: string; job_type: string }) => `<a href="/studio/crm/job?id=${o.id}">${esc(o.job_type)}</a>`).join(', ')} · ` : '')
+      + `<a href="/studio/crm/?addjob=${d.job.client_id}">+ New job for ${esc(d.job.first_name)}</a>`;
 
     dirty = false; saveBtn.disabled = true; $('.save-state').textContent = '';
     $('.content').hidden = false; $('.status').hidden = true;

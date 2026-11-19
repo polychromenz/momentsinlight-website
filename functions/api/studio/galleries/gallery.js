@@ -3,9 +3,10 @@
 //        picks: image ids marked for Google Ads; social: image ids marked Social; ads_blocked: why not (the client's contract); jobs: to link a client
 //   PUT  /api/studio/galleries/gallery { id, ...fields }   name, type, event_date, venue, spouse_a/b,
 //        family_name, description, expires_at, extension_price, cover_image_id, client_id, job_id, slug
+//        (expires_at, or linking a client, applies one date to all the client's online galleries → { expires_at })
 //   POST /api/studio/galleries/gallery { id, action: 'online' | 'offline' }
 import { json } from '../../../../functions-lib/studio.js';
-import { galleryDetail, setOnline, slugify, TYPES } from '../../../../functions-lib/galleries.js';
+import { galleryDetail, setOnline, slugify, lineUpExpiry, TYPES } from '../../../../functions-lib/galleries.js';
 import { deleteGallery, linkUrl } from '../../../../functions-lib/gallery-access.js';
 import { adsBlocked } from '../../../../functions-lib/picks.js';
 
@@ -26,7 +27,7 @@ export async function onRequestGet({ request, env }) {
 const TEXT = { name: 120, venue: 120, spouse_a: 60, spouse_b: 60, family_name: 80, description: 2000, seo_title: 120, seo_description: 320 };
 export async function onRequestPut({ request, env }) {
   const d = await request.json().catch(() => ({}));
-  const g = await env.DB.prepare('SELECT id FROM photo_galleries WHERE id = ?1').bind(String(d.id ?? '')).first();
+  const g = await env.DB.prepare('SELECT id, expires_at, client_id FROM photo_galleries WHERE id = ?1').bind(String(d.id ?? '')).first();
   if (!g) return json({ error: 'That gallery doesn’t exist.' }, 404);
   const sets = [], vals = [];
   const put = (col, v) => { sets.push(`${col} = ?${vals.length + 2}`); vals.push(v); };
@@ -47,6 +48,17 @@ export async function onRequestPut({ request, env }) {
   if (!sets.length) return json({ ok: true });
   put('updated_at', new Date().toISOString());
   await env.DB.prepare(`UPDATE photo_galleries SET ${sets.join(', ')} WHERE id = ?1`).bind(g.id, ...vals).run();
+  // One expiry for all the client's galleries: a date Tony sets goes on all of them; linking it to a
+  // client lines it up with theirs (the latest date).
+  // (A save with the same date as before changes nothing.)
+  const now = await env.DB.prepare(`SELECT client_id, expires_at, status FROM photo_galleries WHERE id = ?1`).bind(g.id).first();
+  const newDate = now.expires_at !== g.expires_at, newClient = now.client_id !== g.client_id;
+  if (newDate || newClient) {
+    if (now.client_id && now.status === 'online' && now.expires_at) {
+      const until = await lineUpExpiry(env.DB, now.client_id, newDate ? now.expires_at : null);
+      return json({ ok: true, expires_at: until });
+    }
+  }
   return json({ ok: true });
 }
 

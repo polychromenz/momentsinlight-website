@@ -79,7 +79,7 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
           <div class="two"><label>Online until <input name="expires_at" type="date" /></label>
           <label>To keep it longer <select name="ext_mode"><option value="default">The default price</option><option value="free">Free</option><option value="custom">A special price</option></select></label></div>
           <label class="ext-custom" hidden>Special price (NZ$) <input name="ext_price" type="number" min="0" step="1" /></label>
-          <p class="hint">Galleries go offline (not deleted) after this date. Leave it empty to keep it online until you take it offline.</p>
+          <p class="hint">Galleries go offline (not deleted) after this date. Leave it empty to keep it online until you take it offline. A client's galleries share one date: changing it here changes all their online galleries.</p>
           <label class="check"><input type="checkbox" name="prints_on" /> Sell prints from this gallery (Galleries › Prints)</label>
         </fieldset>
         <div class="actions"><button type="button" class="s-btn" data-offline hidden>Take offline</button><button type="submit" class="s-btn s-btn--solid">Save</button></div>

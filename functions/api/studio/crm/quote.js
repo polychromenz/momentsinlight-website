@@ -42,7 +42,7 @@ export async function onRequestGet({ request, env }) {
   const total = q.status === 'accepted' ? q.total : totalFor(q, pick, q.packages.length ? [] : q.extras.map((x, i) => i));
   return json({
     quote: q,
-    job: { id: job.id, title: job.title, first_name: job.first_name, partner_name: job.partner_name, email: job.email, event_date: job.event_date, venue: job.venue },
+    job: { id: job.id, client_id: job.client_id, title: job.title, first_name: job.first_name, partner_name: job.partner_name, email: job.email, event_date: job.event_date, venue: job.venue },
     example: total === null ? null : { package: q.packages[pick]?.name ?? 'Everything on the quote', total, payments: payments(q.schedule, total, job.event_date, q.accepted_at?.slice(0, 10)) },
     schedules: schedules.results.map((s) => ({ ...s, parts: JSON.parse(s.parts) })),
     link: `https://www.momentsinlight.co.nz/quote?t=${q.token}`,

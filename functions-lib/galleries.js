@@ -69,14 +69,31 @@ export async function firstExpiry(db, g, s) {
   const least = addMonths(today, s.min_months ?? 0);
   return from > least ? from : least;
 }
-/** When a gallery first goes online it gets its expiry date (firstExpiry). */
+/** When a gallery first goes online it gets its expiry date (firstExpiry), then lines up with the
+ *  client's other galleries (lineUpExpiry). */
 export async function setOnline(env, galleryId) {
-  const g = await env.DB.prepare('SELECT status, expires_at, event_date, job_id FROM photo_galleries WHERE id = ?1').bind(galleryId).first();
+  const g = await env.DB.prepare('SELECT status, expires_at, event_date, job_id, client_id FROM photo_galleries WHERE id = ?1').bind(galleryId).first();
   if (!g) throw new Error('That gallery doesn’t exist.');
   const s = await gallerySettings(env.DB);
   const expires = g.expires_at ?? (await firstExpiry(env.DB, g, s));
   await env.DB.prepare(`UPDATE photo_galleries SET status = 'online', expires_at = ?2, updated_at = ?3 WHERE id = ?1`).bind(galleryId, expires, new Date().toISOString()).run();
-  return expires;
+  return (expires && g.client_id ? await lineUpExpiry(env.DB, g.client_id) : null) ?? expires;
+}
+
+/** One expiry date for all of a client's galleries (Tony, 2026-11-20: keeping galleries online is per
+ *  client). Their online galleries with an expiry all move to `date`, or, without one, to the latest
+ *  of their dates, so a new gallery (e.g. a family shoot after the wedding) keeps the older ones online
+ *  free until it expires. Called when a gallery goes online, is linked to a client, or Tony sets a
+ *  gallery's expiry date. Returns the shared date (null if none of them expires). */
+export async function lineUpExpiry(db, clientId, date = null) {
+  if (!clientId) return null;
+  const gs = (await db.prepare(`SELECT id, expires_at FROM photo_galleries WHERE client_id = ?1 AND status = 'online' AND expires_at IS NOT NULL`).bind(clientId).all()).results;
+  if (!gs.length) return null;
+  const until = date ?? gs.reduce((a, g) => (g.expires_at > a ? g.expires_at : a), '');
+  const move = gs.filter((g) => g.expires_at !== until);
+  const now = new Date().toISOString();
+  if (move.length) await db.batch(move.map((g) => db.prepare('UPDATE photo_galleries SET expires_at = ?2, reminded_for = NULL, updated_at = ?3 WHERE id = ?1').bind(g.id, until, now)));
+  return until;
 }
 
 export async function addSection(env, galleryId, { name, is_bw = 0, source_key = null }) {

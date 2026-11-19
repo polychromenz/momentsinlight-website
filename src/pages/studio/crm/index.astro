@@ -4,6 +4,7 @@
 import StudioLayout from '../../../layouts/StudioLayout.astro';
 ---
 <StudioLayout title="Clients" section="clients">
+  <button slot="bar" type="button" class="s-btn s-btn--quiet" data-add-job>+ Add a job</button>
   <button slot="bar" type="button" class="s-btn s-btn--solid" data-add-client>+ Add client</button>
 
 <div class="test-banner" hidden><strong>TEST MODE</strong>: client emails are redirected to you, nothing reaches a client. It switches to live only when you set CRM_SEND_MODE to “live” in Cloudflare.</div>
@@ -45,9 +46,16 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
   <dialog class="add-client" aria-labelledby="add-title">
     <form class="add-form" autocomplete="off" novalidate>
       <h2 id="add-title">Add a client</h2>
-      <p class="hint">For an enquiry by phone, Facebook or in person. Nothing is sent unless you tick the workflow box.</p>
-      <div class="two"><label>First name *<input name="first_name" required /></label><label>Last name<input name="last_name" /></label></div>
-      <div class="two"><label>Email *<input name="email" type="email" required /></label><label>Phone<input name="phone" type="tel" /></label></div>
+      <p class="hint add-hint"></p>
+      <div class="add-who" hidden>
+        <label>Client *<input name="client_pick" list="add-clients" placeholder="Start typing their name or email" /><datalist id="add-clients"></datalist></label>
+        <input type="hidden" name="client_id" />
+        <p class="add-who-jobs muted"></p>
+      </div>
+      <div class="add-person">
+        <div class="two"><label>First name *<input name="first_name" /></label><label>Last name<input name="last_name" /></label></div>
+        <div class="two"><label>Email *<input name="email" type="email" /></label><label>Phone<input name="phone" type="tel" /></label></div>
+      </div>
       <label>Partner's name<input name="partner_name" placeholder="For a couple" /></label>
       <div class="two"><label>Type<select name="job_type"></select></label><label>Heard about you via<input name="lead_source" list="add-sources" /><datalist id="add-sources"></datalist></label></div>
       <div class="three"><label>Date<input name="event_date" type="date" /></label><label>Time<input name="event_time" type="time" title="Optional" /></label><label>Venue / location<input name="venue" /></label></div>
@@ -58,7 +66,7 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
       </fieldset>
       <label class="add-wf"><input type="checkbox" name="workflow" /> <span class="add-wf-text"></span></label>
       <p class="add-msg" role="alert" hidden></p>
-      <div class="add-actions"><button type="button" class="s-btn s-btn--quiet" data-add-cancel>Cancel</button><button type="submit" class="s-btn s-btn--solid">Add client</button></div>
+      <div class="add-actions"><button type="button" class="s-btn s-btn--quiet" data-add-cancel>Cancel</button><button type="submit" class="s-btn s-btn--solid add-go">Add client</button></div>
     </form>
   </dialog>
   <div class="s-toast" role="status"></div>
@@ -93,7 +101,27 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
       : booked ? `Start the ${wf.name} workflow's booking and planning steps (emails and to-dos timed from their date).`
       : `Start the ${wf.name} workflow's enquiry emails (the enquiry response and follow-ups). Leave unticked if you've already replied.`;
   }
-  async function openAdd() {
+  // + Add a job (Tony, 2026-11-20): a new job for one of their existing clients, e.g. a family shoot
+  // after the wedding, so it gets its own date, quote and contract, and its type's workflow (ticked).
+  type Who = { id: number; first_name: string; last_name: string; email: string; jobs: { job_type: string; event_date: string | null; stage: string }[] };
+  let addMode: 'client' | 'job' = 'client';
+  let clients: Who[] | null = null;
+  const whoLabel = (c: Who) => `${`${c.first_name} ${c.last_name}`.trim()} (${c.email})`;
+  function pickClient() {
+    const c = clients?.find((x) => whoLabel(x) === af('client_pick').value.trim());
+    af('client_id').value = c ? String(c.id) : '';
+    $('.add-who-jobs').textContent = c ? (c.jobs.length ? `Their jobs: ${c.jobs.map((j) => `${j.job_type}${j.event_date ? ` ${nzDate(j.event_date)}` : ''}`).join(', ')}` : 'No jobs yet.') : '';
+  }
+  let moveQuote = 0; // the quote's "Move to a new job": it goes on the job this makes
+  async function openAdd(mode: 'client' | 'job' = 'client', clientId = 0, quote = 0) {
+    addMode = mode;
+    moveQuote = quote;
+    if (mode === 'job' && !clients) {
+      const r = await fetch('/api/studio/crm/people?view=all');
+      if (!r.ok) { toast('Couldn’t load your clients.', true); return; }
+      clients = (await r.json()).rows;
+      $('#add-clients').replaceChildren(...clients!.map((c) => new Option(whoLabel(c))));
+    }
     if (!addLists) {
       const r = await fetch('/api/studio/crm/settings');
       if (!r.ok) { toast('Couldn’t load the job types.', true); return; }
@@ -103,18 +131,44 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
     }
     addForm.reset();
     $('.add-msg').hidden = true;
+    const job = mode === 'job';
+    $('#add-title').textContent = job ? 'Add a job' : 'Add a client';
+    $('.add-hint').textContent = quote ? 'Their quote moves to this new job (with its unsigned contract). It’s already been made, so the workflow is unticked: tick it only if you want its emails too.'
+      : job ? 'A new job for one of your clients (e.g. a family shoot after their wedding), with its own date, quote and contract. Their portal shows all their jobs.'
+      : 'For an enquiry by phone, Facebook or in person. Nothing is sent unless you tick the workflow box.';
+    $('.add-who').hidden = !job;
+    $('.add-person').hidden = job;
+    $('.add-go').textContent = job ? 'Add job' : 'Add client';
+    const pre = job && clientId ? clients?.find((c) => c.id === clientId) : null;
+    if (pre) af('client_pick').value = whoLabel(pre);
+    pickClient();
     wfText();
+    if (job && !quote && !af('workflow').disabled) af('workflow').checked = true;
     addDlg.showModal();
-    af('first_name').focus();
+    (job ? af('client_pick') : af('first_name')).focus();
   }
   addForm.addEventListener('change', (e) => {
     const n = (e.target as HTMLInputElement).name;
-    if (n === 'stage') af('workflow').checked = (e.target as HTMLInputElement).value === 'booked' && !af('workflow').disabled;
+    if (n === 'stage') af('workflow').checked = ((addMode === 'job' && !moveQuote) || (e.target as HTMLInputElement).value === 'booked') && !af('workflow').disabled;
     if (n === 'stage' || n === 'job_type') wfText();
+    if (n === 'job_type' && addMode === 'job' && !moveQuote && !af('workflow').disabled) af('workflow').checked = true;
+    if (n === 'client_pick') pickClient();
   });
+  addForm.addEventListener('input', (e) => { if ((e.target as HTMLInputElement).name === 'client_pick') pickClient(); });
   addForm.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const body = { ...Object.fromEntries(new FormData(addForm)), workflow: af('workflow').checked };
+    const all = Object.fromEntries(new FormData(addForm));
+    const msg = $('.add-msg');
+    let body: Record<string, unknown>;
+    if (addMode === 'job') {
+      pickClient();
+      if (!af('client_id').value) { msg.textContent = 'Choose the client from the list (start typing their name).'; msg.hidden = false; return; }
+      const { first_name, last_name, email, phone, client_pick, ...rest } = all;
+      body = { ...rest, workflow: af('workflow').checked, ...(moveQuote ? { move_quote: moveQuote } : {}) };
+    } else {
+      const { client_id, client_pick, ...rest } = all;
+      body = { ...rest, workflow: af('workflow').checked };
+    }
     const btn = addForm.querySelector<HTMLButtonElement>('button[type="submit"]')!;
     btn.disabled = true;
     const r = await fetch('/api/studio/crm/job', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
@@ -126,9 +180,12 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
   document.addEventListener('click', (e) => {
     const t = e.target as HTMLElement;
     if (t.closest('[data-add-client]')) openAdd();
+    if (t.closest('[data-add-job]')) openAdd('job');
     if (t.closest('[data-add-cancel]')) addDlg.close();
   });
-  if (new URLSearchParams(location.search).has('add')) openAdd();
+  const qs = new URLSearchParams(location.search);
+  if (qs.has('add')) openAdd();
+  if (qs.has('addjob')) openAdd('job', Number(qs.get('addjob')) || 0, Number(qs.get('quote')) || 0); // + New job on a job page; a quote's Move to a new job
   const toast = (text: string, error = false) => {
     const t = $('.s-toast'); t.textContent = text; t.classList.toggle('error', error); t.classList.add('show');
     setTimeout(() => t.classList.remove('show'), 4000);
@@ -262,6 +319,10 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
   .add-client { width: min(640px, calc(100vw - 24px)); max-height: calc(100dvh - 24px); border: 0; border-radius: 28px 0; padding: 0; box-shadow: 0 30px 60px -30px rgb(0 0 0 / 0.5); }
   .add-client::backdrop { background: rgb(30 32 20 / 0.45); }
   .add-form { display: flex; flex-direction: column; gap: 12px; padding: 22px 24px; }
+  .add-person, .add-who { display: flex; flex-direction: column; gap: 12px; }
+  .add-person[hidden], .add-who[hidden] { display: none; }
+  .add-who-jobs { margin: -4px 0 0; font-size: 13px; color: #777; }
+  .add-who-jobs:empty { display: none; }
   .add-form h2 { margin: 0; font-weight: 300; font-size: 26px; color: var(--ink); }
   .add-form .hint { margin: 0; font-size: 14px; color: #666; }
   .add-form label { display: flex; flex-direction: column; gap: 5px; font-size: 13px; font-weight: 600; color: #555; min-width: 0; }

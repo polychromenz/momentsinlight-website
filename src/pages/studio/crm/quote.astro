@@ -53,7 +53,7 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
       <section class="card">
         <label>Notes (shown at the bottom of the quote; use the + Fill-in menu for the valid-until date)<textarea name="notes" rows="3"></textarea></label>
       </section>
-      <p class="danger"><button type="button" class="s-btn s-btn--danger" data-act="withdraw">Withdraw quote</button> <button type="button" class="s-btn s-btn--danger" data-act="delete-draft" hidden>Delete draft</button></p>
+      <p class="danger"><button type="button" class="s-btn s-btn--danger" data-act="withdraw">Withdraw quote</button> <button type="button" class="s-btn s-btn--danger" data-act="delete-draft" hidden>Delete draft</button> <button type="button" class="s-btn s-btn--quiet" data-act="move-job" hidden>Move to a new job…</button></p>
     </form>
   </main>
 
@@ -194,6 +194,7 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
     // A draft that was never sent can simply be deleted; a sent one is withdrawn.
     $<HTMLButtonElement>('[data-act="delete-draft"]').hidden = q.status !== 'draft';
     $<HTMLButtonElement>('[data-act="withdraw"]').hidden = q.status === 'draft';
+    $<HTMLButtonElement>('[data-act="move-job"]').hidden = !['draft', 'sent'].includes(q.status);
     dirty = false; $('.save-state').textContent = '';
     form.hidden = false; $('.status').hidden = true;
   }
@@ -244,6 +245,13 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
       const d = await r.json().catch(() => ({}));
       if (!r.ok) { toast(d.error || 'Couldn’t delete it.', true); return; }
       dirty = false; location.href = `/studio/crm/job?id=${data.job.id}`; return;
+    }
+    // Made on the wrong job (e.g. a family shoot quote on their wedding job): a new job for the same
+    // client, with this quote on it (Clients › Add a job).
+    if (t.closest('[data-act="move-job"]')) {
+      if (dirty && !(await save(true))) return;
+      if (!await ask('Move this quote to a new job for the same client? You choose the job type and date next; the quote keeps its link.', { ok: 'Choose the new job' })) return;
+      dirty = false; location.href = `/studio/crm/?addjob=${data.job.client_id}&quote=${id}`; return;
     }
     if (t.closest('[data-act="withdraw"]')) {
       if (!await ask('Withdraw this quote? Its link will say it’s no longer available.')) return;

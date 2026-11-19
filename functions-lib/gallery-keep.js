@@ -1,8 +1,9 @@
 // Keeping galleries online past their expiry (decided with Tony 2026-11-16): galleries are online for
 // 12 months from the wedding (Galleries > Defaults), then the couple can keep them for another 12 months
 // for NZ$49 (a gallery's own price can be a special price, or 0 = free, which extends it straight away).
-// It's per couple: all the galleries on their client (job), e.g. the wedding and the practice shoot,
-// share one expiry date, one payment keeps them all online, and one reminder goes for them all.
+// It's per client (Tony, 2026-11-20): all the galleries on their client, from every job (e.g. the
+// wedding, the practice shoot and a later family shoot), share one expiry date (the latest of them,
+// see lineUpExpiry in galleries.js), one payment keeps them all online, and one reminder goes for them all.
 //   keepOffer()       what the couple's link may see: { price, months } from 30 days before expiry
 //   keepCheckout()    a Stripe Checkout page for it
 //   keptPaid()        Stripe says it's paid: extend it, and record the payment as a paid studio
@@ -38,11 +39,13 @@ export async function keepOffer(db, g, linkKind) {
   return { ...t, until: g.expires_at, expired: g.expires_at < today() };
 }
 
-/** The couple's galleries that expire: all the online ones on the same client (job) with an expiry
- *  date, or just this one if it isn't on a client. */
+/** The couple's galleries that expire: all the online ones on the same client (any of their jobs)
+ *  with an expiry date, or just this one if it isn't on a client. */
 export async function coupleGalleries(db, g) {
-  if (!g.job_id) return [g];
-  const all = (await db.prepare(`SELECT * FROM photo_galleries WHERE job_id = ?1 AND status = 'online' AND expires_at IS NOT NULL`).bind(g.job_id).all()).results;
+  if (!g.client_id && !g.job_id) return [g];
+  const all = (g.client_id
+    ? await db.prepare(`SELECT * FROM photo_galleries WHERE client_id = ?1 AND status = 'online' AND expires_at IS NOT NULL`).bind(g.client_id).all()
+    : await db.prepare(`SELECT * FROM photo_galleries WHERE job_id = ?1 AND status = 'online' AND expires_at IS NOT NULL`).bind(g.job_id).all()).results;
   return all.length ? all : [g];
 }
 
@@ -139,10 +142,11 @@ export async function expiryReminders(env) {
   const template = await db.prepare(`SELECT * FROM templates WHERE key = 'gallery-expiring'`).first();
   if (!template) return 'no template';
   let sent = 0;
-  const done = new Set(); // one reminder per couple (job), for all their galleries
+  const done = new Set(); // one reminder per client, for all their galleries (from every job)
   for (const g of due) {
-    if (done.has(g.job_id)) continue;
-    done.add(g.job_id);
+    const who = g.client_id ?? `job${g.job_id}`;
+    if (done.has(who)) continue;
+    done.add(who);
     const left = Math.round((Date.parse(`${g.expires_at}T00:00:00Z`) - Date.parse(`${t}T00:00:00Z`)) / 86400_000);
     const stage = left <= 7 ? '7' : '30';
     if (g.reminded_for === `${g.expires_at}:${stage}` || (stage === '30' && g.reminded_for === `${g.expires_at}:7`)) continue;

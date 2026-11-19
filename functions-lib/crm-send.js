@@ -28,7 +28,8 @@ export async function jobLinks(db, job, step = null, env = null) {
   const out = { ...(await studioLinks(db)), portal_link: portalLink(t) };
   // Their galleries' expiry and the price to keep them online (functions-lib/gallery-keep.js), for
   // emails like "Your galleries have moved": {{gallery_expiry}}, {{keep_price}}.
-  const exp = await db.prepare(`SELECT min(expires_at) d FROM photo_galleries WHERE job_id = ?1 AND status = 'online' AND expires_at IS NOT NULL`).bind(job.id).first();
+  // Per client (all their jobs), like keeping them online (gallery-keep.js).
+  const exp = await db.prepare(`SELECT min(expires_at) d FROM photo_galleries WHERE client_id = ?1 AND status = 'online' AND expires_at IS NOT NULL`).bind(job.client_id).first();
   if (exp?.d) out.gallery_expiry = new Date(`${exp.d}T12:00:00Z`).toLocaleDateString('en-NZ', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
   const gs = await db.prepare(`SELECT value FROM settings WHERE key = 'galleries'`).first();
   const price = gs ? JSON.parse(gs.value).extension_price ?? 4900 : 4900;

@@ -2,7 +2,8 @@
 // A couple's client portal (/portal?t=…, the link in "Thanks for booking" and later emails, and
 // "Open their portal" in the studio). One page: their booking at a glance with what's done and
 // what's next, then the quote, contract, questionnaire, payments, files and galleries, with a
-// section menu. The banner photo is shown whole (never cropped). Hidden from Google; data from
+// section menu. A client with more than one job (e.g. their wedding, then a family shoot) gets a tab
+// for each (?job=…); galleries are all of theirs, on every tab. The banner photo is shown whole (never cropped). Hidden from Google; data from
 // functions/api/portal.js.
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { WEATHER_CSS } from '../studio/weather-card-css';
@@ -16,6 +17,7 @@ import { WEATHER_CSS } from '../studio/weather-card-css';
         <p class="eyebrow p-eyebrow"></p>
         <h1 class="display p-title"></h1>
       </header>
+      <nav class="p-jobs" aria-label="Your bookings" hidden></nav>
       <nav class="p-nav" aria-label="Your portal"></nav>
 
       <section id="overview" class="p-card p-overview">
@@ -53,7 +55,9 @@ import { WEATHER_CSS } from '../studio/weather-card-css';
   const size = (n: number) => (n > 1048576 ? `${(n / 1048576).toFixed(1)} MB` : `${Math.max(1, Math.round(n / 1024))} KB`);
   const day = (iso: string) => new Date(iso).toLocaleDateString('en-NZ', { day: 'numeric', month: 'long', year: 'numeric' });
   const token = new URLSearchParams(location.search).get('t') || '';
-  const T = encodeURIComponent(token);
+  const jobParam = new URLSearchParams(location.search).get('job') || '';
+  // Every call says which of their jobs this tab is (the link's own job when there's no ?job=).
+  const T = encodeURIComponent(token) + (/^\d+$/.test(jobParam) ? `&job=${jobParam}` : '');
   const chip = (text: string, kind = '') => `<span class="p-chip ${kind}">${esc(text)}</span>`;
   let d: any;
 
@@ -63,6 +67,13 @@ import { WEATHER_CSS } from '../studio/weather-card-css';
     $('.p-eyebrow').textContent = [d.event_date_long, d.venue].filter(Boolean).join(' · ');
     $('.p-title').textContent = d.couple;
     $('.p-welcome').textContent = d.welcome;
+
+    // Their bookings, when there's more than one: a tab each, this one marked.
+    const jobs = d.jobs ?? [];
+    $('.p-jobs').hidden = jobs.length < 2;
+    $('.p-jobs').innerHTML = jobs.length < 2 ? '' : jobs.map((j: any) => j.id === d.job_id
+      ? `<span aria-current="page">${esc(j.label)}</span>`
+      : `<a href="/portal?t=${encodeURIComponent(token)}&job=${j.id}">${esc(j.label)}</a>`).join('');
 
     const q = d.quote;
     $('.p-facts').innerHTML = [['Date', d.event_date_long], ['Venue', d.venue], ['Package', q?.package && [q.package, ...q.extras].join(' + ')], ['Total', q?.total != null && `${money(q.total)} incl. GST`]]
@@ -155,7 +166,7 @@ import { WEATHER_CSS } from '../studio/weather-card-css';
     for (const [i, f] of files.entries()) {
       label.textContent = `Uploading ${i + 1} of ${files.length}…`;
       if (f.size > 10 * 1024 * 1024) { msg.textContent = `“${f.name}” is over 10 MB. Please choose a smaller version.`; msg.hidden = false; continue; }
-      const fd = new FormData(); fd.append('t', token); fd.append('file', f);
+      const fd = new FormData(); fd.append('t', token); if (/^\d+$/.test(jobParam)) fd.append('job', jobParam); fd.append('file', f);
       const r = await fetch('/api/portal', { method: 'POST', body: fd });
       const x = await r.json().catch(() => ({}));
       if (!r.ok) { msg.textContent = x.error || `“${f.name}” didn’t upload. Please try again.`; msg.hidden = false; continue; }
@@ -184,6 +195,11 @@ import { WEATHER_CSS } from '../studio/weather-card-css';
   .p-banner img { display: block; height: clamp(170px, 30vw, 340px); width: auto; max-width: 100%; object-fit: contain; border-radius: 28px 0; }
   .p-head { text-align: center; padding: 26px var(--pad) 6px; }
   .p-title { font-size: clamp(32px, 2.6vw + 18px, 50px); margin: 0; padding: 0; }
+  .p-jobs { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; padding: 14px var(--pad) 0; }
+  .p-jobs > :global(*) { padding: 9px 18px; border-radius: 18px 0; font-size: 15px; text-decoration: none; }
+  .p-jobs :global(a) { background: var(--white); color: var(--green); border: 1px solid #ddd3c4; }
+  .p-jobs :global(a:hover) { border-radius: 0 18px; opacity: 1; }
+  .p-jobs :global(span) { background: var(--green); color: var(--white); border: 1px solid var(--green); }
   .p-nav { display: flex; justify-content: center; gap: 6px; flex-wrap: wrap; padding: 14px var(--pad) 22px; }
   .p-nav :global(a) { padding: 7px 15px; border: 1px solid #ddd3c4; border-radius: 999px; background: var(--white); font-size: 14px; color: #555; text-decoration: none; transition: border-radius 0.4s var(--ease), background-color 0.3s var(--ease), color 0.3s var(--ease); }
   .p-nav :global(a:hover) { background: var(--green); border-color: var(--green); color: var(--white); opacity: 1; }
