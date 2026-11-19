@@ -35,6 +35,9 @@ export async function jobLinks(db, job, step = null, env = null) {
   out.keep_price = `$${(price / 100).toLocaleString('en-NZ', { minimumFractionDigits: price % 100 ? 2 : 0 })}`;
   // The studio's own booking page knows them from this (their details filled in, booked onto their page).
   if (/^https:\/\/www\.momentsinlight\.co\.nz\/book\/?(\?|$)/.test(out.booking_link || '')) out.booking_link = `${out.booking_link.replace(/\/$/, '')}${out.booking_link.includes('?') ? '&' : '?'}c=${t}`;
+  // Their unsigned contract, for a reviewed email that sends it ({{contract_link}}).
+  const contract = await db.prepare(`SELECT token FROM contracts WHERE job_id = ?1 AND status = 'sent' ORDER BY id DESC LIMIT 1`).bind(job.id).first();
+  if (contract) out.contract_link = `https://www.momentsinlight.co.nz/contract?t=${contract.token}`;
   const want = ruleOf(step).questionnaire;
   const any = await db.prepare(`SELECT * FROM questionnaires WHERE job_id = ?1 ${want ? 'AND template_key = ?2' : ''} ORDER BY id DESC LIMIT 1`).bind(...(want ? [job.id, want] : [job.id])).first();
   if (any) out.questionnaire_link = questionnaireLink(any);
