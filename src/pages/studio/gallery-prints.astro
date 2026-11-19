@@ -56,6 +56,21 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
           <label>NZ$ per A$ (for costs and margins) <input name="rate" type="number" step="0.0001" min="0.6" max="2" /></label>
         </div>
         <p class="hint">Every order waits for you to check it. The hold date is kept so that, once a lab can take orders directly, held orders can go to it automatically when the hold ends.</p>
+        <fieldset class="pr-sale">
+          <legend>Sale</legend>
+          <label class="pr-switch"><input type="checkbox" name="sale_on" /> <span><strong>Run a sale</strong><br />Between the dates below, the shop shows the sale prices (the usual price crossed out) and the couple pays them.</span></label>
+          <div class="three">
+            <label>Name <input name="sale_name" placeholder="e.g. Christmas sale" /></label>
+            <label>Starts <input name="sale_start" type="date" /></label>
+            <label>Ends (last day) <input name="sale_end" type="date" /></label>
+          </div>
+          <div class="three">
+            <label class="pr-check"><input type="checkbox" name="sale_free_home" /> Free delivery on in-house items</label>
+            <label class="pr-check"><input type="checkbox" name="sale_free_seldex" /> Free delivery on Seldex items</label>
+          </div>
+          <table class="pr-sale-tbl"><thead><tr><th>Product</th><th>% off</th><th>Order by (for Christmas)</th></tr></thead><tbody data-sale-rows></tbody></table>
+          <p class="hint">Leave % off empty for no discount. The order-by date shows on the product during the sale.</p>
+        </fieldset>
         <label>Words under the shop <textarea name="intro" rows="3"></textarea></label>
         <p class="hint">The confirmation and “on its way” emails are in Settings › Templates (“Prints order confirmation”, “Prints order on its way”).</p>
         <div class="actions"><button type="submit" class="s-btn s-btn--solid">Save</button></div>
@@ -71,6 +86,7 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
   import { mockup, cropEditor, styleMockups, type Product } from '../../prints/mockup';
   import { labFiles } from '../../prints/lab-files';
   import { zebraPrinter, printOnZebra, drawLabel } from '../../studio/zebra-label';
+  const SALE_CATS: [string, string][] = [['Prints', 'Photo prints'], ['Portrait Envelope', 'Portrait envelope'], ['Print Pack', 'Print pack'], ['Matted Prints', 'Matted print'], ['Frames', 'Framed print'], ['Matted Frames', 'Framed with mat'], ['Float Frames', 'Hand torn frame'], ['Circular Frames', 'Circle frame']];
   import { ratioOf, dpi, money } from '../../../functions-lib/print-pricing.js';
   styleMockups();
   const $ = <T extends HTMLElement = HTMLElement>(s: string, el: ParentNode = document) => el.querySelector<T>(s)!;
@@ -110,6 +126,14 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
     (f.elements.namedItem('live') as HTMLInputElement).checked = !!settings.live;
     for (const k of ['free_over', 'freight_inhouse', 'min_inhouse']) (f.elements.namedItem(k) as HTMLInputElement).value = String((settings[k] ?? 0) / 100);
     (f.elements.namedItem('return_address') as HTMLTextAreaElement).value = settings.return_address ?? '';
+    const sale = settings.sale ?? {};
+    (f.elements.namedItem('sale_on') as HTMLInputElement).checked = !!sale.on;
+    (f.elements.namedItem('sale_name') as HTMLInputElement).value = sale.name ?? '';
+    (f.elements.namedItem('sale_start') as HTMLInputElement).value = sale.start ?? '';
+    (f.elements.namedItem('sale_end') as HTMLInputElement).value = sale.end ?? '';
+    (f.elements.namedItem('sale_free_home') as HTMLInputElement).checked = !!sale.free_home;
+    (f.elements.namedItem('sale_free_seldex') as HTMLInputElement).checked = !!sale.free_seldex;
+    $('[data-sale-rows]').innerHTML = SALE_CATS.map(([cat, name]) => `<tr><td>${name}</td><td><input type="number" min="0" max="80" step="5" data-sale-pct="${cat}" value="${sale.pct?.[cat] ?? ''}" /></td><td><input type="date" data-sale-by="${cat}" value="${sale.order_by?.[cat] ?? ''}" /></td></tr>`).join('');
     (f.elements.namedItem('hold_days') as HTMLInputElement).value = settings.hold_days;
     (f.elements.namedItem('rate') as HTMLInputElement).value = settings.rate;
     (f.elements.namedItem('intro') as HTMLTextAreaElement).value = settings.intro;
@@ -222,6 +246,12 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
     if (live && !settings.live && !await ask('Show prints to clients? Everyone with a gallery link will be able to order and pay from now on.')) return;
     const d = await api('/api/studio/galleries/prints', 'PUT', { settings: {
       live, freight_inhouse: Math.round(Number(f.get('freight_inhouse')) * 100), min_inhouse: Math.round(Number(f.get('min_inhouse')) * 100), return_address: f.get('return_address'),
+      sale: {
+        on: f.get('sale_on') === 'on', name: f.get('sale_name'), start: f.get('sale_start'), end: f.get('sale_end'),
+        free_home: f.get('sale_free_home') === 'on', free_seldex: f.get('sale_free_seldex') === 'on',
+        pct: Object.fromEntries([...document.querySelectorAll<HTMLInputElement>('[data-sale-pct]')].filter((i) => Number(i.value) > 0).map((i) => [i.dataset.salePct, Number(i.value)])),
+        order_by: Object.fromEntries([...document.querySelectorAll<HTMLInputElement>('[data-sale-by]')].filter((i) => i.value).map((i) => [i.dataset.saleBy, i.value])),
+      },
       free_over: Math.round(Number(f.get('free_over')) * 100), hold_days: f.get('hold_days'), rate: f.get('rate'), intro: f.get('intro'),
     } });
     if (d) { toast('Saved.'); loadSetup(); }
@@ -480,6 +510,13 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
   .pill { display: inline-block; font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: 999px; background: #eee; color: #555; white-space: nowrap; vertical-align: middle; }
   .pill--paid { background: #fff0cf; color: #6b4c00; } .pill--approved { background: #e3ecf6; color: #2c4a6b; } .pill--ordered { background: #ece3f4; color: #523a6b; }
   .pill--shipped { background: #e6ecd9; color: #3e4229; } .pill--cancelled { background: #f6e3dc; color: #8a3a22; } .pill--test { background: #fff4d6; color: #5c4400; }
+  .pr-sale { border: 1px solid #e6dfd2; border-radius: 12px; padding: 12px 16px 14px; margin: 6px 0 16px; }
+  .pr-sale legend { font-weight: 600; padding: 0 6px; }
+  .pr-check { display: flex; gap: 8px; align-items: center; }
+  .pr-sale-tbl { width: 100%; max-width: 640px; border-collapse: collapse; margin-top: 8px; font-size: 14px; }
+  .pr-sale-tbl th { text-align: left; font-weight: 600; padding: 4px 8px; border-bottom: 1px solid #e6dfd2; }
+  .pr-sale-tbl td { padding: 4px 8px; }
+  .pr-sale-tbl input[type=number] { width: 80px; }
   .po-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
   .po-head h2 { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
   .po-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin: 8px 0 12px; font-size: 14px; line-height: 1.5; }

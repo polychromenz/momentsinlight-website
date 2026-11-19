@@ -12,7 +12,8 @@ import { roomView, hasRoom, isEnvelope, envelopeCover, ROOM_CSS } from './prints
 import { orderTotals, productTotal, ratioOf, centredCrop, cleanCrop, dpi, money, minCropW, packCount, fillPack, DPI_WARN, DPI_MIN, PAPER } from '../functions-lib/print-pricing.js';
 
 type Img = { id: string; w: number; h: number; thumb: string; web: string; hero?: number; s?: number };
-export type Shop = { products: Product[]; freight_prints: number; freight_wall: number; free_over: number; intro: string; countries?: Record<string, string>; trial: { live: boolean } | null };
+export type Shop = { products: Product[]; freight_prints: number; freight_wall: number; free_over: number; intro: string; countries?: Record<string, string>; trial: { live: boolean } | null;
+  sale?: { name: string; end: string; pct: Record<string, number>; free_home: boolean; free_seldex: boolean; order_by: Record<string, string> } | null };
 type Dest = { country: string; postcode: string; speed: 'standard' | 'express' };
 type Quote = { subtotal: number; freight: number; total: number; free: boolean; parts: { lab: string; label: string; amount: number }[]; express: { standard: number; express: number } | null; error: string };
 type PackPhoto = { image_id: string; n: number; crop: Crop; landscape: boolean };
@@ -223,6 +224,20 @@ export function initShop(ctx: Ctx) {
   // The couple's best photos for the cards: highlights first, then the gallery's first photos.
   const samples = () => { const all = ctx.images(); const h = all.filter((i) => i.hero); return (h.length >= 3 ? h : [...h, ...all.filter((i) => !i.hero)]).slice(0, 12); };
   const fromPrice = (cat: string) => Math.min(...products().filter((p) => p.category === cat).map((p) => p.tiers?.[0]?.base ?? p.price));
+  // A sale (functions-lib/print-sale.js): products carry their usual price as `was`.
+  const wasOf = (p: any) => (p.was ? (p.was_tiers?.[0]?.base ?? p.was) : null);
+  const fromWas = (cat: string) => { const w = products().filter((p) => p.category === cat).map(wasOf).filter((x): x is number => !!x); return w.length ? Math.min(...w) : null; };
+  const longDay = (d: string) => new Date(`${d}T12:00:00`).toLocaleDateString('en-NZ', { weekday: 'long', day: 'numeric', month: 'long' });
+  function saleBanner() {
+    const sale = ctx.shop()?.sale;
+    if (!sale) return '';
+    const by: Record<number, string[]> = {};
+    const WORD: Record<string, string> = { 'Frames': 'frames', 'Matted Frames': 'frames', 'Float Frames': 'frames', 'Circular Frames': 'frames', 'Portrait Envelope': 'portrait envelopes', 'Print Pack': 'print packs', 'Matted Prints': 'matted prints', 'Prints': 'photo prints' };
+    for (const [cat, pct] of Object.entries(sale.pct)) if (products().some((p) => p.category === cat)) { const w = WORD[cat] ?? (NICE[cat] ?? cat).toLowerCase(); if (!(by[pct] ??= []).includes(w)) by[pct].push(w); }
+    const parts = Object.entries(by).map(([pct, list]) => `${pct}% off ${list.length > 1 ? list.slice(0, -1).join(', ') + ' and ' + list[list.length - 1] : list[0]}`);
+    const free = sale.free_home && sale.free_seldex ? ' Free delivery on everything.' : sale.free_seldex ? ' Free delivery on wall art.' : sale.free_home ? ' Free delivery on prints.' : '';
+    return `<div class="sh-sale"><strong>${esc(sale.name)}</strong> ${esc(parts.join(' · '))}, until ${esc(longDay(sale.end))}.${free}</div>`;
+  }
 
   function drawBrowse() {
     shopDlg.innerHTML = `<div class="dlg-body sh-browse sh-scroll">
@@ -230,9 +245,10 @@ export function initShop(ctx: Ctx) {
       <h2>Prints &amp; wall art</h2>
       ${trialNote()}
       <p class="sh-lead">${esc(ctx.shop()!.intro)}</p>
+      ${saleBanner()}
       ${cats().map(([g, list]) => `<h3>${g}</h3><div class="sh-cards">${list.map((c) => `<button type="button" class="sh-card" data-card="${esc(c)}">
           <span class="sh-card-mk" data-card-mk="${esc(c)}"></span>
-          <strong>${esc(NICE[c] ?? c)}</strong><span>${esc(firstSentence(ABOUT[c] ?? ''))}</span><em>from ${nzd(fromPrice(c))}</em>${ctx.shop()?.trial ? `<span class="sh-card-labs">${[...new Set(products().filter((p) => p.category === c).map(labName))].map((l) => `<em class="sh-lab sh-lab--${labCls(l)}">${esc(l)}</em>`).join(' ')}</span>` : ''}</button>`).join('')}</div>`).join('')}
+          <strong>${esc(NICE[c] ?? c)}</strong><span>${esc(firstSentence(ABOUT[c] ?? ''))}</span><em>from ${fromWas(c) ? `<s class="sh-was">${nzd(fromWas(c)!)}</s> ` : ''}${nzd(fromPrice(c))}${ctx.shop()?.sale?.pct?.[c] ? ` <b class="sh-off">${ctx.shop()!.sale!.pct[c]}% off</b>` : ''}</em>${ctx.shop()?.trial ? `<span class="sh-card-labs">${[...new Set(products().filter((p) => p.category === c).map(labName))].map((l) => `<em class="sh-lab sh-lab--${labCls(l)}">${esc(l)}</em>`).join(' ')}</span>` : ''}</button>`).join('')}</div>`).join('')}
       ${cart.length ? '<p class="sh-hint"><button type="button" class="ct-link" data-to-cart>See your cart</button></p>' : ''}
     </div>`;
   }
@@ -378,6 +394,8 @@ export function initShop(ctx: Ctx) {
         ${trialNote()}
         ${cats().map(([g, list]) => `<div class="sh-group"><span>${g}</span><div class="sh-pills">${list.map((c) => `<button type="button" class="${c === st.cat ? 'on' : ''}" data-cat="${esc(c)}">${esc(NICE[c] ?? c)}</button>`).join('')}</div></div>`).join('')}
         <p class="sh-about">${esc(ABOUT[st.cat] ?? '')}</p>
+        ${ctx.shop()?.sale?.pct?.[st.cat] ? `<p class="sh-sale sh-sale--small"><strong>${esc(ctx.shop()!.sale!.name)}:</strong> ${ctx.shop()!.sale!.pct[st.cat]}% off until ${esc(longDay(ctx.shop()!.sale!.end))}.</p>` : ''}
+        ${ctx.shop()?.sale?.order_by?.[st.cat] ? `<p class="sh-orderby">Order by ${esc(longDay(ctx.shop()!.sale!.order_by[st.cat]))} for delivery before Christmas.</p>` : ''}
         ${types.length > 1 ? `<div class="sh-group"><span>${p.category === 'Portrait Envelope' ? 'Number of prints' : pack ? 'Size' : PAPER.has(p.kind) ? 'Paper' : p.kind === 'canvas' ? 'Edge' : 'Frame'}</span><div class="sh-pills">${types.map((t) => `<button type="button" class="${t === st.type ? 'on' : ''}" data-type="${esc(t)}">${esc(t.replace(/^(\d+(?:\.\d+)?)x(\d+(?:\.\d+)?)cm$/i, '$1 × $2 cm'))}</button>`).join('')}</div></div>` : ''}
         ${pack && sizes.length < 2 ? '' : `<div class="sh-group"><span>Size</span><div class="sh-sizes">${sizes.map((s) => {
           const sl = landFor(s, i, pack ? defaultLandscape(i) : st.landscape);
@@ -385,7 +403,7 @@ export function initShop(ctx: Ctx) {
           const q = fullDpi(i, s, sl);
           const tooBig = q < DPI_MIN, soft = !tooBig && q < DPI_WARN;
           const cls = [s.id === st.pid ? 'on' : '', fits ? 'fit' : '', tooBig ? 'off' : ''].filter(Boolean).join(' ');
-          return `<label class="${cls}"${tooBig ? ' title="This photo isn’t big enough to print well at this size."' : ''}><input type="radio" name="sh-size" value="${s.id}"${s.id === st.pid ? ' checked' : ''}${tooBig ? ' disabled' : ''} /><span>${esc(sizeLabel(s, sl))}${labTag(s)}${fits ? ' <em>whole photo</em>' : ''}${tooBig ? ' <em class="sh-no">too big for this photo</em>' : soft ? ' <em class="sh-soft">may look soft</em>' : ''}</span><strong>${nzd(s.tiers?.[0]?.base ?? s.price)}${firstThen(s) ? `<small class="sh-then">then ${nzd(firstThen(s)!)} each</small>` : ''}</strong></label>`;
+          return `<label class="${cls}"${tooBig ? ' title="This photo isn’t big enough to print well at this size."' : ''}><input type="radio" name="sh-size" value="${s.id}"${s.id === st.pid ? ' checked' : ''}${tooBig ? ' disabled' : ''} /><span>${esc(sizeLabel(s, sl))}${labTag(s)}${fits ? ' <em>whole photo</em>' : ''}${tooBig ? ' <em class="sh-no">too big for this photo</em>' : soft ? ' <em class="sh-soft">may look soft</em>' : ''}</span><strong>${wasOf(s) ? `<s class="sh-was">${nzd(wasOf(s)!)}</s> ` : ''}${nzd(s.tiers?.[0]?.base ?? s.price)}${firstThen(s) ? `<small class="sh-then">then ${nzd(firstThen(s)!)} each</small>` : ''}</strong></label>`;
         }).join('')}</div></div>`}
         ${pack && st.ids.length < count ? `<div class="sh-few"><p><strong>${st.ids.length} of ${count} photos chosen.</strong> The other ${count - st.ids.length} prints repeat ${st.ids.length === 1 ? 'this photo' : 'these photos'}. You can choose up to ${count} different photos.</p><button type="button" class="g-btn" data-change-photos>Choose more photos</button></div>` : ''}
         <div class="sh-buy">
@@ -701,6 +719,12 @@ const SHOP_CSS = `
 .sh-room-note{text-align:center;margin:4px 0 0}
 .sh-few{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin:4px 0 14px;padding:12px 14px;border-radius:10px;background:#f6edd2;border:1px solid #e3cf95}
 .sh-few p{margin:0;flex:1 1 220px;font-size:14px;line-height:1.4;color:#4a3d16}
+.sh-sale{margin:0 0 18px;padding:12px 16px;border-radius:10px;background:#5a5e3b;color:#fff;font-size:15px;line-height:1.45}
+.sh-sale strong{font-weight:600;letter-spacing:.04em}
+.sh-sale--small{margin:0 0 8px;padding:8px 12px;font-size:14px}
+.sh-orderby{margin:0 0 12px;font-size:14px;color:#5a5e3b;font-weight:600}
+.sh-was{color:#999;font-weight:400;margin-right:2px}
+.sh-off{display:inline-block;margin-left:4px;padding:0 6px;border-radius:4px;background:#5a5e3b;color:#fff;font-size:11px;font-weight:600;font-style:normal;letter-spacing:.04em}
 .sh-then{display:block;font-size:11.5px;font-weight:400;color:#777;text-align:right}
 em.sh-lab.sh-lab{display:inline-block;margin-left:6px;padding:0 6px;border-radius:4px;font-style:normal;font-size:11px;font-weight:600;letter-spacing:.04em;line-height:1.6;vertical-align:1px;color:#fff;background:#6b6b6b}
 em.sh-lab.sh-lab--seldex{background:#2f6f8f}em.sh-lab.sh-lab--atkins{background:#a0522d}em.sh-lab.sh-lab--inhouse{background:#5a5e3b}

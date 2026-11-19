@@ -17,6 +17,7 @@
 // Server only: it uses the labs' costs, which the gallery page never sees.
 import { PAPER } from './print-pricing.js';
 import { AU_REMOTE } from './seldex-au-remote.js';
+import { saleOn } from './print-sale.js';
 
 export const SELDEX = {
   nz: { under: 25, over: 50, from: 500, remote: 15 },
@@ -99,6 +100,9 @@ export function freightFor(qtys, s, dest, subtotal) {
     }
     if (frame) parts[parts.length - 1].label += ', large frame';
   }
+  // A sale can make delivery free for in-house and/or Seldex items.
+  if (saleOn(s)) for (const x of parts) if ((x.lab === 'In house' && s.sale.free_home) || (x.lab === 'Seldex' && s.sale.free_seldex)) { x.amount = 0; x.label = `Free (${s.sale.name || 'sale'})`; }
+  if (saleOn(s) && express && s.sale.free_seldex) express = { standard: 0, express: 0 };
   const free = s.free_over > 0 && subtotal >= s.free_over;
   if (free) parts.forEach((x) => { x.amount = 0; });
   if (free && express) express = { standard: 0, express: 0 };

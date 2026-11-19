@@ -21,6 +21,7 @@ import { renderTemplate, studioLinks } from './email-render.js';
 import { alertTony } from './crm.js';
 import { webUrl } from './galleries.js';
 import { freightFor, cleanDest, postcodeCheck, COUNTRIES, isInHouse } from './print-freight.js';
+import { onSale, saleForShop } from './print-sale.js';
 
 const SITE = 'https://www.momentsinlight.co.nz';
 const nzToday = () => new Date().toLocaleDateString('en-CA', { timeZone: 'Pacific/Auckland' });
@@ -46,10 +47,12 @@ export async function printSettings(db) {
 }
 
 /** Products that can be bought for one photo, switched on, with a size. */
-export async function shopProducts(db, { cost = false } = {}) {
+export async function shopProducts(db, { cost = false, settings = null } = {}) {
+  const s = settings ?? (await printSettings(db));
   // The lab's cost only for the server's freight sums: never sent to the gallery page.
   const rows = (await db.prepare(`SELECT id, category, type, name, lab, kind, w_cm, h_cm, price, tiers${cost ? ', cost, lab_item' : ''} FROM print_products WHERE active = 1 AND price > 0 AND w_cm > 0 ORDER BY sort, category, type, w_cm * h_cm, name`).all()).results;
-  return rows.filter((p) => SOLD.has(p.kind)).map((p) => ({ ...p, tiers: p.tiers ? JSON.parse(p.tiers) : null }));
+  // During a sale every price here is the sale price (functions-lib/print-sale.js).
+  return rows.filter((p) => SOLD.has(p.kind)).map((p) => onSale({ ...p, tiers: p.tiers ? JSON.parse(p.tiers) : null }, s));
 }
 
 /** Can this visitor see the shop? Tony always (studio visits); others once it's live, unless the
@@ -65,12 +68,13 @@ export async function shopOpen(env, a, s = null) {
 export async function shopFor(env, a) {
   const s = await printSettings(env.DB);
   if (!(await shopOpen(env, a, s))) return null;
-  const products = await shopProducts(env.DB);
+  const products = await shopProducts(env.DB, { settings: s });
   if (!products.length) return null;
   return {
     products,
     freight_prints: s.freight_prints, freight_wall: s.freight_wall, free_over: s.free_over, intro: s.intro,
     countries: COUNTRIES, // delivery: the cart asks where to, and the server works out the freight (quoteCart)
+    sale: saleForShop(s),
     trial: a.viewer.role === 'studio' ? { live: !!s.live } : null, // Tony: test orders without paying
   };
 }

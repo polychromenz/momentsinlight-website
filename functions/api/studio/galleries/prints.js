@@ -11,6 +11,7 @@ import { json } from '../../../../functions-lib/studio.js';
 import { printSettings, DEFAULTS, shippedEmail } from '../../../../functions-lib/prints.js';
 import { kindOf, sizeOf, dollars, parseTiers, tidy, cleanCrop, ratioOf } from '../../../../functions-lib/print-pricing.js';
 import { webUrl } from '../../../../functions-lib/galleries.js';
+import { cleanSale } from '../../../../functions-lib/print-sale.js';
 
 const ORDER = ['Prints', 'Deckled Prints', 'Panoramic Prints', 'Matted Prints', 'Gallery Boards', 'Canvas', 'Frames', 'Float Frames', 'Matted Frames', 'Circular Frames'];
 const now = () => new Date().toISOString();
@@ -59,6 +60,7 @@ export async function onRequestPut({ request, env }) {
   if (x.freight_wall !== undefined) s.freight_wall = cents(x.freight_wall);
   if (x.freight_inhouse !== undefined) s.freight_inhouse = cents(x.freight_inhouse);
   if (x.min_inhouse !== undefined) s.min_inhouse = cents(x.min_inhouse);
+  if (x.sale !== undefined) s.sale = cleanSale(x.sale);
   if (x.return_address !== undefined) s.return_address = String(x.return_address).trim().slice(0, 300);
   if (x.free_over !== undefined) s.free_over = cents(x.free_over);
   if (x.hold_days !== undefined) s.hold_days = Math.min(60, Math.max(0, Math.round(Number(x.hold_days) || 0)));
