@@ -283,13 +283,14 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
       <label class="po-tony">Your note (only you see it) <textarea rows="2" data-tony-note>${esc(o.tony_note ?? '')}</textarea></label>
       <div class="po-actions">
         <button type="button" class="s-btn" data-lab>Download lab files</button>
-        <button type="button" class="s-btn" data-label>Print address label</button>
+        <button type="button" class="s-btn" data-label title="In the print dialog: printer Zebra GC420t, Paper size 100 × 100 mm, Margins None, Scale Default (100%)">Print address label</button>
         ${o.status === 'paid' ? '<button type="button" class="s-btn s-btn--solid" data-step="approved">Crops checked</button>' : ''}
         ${['paid', 'approved'].includes(o.status) ? '<button type="button" class="s-btn s-btn--solid" data-step="ordered">Ordered from the lab</button>' : ''}
         ${['paid', 'approved', 'ordered'].includes(o.status) ? '<button type="button" class="s-btn s-btn--solid" data-step="shipped">Shipped</button>' : ''}
         ${!['cancelled', 'shipped'].includes(o.status) ? '<button type="button" class="s-btn s-btn--quiet" data-step="cancelled">Cancel order</button>' : ''}
         <span class="po-progress"></span>
-      </div>`;
+      </div>
+      <p class="hint">Address label: in the print dialog choose the Zebra GC420t, Paper size 100 × 100 mm, Margins None and Scale Default. If 100 × 100 mm isn’t listed, add it in the Zebra’s Printing Preferences (Page Setup › New).</p>`;
     requestAnimationFrame(() => el.querySelectorAll<HTMLElement>('[data-mk]').forEach((m) => {
       const i = items.find((x: any) => String(x.id) === m.dataset.mk);
       if (i?.crop) m.innerHTML = mockup(i.product as Product, i.web, i.crop, !!i.crop.landscape, 150, 150);
@@ -308,20 +309,21 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
     w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${esc(o.number)} label</title><style>
       @font-face { font-family: Raleway; font-weight: 500; src: url('${O}/fonts/pdf/raleway-500.ttf') format('truetype') }
       @font-face { font-family: Raleway; font-weight: 600; src: url('${O}/fonts/pdf/raleway-600.ttf') format('truetype') }
+      /* Sized in vmin, so it fills whatever page the printer driver uses (1vmin = 1 mm on a 100 mm label). */
       @page { size: 100mm 100mm; margin: 0 }
       html, body { margin: 0; padding: 0 }
-      body { width: 100mm; height: 100mm; box-sizing: border-box; padding: 5mm 6mm 4.5mm; font-family: Raleway, Arial, sans-serif; font-weight: 500; color: #000; display: flex; flex-direction: column }
-      .top { display: flex; justify-content: space-between; align-items: flex-end; padding-bottom: 2.5mm; border-bottom: .5mm solid #000 }
-      .top img { height: 15mm; width: auto; display: block }
-      .top span { font-size: 11pt; font-weight: 600; letter-spacing: .04em }
-      .to { flex: 1; padding-top: 3.5mm; min-height: 0 }
-      .to small { display: block; font-size: 10pt; font-weight: 600; letter-spacing: .14em; margin-bottom: 1.5mm }
-      .name { font-size: 20pt; font-weight: 600; line-height: 1.12 }
-      .addr { font-size: 17pt; line-height: 1.22; margin-top: 1.2mm }
-      .phone { font-size: 13pt; margin-top: 2mm }
-      .from { border-top: .4mm solid #000; padding-top: 2mm; font-size: 10.5pt; line-height: 1.28; white-space: pre-line }
-      .from b { font-weight: 600; letter-spacing: .1em; font-size: 9pt }
-      @media screen { body { margin: 10px auto; outline: 1px dashed #999 } }
+      body { width: 100vmin; height: 100vmin; box-sizing: border-box; padding: 8vmin 7vmin 7vmin; font-family: Raleway, Arial, sans-serif; font-weight: 500; color: #000; display: flex; flex-direction: column; justify-content: space-between; overflow: hidden }
+      .top { display: flex; justify-content: space-between; align-items: flex-end; padding-bottom: 3vmin; border-bottom: .6vmin solid #000 }
+      .top img { height: 17vmin; width: auto; display: block }
+      .top span { font-size: 4.6vmin; font-weight: 600; letter-spacing: .03em }
+      .to { flex: 1; padding-top: 4vmin; min-height: 0 }
+      .to small { display: block; font-size: 3.8vmin; font-weight: 600; letter-spacing: .14em; margin-bottom: 1.5vmin }
+      .name { font-size: 7.6vmin; font-weight: 600; line-height: 1.1 }
+      .addr { font-size: 6.6vmin; line-height: 1.18; margin-top: 1.2vmin }
+      .phone { font-size: 5vmin; margin-top: 2vmin }
+      .from { border-top: .5vmin solid #000; padding-top: 2.4vmin; font-size: 4vmin; line-height: 1.25; white-space: pre-line }
+      .from b { font-weight: 600; letter-spacing: .1em; font-size: 3.6vmin }
+      @media screen { body { margin: 10px auto; outline: 1px dashed #999; width: 100mm; height: 100mm } }
     </style></head><body>
       <div class="top"><img src="${O}/brand/label-logo.png" alt="Moments in Light" /><span>${esc(o.number)}</span></div>
       <div class="to"><small>DELIVER TO</small><div class="name">${esc(a.name || o.name || '')}</div><div class="addr">${lines.map(esc).join('<br>')}</div>${o.phone ? `<div class="phone">${esc(o.phone)}</div>` : ''}</div>
