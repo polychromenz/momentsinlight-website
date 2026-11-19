@@ -28,7 +28,7 @@ const GROUPS: [string, string[]][] = [
 ];
 const NICE: Record<string, string> = { 'Prints': 'Photo prints', 'Print Pack': 'Print pack', 'Portrait Envelope': 'Portrait envelope', 'Deckled Prints': 'Deckled edge', 'Panoramic Prints': 'Panoramic', 'Matted Prints': 'Matted print', 'Canvas': 'Canvas', 'Frames': 'Framed print', 'Matted Frames': 'Framed with mat', 'Float Frames': 'Hand torn frame', 'Circular Frames': 'Circle frame', 'Gallery Boards': 'Gallery board' };
 const ABOUT: Record<string, string> = {
-  'Prints': 'Professional photo prints on semi gloss paper, with a gentle sheen and deep, rich colour.',
+  'Prints': 'Professional photo prints on semi gloss paper, with a gentle sheen and deep, rich colour, printed and posted by Tony within a week. Small sizes are $15 for the first print, then $4 each.',
   'Print Pack': 'A set of 24 prints, one size, from up to 24 of your photos. Choose fewer and your favourites are repeated to fill the pack.',
   'Portrait Envelope': '8×10″ prints, printed and trimmed by hand by Tony, in a sky blue linen portrait envelope with a white insert, a white satin ribbon and the ML monogram foiled in black. Choose 10 or 20 prints and up to that many photos; choose fewer and your favourites are repeated.',
   'Deckled Prints': 'Fine art paper with a hand-torn edge, for a soft, timeless look.',
@@ -302,6 +302,7 @@ export function initShop(ctx: Ctx) {
     const d = dpi(i.w, cropFor(i), p, land);
     const atFloor = st.cropping && cropFor(i).w <= minW(i, p, land) + 0.002;
     const tiers = (p.tiers ?? []).filter((t) => t.q > 1);
+    const ft = firstThen(p);
     const each = st.ids.length;
     let totals = '';
     if (isPack()) totals = `<p class="sh-total"><span>${plural(packCount(p), 'print')}</span><strong>${nzd(p.price)}</strong></p>`;
@@ -314,6 +315,7 @@ export function initShop(ctx: Ctx) {
       ${atFloor ? `<p class="sh-warn">That’s as far as this photo can be zoomed for ${esc(sizeLabel(p, land))} and still print well.</p>`
         : d && d < DPI_WARN ? `<p class="sh-caution">This crop prints at about ${Math.round(d)} dpi, so it may look a little soft up close. Zoom out or choose a smaller size for the sharpest print.</p>` : ''}
       ${tiers.length ? `<p class="sh-bulk">Order more and save: ${tiers.map((t) => `${t.q} or more, then ${nzd(t.add)} each`).join(' · ')}</p>` : ''}
+      ${ft ? `<p class="sh-bulk">${nzd(p.tiers![0].base)} for the first print of this size, then ${nzd(ft)} for each one after.</p>` : ''}
       ${totals}`;
   }
 
@@ -374,7 +376,7 @@ export function initShop(ctx: Ctx) {
           const q = fullDpi(i, s, sl);
           const tooBig = q < DPI_MIN, soft = !tooBig && q < DPI_WARN;
           const cls = [s.id === st.pid ? 'on' : '', fits ? 'fit' : '', tooBig ? 'off' : ''].filter(Boolean).join(' ');
-          return `<label class="${cls}"${tooBig ? ' title="This photo isn’t big enough to print well at this size."' : ''}><input type="radio" name="sh-size" value="${s.id}"${s.id === st.pid ? ' checked' : ''}${tooBig ? ' disabled' : ''} /><span>${esc(sizeLabel(s, sl))}${labTag(s)}${fits ? ' <em>whole photo</em>' : ''}${tooBig ? ' <em class="sh-no">too big for this photo</em>' : soft ? ' <em class="sh-soft">may look soft</em>' : ''}</span><strong>${nzd(s.tiers?.[0]?.base ?? s.price)}</strong></label>`;
+          return `<label class="${cls}"${tooBig ? ' title="This photo isn’t big enough to print well at this size."' : ''}><input type="radio" name="sh-size" value="${s.id}"${s.id === st.pid ? ' checked' : ''}${tooBig ? ' disabled' : ''} /><span>${esc(sizeLabel(s, sl))}${labTag(s)}${fits ? ' <em>whole photo</em>' : ''}${tooBig ? ' <em class="sh-no">too big for this photo</em>' : soft ? ' <em class="sh-soft">may look soft</em>' : ''}</span><strong>${nzd(s.tiers?.[0]?.base ?? s.price)}${firstThen(s) ? `<small class="sh-then">then ${nzd(firstThen(s)!)} each</small>` : ''}</strong></label>`;
         }).join('')}</div></div>`}
         <div class="sh-buy">
           ${pack ? '' : `<div class="sh-qty"><button type="button" data-qty="-1" aria-label="One fewer">−</button><span>${st.qty}</span><button type="button" data-qty="1" aria-label="One more">+</button></div>`}
@@ -386,6 +388,8 @@ export function initShop(ctx: Ctx) {
   }
 
   const fmt = (n: number) => String(Math.round(n * 10) / 10);
+  /** "First print, then extras" pricing (one tier from 1 with a cheaper add): the extra price, or null. */
+  const firstThen = (p: Product) => { const t = p.tiers?.[0]; return t && t.q === 1 && t.add < t.base ? t.add : null; };
   const sizeLabel = (p: Product, landscape: boolean) => {
     const a = p.name.match(/^(A[2-4])\b/i)?.[1];
     const [w, h] = landscape ? [p.h_cm, p.w_cm] : [p.w_cm, p.h_cm];
@@ -685,6 +689,7 @@ const SHOP_CSS = `
 .sh-card-mk{display:flex;align-items:center;justify-content:center;width:100%;aspect-ratio:4/3;background:#ebe8e2;margin-bottom:8px;overflow:hidden;transition:background .3s}
 .sh-card-mk--room{display:block;transition:filter .3s}.sh-card:hover .sh-card-mk--room{filter:brightness(.97)}
 .sh-room-note{text-align:center;margin:4px 0 0}
+.sh-then{display:block;font-size:11.5px;font-weight:400;color:#777;text-align:right}
 em.sh-lab.sh-lab{display:inline-block;margin-left:6px;padding:0 6px;border-radius:4px;font-style:normal;font-size:11px;font-weight:600;letter-spacing:.04em;line-height:1.6;vertical-align:1px;color:#fff;background:#6b6b6b}
 em.sh-lab.sh-lab--seldex{background:#2f6f8f}em.sh-lab.sh-lab--atkins{background:#a0522d}em.sh-lab.sh-lab--inhouse{background:#5a5e3b}
 .sh-card>span.sh-card-labs.sh-card-labs{display:block}.sh-card-labs .sh-lab{margin:2px 2px 0}
