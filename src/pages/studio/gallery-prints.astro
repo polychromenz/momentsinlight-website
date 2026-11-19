@@ -70,6 +70,7 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
   import { ask, askFields } from '../../studio/dialogs';
   import { mockup, cropEditor, styleMockups, type Product } from '../../prints/mockup';
   import { labFiles } from '../../prints/lab-files';
+  import { zebraPrinter, printOnZebra, drawLabel } from '../../studio/zebra-label';
   import { ratioOf, dpi, money } from '../../../functions-lib/print-pricing.js';
   styleMockups();
   const $ = <T extends HTMLElement = HTMLElement>(s: string, el: ParentNode = document) => el.querySelector<T>(s)!;
@@ -283,14 +284,15 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
       <label class="po-tony">Your note (only you see it) <textarea rows="2" data-tony-note>${esc(o.tony_note ?? '')}</textarea></label>
       <div class="po-actions">
         <button type="button" class="s-btn" data-lab>Download lab files</button>
-        <button type="button" class="s-btn" data-label title="In the print dialog: printer Zebra GC420t, Paper size 100 × 100 mm, Margins None, Scale Default (100%)">Print address label</button>
+        <button type="button" class="s-btn" data-label>Print address label</button>
+        <button type="button" class="s-btn s-btn--quiet" data-label-preview>Preview label</button>
         ${o.status === 'paid' ? '<button type="button" class="s-btn s-btn--solid" data-step="approved">Crops checked</button>' : ''}
         ${['paid', 'approved'].includes(o.status) ? '<button type="button" class="s-btn s-btn--solid" data-step="ordered">Ordered from the lab</button>' : ''}
         ${['paid', 'approved', 'ordered'].includes(o.status) ? '<button type="button" class="s-btn s-btn--solid" data-step="shipped">Shipped</button>' : ''}
         ${!['cancelled', 'shipped'].includes(o.status) ? '<button type="button" class="s-btn s-btn--quiet" data-step="cancelled">Cancel order</button>' : ''}
         <span class="po-progress"></span>
       </div>
-      <p class="hint">Address label: in the print dialog choose the Zebra GC420t, Paper size 100 × 100 mm, Margins None and Scale Default. If 100 × 100 mm isn’t listed, add it in the Zebra’s Printing Preferences (Page Setup › New).</p>`;
+      <p class="hint">Address label: with Zebra Browser Print running on this computer, the label goes straight to the Zebra at exactly 100 × 100 mm. Without it, the label opens in the print dialog (choose the Zebra, Paper size 100 × 100 mm, Margins None, Scale Default).</p>`;
     requestAnimationFrame(() => el.querySelectorAll<HTMLElement>('[data-mk]').forEach((m) => {
       const i = items.find((x: any) => String(x.id) === m.dataset.mk);
       if (i?.crop) m.innerHTML = mockup(i.product as Product, i.web, i.crop, !!i.crop.landscape, 150, 150);
@@ -298,7 +300,34 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
   }
   /** The address label for the Zebra GC420t (100 × 100 mm roll): opens a page sized to the label
    *  and the print dialog; choose the Zebra there. */
-  function printLabel() {
+  /** The label's words for this order. */
+  function labelData() {
+    const o = current.order, a = o.address ?? {};
+    const lines = [a.line1, a.line2, [a.city, a.postal_code].filter(Boolean).join(' '), a.state, a.country && a.country !== 'NZ' ? (a.country === 'AU' ? 'AUSTRALIA' : a.country) : ''].filter(Boolean);
+    return { number: o.number, name: a.name || o.name || '', lines, phone: o.phone || '', from: String(settings.return_address ?? '').trim() };
+  }
+  /** Straight to the Zebra through Zebra Browser Print when it's running on this PC (exact 100 × 100 mm);
+   *  otherwise the print dialog. */
+  async function printLabel() {
+    const btn = $<HTMLButtonElement>('[data-label]');
+    btn.disabled = true; const was = btn.textContent; btn.textContent = 'Sending to the Zebra…';
+    try {
+      const printer = await zebraPrinter();
+      if (printer) { await printOnZebra(labelData(), printer); toast(`Label sent to ${printer.name || 'the Zebra'}.`); return; }
+      toast('Zebra Browser Print isn’t running on this computer, so the label opens in the print dialog instead.', true);
+      printLabelDialog();
+    } catch (err) { toast((err as Error).message, true); }
+    finally { btn.disabled = false; btn.textContent = was; }
+  }
+  /** See the label exactly as the Zebra will print it (800 × 800 dots). */
+  async function previewLabel() {
+    const c = await drawLabel(labelData());
+    const w = window.open('', '_blank', 'width=520,height=560');
+    if (!w) return toast('Your browser blocked the preview window. Allow pop-ups for this site.', true);
+    w.document.write(`<!doctype html><title>${esc(current.order.number)} label</title><body style="margin:0;background:#888;display:grid;place-items:center;min-height:100vh"><img src="${c.toDataURL('image/png')}" style="width:400px;height:400px;background:#fff;box-shadow:0 2px 10px #0005" alt="Label" /></body>`);
+    w.document.close();
+  }
+  function printLabelDialog() {
     const { order: o } = current;
     const a = o.address ?? {};
     const lines = [a.line1, a.line2, [a.city, a.postal_code].filter(Boolean).join(' '), a.state, a.country && a.country !== 'NZ' ? (a.country === 'AU' ? 'AUSTRALIA' : a.country) : ''].filter(Boolean);
@@ -387,6 +416,7 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
     if ((x = b('[data-show]'))) { show = x.dataset.show!; document.querySelectorAll('[data-show]').forEach((y) => y.classList.toggle('on', y === x)); drawOrders(); return; }
     if ((x = b('[data-order]'))) { openOrder(Number(x.dataset.order)); return; }
     if (b('[data-label]')) return printLabel();
+    if (b('[data-label-preview]')) return previewLabel();
     if (b('[data-close-order]')) { current = null; $('.pr-order').hidden = true; history.replaceState(null, '', location.pathname); drawOrders(); return; }
     if ((x = b('[data-step]'))) { step(x.dataset.step!); return; }
     if ((x = b('[data-recrop]'))) { recrop(Number(x.dataset.recrop)); return; }
