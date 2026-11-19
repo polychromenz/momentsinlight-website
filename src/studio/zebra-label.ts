@@ -103,6 +103,11 @@ export async function zebraPrinter() {
       if (!r.ok) continue;
       const p = await r.json().catch(() => null);
       if (p && p.uid) { BP = base; return p; }
+      // No default chosen in Browser Print: use the first printer it can see (Tony's has just the GC420t).
+      const r2 = await fetch(`${base}/available`, { signal: AbortSignal.timeout(2500) });
+      const list = r2.ok ? await r2.json().catch(() => null) : null;
+      const first = (list?.printer ?? []).find((x: any) => x?.uid);
+      if (first) { BP = base; return first; }
     } catch { /* not on this port */ }
   }
   return null;
