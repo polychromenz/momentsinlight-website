@@ -184,3 +184,53 @@ export async function albumFiles(album: Album, galleryId: string, photos: Map<st
   document.body.append(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 120_000);
 }
+
+/** The whole album as one print PDF (Tony, 2026-11-19): one PDF page per spread at the exact spread size
+ *  (2W × H inches plus any bleed), each holding that spread's 300 dpi JPEG unchanged, tagged sRGB. */
+export async function albumPdf(album: Album, galleryId: string, photos: Map<string, Photo & { filename?: string }>, progress: (n: number, of: number) => void) {
+  const spreads = album.design.spreads;
+  const page = pageSize(album.size, album.orientation), b = ALBUM_MARGINS.bleed, px = spreadPx(album.size, album.orientation);
+  const wPt = +((page.w * 2 + 2 * b) * 72).toFixed(2), hPt = +((page.h + 2 * b) * 72).toFixed(2);
+  const enc = new TextEncoder();
+  const parts: BlobPart[] = [];
+  const offsets: number[] = [];
+  let at = 0;
+  const put = (x: string | Uint8Array) => { const u = typeof x === 'string' ? enc.encode(x) : x; parts.push(u as BlobPart); at += u.length; };
+  const obj = (n: number, body: string, stream?: Uint8Array) => {
+    offsets[n] = at;
+    if (stream) { put(`${n} 0 obj\n${body}\nstream\n`); put(stream); put('\nendstream\nendobj\n'); }
+    else put(`${n} 0 obj\n${body}\nendobj\n`);
+  };
+  // Objects: 1 catalog, 2 pages, 3 sRGB profile, 4 info, then 3 a spread: page, contents, image.
+  const first = 5, kids = spreads.map((_, k) => `${first + 3 * k} 0 R`).join(' ');
+  put(new Uint8Array([...enc.encode('%PDF-1.4\n%'), 0xe2, 0xe3, 0xcf, 0xd3, 0x0a])); // header, with the binary marker
+  obj(1, '<< /Type /Catalog /Pages 2 0 R >>');
+  obj(2, `<< /Type /Pages /Kids [${kids}] /Count ${spreads.length} >>`);
+  const icc = srgbProfile();
+  obj(3, `<< /N 3 /Alternate /DeviceRGB /Length ${icc.length} >>`, icc);
+  const title = album.name.replace(/[()\\]/g, ' ');
+  obj(4, `<< /Title (${title.replace(/[^\x20-\x7e]/g, '')}) /Creator (Moments Studio album designer) /Producer (Moments Studio) >>`);
+  const src = originals(galleryId, photos);
+  try {
+    for (let k = 0; k < spreads.length; k++) {
+      progress(k, spreads.length);
+      const [jpg] = await renderSpread(album, spreads[k], photos, src.get);
+      const n = first + 3 * k;
+      const content = enc.encode(`q ${wPt} 0 0 ${hPt} 0 0 cm /Im0 Do Q`);
+      obj(n, `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${wPt} ${hPt}] /TrimBox [${b * 72} ${b * 72} ${wPt - b * 72} ${hPt - b * 72}] /Resources << /XObject << /Im0 ${n + 2} 0 R >> >> /Contents ${n + 1} 0 R >>`);
+      obj(n + 1, `<< /Length ${content.length} >>`, content);
+      obj(n + 2, `<< /Type /XObject /Subtype /Image /Width ${px.w} /Height ${px.h} /ColorSpace [/ICCBased 3 0 R] /BitsPerComponent 8 /Filter /DCTDecode /Length ${jpg.length} >>`, jpg);
+    }
+  } finally { src.close(); }
+  progress(spreads.length, spreads.length);
+  const count = first + 3 * spreads.length;
+  const xref = at;
+  put(`xref\n0 ${count}\n0000000000 65535 f \n${Array.from({ length: count - 1 }, (_, i) => `${String(offsets[i + 1]).padStart(10, '0')} 00000 n \n`).join('')}`);
+  put(`trailer\n<< /Size ${count} /Root 1 0 R /Info 4 0 R >>\nstartxref\n${xref}\n%%EOF\n`);
+  const url = URL.createObjectURL(new Blob(parts, { type: 'application/pdf' }));
+  const a = document.createElement('a');
+  const safe = (x: string) => x.replace(/[\/:*?"<>|\u0000-\u001f]+/g, ' ').replace(/\s+/g, ' ').trim();
+  a.href = url; a.download = `${safe(album.name) || 'Album'} print.pdf`;
+  document.body.append(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 120_000);
+}

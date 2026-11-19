@@ -3,7 +3,7 @@
 import { ask, guardLeaving } from './dialogs';
 import { ALBUM_SIZES, ALBUM_MARGINS, SPREADS_MIN, SPREADS_MAX, pageSize, spreadPx, orientationsOf, sizeLabel } from '../../functions-lib/album-sizes.js';
 import { PAGE_LAYOUTS, SPAN_LABEL, DPI_MIN, DPI_WARN, autoLayout, cropBox, maxZoom, relayout, spreadFor, spreadRects, slotsOf, type Photo, type Spread, type Rect } from './album-layouts';
-import { albumFiles } from './album-export';
+import { albumFiles, albumPdf } from './album-export';
 
 type Img = Photo & { filename: string; section_id: number; sort_order: number; hidden: number; has_original: number; web: string | null; thumb: string | null };
 type Design = { spreads: Spread[]; picks: string[] };
@@ -304,7 +304,7 @@ document.addEventListener('click', async (e) => {
   if (t.closest('[data-auto]')) openAuto();
   if (t.closest('[data-export]')) $<HTMLDialogElement>('[data-kind-dlg]').showModal();
   const kind = t.closest<HTMLElement>('[data-kind]');
-  if (kind) { kind.closest('dialog')!.close(); exportFiles(kind.dataset.kind === 'pages'); }
+  if (kind) { kind.closest('dialog')!.close(); exportFiles(kind.dataset.kind!); }
   if (t.closest('[data-close]')) t.closest('dialog')?.close();
 });
 
@@ -499,7 +499,8 @@ function sheet(pages: boolean) {
   ];
   return lines.join('\n');
 }
-async function exportFiles(pages: boolean) {
+async function exportFiles(kind: string) {
+  const pages = kind === 'pages';
   if (dirty || saving) await save();
   const pg = page();
   const empty: number[] = [], soft: string[] = [], missing = new Set<string>();
@@ -522,6 +523,14 @@ async function exportFiles(pages: boolean) {
   const bar = $<HTMLElement>('.bar span', dlg), text = $('.ex-text', dlg);
   dlg.showModal();
   try {
+    if (kind === 'pdf') {
+      await albumPdf({ ...album, design }, album.gallery_id, photos, (n, of) => {
+        bar.style.width = `${Math.round((100 * n) / of)}%`;
+        text.textContent = n < of ? `Drawing spread ${n + 1} of ${of} at ${px.w} × ${px.h} px from the full-size photos…` : `Done. The PDF is in your downloads: ${of} pages, one spread each at ${px.w / 300} × ${px.h / 300} in (300 dpi, sRGB).`;
+      });
+      api('/api/studio/galleries/albums', 'POST', { action: 'exported', id: album.id }).catch(() => {});
+      return;
+    }
     await albumFiles({ ...album, design }, album.gallery_id, photos, sheet(pages), (n, of) => {
       bar.style.width = `${Math.round((100 * n) / of)}%`;
       text.textContent = n < of ? `Drawing spread ${n + 1} of ${of} at ${px.w} × ${px.h} px from the full-size photos…`
