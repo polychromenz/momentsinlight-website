@@ -304,25 +304,34 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
     const from = String(settings.return_address ?? '').trim();
     const w = window.open('', '_blank', 'width=480,height=520');
     if (!w) { alert('Your browser blocked the label window. Allow pop-ups for this site and try again.'); return; }
+    const O = location.origin;
     w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${esc(o.number)} label</title><style>
+      @font-face { font-family: Raleway; font-weight: 500; src: url('${O}/fonts/pdf/raleway-500.ttf') format('truetype') }
+      @font-face { font-family: Raleway; font-weight: 600; src: url('${O}/fonts/pdf/raleway-600.ttf') format('truetype') }
       @page { size: 100mm 100mm; margin: 0 }
       html, body { margin: 0; padding: 0 }
-      body { width: 100mm; height: 100mm; box-sizing: border-box; padding: 6mm 6mm 5mm; font-family: Arial, Helvetica, sans-serif; color: #000; display: flex; flex-direction: column }
-      .top { display: flex; justify-content: space-between; align-items: baseline; border-bottom: .4mm solid #000; padding-bottom: 2mm; font-size: 9pt; letter-spacing: .08em }
-      .top b { font-size: 11pt; letter-spacing: .12em }
-      .to { flex: 1; padding-top: 4mm }
-      .to small { display: block; font-size: 8pt; letter-spacing: .1em; margin-bottom: 1.5mm }
-      .name { font-size: 15pt; font-weight: bold; line-height: 1.15 }
-      .addr { font-size: 13pt; line-height: 1.25; margin-top: 1mm }
-      .phone { font-size: 10pt; margin-top: 2mm }
-      .from { border-top: .3mm solid #000; padding-top: 2mm; font-size: 8pt; line-height: 1.3; white-space: pre-line }
-      .from b { letter-spacing: .1em }
+      body { width: 100mm; height: 100mm; box-sizing: border-box; padding: 5mm 6mm 4.5mm; font-family: Raleway, Arial, sans-serif; font-weight: 500; color: #000; display: flex; flex-direction: column }
+      .top { display: flex; justify-content: space-between; align-items: flex-end; padding-bottom: 2.5mm; border-bottom: .5mm solid #000 }
+      .top img { height: 15mm; width: auto; display: block }
+      .top span { font-size: 11pt; font-weight: 600; letter-spacing: .04em }
+      .to { flex: 1; padding-top: 3.5mm; min-height: 0 }
+      .to small { display: block; font-size: 10pt; font-weight: 600; letter-spacing: .14em; margin-bottom: 1.5mm }
+      .name { font-size: 20pt; font-weight: 600; line-height: 1.12 }
+      .addr { font-size: 17pt; line-height: 1.22; margin-top: 1.2mm }
+      .phone { font-size: 13pt; margin-top: 2mm }
+      .from { border-top: .4mm solid #000; padding-top: 2mm; font-size: 10.5pt; line-height: 1.28; white-space: pre-line }
+      .from b { font-weight: 600; letter-spacing: .1em; font-size: 9pt }
       @media screen { body { margin: 10px auto; outline: 1px dashed #999 } }
     </style></head><body>
-      <div class="top"><b>MOMENTS IN LIGHT</b><span>${esc(o.number)}</span></div>
+      <div class="top"><img src="${O}/brand/label-logo.png" alt="Moments in Light" /><span>${esc(o.number)}</span></div>
       <div class="to"><small>DELIVER TO</small><div class="name">${esc(a.name || o.name || '')}</div><div class="addr">${lines.map(esc).join('<br>')}</div>${o.phone ? `<div class="phone">${esc(o.phone)}</div>` : ''}</div>
       ${from ? `<div class="from"><b>IF UNDELIVERED, RETURN TO</b>\n${esc(from)}</div>` : ''}
-      <script>window.onload = () => { window.print(); };<\/script></body></html>`);
+      <script>
+        // Print once the logo and the Raleway faces are in, so the label doesn't print in a fallback font.
+        const img = document.querySelector('img');
+        Promise.all([document.fonts.load('600 20pt Raleway'), document.fonts.load('500 17pt Raleway'), img.decode ? img.decode().catch(() => {}) : Promise.resolve()])
+          .then(() => document.fonts.ready).then(() => setTimeout(() => window.print(), 150));
+      <\/script></body></html>`);
     w.document.close();
   }
   function sheet() {
