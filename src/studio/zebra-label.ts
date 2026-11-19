@@ -8,9 +8,11 @@ export type LabelData = { number: string; name: string; lines: string[]; phone?:
 const DOTS = 800;          // 100 mm at 8 dots per mm
 const MM = 8;
 // Browser Print listens on https://localhost:9101 (for https pages like the studio) and http://localhost:9100.
-// Only the secure port is used (2026-11-19): the plain http fallback made Tony's Edge mark the whole
-// site "Not secure" for him (visitors weren't affected). If https fails, the label uses the print dialog.
-const PORTS = ['https://localhost:9101'];
+// Only the plain loopback port is used (2026-11-19). The https port has Zebra's own self-signed
+// certificate, and once a page talks to it Edge marks the whole site "Not secure" for Tony until Edge
+// restarts (visitors weren't affected). http://127.0.0.1 never leaves the PC, and browsers count it as
+// trustworthy, so it doesn't set off the warning. If it fails, the label uses the print dialog.
+const PORTS = ['http://127.0.0.1:9100'];
 let BP = PORTS[0];
 
 let fontsReady: Promise<void> | null = null;
