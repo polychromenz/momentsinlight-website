@@ -305,7 +305,16 @@ export function initShop(ctx: Ctx) {
     const ft = firstThen(p);
     const each = st.ids.length;
     let totals = '';
-    if (isPack()) totals = `<p class="sh-total"><span>${plural(packCount(p), 'print')}</span><strong>${nzd(p.price)}</strong></p>`;
+    if (isPack()) {
+      totals = `<p class="sh-total"><span>${plural(packCount(p), 'print')}</span><strong>${nzd(p.price)}</strong></p>`;
+      // The envelope beside the same prints bought loose, so the difference is plain (Tony, 2026-11-19).
+      const loose = isEnvelope(p) ? products().find((x) => x.category === 'Prints' && x.w_cm === p.w_cm && x.h_cm === p.h_cm) : null;
+      if (loose) {
+        const n = packCount(p), each = productTotal(loose, n), extra = p.price - each;
+        if (extra > 0) totals += `<p class="sh-bulk">As ${n} loose ${sizeLabel(p, false)} prints this would be ${nzd(each)}. The sky blue linen envelope, ribbon and hand finishing add ${nzd(extra)}.</p>`;
+        else if (extra < 0) totals += `<p class="sh-bulk">As ${n} loose ${sizeLabel(p, false)} prints this would be ${nzd(each)}, so the envelope saves you ${nzd(-extra)} and comes in sky blue linen with a ribbon.</p>`;
+      }
+    }
     else {
       const all = each > 1 ? orderTotals(st.ids.map((id) => ({ product_id: choiceOf(id).pid, qty: choiceOf(id).qty })), byId(), { free_over: 0, freight_prints: 0, freight_wall: 0 }).subtotal : 0;
       totals = `<p class="sh-total"><span>${each > 1 ? `${st.linked ? 'Each photo' : 'This photo'}${st.qty > 1 ? ` × ${st.qty}` : ''}` : st.qty > 1 ? `${st.qty} prints` : '&nbsp;'}</span><strong>${nzd(productTotal(p, st.qty))}</strong></p>
