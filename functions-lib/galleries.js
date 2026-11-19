@@ -36,8 +36,8 @@ export function crc32(bytes, crc = 0) {
 export async function gallerySettings(db) {
   const row = await db.prepare(`SELECT value FROM settings WHERE key = 'galleries'`).first();
   // expiry_from: 'date' (the wedding/shoot date) or 'online' (when it goes online); min_months: at least this
-  // long online however old the date (decided with Tony 2026-11-16: 12 months from the date, at least 6).
-  return { expiry_months: 12, expiry_from: 'date', min_months: 6, extension_price: 4900, extension_months: 12, ...(row ? JSON.parse(row.value) : {}) };
+  // long online however old the date (Tony 2026-11-20: 6 months from going online, then the annual keep).
+  return { expiry_months: 6, expiry_from: 'online', min_months: 6, extension_price: 4900, extension_months: 12, ...(row ? JSON.parse(row.value) : {}) };
 }
 const addMonths = (iso, m) => { const d = new Date(`${iso}T12:00:00Z`); d.setUTCMonth(d.getUTCMonth() + m); return d.toISOString().slice(0, 10); };
 
