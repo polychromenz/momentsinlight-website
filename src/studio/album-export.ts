@@ -106,8 +106,12 @@ function zip(files: { name: string; blob: Blob; crc: number; size: number }[]): 
   return new Blob([...parts, ...central, end.buffer], { type: 'application/zip' });
 }
 
-/** One spread drawn at full size: the JPEG bytes. getPhoto gives the original as an ImageBitmap. */
-export async function renderSpread(album: Album, s: Spread, photos: Map<string, Photo>, getPhoto: (id: string) => Promise<ImageBitmap>): Promise<Uint8Array> {
+const jpeg = async (c: OffscreenCanvas) => markJpeg(new Uint8Array(await (await c.convertToBlob({ type: 'image/jpeg', quality: 0.95 })).arrayBuffer()));
+
+/** One spread drawn at full size: the JPEG bytes, as one double-page file, or (pages) the left and right
+ *  pages as two files cut exactly at the fold, for Seldex's SDS designer, which only takes a photo per page
+ *  (Tony, 2026-11-19: SDS slots can't be merged across the fold). getPhoto gives the original. */
+export async function renderSpread(album: Album, s: Spread, photos: Map<string, Photo>, getPhoto: (id: string) => Promise<ImageBitmap>, pages = false): Promise<Uint8Array[]> {
   const page = pageSize(album.size, album.orientation), px = spreadPx(album.size, album.orientation), b = ALBUM_MARGINS.bleed;
   const canvas = new OffscreenCanvas(px.w, px.h);
   const ctx = canvas.getContext('2d')!;
@@ -125,8 +129,15 @@ export async function renderSpread(album: Album, s: Spread, photos: Map<string, 
     const dx = Math.round((x0 + b) * ALBUM_DPI), dy = Math.round((y0 + b) * ALBUM_DPI);
     ctx.drawImage(bmp, c.sx, c.sy, c.sw, c.sh, dx, dy, Math.round((x1 + b) * ALBUM_DPI) - dx, Math.round((y1 + b) * ALBUM_DPI) - dy);
   }
-  const blob = await canvas.convertToBlob({ type: 'image/jpeg', quality: 0.95 });
-  return markJpeg(new Uint8Array(await blob.arrayBuffer()));
+  if (!pages) return [await jpeg(canvas)];
+  const half = px.w / 2; // the fold (bleed, if any, is on the outside edges so the halves are equal)
+  const out: Uint8Array[] = [];
+  for (const x of [0, half]) {
+    const c = new OffscreenCanvas(half, px.h);
+    c.getContext('2d')!.drawImage(canvas, x, 0, half, px.h, 0, 0, half, px.h);
+    out.push(await jpeg(c));
+  }
+  return out;
 }
 
 /** Fetch an original as an ImageBitmap (keeps the last couple, as a photo is often in two spreads in a row). */
@@ -147,16 +158,20 @@ export function originals(galleryId: string, photos: Map<string, Photo & { filen
   };
 }
 
-/** Make and download the ZIP. progress(n, of) as each spread is done. */
-export async function albumFiles(album: Album, galleryId: string, photos: Map<string, Photo & { filename?: string }>, sheet: string, progress: (n: number, of: number) => void) {
+/** Make and download the ZIP. progress(n, of) as each spread is done. pages: single pages for SDS
+ *  (001-L.jpg, 001-R.jpg, 002-L.jpg…, which sort in page order) instead of double-page spreads. */
+export async function albumFiles(album: Album, galleryId: string, photos: Map<string, Photo & { filename?: string }>, sheet: string, progress: (n: number, of: number) => void, pages = false) {
   const spreads = album.design.spreads;
   const src = originals(galleryId, photos);
   const files: { name: string; blob: Blob; crc: number; size: number }[] = [];
   try {
     for (let k = 0; k < spreads.length; k++) {
       progress(k, spreads.length);
-      const bytes = await renderSpread(album, spreads[k], photos, src.get);
-      files.push({ name: `${String(k + 1).padStart(3, '0')}.jpg`, blob: new Blob([bytes as BlobPart], { type: 'image/jpeg' }), crc: crc32(bytes), size: bytes.length });
+      const parts = await renderSpread(album, spreads[k], photos, src.get, pages);
+      parts.forEach((bytes, i) => {
+        const name = `${String(k + 1).padStart(3, '0')}${pages ? (i ? '-R' : '-L') : ''}.jpg`;
+        files.push({ name, blob: new Blob([bytes as BlobPart], { type: 'image/jpeg' }), crc: crc32(bytes), size: bytes.length });
+      });
     }
   } finally { src.close(); }
   progress(spreads.length, spreads.length);
@@ -165,7 +180,7 @@ export async function albumFiles(album: Album, galleryId: string, photos: Map<st
   const url = URL.createObjectURL(zip(files));
   const a = document.createElement('a');
   const safe = (x: string) => x.replace(/[\\/:*?"<>|\u0000-\u001f]+/g, ' ').replace(/\s+/g, ' ').trim();
-  a.href = url; a.download = `${safe(album.name) || 'Album'} Seldex files.zip`;
+  a.href = url; a.download = `${safe(album.name) || 'Album'} ${pages ? 'SDS pages' : 'Seldex spreads'}.zip`;
   document.body.append(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 120_000);
 }

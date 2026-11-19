@@ -302,7 +302,9 @@ document.addEventListener('click', async (e) => {
     drawTray();
   }
   if (t.closest('[data-auto]')) openAuto();
-  if (t.closest('[data-export]')) exportFiles();
+  if (t.closest('[data-export]')) $<HTMLDialogElement>('[data-kind-dlg]').showModal();
+  const kind = t.closest<HTMLElement>('[data-kind]');
+  if (kind) { kind.closest('dialog')!.close(); exportFiles(kind.dataset.kind === 'pages'); }
   if (t.closest('[data-close]')) t.closest('dialog')?.close();
 });
 
@@ -475,23 +477,29 @@ $('[data-auto-dlg] form').addEventListener('submit', (e) => {
 });
 
 // ---- The Seldex files ----
-function sheet() {
+function sheet(pages: boolean) {
   const pg = page(), px = spreadPx(album.size, album.orientation), m = ALBUM_MARGINS;
+  const last = String(design.spreads.length).padStart(3, '0');
   const lines = [
     `Seldex order: Boutique Book`, ``,
     `Album: ${album.name}`, `Gallery: ${gallery?.name ?? ''}`, `Made: ${new Date().toLocaleString('en-NZ')} (version ${album.version})`, ``,
     `Size: ${sizeLabel(album.size, album.orientation)} (Seldex size ${album.size}${album.orientation === 'landscape' ? ', landscape' : ''})`,
     `Spreads: ${design.spreads.length} (${design.spreads.length * 2} pages; 10 spreads included)`,
-    `Spread files: ${px.w} × ${px.h} px = ${pg.w * 2 + 2 * m.bleed} × ${pg.h + 2 * m.bleed} in at 300 dpi, JPEG, sRGB, 001.jpg to ${String(design.spreads.length).padStart(3, '0')}.jpg`,
+    pages
+      ? `Page files: ${px.w / 2} × ${px.h} px = ${pg.w + m.bleed} × ${pg.h + 2 * m.bleed} in at 300 dpi, JPEG, sRGB, 001-L.jpg (spread 1 left page), 001-R.jpg (right page) to ${last}-R.jpg`
+      : `Spread files: ${px.w} × ${px.h} px = ${pg.w * 2 + 2 * m.bleed} × ${pg.h + 2 * m.bleed} in at 300 dpi, JPEG, sRGB, 001.jpg to ${last}.jpg`,
+    ...(pages ? [``, `In SDS: give each spread a template with one slot filling each whole page (out to the outer edge, not the red line),`,
+      `then drag NNN-L.jpg into the left slot and NNN-R.jpg into the right one. Don't zoom or move them: each file is exactly one page,`,
+      `so it fits its slot with nothing cropped and the two halves meet at the fold.`] : []),
     `Background: ${album.bg}`,
     `Margins used: bleed ${m.bleed} in, safe area ${m.safe} in, faces kept ${m.gutter} in off the centre crease${m.confirmed ? '' : ` (${m.source})`}`, ``,
     `To choose on the Seldex order: cover material and colour, lining, paper (Matte Ivory / White), packaging, logo position, vellum, companion albums.`, ``,
     `Spreads:`,
-    ...design.spreads.map((s, k) => `${String(k + 1).padStart(3, '0')}.jpg  ${s.layout === 'span' ? 'across both pages' : `${PAGE_LAYOUTS[s.layout[0]]?.label} | ${PAGE_LAYOUTS[s.layout[1]]?.label}`}: ${s.slots.filter(Boolean).map((id) => photos.get(id!)?.filename).join(', ') || '(no photos)'}`),
+    ...design.spreads.map((s, k) => `${String(k + 1).padStart(3, '0')}${pages ? '-L/R' : ''}.jpg  ${s.layout === 'span' ? 'across both pages' : `${PAGE_LAYOUTS[s.layout[0]]?.label} | ${PAGE_LAYOUTS[s.layout[1]]?.label}`}: ${s.slots.filter(Boolean).map((id) => photos.get(id!)?.filename).join(', ') || '(no photos)'}`),
   ];
   return lines.join('\n');
 }
-async function exportFiles() {
+async function exportFiles(pages: boolean) {
   if (dirty || saving) await save();
   const pg = page();
   const empty: number[] = [], soft: string[] = [], missing = new Set<string>();
@@ -514,10 +522,12 @@ async function exportFiles() {
   const bar = $<HTMLElement>('.bar span', dlg), text = $('.ex-text', dlg);
   dlg.showModal();
   try {
-    await albumFiles({ ...album, design }, album.gallery_id, photos, sheet(), (n, of) => {
+    await albumFiles({ ...album, design }, album.gallery_id, photos, sheet(pages), (n, of) => {
       bar.style.width = `${Math.round((100 * n) / of)}%`;
-      text.textContent = n < of ? `Drawing spread ${n + 1} of ${of} at ${px.w} × ${px.h} px from the full-size photos…` : 'Done. The ZIP is in your downloads: upload the spreads to Seldex with the order.';
-    });
+      text.textContent = n < of ? `Drawing spread ${n + 1} of ${of} at ${px.w} × ${px.h} px from the full-size photos…`
+        : pages ? `Done. The ZIP is in your downloads: ${of * 2} page files (${px.w / 2} × ${px.h} px), 001-L.jpg, 001-R.jpg… In SDS put each into a slot that fills its whole page.`
+          : 'Done. The ZIP is in your downloads: upload the spreads to Seldex with the order.';
+    }, pages);
     api('/api/studio/galleries/albums', 'POST', { action: 'exported', id: album.id }).catch(() => {});
   } catch (e) {
     text.textContent = (e as Error).message;

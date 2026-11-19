@@ -8,7 +8,9 @@ export type LabelData = { number: string; name: string; lines: string[]; phone?:
 const DOTS = 800;          // 100 mm at 8 dots per mm
 const MM = 8;
 // Browser Print listens on https://localhost:9101 (for https pages like the studio) and http://localhost:9100.
-const PORTS = ['https://localhost:9101', 'http://127.0.0.1:9100'];
+// Only the secure port is used (2026-11-19): the plain http fallback made Tony's Edge mark the whole
+// site "Not secure" for him (visitors weren't affected). If https fails, the label uses the print dialog.
+const PORTS = ['https://localhost:9101'];
 let BP = PORTS[0];
 
 let fontsReady: Promise<void> | null = null;

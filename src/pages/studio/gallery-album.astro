@@ -83,6 +83,17 @@ const m = ALBUM_MARGINS;
       <div class="actions"><button type="button" class="s-btn s-btn--quiet" data-close>Cancel</button><button type="submit" class="s-btn s-btn--solid" value="go">Lay it out</button></div>
     </form>
   </dialog>
+  <dialog class="ga-dlg" data-kind-dlg>
+    <h2>Make the Seldex files</h2>
+    <p>Drawn from the full-size photos at 300 dpi, in a ZIP with an order sheet.</p>
+    <div class="kinds">
+      <button type="button" class="s-btn s-btn--solid" data-kind="pages">Single pages for SDS</button>
+      <p class="hint">Two files a spread, 001-L.jpg and 001-R.jpg, each exactly one page. In Seldex’s SDS designer, use slots that fill each whole page and drop the files in without zooming.</p>
+      <button type="button" class="s-btn" data-kind="spreads">Double-page spreads</button>
+      <p class="hint">One file a spread, 001.jpg onwards, both pages side by side: for uploading print-ready spreads if Seldex takes them that way.</p>
+    </div>
+    <div class="actions"><button type="button" class="s-btn s-btn--quiet" data-close>Cancel</button></div>
+  </dialog>
   <dialog class="ga-dlg" data-export-dlg>
     <h2>Seldex files</h2>
     <p class="ex-text"></p>
@@ -180,6 +191,8 @@ const m = ALBUM_MARGINS;
   .ga-dlg::backdrop { background: rgb(0 0 0 / 0.35); }
   .ga-dlg h2 { margin: 0 0 6px; font-weight: 300; font-size: 24px; }
   .ga-dlg p { line-height: 1.6; }
+  .kinds { display: grid; gap: 6px; justify-items: start; margin: 8px 0 12px; }
+  .kinds .hint { margin: 0 0 10px !important; font-size: 13px; color: #777; }
   .bar { height: 10px; background: var(--griseo); border-radius: 99px; overflow: hidden; margin: 10px 0; }
   .bar span { display: block; height: 100%; background: var(--green); width: 0; transition: width 0.4s; }
 </style>
