@@ -187,10 +187,28 @@ export async function confirmBooking(context, bookingId) {
       .bind(job.id, job.client_id, e.subject, e.body, s.id, s.threadId, new Date().toISOString()).run();
     if (s.redirected) sent += ` (Test mode: to ${s.to}.)`;
   } catch (e) { sent = `Confirmation not sent (${e.message}).`; }
+  const link = `${SITE}/studio/crm/job?id=${job.id}`;
+  const who = `${job.first_name} ${job.last_name}${job.partner_name ? ` and ${job.partner_name}` : ''}`;
+  const calRow = calNote ? [['Calendar', calNote]] : [];
+  if (job.stage && job.stage !== 'lead') {
+    // A client who's already booked (e.g. a catch-up before the wedding): say so, without their original enquiry notes.
+    const names = [job.first_name, job.partner_name?.split(' ')[0]].filter(Boolean).join(' & ');
+    const d = new Date(`${b.date}T12:00:00Z`);
+    const short = `${d.toLocaleDateString('en-NZ', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' }).replace(',', '')}, ${new Date(`2000-01-01T${b.time}:00`).toLocaleTimeString('en-NZ', { hour: 'numeric', minute: b.time.endsWith(':00') ? undefined : '2-digit' }).replace(/\s/g, '')}`;
+    const kind = (job.job_type || 'event').toLowerCase();
+    const event = job.event_date ? `their ${kind} on ${new Date(`${job.event_date}T12:00:00Z`).toLocaleDateString('en-NZ', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' })}` : `their ${kind}`;
+    const note = appt?.notes?.match(/Their note: ([\s\S]*)$/)?.[1]?.trim() ?? '';
+    const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+    await alertTony(env, `${names} booked a catch-up: ${short}`, [
+      ['', { html: `<p style="margin:0 0 8px">Booked client ${esc(who)} booked a ${esc(b.type_name)} on ${esc(when)}, about ${esc(event)}.</p>` }],
+      ['When', when], ['Where', appt?.location ?? ''], ['Their note', note], ['Email', job.email], ['Phone', job.phone], ['Email to them', sent], ...calRow,
+    ], link);
+    return;
+  }
   await alertTony(env, `New booking: ${b.type_name} with ${job.first_name} ${job.last_name}`, [
-    ['When', when], ['Who', `${job.first_name} ${job.last_name}${job.partner_name ? ` and ${job.partner_name}` : ''}`], ['Email', job.email], ['Phone', job.phone],
-    ['Wedding date', job.event_date ?? ''], ['Their note', job.message?.slice(-500) ?? ''], ['Where', appt?.location ?? ''], ['Email to them', sent], ...(calNote ? [['Calendar', calNote]] : []),
-  ], `${SITE}/studio/crm/job?id=${job.id}`);
+    ['When', when], ['Who', who], ['Email', job.email], ['Phone', job.phone],
+    ['Wedding date', job.event_date ?? ''], ['Their note', job.message?.slice(-500) ?? ''], ['Where', appt?.location ?? ''], ['Email to them', sent], ...calRow,
+  ], link);
 }
 
 /** Paid sessions that weren't paid within 30 minutes: let the time go (timer). */
