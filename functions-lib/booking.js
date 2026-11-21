@@ -193,14 +193,15 @@ export async function confirmBooking(context, bookingId) {
   if (job.stage && job.stage !== 'lead') {
     // A client who's already booked (e.g. a catch-up before the wedding): say so, without their original enquiry notes.
     const names = [job.first_name, job.partner_name?.split(' ')[0]].filter(Boolean).join(' & ');
-    const d = new Date(`${b.date}T12:00:00Z`);
-    const short = `${d.toLocaleDateString('en-NZ', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' }).replace(',', '')}, ${new Date(`2000-01-01T${b.time}:00`).toLocaleTimeString('en-NZ', { hour: 'numeric', minute: b.time.endsWith(':00') ? undefined : '2-digit' }).replace(/\s/g, '')}`;
+    const day = (ymd) => new Date(`${ymd}T12:00:00Z`).toLocaleDateString('en-NZ', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' }).replace(',', '');
+    const time = new Date(`2000-01-01T${b.time}:00`).toLocaleTimeString('en-NZ', { hour: 'numeric', minute: b.time.endsWith(':00') ? undefined : '2-digit' }).replace(/\s/g, '');
+    const short = `${day(b.date)}, ${time}`;
     const kind = (job.job_type || 'event').toLowerCase();
-    const event = job.event_date ? `their ${kind} on ${new Date(`${job.event_date}T12:00:00Z`).toLocaleDateString('en-NZ', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' })}` : `their ${kind}`;
+    const event = job.event_date ? `their ${kind} on ${day(job.event_date)}` : `their ${kind}`;
     const note = appt?.notes?.match(/Their note: ([\s\S]*)$/)?.[1]?.trim() ?? '';
     const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
     await alertTony(env, `${names} booked a catch-up: ${short}`, [
-      ['', { html: `<p style="margin:0 0 8px">Booked client ${esc(who)} booked a ${esc(b.type_name)} on ${esc(when)}, about ${esc(event)}.</p>` }],
+      ['', { html: `<p style="margin:0 0 8px">${esc(names.replace(' & ', ' and '))} booked a catch-up call on ${esc(day(b.date))} at ${esc(time)} about ${esc(event)}.</p>` }],
       ['When', when], ['Where', appt?.location ?? ''], ['Their note', note], ['Email', job.email], ['Phone', job.phone], ['Email to them', sent], ...calRow,
     ], link);
     return;
