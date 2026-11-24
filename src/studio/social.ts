@@ -150,7 +150,7 @@ function openPost(p: Post) {
   open = structuredClone(p);
   at = 0;
   const pf = platforms[p.platform];
-  $('.ed-title').textContent = `${pf.name} · ${new Date(`${p.post_at}:00`).toLocaleDateString('en-NZ', { weekday: 'long', day: 'numeric', month: 'long' })}`;
+  $('.ed-title').innerHTML = `<span class="pf pf-${p.platform}" aria-hidden="true">${SHORT[p.platform]}</span> ${esc(pf.name)} · ${new Date(`${p.post_at}:00`).toLocaleDateString('en-NZ', { weekday: 'long', day: 'numeric', month: 'long' })}`;
   field<HTMLInputElement>('post_at').value = p.post_at;
   field<HTMLInputElement>('label').value = p.label ?? '';
   $('.ed-label').firstChild!.textContent = p.platform === 'pinterest' ? 'Pin title ' : 'Note (only you see this) ';
@@ -221,7 +221,7 @@ function drawEditor() {
   $('.ed-strip').innerHTML = p.photos.map((x, n) => `<div class="ed-th${n === at ? ' on' : ''}" data-at="${n}" role="button" tabindex="0"><img src="${esc(small(x))}" alt="" />${editable && p.photos.length > 1 ? `<button type="button" class="x" data-drop="${n}" title="Leave this photo out">×</button>${n ? `<button type="button" class="mv" data-first="${n}" title="Make it the first photo">↑</button>` : ''}` : ''}</div>`).join('');
   const b = (act: string, text: string, cls = '') => `<button type="button" class="s-btn ${cls}" data-act="${act}">${text}</button>`;
   const acts: string[] = [];
-  if (p.status === 'draft') acts.push(b('approve', 'Approve', 's-btn--solid'), b('save', 'Save'), b('recaption', 'New caption'), b('rephoto', 'Different photos'), b('swap', 'Different idea'), b('skip', 'Skip', 's-btn--quiet'));
+  if (p.status === 'draft') acts.push(b('approve', 'Approve', 's-btn--solid'), b('approve_next', 'Approve & next', 's-btn--solid'), b('save', 'Save'), b('recaption', 'New caption'), b('rephoto', 'Different photos'), b('swap', 'Different idea'), b('skip', 'Skip', 's-btn--quiet'));
   const self = auto(p.platform);
   if (p.status === 'approved' && self) acts.push(b('post_now', 'Post now', 's-btn--solid'), b('save', 'Save changes'), b('unapprove', 'Back to draft', 's-btn--quiet'));
   else if (p.status === 'approved') acts.push(b('copy', 'Copy caption', 's-btn--solid'), b('download', `Download photo${p.photos.length > 1 ? 's' : ''}`), b('posted', 'I’ve posted it'), b('save', 'Save changes'), b('unapprove', 'Back to draft', 's-btn--quiet'));
@@ -303,6 +303,16 @@ async function upload(p: Post) {
   const d = await r.json().catch(() => ({}));
   if (!r.ok) throw new Error(d.error || 'The photos didn’t upload.');
 }
+/** Working through the week: open the next draft in time order (from the one just done, then from the start), or close when none are left. */
+function openNext() {
+  const at = open ? `${open.post_at}#${String(open.id).padStart(9, '0')}` : '';
+  const key = (x: Post) => `${x.post_at}#${String(x.id).padStart(9, '0')}`;
+  const drafts = posts.filter((x) => x.status === 'draft' && x.id !== open?.id).sort((x, y) => key(x).localeCompare(key(y)));
+  const next = drafts.find((x) => key(x) > at) ?? drafts[0];
+  if (next) openPost(next);
+  else { ed.close(); toast('All drafts done.'); }
+}
+
 function replace(p: Post) {
   // A post back from the server has its tags (if set) but not the venue worked out for it.
   posts = posts.map((x) => (x.id === p.id ? { ...p, tag_ids: p.tags != null ? JSON.parse(p.tags) : x.tag_ids } : x));
@@ -435,11 +445,12 @@ document.addEventListener('click', async (e) => {
       if (p.status === 'approved' && auto(p.platform)) { act.textContent = reel(p) ? 'Making the video…' : 'Making the photos…'; await upload({ ...p, photos: open.photos }); }
       toast('Saved.');
     }
-    if (a === 'approve') {
+    if (a === 'approve' || a === 'approve_next') {
       const p = await save();
       if (auto(p.platform)) { act.textContent = reel(p) ? 'Making the video…' : 'Making the photos…'; await upload({ ...p, photos: open.photos }); }
       replace((await api({ action: 'approve', id: open.id })).post);
       toast(auto(p.platform) ? 'Approved: it goes out on its own at its time.' : 'Approved.');
+      if (a === 'approve_next') openNext();
     }
     if (a === 'post_now') {
       // Approved before Facebook/Instagram was connected: make its photo files first.
@@ -451,7 +462,8 @@ document.addEventListener('click', async (e) => {
     if (a === 'unapprove' || a === 'skip' || a === 'restore' || a === 'posted') {
       replace((await api({ action: a, id: open.id })).post);
       toast({ unapprove: 'Back to draft.', skip: 'Skipped.', restore: 'Back as a draft.', posted: 'Marked as posted.' }[a]!);
-      if (a === 'skip' || a === 'posted') ed.close();
+      if (a === 'skip') openNext();
+      else if (a === 'posted') ed.close();
     }
     if (a === 'rephoto') {
       act.textContent = 'Finding photos…';
