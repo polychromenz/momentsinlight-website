@@ -160,8 +160,15 @@ const leastUsed = (list, use, count) => list.map((x, i) => ({ x, i, u: use.get(x
 // Wedding photos come only from the ones Tony has flagged Social in a gallery (his rule, 22 Oct 2026):
 // a blog story or review uses that couple's flagged photos, and the blog's own photos only when the
 // couple's gallery has none flagged.
-const firstName = (n) => String(n ?? '').split(/\s+(?:and|&)\s+/i)[0].trim().toLowerCase();
-const galleryFor = (galleries, title) => galleries.find((g) => firstName(g.name) && String(title ?? '').toLowerCase().includes(firstName(g.name)));
+// A gallery matches a title when it names the whole couple ("Shannon and Connor"): both first names,
+// as words. A first name alone isn't enough, as two couples can share one (Shannon & Connor's blog
+// was picking Shannon & Darren's photos).
+const firstNames = (n) => String(n ?? '').split(/\s+(?:and|&)\s+/i).map((x) => x.trim().split(/[\s'’-]+/)[0].toLowerCase()).filter(Boolean);
+const hasWord = (text, w) => new RegExp(`(^|[^a-z])${w.replace(/[^a-z]/g, '').replace(/s$/, '')}s?([^a-z]|$)`).test(text); // "Warwicks" matches "Warwick"
+const galleryFor = (galleries, title) => {
+  const t = String(title ?? '').toLowerCase();
+  return galleries.find((g) => { const ns = firstNames(g.name); return ns.length > 0 && ns.every((w) => hasWord(t, w)); });
+};
 const flaggedFor = (galleries, title) => (galleryFor(galleries, title)?.photos ?? []).map(galleryPhoto);
 
 /** One idea for a post: { source, source_ref, label, facts, photos, link }. */
