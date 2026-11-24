@@ -40,6 +40,13 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
             <button type="button" data-stage="lost">Not going ahead</button>
             <a class="spam-link" href="/studio/crm/spam" hidden>Spam</a>
           </div>
+          <!-- Clients filter (Tony, 2026-11-25): opens on the people who booked. -->
+          <div class="tabs who-tabs" role="group" aria-label="Show" hidden>
+            <button type="button" data-who="booked" class="on">Booked</button>
+            <button type="button" data-who="lead">Leads</button>
+            <button type="button" data-who="lost">Didn’t go ahead</button>
+            <button type="button" data-who="all">Everyone</button>
+          </div>
           <input class="people-search" type="search" placeholder="Search names, emails, venues…" aria-label="Search" />
         </div>
         <p class="list-count muted"></p>
@@ -213,6 +220,9 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
   const testTag = (x: any) => (x.test ? ' <span class="test-tag" title="Test client: never sent to Xero">Test</span>' : '');
   const matches = (q: string, ...parts: unknown[]) => !q || parts.join(' ').toLowerCase().includes(q);
   const head = (cols: string[]) => { $('.jobs thead').innerHTML = `<tr>${cols.map((c) => `<th>${c}</th>`).join('')}</tr>`; };
+  // Clients filter: booked (a booked or past job), leads (an open enquiry, never booked), or didn't go ahead (the rest).
+  let who = 'booked';
+  const whoOf = (c: any) => c.jobs.some((j: any) => j.stage === 'booked' || j.stage === 'completed') ? 'booked' : c.jobs.some((j: any) => j.stage === 'lead') ? 'lead' : 'lost';
   const renderJobs = async () => {
     const q = $<HTMLInputElement>('.people-search').value.trim().toLowerCase();
     const body = $('.jobs tbody');
@@ -235,12 +245,12 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
     }
     if (stage === 'all') {
       head(['Client', 'Email', 'Phone', 'Jobs', 'Added']);
-      const list = other.all.filter((c) => matches(q, c.first_name, c.last_name, c.email, c.phone, c.notes, ...c.jobs.map((j: any) => j.title)));
+      const list = other.all.filter((c) => (who === 'all' || whoOf(c) === who) && matches(q, c.first_name, c.last_name, c.email, c.phone, c.notes, ...c.jobs.map((j: any) => j.title)));
       body.innerHTML = list.length ? list.map((c) => `<tr><td><a href="/studio/crm/client?id=${c.id}"><strong>${esc(`${c.first_name} ${c.last_name}`.trim())}</strong></a>${testTag(c)}${c.notes ? `<br><small class="note" title="${esc(c.notes)}">${esc(c.notes.slice(0, 90))}${c.notes.length > 90 ? '…' : ''}</small>` : ''}</td>
         <td>${c.email.endsWith('.invalid') ? '<small class="muted">no email</small>' : `<a href="mailto:${esc(c.email)}">${esc(c.email)}</a>`}</td><td>${esc(c.phone)}</td>
         <td>${c.jobs.length ? c.jobs.map((j: any) => `<a href="/studio/crm/job?id=${j.id}">${esc(j.job_type)}</a> <small class="muted">${STAGE[j.stage] ?? j.stage}${j.event_date ? ` · ${nzDate(j.event_date)}` : ''}</small>`).join('<br>') : '<small class="muted">No jobs</small>'}</td>
         <td>${when(c.created_at)}</td></tr>`).join('') : `<tr><td colspan="5" class="empty">${q ? 'Nobody matches.' : 'Nobody yet.'}</td></tr>`;
-      $('.list-count').textContent = `${list.length} ${list.length === 1 ? 'person' : 'people'}`;
+      $('.list-count').textContent = `${list.length} ${list.length === 1 ? 'person' : 'people'}${who === 'all' ? '' : ` · ${{ booked: 'booked', lead: 'open leads', lost: 'didn’t go ahead' }[who]}`}`;
       return;
     }
     const past = stage === 'past';
@@ -302,10 +312,17 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
     }
     const view = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-view]');
     if (view) { showView(view.dataset.view as 'jobs' | 'clients'); return; }
+    const wt = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-who]');
+    if (wt) {
+      who = wt.dataset.who!;
+      document.querySelectorAll('.who-tabs button').forEach((b) => b.classList.toggle('on', b === wt));
+      renderJobs();
+      return;
+    }
     const tab = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-stage]');
     if (tab) {
       stage = tab.dataset.stage!;
-      document.querySelectorAll('.tabs button').forEach((b) => b.classList.toggle('on', b === tab));
+      document.querySelectorAll('.tabs:not(.who-tabs) button').forEach((b) => b.classList.toggle('on', b === tab));
       $('.list-count').textContent = '';
       renderJobs();
     }
@@ -317,6 +334,7 @@ import StudioLayout from '../../../layouts/StudioLayout.astro';
     if (v === 'clients' && stage !== 'all') jobStage = stage;
     stage = v === 'clients' ? 'all' : jobStage;
     $('.tabs').hidden = v === 'clients';
+    $('.who-tabs').hidden = v !== 'clients';
     $('.list-title').textContent = v === 'clients' ? 'Clients' : 'Leads and jobs';
     $<HTMLInputElement>('.people-search').placeholder = v === 'clients' ? 'Search names, emails, phones…' : 'Search names, emails, venues…';
     $('.list-count').textContent = '';
